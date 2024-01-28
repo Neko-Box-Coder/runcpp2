@@ -1,0 +1,6 @@
+[submodule "CLI11"]
+	path = External/CLI11
+	url = https://github.com/CLIUtils/CLI11.git
+[submodule "ssLogger"]
+	path = External/ssLogger
+	url = https://github.com/Neko-Box-Coder/ssLogger.git
