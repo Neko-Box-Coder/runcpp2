@@ -4,3 +4,9 @@
 [submodule "ssLogger"]
 	path = External/ssLogger
 	url = https://github.com/Neko-Box-Coder/ssLogger.git
+[submodule "tinydir"]
+	path = External/tinydir
+	url = https://github.com/cxong/tinydir.git
+[submodule "cfgpath"]
+	path = External/cfgpath
+	url = https://github.com/Malvineous/cfgpath.git
