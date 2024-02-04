@@ -10,3 +10,9 @@
 [submodule "cfgpath"]
 	path = External/cfgpath
 	url = https://github.com/Malvineous/cfgpath.git
+[submodule "mkdirp.c"]
+	path = External/mkdirp
+	url = https://github.com/stephenmathieson/mkdirp.c.git
+[submodule "Embed2C"]
+	path = External/Embed2C
+	url = https://github.com/Neko-Box-Coder/Embed2C.git

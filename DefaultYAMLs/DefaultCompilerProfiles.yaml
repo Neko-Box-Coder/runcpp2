@@ -1,0 +1,27 @@
+---
+CompilerProfiles:
+  - Name: "g++"
+    FileExtensions: [cpp, cc, cxx]
+    SetupSteps: []
+    ObjectFileExtensions:
+        Windows: obj
+        Unix: o
+    SharedLibraryExtensions:
+        Windows: [dll, lib]
+        Unix: [so]
+    StaticLibraryExtensions:
+        Windows: [lib]
+        Unix: [a]
+    DebugSymbolFileExtension:
+        Windows: []
+        Unix: []
+    Compiler:
+        Executable: "g++"
+        DefaultCompileFlags: "-std=c++17 -Wall -Werror"
+        CompileArgs: "-c {CompileFlags} {InputFile}"
+    Linker:
+        Executable: "g++"
+        DefaultLinkFlags: null
+        LinkerArgs:
+            OutputPart: "{LinkFlags} -o {ProgramName}"
+            DependenciesPart: "-l{DependencyName}"
