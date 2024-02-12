@@ -24,8 +24,10 @@ namespace Internal
     
     bool CheckNodeRequirements(YAML::Node& node, const std::vector<NodeRequirement>& requirements);
     
-    
     bool GetParsableInfo(const std::string& contentToParse, std::string& outParsableInfo);
+    
+    
+    
 }
 
 }

@@ -16,11 +16,15 @@ namespace Internal
 
     std::string ProcessPath(const std::string& path);
 
-    bool FileExists(const std::string& path, bool& outIsDir);
+    bool FileOrDirectoryExists(const std::string& path, bool& outIsDir);
     
     std::string GetFileDirectory(const std::string& filePath);
     
+    std::string GetFileNameWithExtension(const std::string& filePath);
+    
     std::string GetFileNameWithoutExtension(const std::string& filePath);
+    
+    std::string GetFileExtension(const std::string& filePath);
     
     std::vector<std::string> GetPlatformNames();
 }

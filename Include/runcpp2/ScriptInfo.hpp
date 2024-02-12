@@ -19,6 +19,8 @@ namespace runcpp2
             FlagsOverrideInfo OverrideCompileFlags;
             FlagsOverrideInfo OverrideLinkFlags;
             
+            bool Populated = false;
+            
             bool ParseYAML_Node(YAML::Node& node);
             std::string ToString(std::string indentation) const;
     };

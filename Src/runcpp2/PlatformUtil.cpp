@@ -60,7 +60,7 @@ namespace Internal
             return path;
     }
 
-    bool FileExists(const std::string& path, bool& outIsDir)
+    bool FileOrDirectoryExists(const std::string& path, bool& outIsDir)
     {
         tinydir_file inputFile;
             
@@ -92,24 +92,48 @@ namespace Internal
         return scriptDirectory;
     }
     
-    std::string GetFileNameWithoutExtension(const std::string& filePath)
+    std::string GetFileNameWithExtension(const std::string& filePath)
     {
         char separator = GetFileSystemSeparator();
         
-        std::size_t lastDotIndex = filePath.rfind(".");
         std::size_t lastSlashIndex = filePath.rfind(separator);
         
         std::string filename;
-        if(lastDotIndex == std::string::npos)
-            filename = filePath;
-        else
-            filename = filePath.substr(0, lastDotIndex);
-        
         if(lastSlashIndex != std::string::npos)
             filename = filename.substr(lastSlashIndex + 1);
         
         return filename;
     }
+
+    std::string GetFileNameWithoutExtension(const std::string& filePath)
+    {
+        std::string filename = GetFileNameWithExtension(filePath);
+        
+        char separator = GetFileSystemSeparator();
+        
+        std::size_t lastDotIndex = filePath.rfind(".");
+        
+        if(lastDotIndex == std::string::npos)
+            filename = filePath;
+        else
+            filename = filePath.substr(0, lastDotIndex);
+        
+        return filename;
+    }
+    
+    std::string GetFileExtension(const std::string& filePath)
+    {
+        std::size_t lastDotIndex = filePath.rfind(".");
+        std::string extension;
+        
+        if(lastDotIndex == std::string::npos)
+            extension = "";
+        else
+            extension = filePath.substr(lastDotIndex+1);
+        
+        return extension;
+    }
+    
     
     std::vector<std::string> GetPlatformNames()
     {

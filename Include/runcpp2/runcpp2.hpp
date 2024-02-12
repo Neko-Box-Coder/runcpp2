@@ -21,9 +21,26 @@ namespace runcpp2
     
     bool ReadUserConfig(std::vector<CompilerProfile>& outProfiles);
     
+    bool GetScriptInfoString(   const std::string& processedScriptPath, 
+                                std::string& outScriptInfoString);
+    
     bool ParseScriptInfo(   const std::string& scriptInfo, 
                             ScriptInfo& outScriptInfo);
     
+    bool CreateRuncpp2ScriptDirectory(const std::string& processedScriptPath);
+    
+    bool SetupScriptDependencies(   const std::string& processedScriptPath, 
+                                    const ScriptInfo& scriptInfo);
+    
+    bool CopyDependencies(  const std::string& processedScriptPath, 
+                            const ScriptInfo& scriptInfo);
+
+    bool CompileAndLinkScript(  const std::string& processedScriptPath, 
+                                const ScriptInfo& scriptInfo,
+                                const std::vector<CompilerProfile>& profiles);
+
+
+
     bool RunScript(const std::string& scriptPath, const std::vector<CompilerProfile>& profiles);
 
 
