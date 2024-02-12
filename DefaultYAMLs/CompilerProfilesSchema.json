@@ -1,11 +1,11 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Test title",
-    "description": "Test description",
+    "title": "Compiler profiles",
+    "description": "Compiler profiles configuraion",
     "type": "object",
     "properties": 
     {
-        "Dependencies": 
+        "CompilerProfiles": 
         {
             "type": "array",
             "description": "",
@@ -14,11 +14,284 @@
                 "type": "object",
                 "properties": 
                 {
-                    "Name": {"type": "string"}
+                    "Name": 
+                    {
+                        "type": "string",
+                        "description": "Name of the compiler profile"
+                    },
+                    "FileExtensions" : 
+                    {
+                        "type": "array",
+                        "items":
+                        {
+                            "type":"string"
+                        },
+                        "uniqueItems": true,
+                        "description": "The file extensions for the compiler"
+                    },
+                    "Languages":
+                    {
+                        "type": "array",
+                        "items":
+                        {
+                            "type":"string"
+                        },
+                        "uniqueItems": true,
+                        "description": "The languages supported by the compiler"
+                    },
+                    "SetupSteps" : 
+                    {
+                        "type": "array",
+                        "items":
+                        {
+                            "type":"string"
+                        },
+                        "description": "(Optional) Steps in commandline to setup the environment"
+                    },
+                    "ObjectFileExtensions":
+                    {
+                        "type": "object",
+                        "properties": 
+                        {
+                            "Windows": {"type": "string"},
+                            "Linux": {"type": "string"},
+                            "Unix": {"type": "string"},
+                            "MacOS": {"type": "string"}
+                        },
+                        "description": "The file extensions for the object files",
+                        "uniqueItems": true
+                    },
+                    "SharedLibraryExtensions":
+                    {
+                        "type": "object",
+                        "properties": 
+                        {
+                            "Windows": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
+                            },
+                            "Linux": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
+                            },
+                            "Unix": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
+                            },
+                            "MacOS": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
+                            }
+                        },
+                        "uniqueItems": true,
+                        "description": "The file extensions for the shared libraries"
+                    },
+                    "StaticLibraryExtensions":
+                    {
+                        "type": "object",
+                        "properties": 
+                        {
+                            "Windows": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
+                            },
+                            "Linux": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
+                            },
+                            "Unix": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
+                            },
+                            "MacOS": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
+                            }
+                        },
+                        "uniqueItems": true,
+                        "description": "The file extensions for the static libraries"
+                    },
+                    "DebugSymbolFileExtensions":
+                    {
+                        "type": "object",
+                        "properties": 
+                        {
+                            "Windows": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
+                            },
+                            "Linux": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
+                            },
+                            "Unix": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
+                            },
+                            "MacOS": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
+                            }
+                        },
+                        "uniqueItems": true,
+                        "description": "(Optional) The file extensions for debug symbols to be copied alongside the binary"
+                    },
+                    "Compiler":
+                    {
+                        "type": "object",
+                        "properties": 
+                        {
+                            "SetupSteps" : 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                },
+                                "description": "(Optional) Steps in commandline to setup the compiler"
+                            },
+                            "Executable": 
+                            {
+                                "type": "string",
+                                "description": "Executable to be called"
+                            },
+                            "DefaultCompileFlags": 
+                            {
+                                "type": "string",
+                                "description": "Default arguments to provide for compilation which can be overriden by the script"
+                            },
+                            "CompileArgs": 
+                            {
+                                "type": "string",
+                                "description": "The syntax to compile the given file"
+                            }
+                        },
+                        "required": 
+                        [
+                            "Executable",
+                            "DefaultCompileFlags",
+                            "CompileArgs"
+                        ],
+                        "description": "Specify the compiler settings, so the final flow will be:\n[Setup steps if any] --> {Executable} {CompileArgs}"
+                    },
+                    "Linker":
+                    {
+                        "type": "object",
+                        "properties": 
+                        {
+                            "SetupSteps" : 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                },
+                                "description": "(Optional) Steps in commandline to setup the linker"
+                            },
+                            "Executable": 
+                            {
+                                "type": "string",
+                                "description": "Executable to be called"
+                            },
+                            "DefaultLinkFlags": 
+                            {
+                                "type": "string",
+                                "description": "Default arguments to provide for linking dependencies to the binary, which can be overriden by the script"
+                            },
+                            "LinkerArgs": 
+                            {
+                                "type": "object",
+                                "properties": 
+                                {
+                                    "OutputPart": 
+                                    {
+                                        "type": "string",
+                                        "description": "Syntax for outputting to the binary"
+                                    },
+                                    "DependenciesPart": 
+                                    {
+                                        "type": "string",
+                                        "description": "Syntax for linking each dependency"
+                                    }
+                                },
+                                "required": 
+                                [
+                                    "OutputPart",
+                                    "DependenciesPart"
+                                ],
+                                "description": "The syntax to link the given file"
+                            }
+                        },
+                        "required": 
+                        [
+                            "Executable",
+                            "DefaultLinkFlags",
+                            "LinkerArgs"
+                        ],
+                        "description": "Specify the linker settings, so the final flow will be:\n[Setup steps if any] --> {Executable} {OutputPart} {DependenciesPart}...(for each dependency)"
+                    }
                 },
-                "required": ["Name"],
+                "required": 
+                [
+                    "Name", 
+                    "FileExtensions", 
+                    "ObjectFileExtensions", 
+                    "SharedLibraryExtensions", 
+                    "StaticLibraryExtensions", 
+                    "Compiler", 
+                    "Linker"
+                ],
                 "uniqueItems": true
             }
         }
-    }
+    },
+    "required": ["CompilerProfiles"]
 }

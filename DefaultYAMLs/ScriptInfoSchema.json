@@ -1,0 +1,155 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Script dependencies",
+    "description": "Script dependencies setup",
+    "type": "object",
+    "properties": 
+    {
+        "Language": 
+        {
+            "type": "string",
+            "description": "Language of the script"
+        },
+        "PreferredProfiles":
+        {
+            "type": "array",
+            "items":
+            {
+                "type":"string"
+            },
+            "description": "Preferred compiler/linker profiles for the script"
+        },
+        "Dependencies": 
+        {
+            "type": "array",
+            "description": "The list of dependencies needed by the script",
+            "items": 
+            {
+                "type": "object",
+                "properties": 
+                {
+                    "Name": 
+                    {
+                        "type": "string",
+                        "description": "Dependency name"
+                    },
+                    "LibraryType": 
+                    {
+                        "type": "string", 
+                        "enum": ["static", "object", "shared"],
+                        "description": "Library Type (static, object, shared)"
+                    },
+                    "SearchLibraryName": 
+                    {
+                        "type": "string",
+                        "description": "The library name to be searched for when linking against the script"
+                    },
+                    "Source": 
+                    {
+                        "type": "object",
+                        "properties": 
+                        {
+                            "Type": 
+                            {
+                                "type": "string", 
+                                "enum": ["git", "local"],
+                                "description": "The type of the dependency (git/local)"
+                            },
+                            "Value": 
+                            {
+                                "type": "string",
+                                "description": "The location of the dependency (git repository location, local directory)"
+                            }
+                        },
+                        "required": ["Type", "Value"],
+                        "description": "The source of getting the dependency"
+                    },
+                    "Setup": 
+                    {
+                        "type": "object",
+                        "properties":
+                        {
+                            "Windows": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
+                            },
+                            "Linux": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
+                            },
+                            "Unix": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
+                            },
+                            "MacOS": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
+                            }
+                        },
+                        "description": "List of setup commands for the supported platforms"
+                    }
+                },
+                "required": 
+                [
+                    "Name", 
+                    "LibraryType", 
+                    "SearchLibraryName", 
+                    "Source"
+                ],
+                "uniqueItems": true
+            }
+        },
+        "OverrideCompileFlags":
+        {
+            "type": "object",
+            "properties":
+            {
+                "Remove": 
+                {
+                    "type": "string",
+                    "description": "Flags to be removed from the default compile flags, separated by space"
+                },
+                "Append":
+                {
+                    "type": "string",
+                    "description": "Additional flags to be appended to the default compile flags"
+                }
+            },
+            "description": "Override the default compile flags"
+        },
+        "OverrideLinkFlags":
+        {
+            "type": "object",
+            "properties":
+            {
+                "Remove": 
+                {
+                    "type": "string",
+                    "description": "Flags to be removed from the default link flags, separated by space"
+                },
+                "Append":
+                {
+                    "type": "string",
+                    "description": "Additional flags to be appended to the default link flags"
+                }
+            },
+            "description": "Override the default link flags"
+        }
+    }
+}

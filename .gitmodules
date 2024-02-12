@@ -16,3 +16,6 @@
 [submodule "Embed2C"]
 	path = External/Embed2C
 	url = https://github.com/Neko-Box-Coder/Embed2C.git
+[submodule "yaml-cpp"]
+	path = External/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git

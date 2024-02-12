@@ -1,27 +1,37 @@
+# yaml-language-server: $schema=./CompilerProfilesSchema.json
+
 ---
 CompilerProfiles:
-  - Name: "g++"
+-   Name: "g++"
     FileExtensions: [cpp, cc, cxx]
+    Languages: ["c++"]
     SetupSteps: []
     ObjectFileExtensions:
         Windows: obj
-        Unix: o
+        #Or Unix: o
+        Linux: o
+        MacOS: o
     SharedLibraryExtensions:
         Windows: [dll, lib]
-        Unix: [so]
+        Linux: [so]
+        MacOS: [dylib]
     StaticLibraryExtensions:
         Windows: [lib]
-        Unix: [a]
-    DebugSymbolFileExtension:
+        #Or Unix: a
+        Linux: [a]
+        MacOS: [a]
+    DebugSymbolFileExtensions:
         Windows: []
         Unix: []
     Compiler:
+        SetupSteps: []
         Executable: "g++"
         DefaultCompileFlags: "-std=c++17 -Wall -Werror"
-        CompileArgs: "-c {CompileFlags} {InputFile}"
+        CompileArgs: "-c {CompileFlags} {InputFile} -o {ObjectFile}"
     Linker:
+        SetupSteps: []
         Executable: "g++"
-        DefaultLinkFlags: null
+        DefaultLinkFlags: ""
         LinkerArgs:
             OutputPart: "{LinkFlags} -o {ProgramName}"
             DependenciesPart: "-l{DependencyName}"
