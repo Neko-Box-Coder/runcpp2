@@ -4,6 +4,7 @@
 #include "runcpp2/DependencyLibraryType.hpp"
 #include "runcpp2/DependencySource.hpp"
 #include <string>
+#include <unordered_set>
 
 namespace runcpp2
 {
@@ -11,6 +12,7 @@ namespace runcpp2
     {
         public:
             std::string Name;
+            std::unordered_set<std::string> Platforms;
             DependencyLibraryType LibraryType;
             std::string SearchLibraryName;
             DependencySource Source;

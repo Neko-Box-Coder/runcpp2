@@ -33,11 +33,19 @@
                         "type": "string",
                         "description": "Dependency name"
                     },
+                    "Platforms": 
+                    {
+                        "type": "array",
+                        "items":
+                        {
+                            "type":"string"
+                        }
+                    },
                     "LibraryType": 
                     {
                         "type": "string", 
-                        "enum": ["static", "object", "shared"],
-                        "description": "Library Type (static, object, shared)"
+                        "enum": ["Static", "Object", "Shared", "Header"],
+                        "description": "Library Type (Static, Object, Shared, Header)"
                     },
                     "SearchLibraryName": 
                     {
@@ -52,8 +60,8 @@
                             "Type": 
                             {
                                 "type": "string", 
-                                "enum": ["git", "local"],
-                                "description": "The type of the dependency (git/local)"
+                                "enum": ["Git", "Local"],
+                                "description": "The type of the dependency (Git/Local)"
                             },
                             "Value": 
                             {
@@ -100,6 +108,14 @@
                                 {
                                     "type":"string"
                                 }
+                            },
+                            "All": 
+                            {
+                                "type": "array",
+                                "items":
+                                {
+                                    "type":"string"
+                                }
                             }
                         },
                         "description": "List of setup commands for the supported platforms"
@@ -108,6 +124,7 @@
                 "required": 
                 [
                     "Name", 
+                    "Platforms",
                     "LibraryType", 
                     "SearchLibraryName", 
                     "Source"

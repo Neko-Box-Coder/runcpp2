@@ -138,15 +138,15 @@ namespace Internal
     std::vector<std::string> GetPlatformNames()
     {
         #ifdef _WIN32
-            return {"Windows"};
+            return {"Windows", "All"};
         #elif __linux__
-            return {"Linux", "Unix"};
+            return {"Linux", "Unix", "All"};
         #elif __APPLE__
-            return {"MacOS", "Unix"};
+            return {"MacOS", "Unix", "All"};
         #elif __unix__
-            return {"Unix"};
+            return {"Unix", "All"};
         #else
-            return {"Unknown"};
+            return {"Unknown", "All"};
         #endif
     }
 }

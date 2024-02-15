@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=./CompilerProfilesSchema.json
 
 ---
+PreferredProfile: "g++"
 CompilerProfiles:
 -   Name: "g++"
     FileExtensions: [cpp, cc, cxx]
@@ -8,18 +9,14 @@ CompilerProfiles:
     SetupSteps: []
     ObjectFileExtensions:
         Windows: obj
-        #Or Unix: o
-        Linux: o
-        MacOS: o
+        Unix: o
     SharedLibraryExtensions:
         Windows: [dll, lib]
         Linux: [so]
         MacOS: [dylib]
     StaticLibraryExtensions:
         Windows: [lib]
-        #Or Unix: a
-        Linux: [a]
-        MacOS: [a]
+        Unix: [a]
     DebugSymbolFileExtensions:
         Windows: []
         Unix: []

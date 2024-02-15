@@ -6,6 +6,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 namespace runcpp2
 {
@@ -13,7 +14,7 @@ namespace runcpp2
     {
         public:
             std::string Language;
-            std::vector<std::string> PreferredProfiles;
+            std::unordered_set<std::string> PreferredProfiles;
             std::vector<DependencyInfo> Dependencies;
             
             FlagsOverrideInfo OverrideCompileFlags;

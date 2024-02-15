@@ -8,6 +8,7 @@ namespace runcpp2
         STATIC,
         SHARED,
         OBJECT,
+        HEADER,
         COUNT
     };
 }

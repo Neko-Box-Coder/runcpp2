@@ -5,10 +5,11 @@ Language: "c++"
 PreferredProfiles: ["g++"]
 Dependencies:
 -   Name: lib1
-    LibraryType: static
+    Platforms: [Windows, Linux, MacOS]
+    LibraryType: Static
     SearchLibraryName: lib1
     Source:
-        Type: git
+        Type: Git
         Value: "https://github.com/USER/REPO.git"
     Setup:
         Windows:
@@ -20,10 +21,11 @@ Dependencies:
         -   "cd build && cmake .."
         -   "cd build && cmake --build . --config Release"
 -   Name: lib2
-    LibraryType: object
+    Platforms: [All]
+    LibraryType: Object
     SearchLibraryName: lib2
     Source:
-        Type: local
+        Type: Local
         Value: "./lib2"
     Setup:
         Windows:

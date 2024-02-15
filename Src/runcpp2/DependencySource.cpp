@@ -20,9 +20,9 @@ namespace runcpp2
         
         static_assert((int)DependencySourceType::COUNT == 2, "");
         
-        if(node["Type"].as<std::string>() == "git")
+        if(node["Type"].as<std::string>() == "Git")
             Type = DependencySourceType::GIT;
-        else if(node["Type"].as<std::string>() == "local")
+        else if(node["Type"].as<std::string>() == "Local")
             Type = DependencySourceType::LOCAL;
         else
         {
@@ -41,9 +41,9 @@ namespace runcpp2
         static_assert((int)DependencySourceType::COUNT == 2, "");
         
         if(Type == DependencySourceType::GIT)
-            out += indentation + "    Type: git\n";
+            out += indentation + "    Type: Git\n";
         else if(Type == DependencySourceType::LOCAL)
-            out += indentation + "    Type: local\n";
+            out += indentation + "    Type: Local\n";
         
         out += indentation + "    Value: " + Value + "\n";
         

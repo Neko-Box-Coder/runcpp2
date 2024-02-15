@@ -6,6 +6,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace runcpp2
@@ -14,8 +15,8 @@ namespace runcpp2
     {
         public:
             std::string Name;
-            std::vector<std::string> FileExtensions;
-            std::vector<std::string> Languages;
+            std::unordered_set<std::string> FileExtensions;
+            std::unordered_set<std::string> Languages;
             std::vector<std::string> SetupSteps;
             std::unordered_map<std::string, std::string> ObjectFileExtensions;
             std::unordered_map<std::string, std::vector<std::string>> SharedLibraryExtensions;

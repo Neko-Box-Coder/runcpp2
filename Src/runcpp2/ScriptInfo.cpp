@@ -25,7 +25,7 @@ namespace runcpp2
             Language = node["Language"].as<std::string>();
         
         for(int i = 0; i < node["PreferredProfiles"].size(); ++i)
-            PreferredProfiles.push_back(node["PreferredProfiles"][i].as<std::string>());
+            PreferredProfiles.insert(node["PreferredProfiles"][i].as<std::string>());
         
         for(int i = 0; i < node["Dependencies"].size(); ++i)
         {
@@ -72,8 +72,9 @@ namespace runcpp2
             out += indentation + "    Language: " + Language + "\n";
         
         out += indentation + "    PreferredProfiles:\n";
-        for(int i = 0; i < PreferredProfiles.size(); ++i)
-            out += indentation + "    -   " + PreferredProfiles[i] + "\n";
+        
+        for(auto it = PreferredProfiles.begin(); it != PreferredProfiles.end(); ++it)
+            out += indentation + "    -   " + *it + "\n";
         
         out += indentation + "    Dependencies:\n";
         for(int i = 0; i < Dependencies.size(); ++i)

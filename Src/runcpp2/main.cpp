@@ -1,8 +1,5 @@
 #include "runcpp2/runcpp2.hpp"
-
-
 #include "ssLogger/ssLog.hpp"
-#include "runcpp2/PlatformUtil.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -55,8 +52,9 @@ int main(int argc, char* argv[])
     #endif
     
     std::vector<runcpp2::CompilerProfile> compilerProfiles;
+    std::string preferredProfile;
     
-    if(!runcpp2::ReadUserConfig(compilerProfiles))
+    if(!runcpp2::ReadUserConfig(compilerProfiles, preferredProfile))
     {
         return -1;
     }

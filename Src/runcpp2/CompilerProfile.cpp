@@ -29,12 +29,12 @@ namespace runcpp2
         Name = profileNode["Name"].as<std::string>();
         
         for(int i = 0; i < profileNode["FileExtensions"].size(); ++i)
-            FileExtensions.push_back(profileNode["FileExtensions"][i].as<std::string>());
+            FileExtensions.insert(profileNode["FileExtensions"][i].as<std::string>());
         
         if(profileNode["Languages"])
         {
             for(int i = 0; i < profileNode["Languages"].size(); ++i)
-                Languages.push_back(profileNode["Languages"][i].as<std::string>());
+                Languages.insert(profileNode["Languages"][i].as<std::string>());
         }
         
         if(profileNode["SetupSteps"])
@@ -103,12 +103,12 @@ namespace runcpp2
         out += indentation + "Name: " + Name + "\n";
         
         out += indentation + "FileExtensions:\n";
-        for(int i = 0; i < FileExtensions.size(); ++i)
-            out += indentation + "-   " + FileExtensions[i] + "\n";
+        for(auto it = FileExtensions.begin(); it != FileExtensions.end(); ++it)
+            out += indentation + "-   " + *it + "\n";
         
         out += indentation + "Languages:\n";
-        for(int i = 0; i < Languages.size(); ++i)
-            out += indentation + "-   " + Languages[i] + "\n";
+        for(auto it = Languages.begin(); it != Languages.end(); ++it)
+            out += indentation + "-   " + *it + "\n";
         
         out += indentation + "SetupSteps:\n";
         for(int i = 0; i < SetupSteps.size(); ++i)

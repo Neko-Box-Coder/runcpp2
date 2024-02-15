@@ -16,6 +16,8 @@ add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/yaml-cpp")
 # =========================================================================
 # mkdirp
 # =========================================================================
+
+
 add_library(path_normalize "${CMAKE_CURRENT_LIST_DIR}/External/mkdirp/deps/path-normalize/path-normalize.c")
 target_include_directories(path_normalize PUBLIC "${CMAKE_CURRENT_LIST_DIR}/External/mkdirp/deps")
 
@@ -27,6 +29,10 @@ target_include_directories(mkdirp PUBLIC "${CMAKE_CURRENT_LIST_DIR}/External/mkd
 
 target_link_libraries(mkdirp PRIVATE path_normalize strdup)
 
+# =========================================================================
+# filesystem
+# =========================================================================
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/filesystem")
 
 # =========================================================================
 # Generate yaml files as c
@@ -72,4 +78,4 @@ target_include_directories(runcpp2 PRIVATE  "${CMAKE_CURRENT_LIST_DIR}/Include"
                                             "${CMAKE_CURRENT_LIST_DIR}/External/tinydir"
                                             "${CMAKE_CURRENT_LIST_DIR}/External/cfgpath")
 
-target_link_libraries(runcpp2 PRIVATE CLI11::CLI11 ssLogger mkdirp yaml-cpp)
+target_link_libraries(runcpp2 PRIVATE CLI11::CLI11 ssLogger yaml-cpp ghc_filesystem)

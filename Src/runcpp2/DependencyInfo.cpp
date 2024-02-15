@@ -10,6 +10,7 @@ namespace runcpp2
         std::vector<Internal::NodeRequirement> requirements =
         {
             Internal::NodeRequirement("Name", YAML::NodeType::Scalar, true, false),
+            Internal::NodeRequirement("Platforms", YAML::NodeType::Sequence, true, false),
             Internal::NodeRequirement("LibraryType", YAML::NodeType::Scalar, true, false),
             Internal::NodeRequirement("SearchLibraryName", YAML::NodeType::Scalar, true, false),
             Internal::NodeRequirement("Source", YAML::NodeType::Map, true, false),
@@ -24,14 +25,19 @@ namespace runcpp2
         
         Name = node["Name"].as<std::string>();
         
-        static_assert((int)DependencyLibraryType::COUNT == 3, "");
+        for(int i = 0; i < node["Platforms"].size(); ++i)
+            Platforms.insert(node["Platforms"][i].as<std::string>());
         
-        if(node["LibraryType"].as<std::string>() == "static")
+        static_assert((int)DependencyLibraryType::COUNT == 4, "");
+        
+        if(node["LibraryType"].as<std::string>() == "Static")
             LibraryType = DependencyLibraryType::STATIC;
-        else if(node["LibraryType"].as<std::string>() == "shared")
+        else if(node["LibraryType"].as<std::string>() == "Shared")
             LibraryType = DependencyLibraryType::SHARED;
-        else if(node["LibraryType"].as<std::string>() == "object")
+        else if(node["LibraryType"].as<std::string>() == "Object")
             LibraryType = DependencyLibraryType::OBJECT;
+        else if(node["LibraryType"].as<std::string>() == "Header")
+            LibraryType = DependencyLibraryType::HEADER;
         else
         {
             ssLOG_ERROR("DependencyInfo: LibraryType is invalid");
@@ -65,14 +71,20 @@ namespace runcpp2
         
         out += indentation + "    Name: " + Name + "\n";
         
-        static_assert((int)DependencyLibraryType::COUNT == 3, "");
+        out += indentation + "    Platforms:\n";
+        for(auto it = Platforms.begin(); it != Platforms.end(); ++it)
+            out += indentation + "    -   " + *it + "\n";
+        
+        static_assert((int)DependencyLibraryType::COUNT == 4, "");
         
         if(LibraryType == DependencyLibraryType::STATIC)
-            out += indentation + "    LibraryType: static\n";
+            out += indentation + "    LibraryType: Static\n";
         else if(LibraryType == DependencyLibraryType::SHARED)
-            out += indentation + "    LibraryType: shared\n";
+            out += indentation + "    LibraryType: Shared\n";
         else if(LibraryType == DependencyLibraryType::OBJECT)
-            out += indentation + "    LibraryType: object\n";
+            out += indentation + "    LibraryType: Object\n";
+        else if(LibraryType == DependencyLibraryType::HEADER)
+            out += indentation + "    LibraryType: Header\n";
         
         out += indentation + "    SearchLibraryName: " + SearchLibraryName + "\n";
         out += Source.ToString(indentation + "    ");

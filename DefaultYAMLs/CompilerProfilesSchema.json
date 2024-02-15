@@ -5,6 +5,11 @@
     "type": "object",
     "properties": 
     {
+        "PreferredProfile": 
+        {
+            "type": "string",
+            "description": "A default compiler profile to be used if not specified while running the build script"
+        },
         "CompilerProfiles": 
         {
             "type": "array",

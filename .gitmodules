@@ -19,3 +19,6 @@
 [submodule "yaml-cpp"]
 	path = External/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "filesystem"]
+	path = External/filesystem
+	url = https://github.com/gulrak/filesystem.git
