@@ -1,5 +1,6 @@
-#include "runcpp2/LinkerInfo.hpp"
+#include "runcpp2/Data/LinkerInfo.hpp"
 
+#include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
@@ -7,6 +8,8 @@ namespace runcpp2
 {
     bool LinkerInfo::ParseYAML_Node(YAML::Node& profileNode)
     {
+        INTERNAL_RUNCPP2_SAFE_START();
+        
         std::vector<Internal::NodeRequirement> requirements = 
         {
             Internal::NodeRequirement("Executable", YAML::NodeType::Scalar, true, false),
@@ -41,6 +44,8 @@ namespace runcpp2
         LinkerArgs.DependenciesPart = linkerArgsNode["DependenciesPart"].as<std::string>();
         
         return true;
+        
+        INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
     }
     
     std::string LinkerInfo::ToString(std::string indentation) const

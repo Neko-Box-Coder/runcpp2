@@ -296,14 +296,19 @@ bool runcpp2::PopulateLocalDependencies(const std::vector<DependencyInfo>& depen
     std::error_code _;
     for(int i = 0; i < dependencies.size(); ++i)
     {
+        bool platformFound = false;
         for(int j = 0; j < platformNames.size(); ++j)
         {
-            if( dependencies.at(i).Platforms.find(platformNames.at(j)) == 
+            if( dependencies.at(i).Platforms.find(platformNames.at(j)) != 
                 dependencies.at(i).Platforms.end())
             {
-                continue;
+                platformFound = true;
+                break;
             }
         }
+        
+        if(!platformFound)
+            continue;
         
         if(ghc::filesystem::exists(dependenciesCopiesPaths.at(i), _))
         {
@@ -387,12 +392,31 @@ bool runcpp2::PopulateLocalDependencies(const std::vector<DependencyInfo>& depen
     return true;
 }
 
-bool runcpp2::RunDependenciesSetupSteps(const std::vector<DependencyInfo>& dependencies,
+bool runcpp2::RunDependenciesSetupSteps(const ProfileName& profileName,
+                                        const std::vector<DependencyInfo>& dependencies,
                                         const std::vector<std::string>& dependenciesCopiesPaths)
 {
     std::vector<std::string> platformNames = Internal::GetPlatformNames();
     for(int i = 0; i < dependencies.size(); ++i)
     {
+        int platformFoundIndex = -1;
+        
+        for(int j = 0; j < platformNames.size(); ++j)
+        {
+            if( dependencies.at(i).Platforms.find(platformNames.at(j)) != 
+                dependencies.at(i).Platforms.end())
+            {
+                platformFoundIndex = j;
+                break;
+            }
+        }
+        
+        if(platformFoundIndex == -1 || dependencies.at(i).Setup.empty())
+            continue;
+        
+        
+        PlatformName chosenPlatformName;
+        
         for(int j = 0; j < platformNames.size(); ++j)
         {
             if( dependencies.at(i).Platforms.find(platformNames.at(j)) == 
@@ -401,65 +425,90 @@ bool runcpp2::RunDependenciesSetupSteps(const std::vector<DependencyInfo>& depen
                 continue;
             }
             
-            if(dependencies.at(i).Setup.find(platformNames.at(j)) != dependencies.at(i).Setup.end())
+            const DependencySetup& dependencySetup = dependencies   .at(i)
+                                                                    .Setup
+                                                                    .find(platformNames.at(j))
+                                                                    ->second;
+            
+            if(dependencySetup.SetupSteps.find(profileName) == dependencySetup.SetupSteps.end())
             {
-                //Run the setup command
-                std::vector<std::string> setupCommands = 
-                    dependencies.at(i).Setup.at(platformNames.at(j));
+                ssLOG_ERROR("Dependency " << dependencies.at(i).Name << " failed to find setup " 
+                            "with profile " << profileName);
                 
-                for(int k = 0; k < setupCommands.size(); ++k)
+                return false;
+            }
+            
+            chosenPlatformName = platformNames.at(j);
+            break;
+        }
+        
+        if(chosenPlatformName.empty())
+        {
+            ssLOG_ERROR("Dependency " << dependencies.at(i).Name << " failed to find setup " 
+                        "with current platform");
+
+            return false;
+        }
+        
+        //Run the setup command
+        const DependencySetup& dependencySetup = dependencies   .at(i)
+                                                                .Setup
+                                                                .find(chosenPlatformName)
+                                                                ->second;
+        
+        const std::vector<std::string>& setupCommands = dependencySetup.SetupSteps.at(profileName);
+        
+        for(int k = 0; k < setupCommands.size(); ++k)
+        {
+            std::string setupCommand = "cd " + dependenciesCopiesPaths.at(i);
+            setupCommand += " && " + setupCommands.at(k);
+            
+            System2CommandInfo setupCommandInfo;
+            SYSTEM2_RESULT result = System2Run(setupCommand.c_str(), &setupCommandInfo);
+            
+            if(result != SYSTEM2_RESULT_SUCCESS)
+            {
+                ssLOG_ERROR("Failed to run setup command with result: " << result);
+                return false;
+            }
+            
+            std::string output;
+            
+            while(true)
+            {
+                char outputBuffer[1024] = {0};
+                uint32_t bytesRead = 0;
+                result = System2ReadFromOutput(&setupCommandInfo, outputBuffer, 1023, &bytesRead);
+                if(bytesRead >= 1024 || outputBuffer[1023] != '\0')
                 {
-                    std::string setupCommand = "cd " + dependenciesCopiesPaths.at(i);
-                    setupCommand += " && " + setupCommands.at(k);
-                    
-                    System2CommandInfo setupCommandInfo;
-                    SYSTEM2_RESULT result = System2Run(setupCommand.c_str(), &setupCommandInfo);
-                    
-                    if(result != SYSTEM2_RESULT_SUCCESS)
-                    {
-                        ssLOG_ERROR("Failed to run setup command with result: " << result);
-                        return false;
-                    }
-                    
-                    std::string output;
-                    
-                    while(true)
-                    {
-                        char outputBuffer[1024] = {0};
-                        uint32_t bytesRead = 0;
-                        result = System2ReadFromOutput(&setupCommandInfo, outputBuffer, 1023, &bytesRead);
-                        if(bytesRead >= 1024 || outputBuffer[1023] != '\0')
-                        {
-                            ssLOG_ERROR("outputBuffer has overflowed");
-                            return false;
-                        }
-                        
-                        bool readFinished = false;
-                        
-                        switch(result)
-                        {
-                            case SYSTEM2_RESULT_SUCCESS:
-                                output.append(outputBuffer, bytesRead);
-                                readFinished = true;
-                                break;
-                            case SYSTEM2_RESULT_READ_NOT_FINISHED:
-                                output.append(outputBuffer, bytesRead);
-                                break;
-                            default:
-                                ssLOG_ERROR("Failed to read git clone output with result: " << result);
-                                return false;
-                        }
-                    }
-                    
-                    int returnCode = 0;
-                    result = System2GetCommandReturnValueSync(&setupCommandInfo, &returnCode);
-                    
-                    if(result != SYSTEM2_RESULT_SUCCESS)
-                    {
-                        ssLOG_ERROR("Failed to get setup command return value with result: " << result);
-                        return false;
-                    }
+                    ssLOG_ERROR("outputBuffer has overflowed");
+                    return false;
                 }
+                
+                bool readFinished = false;
+                
+                switch(result)
+                {
+                    case SYSTEM2_RESULT_SUCCESS:
+                        output.append(outputBuffer, bytesRead);
+                        readFinished = true;
+                        break;
+                    case SYSTEM2_RESULT_READ_NOT_FINISHED:
+                        output.append(outputBuffer, bytesRead);
+                        break;
+                    default:
+                        ssLOG_ERROR("Failed to read git clone output with result: " << result);
+                        return false;
+                }
+            }
+            
+            int returnCode = 0;
+            result = System2GetCommandReturnValueSync(&setupCommandInfo, &returnCode);
+            
+            if(result != SYSTEM2_RESULT_SUCCESS)
+            {
+                ssLOG_ERROR("Failed to get setup command return value with result: " << result);
+                return false;
             }
         }
     }
@@ -469,9 +518,12 @@ bool runcpp2::RunDependenciesSetupSteps(const std::vector<DependencyInfo>& depen
 
 
 
-bool runcpp2::SetupScriptDependencies(  const std::string& scriptPath, 
+bool runcpp2::SetupScriptDependencies(  const ProfileName& profileName,
+                                        const std::string& scriptPath, 
                                         const ScriptInfo& scriptInfo,
-                                        bool resetDependencies)
+                                        bool resetDependencies,
+                                        std::vector<std::string>& outDependenciesLocalCopiesPaths,
+                                        std::vector<std::string>& outDependenciesSourcePaths)
 {
     if(!scriptInfo.Populated)
         return true;
@@ -481,12 +533,9 @@ bool runcpp2::SetupScriptDependencies(  const std::string& scriptPath,
     std::string runcpp2ScriptDir = scriptDirectory + "/.runcpp2";
     
     //Get the dependencies paths
-    std::vector<std::string> dependenciesLocalCopiesPaths;
-    std::vector<std::string> dependenciesSourcePaths;
-    
     if(!GetDependenciesPaths(   scriptInfo.Dependencies, 
-                                dependenciesLocalCopiesPaths, 
-                                dependenciesSourcePaths, 
+                                outDependenciesLocalCopiesPaths, 
+                                outDependenciesSourcePaths, 
                                 runcpp2ScriptDir, 
                                 scriptDirectory))
     {
@@ -501,10 +550,10 @@ bool runcpp2::SetupScriptDependencies(  const std::string& scriptPath,
         for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
         {
             //Remove the directory
-            if(!ghc::filesystem::remove_all(dependenciesLocalCopiesPaths.at(i), _))
+            if(!ghc::filesystem::remove_all(outDependenciesLocalCopiesPaths.at(i), _))
             {
                 ssLOG_ERROR("Failed to reset dependency directory: " << 
-                            dependenciesLocalCopiesPaths.at(i));
+                            outDependenciesLocalCopiesPaths.at(i));
                 
                 return false;
             }
@@ -513,90 +562,33 @@ bool runcpp2::SetupScriptDependencies(  const std::string& scriptPath,
     
     //Clone/copy the dependencies if needed
     if(!PopulateLocalDependencies(  scriptInfo.Dependencies, 
-                                    dependenciesLocalCopiesPaths, 
-                                    dependenciesSourcePaths, 
+                                    outDependenciesLocalCopiesPaths, 
+                                    outDependenciesSourcePaths, 
                                     runcpp2ScriptDir))
     {
         return false;
     }
     
     //Run setup steps
-    if(!RunDependenciesSetupSteps(scriptInfo.Dependencies, dependenciesLocalCopiesPaths))
+    if(!RunDependenciesSetupSteps(  profileName,
+                                    scriptInfo.Dependencies, 
+                                    outDependenciesLocalCopiesPaths))
+    {
         return false;
+    }
 
     return true;
-}
-
-int runcpp2::GetPerferredProfileIndex(  const std::string& scriptPath, 
-                                        const ScriptInfo& scriptInfo,
-                                        const std::vector<CompilerProfile>& profiles, 
-                                        const std::string& configPreferredProfile)
-{
-    //Check which compiler is available
-    std::vector<bool> profilesAbailability;
-    int firstAvailableProfileIndex = -1;
-    for(int i = 0; i < profiles.size(); ++i)
-    {
-        profilesAbailability.push_back( IsProfileAvailableOnSystem(profiles.at(i)) && 
-                                        IsProfileValidForScript(profiles.at(i), 
-                                                                scriptInfo, 
-                                                                scriptPath));
-        
-        if(profilesAbailability.back())
-            firstAvailableProfileIndex = i;
-    }
-    
-    if(firstAvailableProfileIndex == -1)
-    {
-        ssLOG_ERROR("No compilers/linkers found");
-        return -1;
-    }
-    
-    for(int i = 0; i < profiles.size(); ++i)
-    {
-        if(!profilesAbailability.at(i))
-            continue;
-        
-        if(scriptInfo.PreferredProfiles.find(profiles.at(i).Name) != scriptInfo.PreferredProfiles.end())
-            return i;
-    }
-    
-    if(!configPreferredProfile.empty())
-    {
-        for(int i = 0; i < profiles.size(); ++i)
-        {
-            if(!profilesAbailability.at(i))
-                continue;
-            
-            if(profiles.at(i).Name == configPreferredProfile)
-                return i;
-        }
-    }
-    
-    return firstAvailableProfileIndex;
 }
 
 bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath, 
                                         const ScriptInfo& scriptInfo,
                                         const std::vector<std::string>& dependenciesCopiesPaths,
-                                        const std::vector<CompilerProfile>& profiles,
-                                        const std::string& configPreferredProfile)
+                                        const CompilerProfile& profile)
 {
     std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
     std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
     std::string runcpp2ScriptDir = scriptDirectory + "/.runcpp2";
     std::vector<std::string> platformNames = Internal::GetPlatformNames();
-    
-    int preferredProfileIndex = GetPerferredProfileIndex(   scriptPath, 
-                                                            scriptInfo, 
-                                                            profiles, 
-                                                            configPreferredProfile);
-    
-    if(preferredProfileIndex == -1)
-    {
-        ssLOG_ERROR("No suitable compiler/linker found");
-        return false;
-    }
     
     if(scriptInfo.Dependencies.size() != dependenciesCopiesPaths.size())
     {
@@ -606,8 +598,149 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
     
     for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
     {
-        //TODO(NOW)
+        std::string foundPlatformName;
         
+        for(int j = 0; j < platformNames.size(); ++j)
+        {
+            if( scriptInfo.Dependencies.at(i).Platforms.find(platformNames.at(j)) == 
+                scriptInfo.Dependencies.at(i).Platforms.end())
+            {
+                continue;
+            }
+            
+            foundPlatformName = platformNames.at(j);
+        }
+        
+        if(foundPlatformName.empty())
+        {
+            ssLOG_ERROR("Failed to find setup for current platform for dependency: " << 
+                        scriptInfo.Dependencies.at(i).Name);
+
+            return false;
+        }
+        
+        std::vector<std::string> extensionsToCopy;
+        static_assert((int)DependencyLibraryType::COUNT == 4, "");
+        switch(scriptInfo.Dependencies.at(i).LibraryType)
+        {
+            case DependencyLibraryType::STATIC:
+            {
+                for(int j = 0; j < platformNames.size(); ++j)
+                {
+                    if( profile.StaticLibraryExtensions.find(platformNames.at(j)) == 
+                        profile.StaticLibraryExtensions.end())
+                    {
+                        if(j == platformNames.size() - 1)
+                        {
+                            ssLOG_ERROR("Failed to find static library extensions for dependency " << 
+                                        scriptInfo.Dependencies.at(i).Name);
+                            
+                            return false;
+                        }
+                        
+                        continue;
+                    }
+                    
+                    extensionsToCopy = profile.StaticLibraryExtensions.at(platformNames.at(j));
+                    break;
+                }
+            }
+            case DependencyLibraryType::SHARED:
+            {
+                for(int j = 0; j < platformNames.size(); ++j)
+                {
+                    if( profile.SharedLibraryExtensions.find(platformNames.at(j)) == 
+                        profile.SharedLibraryExtensions.end())
+                    {
+                        if(j == platformNames.size() - 1)
+                        {
+                            ssLOG_ERROR("Failed to find shared library extensions for dependency " << 
+                                        scriptInfo.Dependencies.at(i).Name);
+                            
+                            return false;
+                        }
+                        
+                        continue;
+                    }
+                    
+                    extensionsToCopy = profile.SharedLibraryExtensions.at(platformNames.at(j));
+                    break;
+                }
+            }
+            case DependencyLibraryType::OBJECT:
+            {
+                for(int j = 0; j < platformNames.size(); ++j)
+                {
+                    if( profile.ObjectFileExtensions.find(platformNames.at(j)) == 
+                        profile.ObjectFileExtensions.end())
+                    {
+                        if(j == platformNames.size() - 1)
+                        {
+                            ssLOG_ERROR("Failed to find shared library extensions for dependency " << 
+                                        scriptInfo.Dependencies.at(i).Name);
+                            
+                            return false;
+                        }
+                        
+                        continue;
+                    }
+                    
+                    extensionsToCopy.push_back(profile.ObjectFileExtensions.at(platformNames.at(j)));
+                    break;
+                }
+            }
+            case DependencyLibraryType::HEADER:
+                break;
+            default:
+                ssLOG_ERROR("Invalid library type: " << (int)scriptInfo.Dependencies.at(i).LibraryType);
+                return false;
+        }
+    
+        for(int j = 0; j < platformNames.size(); ++j)
+        {
+            if( profile.DebugSymbolFileExtensions.find(platformNames.at(j)) == 
+                profile.DebugSymbolFileExtensions.end())
+            {
+                continue;
+            }
+            
+            const std::vector<std::string>& debugSymbolExtensions = profile .DebugSymbolFileExtensions
+                                                                            .at(platformNames.at(j));
+            
+            extensionsToCopy.insert(extensionsToCopy.end(), 
+                                    debugSymbolExtensions.begin(), 
+                                    debugSymbolExtensions.end());
+
+            break;
+        }
+        
+        if(scriptInfo.Dependencies.at(i).LibraryType == DependencyLibraryType::HEADER)
+            return true;
+        
+        //Get the Search path and search library name
+        if( scriptInfo.Dependencies.at(i).SearchProperties.find(profile.Name) == 
+            scriptInfo.Dependencies.at(i).SearchProperties.end())
+        {
+            ssLOG_ERROR("Search properties for dependency " << scriptInfo.Dependencies.at(i).Name <<
+                        " is missing profile " << profile.Name);
+            
+            return false;
+        }
+        
+        //Copy the files with extensions that contains the search name
+        const std::string& searchLibraryName = scriptInfo   .Dependencies
+                                                            .at(i)
+                                                            .SearchProperties
+                                                            .at(profile.Name).SearchLibraryName;
+    
+        const std::string& searchPath = scriptInfo  .Dependencies
+                                                    .at(i)
+                                                    .SearchProperties
+                                                    .at(profile.Name).SearchPath;
+    
+        //TODO(NOW)
+    
+    
     }
     
     
@@ -618,6 +751,7 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
                                     const ScriptInfo& scriptInfo,
                                     const std::vector<CompilerProfile>& profiles)
 {
+        //TODO(NOW)
 
 }
 
@@ -668,6 +802,8 @@ bool runcpp2::IsProfileAvailableOnSystem(const CompilerProfile& profile)
     
     if(returnCode != 0)
         return false;
+
+    return true;
 }
 
 bool runcpp2::IsProfileValidForScript(  const CompilerProfile& profile, 
@@ -685,7 +821,99 @@ bool runcpp2::IsProfileValidForScript(  const CompilerProfile& profile,
             return false;
     }
     
+    if(!scriptInfo.RequiredProfiles.empty())
+    {
+        std::vector<PlatformName> platformNames = Internal::GetPlatformNames();
+        
+        for(int i = 0; i < platformNames.size(); ++i)
+        {
+            if(scriptInfo.RequiredProfiles.find(platformNames.at(i)) == scriptInfo.RequiredProfiles.end())
+                continue;
+            
+            const std::vector<ProfileName> allowedProfileNames = scriptInfo .RequiredProfiles
+                                                                            .at(platformNames.at(i));
+
+            for(int j = 0; j < allowedProfileNames.size(); ++j)
+            {
+                if(allowedProfileNames.at(j) == profile.Name)
+                    return true;
+            }
+            
+            //If we went through all the specified profile names, exit
+            return false;
+        }
+        
+        //If we went through all the specified platform names for required profiles, exit
+        return false;
+    }
+    
     return true;
+}
+
+std::vector<ProfileName> runcpp2::GetAvailableProfiles( const std::vector<CompilerProfile>& profiles,
+                                                        const ScriptInfo& scriptInfo,
+                                                        const std::string& scriptPath)
+{
+    //Check which compiler is available
+    std::vector<ProfileName> availableProfiles;
+    
+    for(int i = 0; i < profiles.size(); ++i)
+    {
+        if(IsProfileAvailableOnSystem(profiles.at(i)) && IsProfileValidForScript(   profiles.at(i), 
+                                                                                    scriptInfo, 
+                                                                                    scriptPath))
+        {
+            availableProfiles.push_back(profiles.at(i).Name);
+        }
+    }
+    
+    return availableProfiles;
+}
+
+
+int runcpp2::GetPerferredProfileIndex(  const std::string& scriptPath, 
+                                        const ScriptInfo& scriptInfo,
+                                        const std::vector<CompilerProfile>& profiles, 
+                                        const std::string& configPreferredProfile)
+{
+    std::vector<ProfileName> availableProfiles = GetAvailableProfiles(  profiles, 
+                                                                        scriptInfo, 
+                                                                        scriptPath);
+    
+    if(availableProfiles.empty())
+    {
+        ssLOG_ERROR("No compilers/linkers found");
+        return -1;
+    }
+    
+    int firstAvailableProfileIndex = -1;
+    
+    if(!configPreferredProfile.empty())
+    {
+        for(int i = 0; i < profiles.size(); ++i)
+        {
+            bool available = false;
+            for(int j = 0; j < availableProfiles.size(); ++j)
+            {
+                if(availableProfiles.at(j) == profiles.at(i).Name)
+                {
+                    available = true;
+                    break;
+                }
+            }
+            
+            if(!available)
+                continue;
+            
+            if(firstAvailableProfileIndex == -1)
+                firstAvailableProfileIndex = i;
+            
+            if(profiles.at(i).Name == configPreferredProfile)
+                return i;
+        }
+    }
+    
+    return firstAvailableProfileIndex;
 }
 
 bool runcpp2::RunScript(const std::string& scriptPath, 
@@ -753,21 +981,72 @@ bool runcpp2::RunScript(const std::string& scriptPath,
         ssLOG_LINE("\n" << scriptInfo.ToString(""));
     }
 
-    //TODO(NOW): Setup dependencies if any
     if(!CreateRuncpp2ScriptDirectory(scriptPath))
     {
         ssLOG_ERROR("Failed to create runcpp2 script directory: " << scriptPath);
         return false;
     }
 
+    int profileIndex = GetPerferredProfileIndex(scriptPath, 
+                                                scriptInfo, 
+                                                profiles, 
+                                                configPreferredProfile);
+
+    if(profileIndex == -1)
+    {
+        ssLOG_ERROR("Failed to find a profile to run");
+        return false;
+    }
+
+    //TODO(NOW): Pass reset dependencies from commandline arg
+    std::vector<std::string> dependenciesLocalCopiesPaths;
+    std::vector<std::string> dependenciesSourcePaths;
+    
+    if(!SetupScriptDependencies(profiles.at(profileIndex).Name, 
+                                scriptPath, 
+                                scriptInfo, 
+                                false,
+                                dependenciesLocalCopiesPaths,
+                                dependenciesSourcePaths))
+    {
+        ssLOG_ERROR("Failed to setup script dependencies");
+        return false;
+    }
+
+    if(!CopyDependenciesBinaries(   scriptPath, 
+                                    scriptInfo,
+                                    dependenciesLocalCopiesPaths,
+                                    profiles.at(profileIndex)))
+    {
+        ssLOG_ERROR("Failed to copy dependencies binaries");
+        return false;
+    }
+
+    if(!CompileAndLinkScript(   scriptPath, 
+                                scriptInfo,
+                                profiles))
+    {
+        ssLOG_ERROR("Failed to compile or link script");
+        return false;
+    }
+
+    //TODO(NOW): Run the script
+
+    return true;
+
+
+
+
+
+
 
 
     //Compile and execute the file
     
     
-    ssLOG_INFO("Using profile at index " << firstAvailableProfile);
+    //ssLOG_INFO("Using profile at index " << firstAvailableProfile);
 
-    CompilerProfile currentProfile = profiles.at(firstAvailableProfile);
+    CompilerProfile currentProfile = profiles.at(0);
 
     std::vector<std::string> currentPlatform = Internal::GetPlatformNames();
 

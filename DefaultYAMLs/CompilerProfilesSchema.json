@@ -8,12 +8,12 @@
         "PreferredProfile": 
         {
             "type": "string",
-            "description": "A default compiler profile to be used if not specified while running the build script"
+            "description": "A default compiler/linker profile to be used if not specified while running the build script"
         },
         "CompilerProfiles": 
         {
             "type": "array",
-            "description": "",
+            "description": "List of compiler/linker profiles that instruct how to compile/link",
             "items": 
             {
                 "type": "object",
@@ -32,7 +32,7 @@
                             "type":"string"
                         },
                         "uniqueItems": true,
-                        "description": "The file extensions for the compiler"
+                        "description": "The file extensions associated with the profile"
                     },
                     "Languages":
                     {
@@ -42,7 +42,7 @@
                             "type":"string"
                         },
                         "uniqueItems": true,
-                        "description": "The languages supported by the compiler"
+                        "description": "The languages supported by the profile"
                     },
                     "SetupSteps" : 
                     {
@@ -56,46 +56,19 @@
                     "ObjectFileExtensions":
                     {
                         "type": "object",
-                        "properties": 
+                        "patternProperties":
                         {
-                            "Windows": {"type": "string"},
-                            "Linux": {"type": "string"},
-                            "Unix": {"type": "string"},
-                            "MacOS": {"type": "string"}
+                            "^.*$": { "type": "string" }
                         },
-                        "description": "The file extensions for the object files",
-                        "uniqueItems": true
+                        "additionalProperties": false,
+                        "description": "The file extension for the object files for each platform"
                     },
                     "SharedLibraryExtensions":
                     {
                         "type": "object",
-                        "properties": 
+                        "patternProperties":
                         {
-                            "Windows": 
-                            {
-                                "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                }
-                            },
-                            "Linux": 
-                            {
-                                "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                }
-                            },
-                            "Unix": 
-                            {
-                                "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                }
-                            },
-                            "MacOS": 
+                            "^.*$": 
                             {
                                 "type": "array",
                                 "items":
@@ -104,39 +77,15 @@
                                 }
                             }
                         },
-                        "uniqueItems": true,
-                        "description": "The file extensions for the shared libraries"
+                        "additionalProperties": false,
+                        "description": "The file extensions for the shared libraries for each platform"
                     },
                     "StaticLibraryExtensions":
                     {
                         "type": "object",
-                        "properties": 
+                        "patternProperties":
                         {
-                            "Windows": 
-                            {
-                                "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                }
-                            },
-                            "Linux": 
-                            {
-                                "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                }
-                            },
-                            "Unix": 
-                            {
-                                "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                }
-                            },
-                            "MacOS": 
+                            "^.*$": 
                             {
                                 "type": "array",
                                 "items":
@@ -145,39 +94,15 @@
                                 }
                             }
                         },
-                        "uniqueItems": true,
-                        "description": "The file extensions for the static libraries"
+                        "additionalProperties": false,
+                        "description": "The file extensions for the static libraries for each platform"
                     },
                     "DebugSymbolFileExtensions":
                     {
                         "type": "object",
-                        "properties": 
+                        "patternProperties":
                         {
-                            "Windows": 
-                            {
-                                "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                }
-                            },
-                            "Linux": 
-                            {
-                                "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                }
-                            },
-                            "Unix": 
-                            {
-                                "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                }
-                            },
-                            "MacOS": 
+                            "^.*$": 
                             {
                                 "type": "array",
                                 "items":
@@ -186,7 +111,7 @@
                                 }
                             }
                         },
-                        "uniqueItems": true,
+                        "additionalProperties": false,
                         "description": "(Optional) The file extensions for debug symbols to be copied alongside the binary"
                     },
                     "Compiler":
@@ -216,7 +141,7 @@
                             "CompileArgs": 
                             {
                                 "type": "string",
-                                "description": "The syntax to compile the given file"
+                                "description": "The syntax to compile the given file. {CompileFlags}, {InputFile}, {ObjectFile} will be replaced accordingly"
                             }
                         },
                         "required": 
@@ -230,6 +155,7 @@
                     "Linker":
                     {
                         "type": "object",
+                        "description": "Specify the linker settings, so the final flow will be:\n[Setup steps if any] --> {Executable} {OutputPart} {DependenciesPart}...(for each dependency)",
                         "properties": 
                         {
                             "SetupSteps" : 
@@ -259,12 +185,12 @@
                                     "OutputPart": 
                                     {
                                         "type": "string",
-                                        "description": "Syntax for outputting to the binary"
+                                        "description": "Syntax for outputting to the binary. {LinkFlags}, {ProgramName} will be replaced accordingly"
                                     },
                                     "DependenciesPart": 
                                     {
                                         "type": "string",
-                                        "description": "Syntax for linking each dependency"
+                                        "description": "Syntax for linking each dependency. {DependencyName} will be replaced accordingly"
                                     }
                                 },
                                 "required": 
@@ -280,8 +206,7 @@
                             "Executable",
                             "DefaultLinkFlags",
                             "LinkerArgs"
-                        ],
-                        "description": "Specify the linker settings, so the final flow will be:\n[Setup steps if any] --> {Executable} {OutputPart} {DependenciesPart}...(for each dependency)"
+                        ]
                     }
                 },
                 "required": 

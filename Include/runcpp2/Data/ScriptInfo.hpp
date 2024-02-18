@@ -1,12 +1,13 @@
 #ifndef RUNCPP2_SCRIPT_INFO_HPP
 #define RUNCPP2_SCRIPT_INFO_HPP
 
-#include "runcpp2/DependencyInfo.hpp"
-#include "runcpp2/FlagsOverrideInfo.hpp"
+#include "runcpp2/Data/DependencyInfo.hpp"
+#include "runcpp2/Data/FlagsOverrideInfo.hpp"
+#include "runcpp2/Data/ParseCommon.hpp"
 
 #include <string>
 #include <vector>
-#include <unordered_set>
+#include <unordered_map>
 
 namespace runcpp2
 {
@@ -14,11 +15,13 @@ namespace runcpp2
     {
         public:
             std::string Language;
-            std::unordered_set<std::string> PreferredProfiles;
+            std::unordered_map<PlatformName, std::vector<ProfileName>> RequiredProfiles;
+            
+            std::unordered_map<ProfileName, FlagsOverrideInfo> OverrideCompileFlags;
+            std::unordered_map<ProfileName, FlagsOverrideInfo> OverrideLinkFlags;
+            
             std::vector<DependencyInfo> Dependencies;
             
-            FlagsOverrideInfo OverrideCompileFlags;
-            FlagsOverrideInfo OverrideLinkFlags;
             
             bool Populated = false;
             

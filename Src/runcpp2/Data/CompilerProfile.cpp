@@ -1,4 +1,5 @@
-#include "runcpp2/CompilerProfile.hpp"
+#include "runcpp2/Data/CompilerProfile.hpp"
+#include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
@@ -6,6 +7,8 @@ namespace runcpp2
 {
     bool CompilerProfile::ParseYAML_Node(YAML::Node& profileNode)
     {
+        INTERNAL_RUNCPP2_SAFE_START();
+
         std::vector<Internal::NodeRequirement> requirements =
         {
             Internal::NodeRequirement("Name", YAML::NodeType::Scalar, true, false),
@@ -94,6 +97,8 @@ namespace runcpp2
         }
         
         return true;
+        
+        INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
     }
     
     std::string CompilerProfile::ToString(std::string indentation) const

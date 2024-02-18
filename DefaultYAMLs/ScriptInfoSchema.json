@@ -8,21 +8,87 @@
         "Language": 
         {
             "type": "string",
-            "description": "Language of the script"
+            "description": "(Optional) Language of the script"
         },
-        "PreferredProfiles":
+        "RequiredProfiles":
         {
-            "type": "array",
-            "items":
+            "type": "object",
+            "patternProperties":
             {
-                "type":"string"
+                "^.*$": 
+                {
+                    "type": "array",
+                    "items":
+                    {
+                        "type":"string"
+                    }
+                }
             },
-            "description": "Preferred compiler/linker profiles for the script"
+            "description": "(Optional) Preferred compiler/linker profiles for the script",
+            "additionalProperties": false
+        },
+        "OverrideCompileFlags":
+        {
+            "type": "object",
+            "patternProperties":
+            {
+                "^.*$": 
+                {
+                    "type": "object",
+                    "properties":
+                    {
+                        "Remove": 
+                        {
+                            "type": "string",
+                            "description": "Flags to be removed from the default compile flags, separated by space"
+                        },
+                        "Append":
+                        {
+                            "type": "string",
+                            "description": "Additional flags to be appended to the default compile flags"
+                        }
+                    },
+                    "additionalProperties": false,
+                    "description": "Profile with the respective flags to override",
+                    "required": ["Remove", "Append"]
+                }
+            },
+            "additionalProperties": false,
+            "description": "(Optional) Override the default compile flags"
+        },
+        "OverrideLinkFlags":
+        {
+            "type": "object",
+            "patternProperties":
+            {
+                "^.*$": 
+                {
+                    "type": "object",
+                    "properties":
+                    {
+                        "Remove": 
+                        {
+                            "type": "string",
+                            "description": "Flags to be removed from the default compile flags, separated by space"
+                        },
+                        "Append":
+                        {
+                            "type": "string",
+                            "description": "Additional flags to be appended to the default compile flags"
+                        }
+                    },
+                    "additionalProperties": false,
+                    "description": "Profile with the respective flags to override",
+                    "required": ["Remove", "Append"]
+                }
+            },
+            "additionalProperties": false,
+            "description": "(Optional) Override the default link flags"
         },
         "Dependencies": 
         {
             "type": "array",
-            "description": "The list of dependencies needed by the script",
+            "description": "(Optional) The list of dependencies needed by the script",
             "items": 
             {
                 "type": "object",
@@ -36,21 +102,8 @@
                     "Platforms": 
                     {
                         "type": "array",
-                        "items":
-                        {
-                            "type":"string"
-                        }
-                    },
-                    "LibraryType": 
-                    {
-                        "type": "string", 
-                        "enum": ["Static", "Object", "Shared", "Header"],
-                        "description": "Library Type (Static, Object, Shared, Header)"
-                    },
-                    "SearchLibraryName": 
-                    {
-                        "type": "string",
-                        "description": "The library name to be searched for when linking against the script"
+                        "items": { "type":"string" },
+                        "description": "Supported platforms of the dependency"
                     },
                     "Source": 
                     {
@@ -72,101 +125,77 @@
                         "required": ["Type", "Value"],
                         "description": "The source of getting the dependency"
                     },
+                    "LibraryType": 
+                    {
+                        "type": "string", 
+                        "enum": ["Static", "Object", "Shared", "Header"],
+                        "description": "Library Type (Static, Object, Shared, Header)"
+                    },
+                    "SearchProperties": 
+                    {
+                        "type": "object",
+                        "patternProperties":
+                        {
+                            "^.*$": 
+                            {
+                                "type": "object",
+                                "properties": 
+                                {
+                                    "SearchLibraryName": 
+                                    {
+                                        "type": "string",
+                                        "description": "The library name to be searched for when linking against the script"
+                                    },
+                                    "SearchPath": 
+                                    {
+                                        "type": "string",
+                                        "description": "The path to be searched for the dependency. {BuildType} will be replaced accordingly"
+                                    }
+                                },
+                                "required": ["SearchLibraryName", "SearchPath"],
+                                "additionalProperties": false,
+                                "description": "Properties for searching the library binary for the profile"
+                            }
+                        },
+                        "additionalProperties": false,
+                        "description": "Searchable properties of the dependency"
+                    },
                     "Setup": 
                     {
                         "type": "object",
-                        "properties":
+                        "patternProperties":
                         {
-                            "Windows": 
+                            "^.*$": 
                             {
-                                "type": "array",
-                                "items":
+                                "type": "object",
+                                "patternProperties":
                                 {
-                                    "type":"string"
-                                }
-                            },
-                            "Linux": 
-                            {
-                                "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                }
-                            },
-                            "Unix": 
-                            {
-                                "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                }
-                            },
-                            "MacOS": 
-                            {
-                                "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                }
-                            },
-                            "All": 
-                            {
-                                "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                }
+                                    "^.*$": 
+                                    {
+                                        "type": "array",
+                                        "items": { "type":"string" },
+                                        "description": "Setup commands for the specified profile. {BuildType} will be replaced accordingly"
+                                    }
+                                },
+                                "additionalProperties": false,
+                                "description": "Setup commands for the specified platform"
                             }
                         },
-                        "description": "List of setup commands for the supported platforms"
+                        "additionalProperties": false,
+                        "description": "(Optional) List of setup commands for the supported platforms"
                     }
                 },
+                "additionalProperties": false,
                 "required": 
                 [
                     "Name", 
                     "Platforms",
+                    "Source",
                     "LibraryType", 
-                    "SearchLibraryName", 
-                    "Source"
+                    "SearchProperties"
                 ],
                 "uniqueItems": true
             }
-        },
-        "OverrideCompileFlags":
-        {
-            "type": "object",
-            "properties":
-            {
-                "Remove": 
-                {
-                    "type": "string",
-                    "description": "Flags to be removed from the default compile flags, separated by space"
-                },
-                "Append":
-                {
-                    "type": "string",
-                    "description": "Additional flags to be appended to the default compile flags"
-                }
-            },
-            "description": "Override the default compile flags"
-        },
-        "OverrideLinkFlags":
-        {
-            "type": "object",
-            "properties":
-            {
-                "Remove": 
-                {
-                    "type": "string",
-                    "description": "Flags to be removed from the default link flags, separated by space"
-                },
-                "Append":
-                {
-                    "type": "string",
-                    "description": "Additional flags to be appended to the default link flags"
-                }
-            },
-            "description": "Override the default link flags"
         }
     }
 }

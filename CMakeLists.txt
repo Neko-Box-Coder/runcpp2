@@ -59,18 +59,20 @@ endif()
 # runcpp2
 # =========================================================================
 
-add_executable(runcpp2  "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/CompilerInfo.cpp"
-                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/CompilerProfile.cpp"
+add_executable(runcpp2  "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/CompilerInfo.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/CompilerProfile.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencyInfo.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencySearchProperty.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencySetup.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencySource.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/FlagsOverrideInfo.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/LinkerInfo.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ScriptInfo.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/DefaultYAMLs.c"
-                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/DependencyInfo.cpp"
-                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/DependencySource.cpp"
-                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/FlagsOverrideInfo.cpp"
-                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/LinkerInfo.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/main.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/ParseUtil.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/PlatformUtil.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/runcpp2.cpp"
-                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/ScriptInfo.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/StringUtil.cpp"
                         )
 
@@ -79,3 +81,18 @@ target_include_directories(runcpp2 PRIVATE  "${CMAKE_CURRENT_LIST_DIR}/Include"
                                             "${CMAKE_CURRENT_LIST_DIR}/External/cfgpath")
 
 target_link_libraries(runcpp2 PRIVATE CLI11::CLI11 ssLogger yaml-cpp ghc_filesystem)
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(STANDARD_COMPILE_FLAGS "/utf-8;/W1")
+else()
+    set(STANDARD_COMPILE_FLAGS  "-Wall"
+                                "-Wno-return-local-addr"
+                                "-Wno-sign-compare"
+                                "-Wno-unused-variable"
+                                "-Wno-unused-parameter"
+                                "-Wno-switch"
+                                "-Wno-gnu-zero-variadic-macro-arguments"
+                                "-Wextra"
+                                "-pedantic"
+                                "-Werror")
+endif()

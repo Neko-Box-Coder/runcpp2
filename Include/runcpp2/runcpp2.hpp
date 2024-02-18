@@ -1,8 +1,8 @@
 #ifndef RUNCPP2_RUNCPP2_HPP
 #define RUNCPP2_RUNCPP2_HPP
 
-#include "runcpp2/CompilerProfile.hpp"
-#include "runcpp2/ScriptInfo.hpp"
+#include "runcpp2/Data/CompilerProfile.hpp"
+#include "runcpp2/Data/ScriptInfo.hpp"
 
 #include <string>
 #include <vector>
@@ -16,6 +16,9 @@ namespace runcpp2
     //        virtual std::string ToString() const = 0;
     //};
     
+    //--------------------------------------------
+    //YAML Parsing
+    //--------------------------------------------
     bool ParseCompilerProfiles( const std::string& compilerProfilesString, 
                                 std::vector<CompilerProfile>& outProfiles,
                                 std::string& outPreferredProfile);
@@ -23,14 +26,18 @@ namespace runcpp2
     bool ReadUserConfig(std::vector<CompilerProfile>& outProfiles, 
                         std::string& outPreferredProfile);
     
-    bool GetScriptInfoString(   const std::string& scriptPath, 
-                                std::string& outScriptInfoString);
-    
     bool ParseScriptInfo(   const std::string& scriptInfo, 
                             ScriptInfo& outScriptInfo);
     
+    //--------------------------------------------
+    //Directory setup
+    //--------------------------------------------
     bool CreateRuncpp2ScriptDirectory(const std::string& scriptPath);
 
+
+    //--------------------------------------------
+    //Dependencies setup
+    //--------------------------------------------
     bool GetDependenciesPaths(  const std::vector<DependencyInfo>& dependencies,
                                 std::vector<std::string>& copiesPaths,
                                 std::vector<std::string>& sourcesPaths,
@@ -42,34 +49,50 @@ namespace runcpp2
                                     const std::vector<std::string>& dependenciessourcesPaths,
                                     const std::string runcpp2ScriptDir);
 
-    bool RunDependenciesSetupSteps( const std::vector<DependencyInfo>& dependencies,
+    bool RunDependenciesSetupSteps( const ProfileName& profileName,
+                                    const std::vector<DependencyInfo>& dependencies,
                                     const std::vector<std::string>& dependenciesCopiesPaths);
     
-    bool SetupScriptDependencies(   const std::string& scriptPath, 
+    bool SetupScriptDependencies(   const ProfileName& profileName,
+                                    const std::string& scriptPath, 
                                     const ScriptInfo& scriptInfo,
-                                    bool resetDependencies);
+                                    bool resetDependencies,
+                                    std::vector<std::string>& outDependenciesLocalCopiesPaths,
+                                    std::vector<std::string>& outDependenciesSourcePaths);
     
-    int GetPerferredProfileIndex(   const std::string& scriptPath,
-                                    const ScriptInfo& scriptInfo,
-                                    const std::vector<CompilerProfile>& profiles, 
-                                    const std::string& configPreferredProfile);
-    
+    //--------------------------------------------
+    //Compiling and Linking
+    //--------------------------------------------
     bool CopyDependenciesBinaries(  const std::string& scriptPath, 
                                     const ScriptInfo& scriptInfo,
                                     const std::vector<std::string>& dependenciesCopiesPaths,
-                                    const std::vector<CompilerProfile>& profiles,
-                                    const std::string& configPreferredProfile);
+                                    const CompilerProfile& profile);
 
     bool CompileAndLinkScript(  const std::string& scriptPath, 
                                 const ScriptInfo& scriptInfo,
                                 const std::vector<CompilerProfile>& profiles);
 
+    //--------------------------------------------
+    //Profile check
+    //--------------------------------------------
     bool IsProfileAvailableOnSystem(const CompilerProfile& profile);
 
     bool IsProfileValidForScript(   const CompilerProfile& profile, 
                                     const ScriptInfo& scriptInfo, 
                                     const std::string& scriptPath);
 
+    std::vector<ProfileName> GetAvailableProfiles(  const std::vector<CompilerProfile>& profiles,
+                                                    const ScriptInfo& scriptInfo,
+                                                    const std::string& scriptPath);
+
+    int GetPerferredProfileIndex(   const std::string& scriptPath,
+                                    const ScriptInfo& scriptInfo,
+                                    const std::vector<CompilerProfile>& profiles, 
+                                    const std::string& configPreferredProfile);
+
+    //--------------------------------------------
+    //Running
+    //--------------------------------------------
     bool RunScript( const std::string& scriptPath, 
                     const std::vector<CompilerProfile>& profiles,
                     const std::string& configPreferredProfile);

@@ -1,4 +1,5 @@
-#include "runcpp2/DependencySource.hpp"
+#include "runcpp2/Data/DependencySource.hpp"
+#include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
@@ -6,6 +7,8 @@ namespace runcpp2
 {
     bool DependencySource::ParseYAML_Node(YAML::Node& node)
     {
+        INTERNAL_RUNCPP2_SAFE_START();
+        
         std::vector<Internal::NodeRequirement> requirements =
         {
             Internal::NodeRequirement("Type", YAML::NodeType::Scalar, true, false),
@@ -32,11 +35,13 @@ namespace runcpp2
         
         Value = node["Value"].as<std::string>();
         return true;
+        
+        INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
     }
     
     std::string DependencySource::ToString(std::string indentation) const
     {
-        std::string out = indentation + "DependencySource:\n";
+        std::string out = indentation + "Source:\n";
         
         static_assert((int)DependencySourceType::COUNT == 2, "");
         

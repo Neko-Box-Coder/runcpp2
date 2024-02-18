@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
     }
     
     std::string script = argv[1];
-    if(!runcpp2::RunScript(script, compilerProfiles))
+    if(!runcpp2::RunScript(script, compilerProfiles, preferredProfile))
     {
         ssLOG_FATAL("Failed to run script: " << script);
         return 2;

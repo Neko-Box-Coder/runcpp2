@@ -1,46 +1,70 @@
 # yaml-language-server: $schema=./ScriptInfoSchema.json
 
 ---
+# (Optional) Language of the script
 Language: "c++"
-PreferredProfiles: ["g++"]
+
+# (Optional) Preferred compiler/linker profiles for the script
+RequiredProfiles: 
+    Windows: ["g++"]
+    Linux: ["g++"]
+    MacOS: ["g++"]
+
+# (Optional) Override the default compile flags
+OverrideCompileFlags:
+    # Profile with the respective flags to override
+    "g++":
+        # Flags to be removed from the default compile flags, separated by space
+        Remove: ""
+        
+        # Additional flags to be appended to the default compile flags
+        Append: ""
+        
+# (Optional) Override the default link flags
+OverrideLinkFlags:
+    # Profile with the respective flags to override
+    "g++":
+        # Flags to be removed from the default compile flags, separated by space
+        Remove: ""
+        
+        # Additional flags to be appended to the default compile flags
+        Append: ""
+
+# (Optional) The list of dependencies needed by the script
 Dependencies:
+    # Dependency name
 -   Name: lib1
+    
+    # Supported platforms of the dependency
     Platforms: [Windows, Linux, MacOS]
-    LibraryType: Static
-    SearchLibraryName: lib1
+    
+    # The source of getting the dependency
     Source:
         Type: Git
         Value: "https://github.com/USER/REPO.git"
+    
+    # Library Type (Static, Object, Shared, Header)
+    LibraryType: Static
+    
+    # Searchable properties of the dependency
+    SearchProperties:
+        # Properties for searching the library binary for the profile
+        "g++":
+            # The library name to be searched for when linking against the script
+            SearchLibraryName: lib1
+            
+            # The path to be searched for the dependency. 
+            # {BuildType} will be replaced accordingly
+            # TODO: Make this a list
+            SearchPath: ./build
+    
+    # (Optional) List of setup commands for the supported platforms
     Setup:
-        Windows:
-        -   "mkdir build"
-        -   "cd build && cmake .."
-        -   "cd build && cmake --build . --config Release"
-        Unix:
-        -   "mkdir build"
-        -   "cd build && cmake .."
-        -   "cd build && cmake --build . --config Release"
--   Name: lib2
-    Platforms: [All]
-    LibraryType: Object
-    SearchLibraryName: lib2
-    Source:
-        Type: Local
-        Value: "./lib2"
-    Setup:
-        Windows:
-        -   "mkdir build"
-        -   "cd build && cmake .."
-        -   "cd build && cmake --build . --config Release"
-        Unix:
-        -   "mkdir build"
-        -   "cd build && cmake .."
-        -   "cd build && cmake --build . --config Release"
-
-OverrideCompileFlags:
-    Remove: ""
-    Append: ""
-OverrideLinkFlags:
-    Remove: ""
-    Append: ""
-
+        # Setup commands for the specified platform
+        All:
+            # Setup commands for the specified profile. 
+            # {BuildType} will be replaced accordingly
+            "g++":
+            -   "mkdir build"
+            -   "cd build && cmake .. -DCMAKE_BUILD_TYPE={BuildType}"
+            -   "cd build && cmake --build ."

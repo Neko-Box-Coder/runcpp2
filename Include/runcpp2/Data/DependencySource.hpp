@@ -1,7 +1,7 @@
 #ifndef RUNCPP2_DEPENDENCY_SOURCE_HPP
 #define RUNCPP2_DEPENDENCY_SOURCE_HPP
 
-#include "runcpp2/DependencySourceType.hpp"
+#include "runcpp2/Data/DependencySourceType.hpp"
 #include "yaml-cpp/yaml.h"
 #include <string>
 

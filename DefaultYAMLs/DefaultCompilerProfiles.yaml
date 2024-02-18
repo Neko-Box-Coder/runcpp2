@@ -1,34 +1,78 @@
 # yaml-language-server: $schema=./CompilerProfilesSchema.json
 
 ---
+# A default compiler profile to be used if not specified while running the build script
 PreferredProfile: "g++"
+
+# List of compiler/linker profiles that instruct how to compile/link
 CompilerProfiles:
 -   Name: "g++"
+    
+    # The file extensions associated with the profile
     FileExtensions: [cpp, cc, cxx]
+    
+    # The languages supported by the profile
     Languages: ["c++"]
+    
+    # (Optional) Steps in commandline to setup the environment
     SetupSteps: []
+    
+    # The file extension for the object files for each platform
     ObjectFileExtensions:
         Windows: obj
         Unix: o
+    
+    # The file extensions for the shared libraries for each platform
     SharedLibraryExtensions:
         Windows: [dll, lib]
         Linux: [so]
         MacOS: [dylib]
+    
+    # The file extensions for the static libraries for each platform
     StaticLibraryExtensions:
         Windows: [lib]
         Unix: [a]
+    
+    # (Optional) The file extensions for debug symbols to be copied alongside the binary
     DebugSymbolFileExtensions:
         Windows: []
         Unix: []
+    
+    # Specify the compiler settings, so the final flow will be:
+    # [Setup steps if any] --> {Executable} {CompileArgs}
     Compiler:
+        # (Optional) Steps in commandline to setup the compiler
         SetupSteps: []
+        
+        # Executable to be called
         Executable: "g++"
+        
+        # Default arguments to provide for compilation which can be overriden by the script
         DefaultCompileFlags: "-std=c++17 -Wall -Werror"
+        
+        # The syntax to compile the given file. 
+        # {CompileFlags}, {InputFile}, {ObjectFile} will be replaced accordingly
         CompileArgs: "-c {CompileFlags} {InputFile} -o {ObjectFile}"
+    
+    # Specify the linker settings, so the final flow will be:
+    # [Setup steps if any] --> {Executable} {OutputPart} {DependenciesPart}...(for each dependency)
     Linker:
+        # (Optional) Steps in commandline to setup the linker
         SetupSteps: []
+        
+        # Executable to be called
         Executable: "g++"
+        
+        # Default arguments to provide for linking dependencies to the binary, 
+        # which can be overriden by the script
         DefaultLinkFlags: ""
+        
+        # The syntax to link the given file
         LinkerArgs:
+            # Syntax for outputting to the binary. 
+            # {LinkFlags}, {ProgramName} will be replaced accordingly
             OutputPart: "{LinkFlags} -o {ProgramName}"
+            
+            # Syntax for linking each dependency. 
+            # {DependencyName} will be replaced accordingly
             DependenciesPart: "-l{DependencyName}"

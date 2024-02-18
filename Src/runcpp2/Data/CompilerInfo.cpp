@@ -1,11 +1,14 @@
-#include "runcpp2/CompilerInfo.hpp"
+#include "runcpp2/Data/CompilerInfo.hpp"
 #include "runcpp2/ParseUtil.hpp"
+#include "runcpp2/Data/ParseCommon.hpp"
 #include "ssLogger/ssLog.hpp"
 
 namespace runcpp2
 {
     bool CompilerInfo::ParseYAML_Node(YAML::Node& profileNode)
     {
+        INTERNAL_RUNCPP2_SAFE_START();
+        
         std::vector<Internal::NodeRequirement> requirements = 
         {
             Internal::NodeRequirement("Executable", YAML::NodeType::Scalar, true, false),
@@ -24,6 +27,8 @@ namespace runcpp2
         CompileArgs = profileNode["CompileArgs"].as<std::string>();
         
         return true;
+        
+        INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
     }
     
     std::string CompilerInfo::ToString(std::string indentation) const

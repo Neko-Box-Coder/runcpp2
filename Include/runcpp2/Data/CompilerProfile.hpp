@@ -1,8 +1,8 @@
 #ifndef RUNCPP2_COMPILER_PROFILE_HPP
 #define RUNCPP2_COMPILER_PROFILE_HPP
 
-#include "runcpp2/CompilerInfo.hpp"
-#include "runcpp2/LinkerInfo.hpp"
+#include "runcpp2/Data/CompilerInfo.hpp"
+#include "runcpp2/Data/LinkerInfo.hpp"
 
 #include <string>
 #include <unordered_map>

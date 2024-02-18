@@ -1,5 +1,6 @@
-#include "runcpp2/DependencyInfo.hpp"
+#include "runcpp2/Data/DependencyInfo.hpp"
 #include "runcpp2/ParseUtil.hpp"
+#include "runcpp2/Data/ParseCommon.hpp"
 #include "ssLogger/ssLog.hpp"
 
 
@@ -7,13 +8,15 @@ namespace runcpp2
 {
     bool DependencyInfo::ParseYAML_Node(YAML::Node& node)
     {
+        INTERNAL_RUNCPP2_SAFE_START();
+        
         std::vector<Internal::NodeRequirement> requirements =
         {
             Internal::NodeRequirement("Name", YAML::NodeType::Scalar, true, false),
             Internal::NodeRequirement("Platforms", YAML::NodeType::Sequence, true, false),
-            Internal::NodeRequirement("LibraryType", YAML::NodeType::Scalar, true, false),
-            Internal::NodeRequirement("SearchLibraryName", YAML::NodeType::Scalar, true, false),
             Internal::NodeRequirement("Source", YAML::NodeType::Map, true, false),
+            Internal::NodeRequirement("LibraryType", YAML::NodeType::Scalar, true, false),
+            Internal::NodeRequirement("SearchProperties", YAML::NodeType::Map, false, false),
             Internal::NodeRequirement("Setup", YAML::NodeType::Map, false, true)
         };
         
@@ -27,6 +30,13 @@ namespace runcpp2
         
         for(int i = 0; i < node["Platforms"].size(); ++i)
             Platforms.insert(node["Platforms"][i].as<std::string>());
+        
+        YAML::Node sourceNode = node["Source"];
+        if(!Source.ParseYAML_Node(sourceNode))
+        {
+            ssLOG_ERROR("DependencyInfo: Failed to parse Source");
+            return false;
+        }
         
         static_assert((int)DependencyLibraryType::COUNT == 4, "");
         
@@ -44,36 +54,55 @@ namespace runcpp2
             return false;
         }
         
-        SearchLibraryName = node["SearchLibraryName"].as<std::string>();
-        
-        YAML::Node sourceNode = node["Source"];
-        if(!Source.ParseYAML_Node(sourceNode))
+        if(node["SearchProperties"])
         {
-            ssLOG_ERROR("DependencyInfo: Failed to parse Source");
-            return false;
+            YAML::Node searchPropertiesNode = node["SearchProperties"];
+            
+            for(auto it = searchPropertiesNode.begin(); it != searchPropertiesNode.end(); ++it)
+            {
+                ProfileName profile = it->first.as<ProfileName>();
+                DependencySearchProperty property;
+                if(!property.ParseYAML_Node(it->second))
+                {
+                    ssLOG_ERROR("DependencyInfo: Failed to parse SearchProperties");
+                    return false;
+                }
+                
+                SearchProperties[profile] = property;
+            }
         }
         
-        for(auto it = node["Setup"].begin(); it != node["Setup"].end(); ++it)
+        if(node["Setup"])
         {
-            std::vector<std::string> currentSetup;
-            for(int i = 0; i < it->second.size(); ++i)
-                currentSetup.push_back(it->second[i].as<std::string>());
-            
-            Setup[it->first.as<std::string>()] = currentSetup;
+            for(auto it = node["Setup"].begin(); it != node["Setup"].end(); ++it)
+            {
+                DependencySetup currentSetup;
+                
+                if(!currentSetup.ParseYAML_Node(it->second))
+                {
+                    ssLOG_ERROR("DependencyInfo: Failed to parse Setup");
+                    return false;
+                }
+                
+                Setup[it->first.as<std::string>()] = currentSetup;
+            }
         }
         
         return true;
+        
+        INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
     }
     
     std::string DependencyInfo::ToString(std::string indentation) const
     {
-        std::string out = indentation + "DependencyInfo:\n";
-        
-        out += indentation + "    Name: " + Name + "\n";
+        std::string out;
+        out += indentation + "-   Name: " + Name + "\n";
         
         out += indentation + "    Platforms:\n";
         for(auto it = Platforms.begin(); it != Platforms.end(); ++it)
             out += indentation + "    -   " + *it + "\n";
+        
+        out += Source.ToString(indentation + "    ");
         
         static_assert((int)DependencyLibraryType::COUNT == 4, "");
         
@@ -86,15 +115,18 @@ namespace runcpp2
         else if(LibraryType == DependencyLibraryType::HEADER)
             out += indentation + "    LibraryType: Header\n";
         
-        out += indentation + "    SearchLibraryName: " + SearchLibraryName + "\n";
-        out += Source.ToString(indentation + "    ");
+        out += indentation + "    SearchProperties:\n";
+        for(auto it = SearchProperties.begin(); it != SearchProperties.end(); ++it)
+        {
+            out += indentation + "        " + it->first + ":\n";
+            out += it->second.ToString(indentation + "            ");
+        }
         
         out += indentation + "    Setup:\n";
         for(auto it = Setup.begin(); it != Setup.end(); ++it)
         {
-            out += indentation + "    " + it->first + ":\n";
-            for(int i = 0; i < it->second.size(); ++i)
-                out += indentation + "    -   " + it->second[i] + "\n";
+            out += indentation + "        " + it->first + ":\n";
+            out += it->second.ToString(indentation + "            ");
         }
         
         return out;
