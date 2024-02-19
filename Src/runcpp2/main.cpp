@@ -1,5 +1,12 @@
+#include "runcpp2/StringUtil.hpp"
 #include "runcpp2/runcpp2.hpp"
+
+
+
+
 #include "ssLogger/ssLog.hpp"
+
+
 
 int main(int argc, char* argv[])
 {
@@ -49,6 +56,22 @@ int main(int argc, char* argv[])
         }
         
         return 0;
+    #elif 1
+    //TODO(NOW): Test string split
+    
+    std::string testString = "This is a test string to split.";
+    
+    std::vector<std::string> splittedStrings;
+    
+    runcpp2::Internal::SplitString( testString, 
+                                    " ", 
+                                    splittedStrings);
+    
+    for(int i = 0; i < splittedStrings.size(); ++i)
+    {
+        ssLOG_LINE("splittedStrings[" << i << "]: " << splittedStrings[i]);
+    }
+    
     #endif
     
     std::vector<runcpp2::CompilerProfile> compilerProfiles;

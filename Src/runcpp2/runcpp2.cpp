@@ -728,31 +728,153 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
         }
         
         //Copy the files with extensions that contains the search name
-        const std::string& searchLibraryName = scriptInfo   .Dependencies
-                                                            .at(i)
-                                                            .SearchProperties
-                                                            .at(profile.Name).SearchLibraryName;
-    
-        const std::string& searchPath = scriptInfo  .Dependencies
+        std::string searchLibraryName = scriptInfo  .Dependencies
                                                     .at(i)
                                                     .SearchProperties
-                                                    .at(profile.Name).SearchPath;
+                                                    .at(profile.Name).SearchLibraryName;
     
-        //TODO(NOW)
+        std::string searchPath = scriptInfo .Dependencies
+                                            .at(i)
+                                            .SearchProperties
+                                            .at(profile.Name).SearchPath;
     
+        if(!ghc::filesystem::path(searchPath).is_absolute())
+            searchPath = scriptDirectory + "/" + searchPath;
     
+        std::error_code _;
+        if(!ghc::filesystem::exists(searchPath, _) || !ghc::filesystem::is_directory(searchPath, _))
+        {
+            ssLOG_ERROR("Invalid search path: " << searchPath);
+            return false;
+        }
+    
+        //auto dirEntry = ghc::filesystem::directory_entry(searchPath, _);
+        
+        //auto dirIt = ghc::filesystem::directory_iterator(searchPath, _);
+        
+        for(auto it :  ghc::filesystem::directory_iterator(searchPath, _))
+        {
+            if(it.is_directory())
+                continue;
+            
+            std::string currentFileName = it.path().stem().string();
+            std::string currentExtension = it.path().extension().string();
+            
+            //TODO: Make it not case sensitive?
+            bool nameMatched = false;
+            if(currentFileName.find(searchLibraryName) != std::string::npos)
+                nameMatched = true;
+            
+            if(!nameMatched)
+                continue;
+            
+            bool extensionMatched = false;
+            
+            for(int j = 0; j < extensionsToCopy.size(); ++j)
+            {
+                if(currentExtension == extensionsToCopy.at(j))
+                {
+                    extensionMatched = true;
+                    break;
+                }
+            }
+            
+            if(!extensionMatched)
+                continue;
+            
+            if(!ghc::filesystem::copy_file( it.path(), 
+                                            runcpp2ScriptDir, 
+                                            ghc::filesystem::copy_options::overwrite_existing,  
+                                            _))
+            {
+                ssLOG_ERROR("Failed to copy file from " << it.path().string() << 
+                            " to " << runcpp2ScriptDir);
+
+                return false;
+            }
+        }
     }
     
-    
-    
+    return true;
 }
 
 bool runcpp2::CompileAndLinkScript( const std::string& scriptPath, 
                                     const ScriptInfo& scriptInfo,
-                                    const std::vector<CompilerProfile>& profiles)
+                                    const CompilerProfile& profile)
 {
-        //TODO(NOW)
+    //TODO(NOW)
+    
+    std::string compileCommand =    profile.Compiler.Executable + " " + 
+                                    profile.Compiler.CompileArgs;
 
+    //Replace for {CompileFlags}
+    const std::string compileFlagSubstitution = "{CompileFlags}";
+    std::size_t foundIndex = compileCommand.find(compileFlagSubstitution);
+    
+    std::string compileArgs = profile.Compiler.DefaultCompileFlags;
+    
+    if(foundIndex != std::string::npos)
+    {
+        //TODO: Allow user to override compile flags
+        
+        if(scriptInfo.OverrideCompileFlags.find(profile.Name) != scriptInfo.OverrideCompileFlags.end())
+        {
+            //std::vector<std::string> compileArgsToRemove = scriptInfo   .OverrideCompileFlags
+            //                                                            .at(profile.Name)
+            //                                                            .Remove.
+            
+            
+            
+            
+        }
+        
+        compileCommand.replace( foundIndex, 
+                                compileFlagSubstitution.size(), 
+                                compileArgs);
+    }
+    else
+    {
+        ssLOG_ERROR("'{CompileFlags}' missing in CompileArgs");
+        return false;
+    }
+    
+    
+    #if 0
+    //Replace {InputFile}
+    const std::string inputFileSubstitution = "{InputFile}";
+    foundIndex = compileCommand.find(inputFileSubstitution);
+    if(foundIndex != std::string::npos)
+        compileCommand.replace(foundIndex, inputFileSubstitution.size(), scriptPath);
+    else
+    {
+        ssLOG_ERROR("'{InputFile}' missing in CompileArgs");
+        return false;
+    }
+    
+    //Replace {ObjectFile}
+    const std::string objectFileSubstitution = "{ObjectFile}";
+    foundIndex = compileCommand.find(objectFileSubstitution);
+    if(foundIndex != std::string::npos)
+    {
+        std::string objectFileName = scriptDirectory + "/.runcpp2/" + scriptName + "." + objectFileExt;
+        compileCommand.replace(foundIndex, objectFileSubstitution.size(), objectFileName);
+    }
+    else
+    {
+        ssLOG_ERROR("'{ObjectFile}' missing in CompileArgs");
+        return false;
+    }
+    
+    //Compile the script
+    ssLOG_INFO("running compile command: " << compileCommand);
+    //TODO(NOW): Replace this with system2
+    if(std::system(compileCommand.c_str()) != 0)
+    {
+        ssLOG_ERROR("Failed to run compile script with command: " << compileCommand);
+        return false;
+    }
+    #endif
+    return true;
 }
 
 bool runcpp2::IsProfileAvailableOnSystem(const CompilerProfile& profile)
@@ -1024,7 +1146,7 @@ bool runcpp2::RunScript(const std::string& scriptPath,
 
     if(!CompileAndLinkScript(   scriptPath, 
                                 scriptInfo,
-                                profiles))
+                                profiles.at(profileIndex)))
     {
         ssLOG_ERROR("Failed to compile or link script");
         return false;

@@ -6,25 +6,24 @@
 namespace runcpp2
 {
 
-namespace Internal
-{
-    NodeRequirement::NodeRequirement() :    Name(""),
-                                            NodeType(YAML::NodeType::Null),
-                                            Required(false),
-                                            Nullable(true)
+    Internal::NodeRequirement::NodeRequirement() :  Name(""),
+                                                    NodeType(YAML::NodeType::Null),
+                                                    Required(false),
+                                                    Nullable(true)
     {
     }
     
-    NodeRequirement::NodeRequirement(   const std::string& name, 
-                                        YAML::NodeType::value nodeType, 
-                                        bool required,
-                                        bool nullable) :    Name(name), 
-                                                            NodeType(nodeType), 
-                                                            Required(required), 
-                                                            Nullable(nullable)
+    Internal::NodeRequirement::NodeRequirement( const std::string& name, 
+                                                YAML::NodeType::value nodeType, 
+                                                bool required,
+                                                bool nullable) :    Name(name), 
+                                                                    NodeType(nodeType), 
+                                                                    Required(required), 
+                                                                    Nullable(nullable)
     {}
     
-    bool CheckNodeRequirements(YAML::Node& node, const std::vector<NodeRequirement>& requirements)
+    bool Internal::CheckNodeRequirements(   YAML::Node& node, 
+                                            const std::vector<NodeRequirement>& requirements)
     {
         for(int i = 0; i < requirements.size(); ++i)
         {
@@ -55,7 +54,7 @@ namespace Internal
         return true;
     }
     
-    bool GetParsableInfo(const std::string& contentToParse, std::string& outParsableInfo)
+    bool Internal::GetParsableInfo(const std::string& contentToParse, std::string& outParsableInfo)
     {
         std::string source = contentToParse;
         
@@ -219,6 +218,4 @@ namespace Internal
         
         return true;
     }
-}
-
 }

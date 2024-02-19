@@ -70,7 +70,7 @@ namespace runcpp2
 
     bool CompileAndLinkScript(  const std::string& scriptPath, 
                                 const ScriptInfo& scriptInfo,
-                                const std::vector<CompilerProfile>& profiles);
+                                const CompilerProfile& profile);
 
     //--------------------------------------------
     //Profile check
