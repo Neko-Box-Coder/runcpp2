@@ -2,7 +2,7 @@
 
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/PlatformUtil.hpp"
-
+#include "runcpp2/StringUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 #include "tinydir.h"
 #include "cfgpath.h"
@@ -748,10 +748,6 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
             return false;
         }
     
-        //auto dirEntry = ghc::filesystem::directory_entry(searchPath, _);
-        
-        //auto dirIt = ghc::filesystem::directory_iterator(searchPath, _);
-        
         for(auto it :  ghc::filesystem::directory_iterator(searchPath, _))
         {
             if(it.is_directory())
@@ -803,6 +799,12 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
                                     const CompilerProfile& profile)
 {
     //TODO(NOW)
+    std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
+    std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
+    std::string runcpp2ScriptDir = scriptDirectory + "/.runcpp2";
+    std::vector<std::string> platformNames = Internal::GetPlatformNames();
+    
+    
     
     std::string compileCommand =    profile.Compiler.Executable + " " + 
                                     profile.Compiler.CompileArgs;
@@ -819,13 +821,26 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
         
         if(scriptInfo.OverrideCompileFlags.find(profile.Name) != scriptInfo.OverrideCompileFlags.end())
         {
-            //std::vector<std::string> compileArgsToRemove = scriptInfo   .OverrideCompileFlags
-            //                                                            .at(profile.Name)
-            //                                                            .Remove.
+            std::vector<std::string> compileArgsToRemove; 
+            Internal::SplitString(  scriptInfo.OverrideCompileFlags.at(profile.Name).Remove, 
+                                    " ", 
+                                    compileArgsToRemove);
             
+            for(int i = 0; i < compileArgsToRemove.size(); ++i)
+            {
+                std::size_t foundIndex = compileArgs.find(compileArgsToRemove.at(i));
+                
+                if(foundIndex != std::string::npos)
+                {
+                    compileArgs.erase(foundIndex, compileArgsToRemove.at(i).size() + 1);
+                    continue;
+                }
+                
+                ssLOG_WARNING("Compile flag to remove not found: " << compileArgsToRemove.at(i));
+            }
             
-            
-            
+            Internal::TrimRight(compileArgs);
+            compileArgs += " " + scriptInfo.OverrideCompileFlags.at(profile.Name).Append;
         }
         
         compileCommand.replace( foundIndex, 
@@ -838,8 +853,6 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
         return false;
     }
     
-    
-    #if 0
     //Replace {InputFile}
     const std::string inputFileSubstitution = "{InputFile}";
     foundIndex = compileCommand.find(inputFileSubstitution);
@@ -853,10 +866,21 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
     
     //Replace {ObjectFile}
     const std::string objectFileSubstitution = "{ObjectFile}";
+    std::string objectFileExt; 
+    
+    for(int i = 0; i < platformNames.size(); ++i)
+    {
+        if(profile.ObjectFileExtensions.find(platformNames.at(i)) != profile.ObjectFileExtensions.end())
+        {
+            objectFileExt = profile.ObjectFileExtensions.at(platformNames.at(i));
+            break;
+        }
+    }
+    
     foundIndex = compileCommand.find(objectFileSubstitution);
     if(foundIndex != std::string::npos)
     {
-        std::string objectFileName = scriptDirectory + "/.runcpp2/" + scriptName + "." + objectFileExt;
+        std::string objectFileName =   runcpp2ScriptDir + "/" + scriptName + "." + objectFileExt;
         compileCommand.replace(foundIndex, objectFileSubstitution.size(), objectFileName);
     }
     else
@@ -867,13 +891,62 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
     
     //Compile the script
     ssLOG_INFO("running compile command: " << compileCommand);
-    //TODO(NOW): Replace this with system2
-    if(std::system(compileCommand.c_str()) != 0)
+    
+    System2CommandInfo compileCommandInfo;
+    SYSTEM2_RESULT result = System2Run(compileCommand.c_str(), &compileCommandInfo);
+    
+    if(result != SYSTEM2_RESULT_SUCCESS)
     {
-        ssLOG_ERROR("Failed to run compile script with command: " << compileCommand);
+        ssLOG_ERROR("System2Run failed with result: " << result);
         return false;
     }
-    #endif
+    
+    std::vector<char> output;
+    output.resize(4096);
+    output.back() = '\0';
+    
+    uint32_t byteRead = 0;
+    
+    do
+    {
+        output.resize(output.size() + 4096);
+        output.back() = '\0';
+        
+        result = System2ReadFromOutput( &compileCommandInfo, 
+                                        output.data() + output.size() - 4096, 
+                                        4096 - 1, 
+                                        &byteRead);
+    }
+    while(result == SYSTEM2_RESULT_READ_NOT_FINISHED);
+    
+    output.at(byteRead) = '\0';
+    
+    if(result != SYSTEM2_RESULT_SUCCESS)
+    {
+        ssLOG_ERROR("Failed to read from output with result: " << result);
+        return false;
+    }
+    
+    ssLOG_DEBUG("Compile Output: \n" << output.data());
+    
+    int statusCode = 0;
+    result = System2GetCommandReturnValueSync(&compileCommandInfo, &statusCode);
+    
+    if(result != SYSTEM2_RESULT_SUCCESS)
+    {
+        ssLOG_ERROR("System2GetCommandReturnValueSync failed with result: " << result);
+        return false;
+    }
+    
+    if(statusCode != 0)
+    {
+        ssLOG_ERROR("Compile command returned with non-zero status code: " << statusCode);
+        return false;
+    }
+    
+    //TODO(NOW): Link
+    
+    
     return true;
 }
 

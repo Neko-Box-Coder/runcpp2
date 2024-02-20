@@ -54,7 +54,7 @@ namespace runcpp2
             //Check existing string matches
             for(int j = 0; j < tempStringsToCheckForSplit.size(); ++j)
             {
-                if( tempStringsToCheckForSplit.at(j).size() >= splitter.size() - 1 || 
+                if( tempStringsToCheckForSplit.at(j).size() >= splitter.size() || 
                     stringToSplit.at(i) != splitter.at(tempStringsToCheckForSplit.at(j).size()))
                 {
                     tempStringsToCheckForSplit.erase(tempStringsToCheckForSplit.begin() + j);
@@ -66,7 +66,7 @@ namespace runcpp2
                     tempStringsToCheckForSplit.at(j) += stringToSplit.at(i);
                     
                     //If there's a match, clear record
-                    if(tempStringsToCheckForSplit.size() == splitter.size())
+                    if(tempStringsToCheckForSplit.at(j).size() == splitter.size())
                     {
                         curOutString.erase(curOutString.size() - splitter.size());
                         outStrings.push_back(curOutString);

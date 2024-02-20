@@ -56,22 +56,22 @@ int main(int argc, char* argv[])
         }
         
         return 0;
-    #elif 1
-    //TODO(NOW): Test string split
-    
-    std::string testString = "This is a test string to split.";
-    
-    std::vector<std::string> splittedStrings;
-    
-    runcpp2::Internal::SplitString( testString, 
-                                    " ", 
-                                    splittedStrings);
-    
-    for(int i = 0; i < splittedStrings.size(); ++i)
-    {
-        ssLOG_LINE("splittedStrings[" << i << "]: " << splittedStrings[i]);
-    }
-    
+    #elif 0
+        //Test string split
+        
+        std::string testString = "This.is.a.test.string.to.split.";
+        
+        std::vector<std::string> splittedStrings;
+        
+        runcpp2::Internal::SplitString( testString, 
+                                        ".", 
+                                        splittedStrings);
+        
+        for(int i = 0; i < splittedStrings.size(); ++i)
+        {
+            ssLOG_LINE("splittedStrings[" << i << "]: " << splittedStrings[i]);
+        }
+        return 0;
     #endif
     
     std::vector<runcpp2::CompilerProfile> compilerProfiles;
