@@ -70,8 +70,8 @@ CompilerProfiles:
         # The syntax to link the given file
         LinkerArgs:
             # Syntax for outputting to the binary. 
-            # {LinkFlags}, {ProgramName} will be replaced accordingly
-            OutputPart: "{LinkFlags} -o {ProgramName}"
+            # {LinkFlags}, {OutputFile}, {ObjectFile} will be replaced accordingly
+            OutputPart: "{LinkFlags} -o {OutputFile} {ObjectFile}"
             
             # Syntax for linking each dependency. 
             # {DependencyName} will be replaced accordingly

@@ -8,6 +8,14 @@
 
 
 
+enum class runcpp2_CmdOptions
+{
+    NONE,
+    SETUP,
+    COUNT
+};
+
+
 int main(int argc, char* argv[])
 {
     #if 0
@@ -86,16 +94,48 @@ int main(int argc, char* argv[])
     for(int i = 0; i < compilerProfiles.size(); ++i)
         ssLOG_LINE("\n" << compilerProfiles[i].ToString("    "));
     
-    //TODO(NOW): Parse arguments
-    
     if(argc < 2)
     {
         ssLOG_FATAL("An input file is required");
         return 1;
     }
     
-    std::string script = argv[1];
-    if(!runcpp2::RunScript(script, compilerProfiles, preferredProfile))
+    std::unordered_map<std::string, runcpp2_CmdOptions> optionsMap =
+    {
+        {"--setup", runcpp2_CmdOptions::SETUP}
+    };
+    
+    runcpp2_CmdOptions currentOption = runcpp2_CmdOptions::NONE;
+    int currentArgIndex = 1;
+    if(optionsMap.find(std::string(argv[currentArgIndex])) != optionsMap.end())
+    {
+        static_assert((int)runcpp2_CmdOptions::COUNT == 2, "Add a case for the new runcpp2_CmdOptions");
+        
+        switch(optionsMap.at(std::string(argv[1])))
+        {
+            case runcpp2_CmdOptions::NONE:
+            case runcpp2_CmdOptions::COUNT:
+                break;
+            case runcpp2_CmdOptions::SETUP:
+                currentOption = runcpp2_CmdOptions::SETUP;
+                ++currentArgIndex;
+                break;
+        }
+    }
+    
+    std::string scriptArgs = "";
+    if(currentArgIndex >= argc)
+    {
+        ssLOG_FATAL("An input file is required");
+        return 1;
+    }
+    
+    std::string script = argv[currentArgIndex++];
+    
+    for(; currentArgIndex < argc; ++currentArgIndex)
+        scriptArgs += " " + std::string(argv[currentArgIndex]);
+    
+    if(!runcpp2::RunScript(script, compilerProfiles, preferredProfile, scriptArgs))
     {
         ssLOG_FATAL("Failed to run script: " << script);
         return 2;

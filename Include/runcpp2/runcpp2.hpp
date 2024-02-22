@@ -95,7 +95,8 @@ namespace runcpp2
     //--------------------------------------------
     bool RunScript( const std::string& scriptPath, 
                     const std::vector<CompilerProfile>& profiles,
-                    const std::string& configPreferredProfile);
+                    const std::string& configPreferredProfile,
+                    const std::string& runArgs);
 
 
 
