@@ -17,11 +17,6 @@ namespace runcpp2
                                     const CompilerProfile& profile);
 
     //--------------------------------------------
-    //Profile check
-    //--------------------------------------------
-    
-
-    //--------------------------------------------
     //Running
     //--------------------------------------------
     bool RunScript( const std::string& scriptPath, 
