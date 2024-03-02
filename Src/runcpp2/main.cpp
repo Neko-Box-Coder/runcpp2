@@ -106,6 +106,8 @@ int main(int argc, char* argv[])
     };
     
     runcpp2_CmdOptions currentOption = runcpp2_CmdOptions::NONE;
+    (void)currentOption;
+    
     int currentArgIndex = 1;
     if(optionsMap.find(std::string(argv[currentArgIndex])) != optionsMap.end())
     {
@@ -122,6 +124,8 @@ int main(int argc, char* argv[])
                 break;
         }
     }
+    
+    //TODO(NOW): Use command line option
     
     std::string scriptArgs = "";
     if(currentArgIndex >= argc)

@@ -4,15 +4,9 @@
 [submodule "ssLogger"]
 	path = External/ssLogger
 	url = https://github.com/Neko-Box-Coder/ssLogger.git
-[submodule "tinydir"]
-	path = External/tinydir
-	url = https://github.com/cxong/tinydir.git
 [submodule "cfgpath"]
 	path = External/cfgpath
 	url = https://github.com/Malvineous/cfgpath.git
-[submodule "mkdirp.c"]
-	path = External/mkdirp
-	url = https://github.com/stephenmathieson/mkdirp.c.git
 [submodule "Embed2C"]
 	path = External/Embed2C
 	url = https://github.com/Neko-Box-Coder/Embed2C.git
@@ -22,3 +16,6 @@
 [submodule "filesystem"]
 	path = External/filesystem
 	url = https://github.com/gulrak/filesystem.git
+[submodule "System2"]
+	path = External/System2
+	url = https://github.com/Neko-Box-Coder/System2.git

@@ -14,22 +14,6 @@ add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/ssLogger")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/yaml-cpp")
 
 # =========================================================================
-# mkdirp
-# =========================================================================
-
-
-add_library(path_normalize "${CMAKE_CURRENT_LIST_DIR}/External/mkdirp/deps/path-normalize/path-normalize.c")
-target_include_directories(path_normalize PUBLIC "${CMAKE_CURRENT_LIST_DIR}/External/mkdirp/deps")
-
-add_library(strdup "${CMAKE_CURRENT_LIST_DIR}/External/mkdirp/deps/strdup/strdup.c")
-target_include_directories(strdup PUBLIC "${CMAKE_CURRENT_LIST_DIR}/External/mkdirp/deps")
-
-add_library(mkdirp "${CMAKE_CURRENT_LIST_DIR}/External/mkdirp/src/mkdirp.c")
-target_include_directories(mkdirp PUBLIC "${CMAKE_CURRENT_LIST_DIR}/External/mkdirp/src")
-
-target_link_libraries(mkdirp PRIVATE path_normalize strdup)
-
-# =========================================================================
 # filesystem
 # =========================================================================
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/filesystem")
@@ -55,6 +39,13 @@ if(RUNCPP2_UPDATE_DEFAULT_YAMLS)
                 "${FILES_TO_EMBED}")
 endif()
 
+
+# =========================================================================
+# System2
+# =========================================================================
+
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/System2")
+
 # =========================================================================
 # runcpp2
 # =========================================================================
@@ -77,10 +68,9 @@ add_executable(runcpp2  "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/CompilerInfo
                         )
 
 target_include_directories(runcpp2 PRIVATE  "${CMAKE_CURRENT_LIST_DIR}/Include"
-                                            "${CMAKE_CURRENT_LIST_DIR}/External/tinydir"
                                             "${CMAKE_CURRENT_LIST_DIR}/External/cfgpath")
 
-target_link_libraries(runcpp2 PRIVATE CLI11::CLI11 ssLogger yaml-cpp ghc_filesystem)
+target_link_libraries(runcpp2 PRIVATE CLI11::CLI11 ssLogger yaml-cpp ghc_filesystem System2)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(STANDARD_COMPILE_FLAGS "/utf-8;/W1")
@@ -88,7 +78,8 @@ else()
     set(STANDARD_COMPILE_FLAGS  "-Wall"
                                 "-Wno-return-local-addr"
                                 "-Wno-sign-compare"
-                                "-Wno-unused-variable"
+                                #"-Wno-unused-variable"
+                                #"-Wno-unused-but-set-variable"
                                 "-Wno-unused-parameter"
                                 "-Wno-switch"
                                 "-Wno-gnu-zero-variadic-macro-arguments"
@@ -96,3 +87,5 @@ else()
                                 "-pedantic"
                                 "-Werror")
 endif()
+
+target_compile_options(runcpp2 PRIVATE ${STANDARD_COMPILE_FLAGS})

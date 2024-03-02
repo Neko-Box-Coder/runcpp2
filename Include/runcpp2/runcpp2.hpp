@@ -85,7 +85,7 @@ namespace runcpp2
                                                     const ScriptInfo& scriptInfo,
                                                     const std::string& scriptPath);
 
-    int GetPerferredProfileIndex(   const std::string& scriptPath,
+    int GetPreferredProfileIndex(   const std::string& scriptPath,
                                     const ScriptInfo& scriptInfo,
                                     const std::vector<CompilerProfile>& profiles, 
                                     const std::string& configPreferredProfile);

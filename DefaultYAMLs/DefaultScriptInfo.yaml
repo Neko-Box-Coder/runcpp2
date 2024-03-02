@@ -54,7 +54,6 @@ Dependencies:
             SearchLibraryName: lib1
             
             # The path to be searched for the dependency. 
-            # {BuildType} will be replaced accordingly
             # TODO: Make this a list
             SearchPath: ./build
     
@@ -63,8 +62,7 @@ Dependencies:
         # Setup commands for the specified platform
         All:
             # Setup commands for the specified profile. 
-            # {BuildType} will be replaced accordingly
             "g++":
             -   "mkdir build"
-            -   "cd build && cmake .. -DCMAKE_BUILD_TYPE={BuildType}"
+            -   "cd build && cmake .."
             -   "cd build && cmake --build ."

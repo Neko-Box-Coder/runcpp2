@@ -2,18 +2,12 @@
 
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/PlatformUtil.hpp"
+#include "System2.h"
 #include "runcpp2/StringUtil.hpp"
 #include "ssLogger/ssLog.hpp"
-#include "tinydir.h"
 #include "cfgpath.h"
 #include "yaml-cpp/yaml.h"
 #include "ghc/filesystem.hpp"
-
-
-//extern "C"
-//{
-//    #include "mkdirp.h"
-//}
 
 #include <fstream>
 
@@ -109,9 +103,7 @@ bool runcpp2::ReadUserConfig(   std::vector<CompilerProfile>& outProfiles,
         for(int i = 0; i < sizeof(compilerConfigFilePaths) / sizeof(std::string); ++i)
         {
             //Check if the config file exists
-            //TODO(NOW): Replace this with filesystem
-            tinydir_file configFileInfo;
-            if(tinydir_file_open(&configFileInfo, compilerConfigFilePaths[i].c_str()) == 0)
+            if(ghc::filesystem::exists(compilerConfigFilePaths[i]))
             {
                 foundConfigFilePathIndex = i;
                 writeDefaultProfiles = false;
@@ -258,6 +250,7 @@ bool runcpp2::GetDependenciesPaths( const std::vector<DependencyInfo>& dependenc
                     copiesPaths.push_back(runcpp2ScriptDir + "/" + gitRepoName);
                     sourcesPaths.push_back("");
                 }
+                break;
             }
             
             case DependencySourceType::LOCAL:
@@ -268,9 +261,7 @@ bool runcpp2::GetDependenciesPaths( const std::vector<DependencyInfo>& dependenc
                 if(curPath.back() == '/')
                     curPath.pop_back();
                 
-                localDepDirectoryName = 
-                        ghc::filesystem::path(curPath).filename().string();
-                
+                localDepDirectoryName = ghc::filesystem::path(curPath).filename().string();
                 copiesPaths.push_back(runcpp2ScriptDir + "/" + localDepDirectoryName);
                 
                 if(ghc::filesystem::path(curPath).is_relative())
@@ -291,7 +282,7 @@ bool runcpp2::GetDependenciesPaths( const std::vector<DependencyInfo>& dependenc
 
 bool runcpp2::PopulateLocalDependencies(const std::vector<DependencyInfo>& dependencies,
                                         const std::vector<std::string>& dependenciesCopiesPaths,
-                                        const std::vector<std::string>& dependenciessourcesPaths,
+                                        const std::vector<std::string>& dependenciesSourcesPaths,
                                         const std::string runcpp2ScriptDir)
 {
     std::vector<std::string> platformNames = Internal::GetPlatformNames();
@@ -329,7 +320,8 @@ bool runcpp2::PopulateLocalDependencies(const std::vector<DependencyInfo>& depen
             {
                 case DependencySourceType::GIT:
                 {
-                    std::string gitCloneCommand = "cd " + runcpp2ScriptDir;
+                    std::string processedRuncpp2ScriptDir = Internal::ProcessPath(runcpp2ScriptDir);
+                    std::string gitCloneCommand = "cd " + processedRuncpp2ScriptDir;
                     gitCloneCommand += " && git clone " + dependencies.at(i).Source.Value;
                     
                     System2CommandInfo gitCommandInfo;
@@ -348,15 +340,12 @@ bool runcpp2::PopulateLocalDependencies(const std::vector<DependencyInfo>& depen
                         char outputBuffer[1024] = {0};
                         uint32_t bytesRead = 0;
                         
-                        //TODO: Use do while loop
                         result = System2ReadFromOutput(&gitCommandInfo, outputBuffer, 1023, &bytesRead);
-                        bool readFinished = false;
                         
                         switch(result)
                         {
                             case SYSTEM2_RESULT_SUCCESS:
                                 output.append(outputBuffer, bytesRead);
-                                readFinished = true;
                                 break;
                             case SYSTEM2_RESULT_READ_NOT_FINISHED:
                                 output.append(outputBuffer, bytesRead);
@@ -373,6 +362,7 @@ bool runcpp2::PopulateLocalDependencies(const std::vector<DependencyInfo>& depen
                     if(result != SYSTEM2_RESULT_SUCCESS)
                     {
                         ssLOG_ERROR("Failed to get git clone return value with result: " << result);
+                        ssLOG_ERROR("Output: " << output);
                         return false;
                     }
                     break;
@@ -380,7 +370,7 @@ bool runcpp2::PopulateLocalDependencies(const std::vector<DependencyInfo>& depen
                 
                 case DependencySourceType::LOCAL:
                 {
-                    std::string sourcePath = dependenciessourcesPaths.at(i);
+                    std::string sourcePath = dependenciesSourcesPaths.at(i);
                     std::string destinationPath = dependenciesCopiesPaths.at(i);
                     
                     //Copy the folder
@@ -465,7 +455,9 @@ bool runcpp2::RunDependenciesSetupSteps(const ProfileName& profileName,
         
         for(int k = 0; k < setupCommands.size(); ++k)
         {
-            std::string setupCommand = "cd " + dependenciesCopiesPaths.at(i);
+            std::string processedDependencyPath = Internal::ProcessPath(dependenciesCopiesPaths.at(i));
+            
+            std::string setupCommand = "cd " + processedDependencyPath;
             setupCommand += " && " + setupCommands.at(k);
             
             System2CommandInfo setupCommandInfo;
@@ -491,13 +483,10 @@ bool runcpp2::RunDependenciesSetupSteps(const ProfileName& profileName,
                     return false;
                 }
                 
-                bool readFinished = false;
-                
                 switch(result)
                 {
                     case SYSTEM2_RESULT_SUCCESS:
                         output.append(outputBuffer, bytesRead);
-                        readFinished = true;
                         break;
                     case SYSTEM2_RESULT_READ_NOT_FINISHED:
                         output.append(outputBuffer, bytesRead);
@@ -514,6 +503,7 @@ bool runcpp2::RunDependenciesSetupSteps(const ProfileName& profileName,
             if(result != SYSTEM2_RESULT_SUCCESS)
             {
                 ssLOG_ERROR("Failed to get setup command return value with result: " << result);
+                ssLOG_ERROR("Output: " << output);
                 return false;
             }
         }
@@ -650,6 +640,8 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                     extensionsToCopy = profile.StaticLibraryExtensions.at(platformNames.at(j));
                     break;
                 }
+                
+                break;
             }
             case DependencyLibraryType::SHARED:
             {
@@ -672,6 +664,8 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                     extensionsToCopy = profile.SharedLibraryExtensions.at(platformNames.at(j));
                     break;
                 }
+                
+                break;
             }
             case DependencyLibraryType::OBJECT:
             {
@@ -694,6 +688,8 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                     extensionsToCopy.push_back(profile.ObjectFileExtensions.at(platformNames.at(j)));
                     break;
                 }
+                
+                break;
             }
             case DependencyLibraryType::HEADER:
                 break;
@@ -806,7 +802,7 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
 {
     std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
     std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
-    std::string runcpp2ScriptDir = scriptDirectory + "/.runcpp2";
+    std::string runcpp2ScriptDir = Internal::ProcessPath(scriptDirectory + "/.runcpp2");
     std::vector<std::string> platformNames = Internal::GetPlatformNames();
     
     std::string compileCommand =    profile.Compiler.Executable + " " + 
@@ -882,7 +878,9 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
         return false;
     }
     
-    std::string objectFileName = runcpp2ScriptDir + "/" + scriptName + "." + objectFileExt;
+    std::string objectFileName = Internal::ProcessPath( runcpp2ScriptDir + "/" + 
+                                                        scriptName + "." + objectFileExt);
+    
     compileCommand.replace(foundIndex, objectFileSubstitution.size(), objectFileName);
     
     //Compile the script
@@ -941,8 +939,7 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
     std::string linkCommand = profile.Linker.Executable + " ";
     std::string currentOutputPart = profile.Linker.LinkerArgs.OutputPart;
     const std::string linkFlagsSubstitution = "{LinkFlags}";
-    const std::string outputFileSubstition = "{OutputFile}";
-    const std::string objectFileSubstition = "{ObjectFile}";
+    const std::string outputFileSubstitution = "{OutputFile}";
     
     std::string linkFlags = profile.Linker.DefaultLinkFlags;
     std::string outputName = scriptName;
@@ -981,23 +978,23 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
     
     currentOutputPart.replace(foundIndex, linkFlagsSubstitution.size(), linkFlags);
     
-    foundIndex = currentOutputPart.find(outputFileSubstition);
+    foundIndex = currentOutputPart.find(outputFileSubstitution);
     if(foundIndex == std::string::npos)
     {
         ssLOG_ERROR("'{ProgramName}' missing in LinkerArgs");
         return false;
     }
     
-    currentOutputPart.replace(foundIndex, outputFileSubstition.size(), outputName);
+    currentOutputPart.replace(foundIndex, outputFileSubstitution.size(), outputName);
     
-    foundIndex = currentOutputPart.find(objectFileSubstition);
+    foundIndex = currentOutputPart.find(objectFileSubstitution);
     if(foundIndex == std::string::npos)
     {
         ssLOG_ERROR("'{ObjectFile}' missing in LinkerArgs");
         return false;
     }
     
-    currentOutputPart.replace(foundIndex, objectFileSubstition.size(), objectFileName);
+    currentOutputPart.replace(foundIndex, objectFileSubstitution.size(), objectFileName);
     Internal::Trim(currentOutputPart);
     linkCommand += currentOutputPart;
     
@@ -1204,7 +1201,7 @@ std::vector<ProfileName> runcpp2::GetAvailableProfiles( const std::vector<Compil
 }
 
 
-int runcpp2::GetPerferredProfileIndex(  const std::string& scriptPath, 
+int runcpp2::GetPreferredProfileIndex(  const std::string& scriptPath, 
                                         const ScriptInfo& scriptInfo,
                                         const std::vector<CompilerProfile>& profiles, 
                                         const std::string& configPreferredProfile)
@@ -1277,17 +1274,12 @@ bool runcpp2::RunScript(const std::string& scriptPath,
         }
     }
     
-    std::string abosulteScriptPath = ghc::filesystem::absolute(scriptPath).string();
-    //ghc::filesystem::di
-    
-    std::string scriptDirectory = ghc::filesystem::path(abosulteScriptPath).parent_path().string();
-    
-    //scriptDirectory = scriptDirectory.substr(0, scriptDirectory.size() - 2);
-    
-    std::string scriptName = ghc::filesystem::path(abosulteScriptPath).stem().string();
+    std::string absoluteScriptPath = ghc::filesystem::absolute(scriptPath).string();
+    std::string scriptDirectory = ghc::filesystem::path(absoluteScriptPath).parent_path().string();
+    std::string scriptName = ghc::filesystem::path(absoluteScriptPath).stem().string();
 
     ssLOG_DEBUG("scriptPath: " << scriptPath);
-    ssLOG_DEBUG("abosulteScriptPath: " << abosulteScriptPath);
+    ssLOG_DEBUG("absoluteScriptPath: " << absoluteScriptPath);
     ssLOG_DEBUG("scriptDirectory: " << scriptDirectory);
     ssLOG_DEBUG("scriptName: " << scriptName);
     
@@ -1297,10 +1289,10 @@ bool runcpp2::RunScript(const std::string& scriptPath,
     //Read from a c/cpp file
     //TODO: Check is it c or cpp
 
-    std::ifstream inputFile(abosulteScriptPath);
+    std::ifstream inputFile(absoluteScriptPath);
     if (!inputFile)
     {
-        ssLOG_ERROR("Failed to open file: " << abosulteScriptPath);
+        ssLOG_ERROR("Failed to open file: " << absoluteScriptPath);
         return false;
     }
 
@@ -1311,7 +1303,7 @@ bool runcpp2::RunScript(const std::string& scriptPath,
     std::string parsableInfo;
     if(!runcpp2::Internal::GetParsableInfo(source, parsableInfo))
     {
-        ssLOG_ERROR("An error has been encountered when parsing info: " << abosulteScriptPath);
+        ssLOG_ERROR("An error has been encountered when parsing info: " << absoluteScriptPath);
         return false;
     }
     
@@ -1331,13 +1323,13 @@ bool runcpp2::RunScript(const std::string& scriptPath,
         ssLOG_LINE("\n" << scriptInfo.ToString(""));
     }
 
-    if(!CreateRuncpp2ScriptDirectory(abosulteScriptPath))
+    if(!CreateRuncpp2ScriptDirectory(absoluteScriptPath))
     {
-        ssLOG_ERROR("Failed to create runcpp2 script directory: " << abosulteScriptPath);
+        ssLOG_ERROR("Failed to create runcpp2 script directory: " << absoluteScriptPath);
         return false;
     }
 
-    int profileIndex = GetPerferredProfileIndex(abosulteScriptPath, 
+    int profileIndex = GetPreferredProfileIndex(absoluteScriptPath, 
                                                 scriptInfo, 
                                                 profiles, 
                                                 configPreferredProfile);
@@ -1353,7 +1345,7 @@ bool runcpp2::RunScript(const std::string& scriptPath,
     std::vector<std::string> dependenciesSourcePaths;
     
     if(!SetupScriptDependencies(profiles.at(profileIndex).Name, 
-                                abosulteScriptPath, 
+                                absoluteScriptPath, 
                                 scriptInfo, 
                                 false,
                                 dependenciesLocalCopiesPaths,
@@ -1363,7 +1355,7 @@ bool runcpp2::RunScript(const std::string& scriptPath,
         return false;
     }
 
-    if(!CopyDependenciesBinaries(   abosulteScriptPath, 
+    if(!CopyDependenciesBinaries(   absoluteScriptPath, 
                                     scriptInfo,
                                     dependenciesLocalCopiesPaths,
                                     profiles.at(profileIndex)))
@@ -1372,7 +1364,7 @@ bool runcpp2::RunScript(const std::string& scriptPath,
         return false;
     }
 
-    if(!CompileAndLinkScript(   abosulteScriptPath, 
+    if(!CompileAndLinkScript(   absoluteScriptPath, 
                                 scriptInfo,
                                 profiles.at(profileIndex)))
     {
@@ -1380,11 +1372,12 @@ bool runcpp2::RunScript(const std::string& scriptPath,
         return false;
     }
 
-    //TODO(NOW): Run the script
+    //Run the script
     std::string exeExt = "";
     #ifdef _WIN32
         exeExt = ".exe";
     #endif
+    
     std::string exeToCopy = scriptDirectory + "/.runcpp2/" + scriptName + exeExt;
     
     if(!ghc::filesystem::exists(exeToCopy))
@@ -1394,8 +1387,6 @@ bool runcpp2::RunScript(const std::string& scriptPath,
     }
     
     std::error_code _;
-    //ghc::filesystem::copy(exeToCopy, scriptDirectory, _);
-    
     if(!ghc::filesystem::copy_file(exeToCopy, scriptDirectory + "/" + scriptName + exeExt, _))
     {
         ssLOG_ERROR("Failed to copy file from " << exeToCopy << " to " << scriptDirectory);
@@ -1403,7 +1394,9 @@ bool runcpp2::RunScript(const std::string& scriptPath,
         return false;
     }
 
-    std::string runCommand = "cd " + scriptDirectory + " && ./" + scriptName + exeExt;
+    std::string runCommand = Internal::ProcessPath( "cd " + scriptDirectory + 
+                                                    " && ./" + scriptName + exeExt);
+    
     if(!runArgs.empty())
         runCommand += " " + runArgs;
     
@@ -1462,90 +1455,6 @@ bool runcpp2::RunScript(const std::string& scriptPath,
     }
     
     ghc::filesystem::remove(scriptDirectory + "/" + std::string(scriptName + exeExt), _);
-    return true;
-
-
-
-
-
-    //Compile and execute the file
-    
-    
-    //ssLOG_INFO("Using profile at index " << firstAvailableProfile);
-
-    CompilerProfile currentProfile = profiles.at(0);
-
-    std::vector<std::string> currentPlatform = Internal::GetPlatformNames();
-
-    std::string objectFileExt;
-    for(int i = 0; i < currentPlatform.size(); ++i)
-    {
-        if( currentProfile.ObjectFileExtensions.find(currentPlatform[i]) != 
-            currentProfile.ObjectFileExtensions.end())
-        {
-            objectFileExt = currentProfile.ObjectFileExtensions.at(currentPlatform[i]);
-            break;
-        }
-    }
-    
-    //Compile the script
-        return true;
-    
-    std::string compileCommand =    currentProfile.Compiler.Executable + " " + 
-                                    currentProfile.Compiler.CompileArgs;
-
-    //Replace for {CompileFlags}
-    const std::string compileFlagSubstitution = "{CompileFlags}";
-    std::size_t foundIndex = compileCommand.find(compileFlagSubstitution);
-    if(foundIndex != std::string::npos)
-    {
-        //TODO: Allow user to override compile flags
-        compileCommand.replace( foundIndex, 
-                                compileFlagSubstitution.size(), 
-                                currentProfile.Compiler.DefaultCompileFlags);
-    }
-    else
-    {
-        ssLOG_ERROR("'{CompileFlags}' missing in CompileArgs");
-        return false;
-    }
-    
-    //Replace {InputFile}
-    const std::string inputFileSubstitution = "{InputFile}";
-    foundIndex = compileCommand.find(inputFileSubstitution);
-    if(foundIndex != std::string::npos)
-        compileCommand.replace(foundIndex, inputFileSubstitution.size(), scriptPath);
-    else
-    {
-        ssLOG_ERROR("'{InputFile}' missing in CompileArgs");
-        return false;
-    }
-    
-    //Replace {ObjectFile}
-    const std::string objectFileSubstitution = "{ObjectFile}";
-    foundIndex = compileCommand.find(objectFileSubstitution);
-    if(foundIndex != std::string::npos)
-    {
-        std::string objectFileName = scriptDirectory + "/.runcpp2/" + scriptName + "." + objectFileExt;
-        compileCommand.replace(foundIndex, objectFileSubstitution.size(), objectFileName);
-    }
-    else
-    {
-        ssLOG_ERROR("'{ObjectFile}' missing in CompileArgs");
-        return false;
-    }
-    
-    //Compile the script
-    ssLOG_INFO("running compile command: " << compileCommand);
-    //TODO(NOW): Replace this with system2
-    if(std::system(compileCommand.c_str()) != 0)
-    {
-        ssLOG_ERROR("Failed to run compile script with command: " << compileCommand);
-        return false;
-    }
-    
-    
-
     return true;
 }
 

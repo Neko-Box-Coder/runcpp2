@@ -47,7 +47,7 @@ CompilerProfiles:
         # Executable to be called
         Executable: "g++"
         
-        # Default arguments to provide for compilation which can be overriden by the script
+        # Default arguments to provide for compilation which can be overridden by the script
         DefaultCompileFlags: "-std=c++17 -Wall -Werror"
         
         # The syntax to compile the given file. 
@@ -64,7 +64,7 @@ CompilerProfiles:
         Executable: "g++"
         
         # Default arguments to provide for linking dependencies to the binary, 
-        # which can be overriden by the script
+        # which can be overridden by the script
         DefaultLinkFlags: ""
         
         # The syntax to link the given file
