@@ -1,5 +1,5 @@
-#ifndef RUNCPP2_DEPENDENCY_INFO_HPP
-#define RUNCPP2_DEPENDENCY_INFO_HPP
+#ifndef RUNCPP2_DATA_DEPENDENCY_INFO_HPP
+#define RUNCPP2_DATA_DEPENDENCY_INFO_HPP
 
 #include "runcpp2/Data/DependencyLibraryType.hpp"
 #include "runcpp2/Data/DependencySource.hpp"

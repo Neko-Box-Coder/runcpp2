@@ -1,5 +1,5 @@
-#ifndef RUNCPP2_COMPILER_PROFILE_HPP
-#define RUNCPP2_COMPILER_PROFILE_HPP
+#ifndef RUNCPP2_DATA_COMPILER_PROFILE_HPP
+#define RUNCPP2_DATA_COMPILER_PROFILE_HPP
 
 #include "runcpp2/Data/CompilerInfo.hpp"
 #include "runcpp2/Data/LinkerInfo.hpp"

@@ -1,5 +1,5 @@
-#ifndef RUNCPP2_SCRIPT_INFO_HPP
-#define RUNCPP2_SCRIPT_INFO_HPP
+#ifndef RUNCPP2_DATA_SCRIPT_INFO_HPP
+#define RUNCPP2_DATA_SCRIPT_INFO_HPP
 
 #include "runcpp2/Data/DependencyInfo.hpp"
 #include "runcpp2/Data/FlagsOverrideInfo.hpp"

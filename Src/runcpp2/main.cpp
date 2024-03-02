@@ -1,3 +1,4 @@
+#include "runcpp2/ConfigParsing.hpp"
 #include "runcpp2/StringUtil.hpp"
 #include "runcpp2/runcpp2.hpp"
 
@@ -18,70 +19,6 @@ enum class runcpp2_CmdOptions
 
 int main(int argc, char* argv[])
 {
-    #if 0
-        System2CommandInfo commandInfo;
-        const char* command = "ls -lah";
-        
-        SYSTEM2_RESULT system2Result;
-        
-        {
-            system2Result = System2Run(command, &commandInfo);
-            if(system2Result != SYSTEM2_RESULT_SUCCESS)
-            {
-                ssLOG_ERROR("System2Run failed: " << system2Result);
-                return 1;
-            }
-        }
-        
-        {
-            char outputBuffer[1024] = {0};
-            uint32_t bytesRead = 0;
-            system2Result = System2ReadFromOutput(&commandInfo, outputBuffer, 1023, &bytesRead);
-            
-            if(system2Result != SYSTEM2_RESULT_SUCCESS)
-            {
-                ssLOG_ERROR("System2ReadFromOutput failed: " << system2Result);
-                return 2;
-            }
-            
-            //Make sure to null terminate the outputBuffer after reading the data.
-            outputBuffer[bytesRead] = '\0';
-            
-            ssLOG_LINE("Output of command: \n" << outputBuffer);
-        }
-        
-        {
-            int returnCode = 0;
-            system2Result = System2GetCommandReturnValueSync(&commandInfo, &returnCode);
-            
-            if(system2Result != SYSTEM2_RESULT_SUCCESS)
-            {
-                ssLOG_ERROR("System2GetCommandReturnValueSync failed: " << system2Result);
-                return 3;
-            }
-            
-            ssLOG_LINE("Return value of command: " << returnCode);
-        }
-        
-        return 0;
-    #elif 0
-        //Test string split
-        
-        std::string testString = "This.is.a.test.string.to.split.";
-        
-        std::vector<std::string> splittedStrings;
-        
-        runcpp2::Internal::SplitString( testString, 
-                                        ".", 
-                                        splittedStrings);
-        
-        for(int i = 0; i < splittedStrings.size(); ++i)
-        {
-            ssLOG_LINE("splittedStrings[" << i << "]: " << splittedStrings[i]);
-        }
-        return 0;
-    #endif
-    
     std::vector<runcpp2::CompilerProfile> compilerProfiles;
     std::string preferredProfile;
     
@@ -90,9 +27,9 @@ int main(int argc, char* argv[])
         return -1;
     }
     
-    ssLOG_LINE("\nCompilerProfiles:");
+    ssLOG_DEBUG("\nCompilerProfiles:");
     for(int i = 0; i < compilerProfiles.size(); ++i)
-        ssLOG_LINE("\n" << compilerProfiles[i].ToString("    "));
+        ssLOG_DEBUG("\n" << compilerProfiles[i].ToString("    "));
     
     if(argc < 2)
     {
@@ -127,7 +64,7 @@ int main(int argc, char* argv[])
     
     //TODO(NOW): Use command line option
     
-    std::string scriptArgs = "";
+    std::vector<std::string> scriptArgs;
     if(currentArgIndex >= argc)
     {
         ssLOG_FATAL("An input file is required");
@@ -137,7 +74,10 @@ int main(int argc, char* argv[])
     std::string script = argv[currentArgIndex++];
     
     for(; currentArgIndex < argc; ++currentArgIndex)
-        scriptArgs += " " + std::string(argv[currentArgIndex]);
+    {
+        ssLOG_LINE("argv[" << currentArgIndex << "]: " << argv[currentArgIndex]);
+        scriptArgs.push_back(std::string(argv[currentArgIndex]));
+    }
     
     if(!runcpp2::RunScript(script, compilerProfiles, preferredProfile, scriptArgs))
     {

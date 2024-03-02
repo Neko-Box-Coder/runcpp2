@@ -1,5 +1,5 @@
-#ifndef RUNCPP2_LINKER_INFO_HPP
-#define RUNCPP2_LINKER_INFO_HPP
+#ifndef RUNCPP2_DATA_LINKER_INFO_HPP
+#define RUNCPP2_DATA_LINKER_INFO_HPP
 
 #include "yaml-cpp/yaml.h"
 #include <string>
