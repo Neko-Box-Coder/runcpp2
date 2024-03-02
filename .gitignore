@@ -56,3 +56,7 @@ docs/
 # Language server files
 .cache/
 compile_commands.json
+
+
+# Generated file
+Src/runcpp2/DefaultYAMLs.c
