@@ -22,10 +22,10 @@ namespace runcpp2
             return false;
         }
         
-        if(node[Remove])
+        if(node["Remove"])
             Remove = node["Remove"].as<std::string>();
         
-        if(node[Append])
+        if(node["Append"])
             Append = node["Append"].as<std::string>();
         
         return true;

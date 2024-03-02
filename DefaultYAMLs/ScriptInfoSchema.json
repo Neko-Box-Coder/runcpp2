@@ -131,6 +131,12 @@
                         "enum": ["Static", "Object", "Shared", "Header"],
                         "description": "Library Type (Static, Object, Shared, Header)"
                     },
+                    "IncludePaths":
+                    {
+                        "type": "array",
+                        "items": { "type":"string" },
+                        "description": "Paths to be added to include paths"
+                    },
                     "SearchProperties": 
                     {
                         "type": "object",

@@ -19,6 +19,8 @@ namespace runcpp2
             std::unordered_set<PlatformName> Platforms;
             DependencySource Source;
             DependencyLibraryType LibraryType;
+            std::vector<std::string> IncludePaths;
+            std::vector<std::string> AbsoluteIncludePaths;
             std::unordered_map<ProfileName, DependencySearchProperty> SearchProperties;
             std::unordered_map<PlatformName, DependencySetup> Setup;
             

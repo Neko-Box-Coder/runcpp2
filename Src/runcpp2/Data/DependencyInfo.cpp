@@ -16,6 +16,7 @@ namespace runcpp2
             Internal::NodeRequirement("Platforms", YAML::NodeType::Sequence, true, false),
             Internal::NodeRequirement("Source", YAML::NodeType::Map, true, false),
             Internal::NodeRequirement("LibraryType", YAML::NodeType::Scalar, true, false),
+            Internal::NodeRequirement("IncludePaths", YAML::NodeType::Sequence, false, true),
             Internal::NodeRequirement("SearchProperties", YAML::NodeType::Map, false, false),
             Internal::NodeRequirement("Setup", YAML::NodeType::Map, false, true)
         };
@@ -52,6 +53,14 @@ namespace runcpp2
         {
             ssLOG_ERROR("DependencyInfo: LibraryType is invalid");
             return false;
+        }
+        
+        if(node["IncludePaths"])
+        {
+            YAML::Node includePathsNode = node["IncludePaths"];
+            
+            for(int i = 0; i < includePathsNode.size(); i++)
+                IncludePaths.push_back(includePathsNode[i].as<std::string>());
         }
         
         if(node["SearchProperties"])
@@ -114,6 +123,10 @@ namespace runcpp2
             out += indentation + "    LibraryType: Object\n";
         else if(LibraryType == DependencyLibraryType::HEADER)
             out += indentation + "    LibraryType: Header\n";
+        
+        out += indentation + "    IncludePaths:\n";
+        for(auto it = IncludePaths.begin(); it != IncludePaths.end(); ++it)
+            out += indentation + "    -   " + *it + "\n";
         
         out += indentation + "    SearchProperties:\n";
         for(auto it = SearchProperties.begin(); it != SearchProperties.end(); ++it)

@@ -450,7 +450,7 @@ bool runcpp2::RunScript(const std::string& scriptPath,
         return false;
     }
     
-    ssLOG_INFO("Run Output: \n" << output.data());
+    ssLOG_SIMPLE("Run Output: \n" << output.data());
     
     int statusCode = 0;
     result = System2GetCommandReturnValueSync(&runCommandInfo, &statusCode);

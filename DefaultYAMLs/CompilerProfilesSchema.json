@@ -140,8 +140,21 @@
                             },
                             "CompileArgs": 
                             {
-                                "type": "string",
-                                "description": "The syntax to compile the given file. {CompileFlags}, {InputFile}, {ObjectFile} will be replaced accordingly"
+                                "type": "object",
+                                "properties": 
+                                {
+                                    "CompilePart": { "type": "string" },
+                                    "IncludePart": { "type": "string" },
+                                    "InputPart": { "type": "string" },
+                                    "OutputPart": { "type": "string" }
+                                },
+                                "required": 
+                                [
+                                    "CompilePart",
+                                    "IncludePart",
+                                    "InputPart",
+                                    "OutputPart"
+                                ]
                             }
                         },
                         "required": 

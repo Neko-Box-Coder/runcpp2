@@ -51,9 +51,15 @@ CompilerProfiles:
         DefaultCompileFlags: "-std=c++17 -Wall -Werror"
         
         # The syntax to compile the given file. 
-        # {CompileFlags}, {InputFile}, {ObjectFile} will be replaced accordingly
-        CompileArgs: "-c {CompileFlags} {InputFile} -o {ObjectFile}"
-    
+        # [Setup steps if any] --> 
+        # {Executable} {CompilePart} {IncludePart}...(for each dependency) {InputPart} {OutputPart}
+        # {CompileFlags}, {IncludePath}, {InputFile}, {ObjectFile} will be replaced accordingly
+        CompileArgs: 
+            CompilePart: "-c {CompileFlags}"
+            IncludePart: "-I{IncludePath}"
+            InputPart: "{InputFile}"
+            OutputPart: "-o {ObjectFile}"
+
     # Specify the linker settings, so the final flow will be:
     # [Setup steps if any] --> {Executable} {OutputPart} {DependenciesPart}...(for each dependency)
     Linker:

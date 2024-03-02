@@ -1,6 +1,7 @@
 #include "runcpp2/CompilingLinking.hpp"
 #include "System2.h"
 #include "ghc/filesystem.hpp"
+#include "runcpp2/DependenciesSetupHelper.hpp"
 #include "runcpp2/PlatformUtil.hpp"
 #include "runcpp2/StringUtil.hpp"
 #include "ssLogger/ssLog.hpp"
@@ -15,20 +16,19 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
     std::vector<std::string> platformNames = Internal::GetPlatformNames();
     
     std::string compileCommand =    profile.Compiler.Executable + " " + 
-                                    profile.Compiler.CompileArgs;
+                                    profile.Compiler.CompileArgs.CompilePart;
 
-    //Replace for {CompileFlags}
+    //Replace for {CompileFlags} for compile part
     const std::string compileFlagSubstitution = "{CompileFlags}";
     std::size_t foundIndex = compileCommand.find(compileFlagSubstitution);
-    
     std::string compileArgs = profile.Compiler.DefaultCompileFlags;
-    
     if(foundIndex == std::string::npos)
     {
-        ssLOG_ERROR("'{CompileFlags}' missing in CompileArgs");
+        ssLOG_ERROR("'" + compileFlagSubstitution + "' missing in CompileArgs.CompilePart");
         return false;
     }
     
+    //Override the compile flags from the script info
     if(scriptInfo.OverrideCompileFlags.find(profile.Name) != scriptInfo.OverrideCompileFlags.end())
     {
         std::vector<std::string> compileArgsToRemove; 
@@ -57,17 +57,44 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
                             compileFlagSubstitution.size(), 
                             compileArgs);
     
-    //Replace {InputFile}
+    //Add include paths for all the dependencies
+    //Replace {IncludePath}
+    const std::string includePathSubstitution = "{IncludePath}";
+    foundIndex = profile.Compiler.CompileArgs.IncludePart.find(includePathSubstitution);
+    if(foundIndex == std::string::npos)
+    {
+        ssLOG_ERROR("'" + includePathSubstitution + "' missing in CompileArgs");
+        return false;
+    }
+    
+    for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+    {
+        if(!runcpp2::IsDependencyAvailableForThisPlatform(scriptInfo.Dependencies.at(i)))
+            continue;
+    
+        for(int j = 0; j < scriptInfo.Dependencies[i].AbsoluteIncludePaths.size(); ++j)
+        {
+            std::string currentIncludePart = profile.Compiler.CompileArgs.IncludePart;
+            currentIncludePart.replace( foundIndex, 
+                                        includePathSubstitution.size(), 
+                                        scriptInfo.Dependencies[i].AbsoluteIncludePaths[j]);
+            
+            compileCommand += " " + currentIncludePart;
+        }
+    }
+    
+    //Replace {InputFile} for input part
     const std::string inputFileSubstitution = "{InputFile}";
+    compileCommand += " " + profile.Compiler.CompileArgs.InputPart;
     foundIndex = compileCommand.find(inputFileSubstitution);
     if(foundIndex == std::string::npos)
     {
-        ssLOG_ERROR("'{InputFile}' missing in CompileArgs");
+        ssLOG_ERROR("'" + inputFileSubstitution + "' missing in CompileArgs");
         return false;
     }
     compileCommand.replace(foundIndex, inputFileSubstitution.size(), scriptPath);
     
-    //Replace {ObjectFile}
+    //Replace {ObjectFile} for output part
     const std::string objectFileSubstitution = "{ObjectFile}";
     std::string objectFileExt; 
     
@@ -80,10 +107,11 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
         }
     }
     
+    compileCommand += " " + profile.Compiler.CompileArgs.OutputPart;
     foundIndex = compileCommand.find(objectFileSubstitution);
     if(foundIndex == std::string::npos)
     {
-        ssLOG_ERROR("'{ObjectFile}' missing in CompileArgs");
+        ssLOG_ERROR("'" + objectFileSubstitution + "' missing in CompileArgs");
         return false;
     }
     
@@ -153,6 +181,7 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
     std::string linkFlags = profile.Linker.DefaultLinkFlags;
     std::string outputName = scriptName;
     
+    //Override the default link flags from the script info
     if(scriptInfo.OverrideLinkFlags.find(profile.Name) != scriptInfo.OverrideLinkFlags.end())
     {
         std::vector<std::string> linkFlagsToRemove;
@@ -178,28 +207,29 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
         linkFlags += " " + scriptInfo.OverrideLinkFlags.at(profile.Name).Append;
     }
     
+    //Replace for {LinkFlags} for output part
     foundIndex = currentOutputPart.find(linkFlagsSubstitution);
     if(foundIndex == std::string::npos)
     {
-        ssLOG_ERROR("'{LinkFlags}' missing in LinkerArgs");
+        ssLOG_ERROR("'" + linkFlagsSubstitution + "' missing in LinkerArgs");
         return false;
     }
-    
     currentOutputPart.replace(foundIndex, linkFlagsSubstitution.size(), linkFlags);
     
+    //Replace {OutputFile} for output part
     foundIndex = currentOutputPart.find(outputFileSubstitution);
     if(foundIndex == std::string::npos)
     {
-        ssLOG_ERROR("'{ProgramName}' missing in LinkerArgs");
+        ssLOG_ERROR("'" + outputFileSubstitution + "' missing in LinkerArgs");
         return false;
     }
-    
     currentOutputPart.replace(foundIndex, outputFileSubstitution.size(), outputName);
     
+    //Replace {ObjectFile} for output part
     foundIndex = currentOutputPart.find(objectFileSubstitution);
     if(foundIndex == std::string::npos)
     {
-        ssLOG_ERROR("'{ObjectFile}' missing in LinkerArgs");
+        ssLOG_ERROR("'" + objectFileSubstitution + "' missing in LinkerArgs");
         return false;
     }
     
@@ -207,13 +237,14 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
     Internal::Trim(currentOutputPart);
     linkCommand += currentOutputPart;
     
+    //Replace {DependencyName} for Dependencies part
     const std::string dependencySubstitution = "{DependencyName}";
     const std::string dependencyPart = profile.Linker.LinkerArgs.DependenciesPart;
     
     foundIndex = dependencyPart.find(dependencySubstitution);
     if(foundIndex == std::string::npos)
     {
-        ssLOG_ERROR("'{DependencyName}' missing in LinkerArgs");
+        ssLOG_ERROR("'" + dependencySubstitution + "' missing in LinkerArgs");
         return false;
     }
     
@@ -230,15 +261,12 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
         
         std::string currentDependencyPart = dependencyPart;
         currentDependencyPart.replace(foundIndex, dependencySubstitution.size(), dependencyName);
-        
-        if(i == 0)
-            linkCommand += " ";
-        
-        linkCommand += currentDependencyPart;
+        linkCommand += " " + currentDependencyPart;
     }
     
     linkCommand = "cd " + runcpp2ScriptDir + " && " + linkCommand;
     
+    //Do Linking
     System2CommandInfo linkCommandInfo;
     result = System2Run(linkCommand.c_str(), &linkCommandInfo);
     

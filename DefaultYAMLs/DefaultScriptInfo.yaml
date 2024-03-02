@@ -46,14 +46,20 @@ Dependencies:
     # Library Type (Static, Object, Shared, Header)
     LibraryType: Static
     
-    # Searchable properties of the dependency
+    # (Optional) Paths to be added to the include paths, relative to the dependency folder
+    IncludePaths:
+    -   "src/include"
+    
+    # TODO: Maybe rename to LinkSearchProperties?
+    # (Optional if Header type) Searchable properties of the dependency
     SearchProperties:
         # Properties for searching the library binary for the profile
         "g++":
             # The library name to be searched for when linking against the script
             SearchLibraryName: lib1
             
-            # The path to be searched for the dependency. 
+            # The path (relative to the dependency folder) to be searched for the dependency binaries
+            # TODO: Maybe rename this to SearchDirectories
             # TODO: Make this a list
             SearchPath: ./build
     
@@ -62,6 +68,7 @@ Dependencies:
         # Setup commands for the specified platform
         All:
             # Setup commands for the specified profile. 
+            # All commands are run in the dependency folder
             "g++":
             -   "mkdir build"
             -   "cd build && cmake .."

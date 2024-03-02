@@ -4,28 +4,35 @@
 #include "runcpp2/PlatformUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::GetDependenciesPaths( const std::vector<DependencyInfo>& dependencies,
-                                    std::vector<std::string>& copiesPaths,
-                                    std::vector<std::string>& sourcesPaths,
-                                    std::string runcpp2ScriptDir,
-                                    std::string scriptDir)
+bool runcpp2::IsDependencyAvailableForThisPlatform(const DependencyInfo& dependency)
 {
     std::vector<std::string> platformNames = Internal::GetPlatformNames();
     
+    for(int i = 0; i < platformNames.size(); ++i)
+    {
+        if( dependency.Platforms.find(platformNames[i]) != 
+            dependency.Platforms.end())
+        {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+
+bool runcpp2::GetDependenciesPaths( const std::vector<DependencyInfo>& dependencies,
+                                    std::vector<std::string>& outCopiesPaths,
+                                    std::vector<std::string>& outSourcesPaths,
+                                    std::string runcpp2ScriptDir,
+                                    std::string scriptDir)
+{
     for(int i = 0; i < dependencies.size(); ++i)
     {
-        for(int j = 0; j < platformNames.size(); ++j)
-        {
-            if( dependencies.at(i).Platforms.find(platformNames.at(j)) == 
-                dependencies.at(i).Platforms.end())
-            {
-                copiesPaths.push_back("");
-                sourcesPaths.push_back("");
-                continue;
-            }
-        }
+        if(!IsDependencyAvailableForThisPlatform(dependencies[i]))
+            continue;
         
-        const DependencySource& currentSource = dependencies.at(i).Source;
+        const DependencySource& currentSource = dependencies[i].Source;
         
         static_assert((int)DependencySourceType::COUNT == 2, "");
         
@@ -46,11 +53,16 @@ bool runcpp2::GetDependenciesPaths( const std::vector<DependencyInfo>& dependenc
                 else
                 {
                     std::string gitRepoName = 
+                                                    //+1 for / to not include it
                         currentSource.Value.substr( lastSlashFoundIndex + 1, 
-                                                    lastDotGitFoundIndex - lastSlashFoundIndex - 1);
+                                                    //-1 for slash
+                                                    lastDotGitFoundIndex - 1 -
+                                                    //-(size - 1) for .git
+                                                    (std::string(".git").size() - 1) -
+                                                    lastSlashFoundIndex);
                     
-                    copiesPaths.push_back(runcpp2ScriptDir + "/" + gitRepoName);
-                    sourcesPaths.push_back("");
+                    outCopiesPaths.push_back(runcpp2ScriptDir + "/" + gitRepoName);
+                    outSourcesPaths.push_back("");
                 }
                 break;
             }
@@ -64,12 +76,12 @@ bool runcpp2::GetDependenciesPaths( const std::vector<DependencyInfo>& dependenc
                     curPath.pop_back();
                 
                 localDepDirectoryName = ghc::filesystem::path(curPath).filename().string();
-                copiesPaths.push_back(runcpp2ScriptDir + "/" + localDepDirectoryName);
+                outCopiesPaths.push_back(runcpp2ScriptDir + "/" + localDepDirectoryName);
                 
                 if(ghc::filesystem::path(curPath).is_relative())
-                    sourcesPaths.push_back(scriptDir + "/" + currentSource.Value);
+                    outSourcesPaths.push_back(scriptDir + "/" + currentSource.Value);
                 else
-                    sourcesPaths.push_back(currentSource.Value);
+                    outSourcesPaths.push_back(currentSource.Value);
                 
                 break;
             }
@@ -92,25 +104,14 @@ bool runcpp2::PopulateLocalDependencies(const std::vector<DependencyInfo>& depen
     std::error_code _;
     for(int i = 0; i < dependencies.size(); ++i)
     {
-        bool platformFound = false;
-        for(int j = 0; j < platformNames.size(); ++j)
-        {
-            if( dependencies.at(i).Platforms.find(platformNames.at(j)) != 
-                dependencies.at(i).Platforms.end())
-            {
-                platformFound = true;
-                break;
-            }
-        }
-        
-        if(!platformFound)
+        if(!IsDependencyAvailableForThisPlatform(dependencies[i]))
             continue;
         
-        if(ghc::filesystem::exists(dependenciesCopiesPaths.at(i), _))
+        if(ghc::filesystem::exists(dependenciesCopiesPaths[i], _))
         {
-            if(!ghc::filesystem::is_directory(dependenciesCopiesPaths.at(i), _))
+            if(!ghc::filesystem::is_directory(dependenciesCopiesPaths[i], _))
             {
-                ssLOG_ERROR("Dependency path is a file: " << dependenciesCopiesPaths.at(i));
+                ssLOG_ERROR("Dependency path is a file: " << dependenciesCopiesPaths[i]);
                 return false;
             }
         }
@@ -118,13 +119,13 @@ bool runcpp2::PopulateLocalDependencies(const std::vector<DependencyInfo>& depen
         {
             static_assert((int)DependencySourceType::COUNT == 2, "");
             
-            switch(dependencies.at(i).Source.Type)
+            switch(dependencies[i].Source.Type)
             {
                 case DependencySourceType::GIT:
                 {
                     std::string processedRuncpp2ScriptDir = Internal::ProcessPath(runcpp2ScriptDir);
                     std::string gitCloneCommand = "cd " + processedRuncpp2ScriptDir;
-                    gitCloneCommand += " && git clone " + dependencies.at(i).Source.Value;
+                    gitCloneCommand += " && git clone " + dependencies[i].Source.Value;
                     
                     System2CommandInfo gitCommandInfo;
                     SYSTEM2_RESULT result = System2Run(gitCloneCommand.c_str(), &gitCommandInfo);
@@ -137,25 +138,20 @@ bool runcpp2::PopulateLocalDependencies(const std::vector<DependencyInfo>& depen
                     
                     std::string output;
                     
-                    while(true)
+                    do
                     {
                         char outputBuffer[1024] = {0};
                         uint32_t bytesRead = 0;
                         
                         result = System2ReadFromOutput(&gitCommandInfo, outputBuffer, 1023, &bytesRead);
-                        
-                        switch(result)
-                        {
-                            case SYSTEM2_RESULT_SUCCESS:
-                                output.append(outputBuffer, bytesRead);
-                                break;
-                            case SYSTEM2_RESULT_READ_NOT_FINISHED:
-                                output.append(outputBuffer, bytesRead);
-                                break;
-                            default:
-                                ssLOG_ERROR("Failed to read git clone output with result: " << result);
-                                return false;
-                        }
+                        output.append(outputBuffer, bytesRead);
+                    }
+                    while(result == SYSTEM2_RESULT_READ_NOT_FINISHED);
+                    
+                    if(result != SYSTEM2_RESULT_SUCCESS)
+                    {
+                        ssLOG_ERROR("Failed to read git clone output with result: " << result);
+                        return false;
                     }
                     
                     int returnCode = 0;
@@ -172,8 +168,8 @@ bool runcpp2::PopulateLocalDependencies(const std::vector<DependencyInfo>& depen
                 
                 case DependencySourceType::LOCAL:
                 {
-                    std::string sourcePath = dependenciesSourcesPaths.at(i);
-                    std::string destinationPath = dependenciesCopiesPaths.at(i);
+                    std::string sourcePath = dependenciesSourcesPaths[i];
+                    std::string destinationPath = dependenciesCopiesPaths[i];
                     
                     //Copy the folder
                     ghc::filesystem::copy(destinationPath, sourcePath, _);
@@ -189,66 +185,81 @@ bool runcpp2::PopulateLocalDependencies(const std::vector<DependencyInfo>& depen
     return true;
 }
 
+bool runcpp2::PopulateAbsoluteIncludePaths( std::vector<DependencyInfo>& dependencies,
+                                            const std::vector<std::string>& dependenciesCopiesPaths)
+{
+    //Append absolute include paths from relative include paths
+    for(int i = 0; i < dependencies.size(); ++i)
+    {
+        if(!IsDependencyAvailableForThisPlatform(dependencies[i]))
+            continue;
+        
+        dependencies[i].AbsoluteIncludePaths.clear();
+        for(int j = 0; j < dependencies[i].IncludePaths.size(); ++j)
+        {
+            if(ghc::filesystem::path(dependencies[i].IncludePaths[j]).is_absolute())
+            {
+                ssLOG_ERROR("Dependency include path cannot be absolute: " << 
+                            dependencies[i].IncludePaths[j]);
+                
+                return false;
+            }
+            
+            dependencies[i] .AbsoluteIncludePaths
+                            .push_back(ghc::filesystem::absolute(   dependenciesCopiesPaths[i] + "/" + 
+                                                                    dependencies[i].IncludePaths[j]));
+        
+            ssLOG_DEBUG("Include path added: " << dependencies[i].AbsoluteIncludePaths.back());
+        }
+    }
+    
+    return true;
+}
+
 bool runcpp2::RunDependenciesSetupSteps(const ProfileName& profileName,
-                                        const std::vector<DependencyInfo>& dependencies,
+                                        std::vector<DependencyInfo>& dependencies,
                                         const std::vector<std::string>& dependenciesCopiesPaths)
 {
     std::vector<std::string> platformNames = Internal::GetPlatformNames();
     for(int i = 0; i < dependencies.size(); ++i)
     {
-        int platformFoundIndex = -1;
-        
-        for(int j = 0; j < platformNames.size(); ++j)
-        {
-            if( dependencies.at(i).Platforms.find(platformNames.at(j)) != 
-                dependencies.at(i).Platforms.end())
-            {
-                platformFoundIndex = j;
-                break;
-            }
-        }
-        
-        if(platformFoundIndex == -1 || dependencies.at(i).Setup.empty())
+        if(!IsDependencyAvailableForThisPlatform(dependencies[i]) || dependencies[i].Setup.empty())
             continue;
         
-        
+        //Find the platform name we use for setup
         PlatformName chosenPlatformName;
-        
         for(int j = 0; j < platformNames.size(); ++j)
         {
-            if( dependencies.at(i).Platforms.find(platformNames.at(j)) == 
-                dependencies.at(i).Platforms.end())
-            {
+            if(dependencies[i].Setup.find(platformNames[j]) == dependencies[i].Setup.end())
                 continue;
-            }
             
-            const DependencySetup& dependencySetup = dependencies   .at(i)
-                                                                    .Setup
-                                                                    .find(platformNames.at(j))
+            const DependencySetup& dependencySetup = dependencies[i].Setup
+                                                                    .find(platformNames[j])
                                                                     ->second;
+            
             
             if(dependencySetup.SetupSteps.find(profileName) == dependencySetup.SetupSteps.end())
             {
-                ssLOG_ERROR("Dependency " << dependencies.at(i).Name << " failed to find setup " 
+                ssLOG_ERROR("Dependency " << dependencies[i].Name << " failed to find setup " 
                             "with profile " << profileName);
                 
                 return false;
             }
             
-            chosenPlatformName = platformNames.at(j);
+            chosenPlatformName = platformNames[j];
             break;
         }
         
         if(chosenPlatformName.empty())
         {
-            ssLOG_ERROR("Dependency " << dependencies.at(i).Name << " failed to find setup " 
+            ssLOG_ERROR("Dependency " << dependencies[i].Name << " failed to find setup " 
                         "with current platform");
 
             return false;
         }
         
         //Run the setup command
-        const DependencySetup& dependencySetup = dependencies   .at(i)
+        const DependencySetup& dependencySetup = dependencies   [i]
                                                                 .Setup
                                                                 .find(chosenPlatformName)
                                                                 ->second;
@@ -257,10 +268,10 @@ bool runcpp2::RunDependenciesSetupSteps(const ProfileName& profileName,
         
         for(int k = 0; k < setupCommands.size(); ++k)
         {
-            std::string processedDependencyPath = Internal::ProcessPath(dependenciesCopiesPaths.at(i));
+            std::string processedDependencyPath = Internal::ProcessPath(dependenciesCopiesPaths[i]);
             
             std::string setupCommand = "cd " + processedDependencyPath;
-            setupCommand += " && " + setupCommands.at(k);
+            setupCommand += " && " + setupCommands[k];
             
             System2CommandInfo setupCommandInfo;
             SYSTEM2_RESULT result = System2Run(setupCommand.c_str(), &setupCommandInfo);
@@ -273,30 +284,20 @@ bool runcpp2::RunDependenciesSetupSteps(const ProfileName& profileName,
             
             std::string output;
             
-            while(true)
+            do
             {
                 char outputBuffer[1024] = {0};
                 uint32_t bytesRead = 0;
-                //TODO: Use do while loop
-                result = System2ReadFromOutput(&setupCommandInfo, outputBuffer, 1023, &bytesRead);
-                if(bytesRead >= 1024 || outputBuffer[1023] != '\0')
-                {
-                    ssLOG_ERROR("outputBuffer has overflowed");
-                    return false;
-                }
                 
-                switch(result)
-                {
-                    case SYSTEM2_RESULT_SUCCESS:
-                        output.append(outputBuffer, bytesRead);
-                        break;
-                    case SYSTEM2_RESULT_READ_NOT_FINISHED:
-                        output.append(outputBuffer, bytesRead);
-                        break;
-                    default:
-                        ssLOG_ERROR("Failed to read git clone output with result: " << result);
-                        return false;
-                }
+                result = System2ReadFromOutput(&setupCommandInfo, outputBuffer, 1023, &bytesRead);
+                output.append(outputBuffer, bytesRead);
+            }
+            while(result == SYSTEM2_RESULT_READ_NOT_FINISHED);
+            
+            if(result != SYSTEM2_RESULT_SUCCESS)
+            {
+                ssLOG_ERROR("Failed to read git clone output with result: " << result);
+                return false;
             }
             
             int returnCode = 0;
@@ -314,11 +315,9 @@ bool runcpp2::RunDependenciesSetupSteps(const ProfileName& profileName,
     return true;
 }
 
-
-
 bool runcpp2::SetupScriptDependencies(  const ProfileName& profileName,
                                         const std::string& scriptPath, 
-                                        const ScriptInfo& scriptInfo,
+                                        ScriptInfo& scriptInfo,
                                         bool resetDependencies,
                                         std::vector<std::string>& outDependenciesLocalCopiesPaths,
                                         std::vector<std::string>& outDependenciesSourcePaths)
@@ -348,10 +347,10 @@ bool runcpp2::SetupScriptDependencies(  const ProfileName& profileName,
         for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
         {
             //Remove the directory
-            if(!ghc::filesystem::remove_all(outDependenciesLocalCopiesPaths.at(i), _))
+            if(!ghc::filesystem::remove_all(outDependenciesLocalCopiesPaths[i], _))
             {
                 ssLOG_ERROR("Failed to reset dependency directory: " << 
-                            outDependenciesLocalCopiesPaths.at(i));
+                            outDependenciesLocalCopiesPaths[i]);
                 
                 return false;
             }
@@ -366,6 +365,9 @@ bool runcpp2::SetupScriptDependencies(  const ProfileName& profileName,
     {
         return false;
     }
+    
+    if(!PopulateAbsoluteIncludePaths(scriptInfo.Dependencies, outDependenciesLocalCopiesPaths))
+        return false;
     
     //Run setup steps
     if(!RunDependenciesSetupSteps(  profileName,

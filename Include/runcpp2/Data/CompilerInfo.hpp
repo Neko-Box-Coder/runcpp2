@@ -12,7 +12,16 @@ namespace runcpp2
         public:
             std::string Executable;
             std::string DefaultCompileFlags;
-            std::string CompileArgs;
+            
+            struct Args
+            {
+                std::string CompilePart;
+                std::string IncludePart;
+                std::string InputPart;
+                std::string OutputPart;
+            };
+            
+            Args CompileArgs;
             
             bool ParseYAML_Node(YAML::Node& profileNode);
             std::string ToString(std::string indentation) const;
