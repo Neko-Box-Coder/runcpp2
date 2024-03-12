@@ -91,7 +91,7 @@ bool runcpp2::RunScript(const std::string& scriptPath,
     std::string source(buffer.str());
 
     std::string parsableInfo;
-    if(!runcpp2::Internal::GetParsableInfo(source, parsableInfo))
+    if(!GetParsableInfo(source, parsableInfo))
     {
         ssLOG_ERROR("An error has been encountered when parsing info: " << absoluteScriptPath);
         return false;
@@ -101,7 +101,7 @@ bool runcpp2::RunScript(const std::string& scriptPath,
 
     //Try to parse the runcpp2 info
     ScriptInfo scriptInfo;
-    if(!runcpp2::ParseScriptInfo(parsableInfo, scriptInfo))
+    if(!ParseScriptInfo(parsableInfo, scriptInfo))
     {
         ssLOG_ERROR("Failed to parse info");
         ssLOG_ERROR("Content trying to parse: " << "\n" << parsableInfo);
@@ -131,10 +131,8 @@ bool runcpp2::RunScript(const std::string& scriptPath,
         return false;
     }
 
-    //TODO(NOW): Pass reset dependencies from commandline arg
     std::vector<std::string> dependenciesLocalCopiesPaths;
     std::vector<std::string> dependenciesSourcePaths;
-    
     if(!SetupScriptDependencies(profiles[profileIndex].Name, 
                                 absoluteScriptPath, 
                                 scriptInfo, 
@@ -193,8 +191,8 @@ bool runcpp2::RunScript(const std::string& scriptPath,
 
     //Running the script
     {
-        std::string runCommand = Internal::ProcessPath( "cd " + scriptDirectory + 
-                                                        " && ./" + scriptName + exeExt);
+        std::string runCommand = ProcessPath(   "cd " + scriptDirectory + 
+                                               " && ./" + scriptName + exeExt);
         
         if(!runArgs.empty())
         {

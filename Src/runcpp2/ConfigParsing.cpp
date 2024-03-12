@@ -10,63 +10,66 @@ extern const size_t DefaultCompilerProfiles_size;
 extern const uint8_t DefaultScriptDependencies[];
 extern const size_t DefaultScriptDependencies_size;
 
-bool runcpp2::ParseCompilerProfiles(const std::string& compilerProfilesString, 
-                                    std::vector<CompilerProfile>& outProfiles,
-                                    std::string& outPreferredProfile)
+namespace 
 {
-    YAML::Node compilersProfileYAML;
-    
-    try
+    bool ParseCompilerProfiles( const std::string& compilerProfilesString, 
+                                std::vector<runcpp2::CompilerProfile>& outProfiles,
+                                std::string& outPreferredProfile)
     {
-        compilersProfileYAML = YAML::Load(compilerProfilesString);
-    }
-    catch(...)
-    {
-        return false;
-    }
-
-    YAML::Node compilerProfilesNode = compilersProfileYAML["CompilerProfiles"];
-    if(!compilerProfilesNode || compilerProfilesNode.Type() != YAML::NodeType::Sequence)
-    {
-        ssLOG_ERROR("CompilerProfiles is invalid");
-        return false;
-    }
-    
-    if(compilerProfilesNode.size() == 0)
-    {
-        ssLOG_ERROR("No compiler profiles found");
-        return false;
-    }
-    
-    for(int i = 0; i < compilerProfilesNode.size(); ++i)
-    {
-        YAML::Node currentCompilerProfileNode = compilerProfilesNode[i];
+        YAML::Node compilersProfileYAML;
         
-        outProfiles.push_back({});
-        if(!outProfiles.back().ParseYAML_Node(currentCompilerProfileNode))
+        try
         {
-            outProfiles.erase(outProfiles.end() - 1);
-            ssLOG_ERROR("Failed to parse compiler profile at index " << i);
+            compilersProfileYAML = YAML::Load(compilerProfilesString);
+        }
+        catch(...)
+        {
             return false;
         }
-    }
-    
-    if( compilersProfileYAML["PreferredProfile"] && 
-        compilersProfileYAML["PreferredProfile"].Type() == YAML::NodeType::Scalar)
-    {
-        outPreferredProfile = compilersProfileYAML["PreferredProfile"].as<std::string>();
-        if(outPreferredProfile.empty())
+
+        YAML::Node compilerProfilesNode = compilersProfileYAML["CompilerProfiles"];
+        if(!compilerProfilesNode || compilerProfilesNode.Type() != YAML::NodeType::Sequence)
         {
-            outPreferredProfile = outProfiles.at(0).Name;
-            ssLOG_WARNING("PreferredProfile is empty. Using the first profile name");
+            ssLOG_ERROR("CompilerProfiles is invalid");
+            return false;
         }
+        
+        if(compilerProfilesNode.size() == 0)
+        {
+            ssLOG_ERROR("No compiler profiles found");
+            return false;
+        }
+        
+        for(int i = 0; i < compilerProfilesNode.size(); ++i)
+        {
+            YAML::Node currentCompilerProfileNode = compilerProfilesNode[i];
+            
+            outProfiles.push_back({});
+            if(!outProfiles.back().ParseYAML_Node(currentCompilerProfileNode))
+            {
+                outProfiles.erase(outProfiles.end() - 1);
+                ssLOG_ERROR("Failed to parse compiler profile at index " << i);
+                return false;
+            }
+        }
+        
+        if( compilersProfileYAML["PreferredProfile"] && 
+            compilersProfileYAML["PreferredProfile"].Type() == YAML::NodeType::Scalar)
+        {
+            outPreferredProfile = compilersProfileYAML["PreferredProfile"].as<std::string>();
+            if(outPreferredProfile.empty())
+            {
+                outPreferredProfile = outProfiles.at(0).Name;
+                ssLOG_WARNING("PreferredProfile is empty. Using the first profile name");
+            }
+        }
+        
+        return true;
     }
-    
-    return true;
 }
 
-bool runcpp2::ReadUserConfig(   std::vector<CompilerProfile>& outProfiles, 
-                                std::string& outPreferredProfile)
+bool runcpp2::ReadUserConfig( std::vector<CompilerProfile>& outProfiles, 
+                                        std::string& outPreferredProfile)
 {
     //Check if user config exists
     char configDirC_Str[MAX_PATH] = {0};

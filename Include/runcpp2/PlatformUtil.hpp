@@ -7,18 +7,9 @@
 
 namespace runcpp2
 {
-
-namespace Internal
-{
-    char GetAltFileSystemSeparator();
-    
-    char GetFileSystemSeparator();
-
     std::string ProcessPath(const std::string& path);
-
+    
     std::vector<std::string> GetPlatformNames();
-}
-
 }
 
 #endif

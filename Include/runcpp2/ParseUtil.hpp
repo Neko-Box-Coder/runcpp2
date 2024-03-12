@@ -5,11 +5,7 @@
 
 namespace runcpp2
 {
-
-//TODO: Use rapidyaml instead
-
-namespace Internal
-{
+    //TODO: Use rapidyaml instead
     struct NodeRequirement
     {
         std::string Name;
@@ -25,10 +21,8 @@ namespace Internal
     };
     
     bool CheckNodeRequirements(YAML::Node& node, const std::vector<NodeRequirement>& requirements);
-    
-    bool GetParsableInfo(const std::string& contentToParse, std::string& outParsableInfo);
-}
 
+    bool GetParsableInfo(const std::string& contentToParse, std::string& outParsableInfo);
 }
 
 #endif

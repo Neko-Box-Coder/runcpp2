@@ -2,7 +2,7 @@
 
 namespace runcpp2
 {
-    void Internal::TrimLeft(std::string& str)
+    void TrimLeft(std::string& str)
     {
         //Remove spaces from left
         while(!str.empty() && str.at(0) == ' ')
@@ -13,7 +13,7 @@ namespace runcpp2
             str.erase(0, 1);
     }
 
-    void Internal::TrimRight(std::string& str)
+    void TrimRight(std::string& str)
     {
         //Remove spaces from right
         while(!str.empty() && str.at(str.size() - 1) == ' ')
@@ -25,7 +25,7 @@ namespace runcpp2
     }
 
     //Trim string from both sides
-    void Internal::Trim(std::string& str)
+    void Trim(std::string& str)
     {
         //Remove spaces from left
         TrimLeft(str);
@@ -34,9 +34,9 @@ namespace runcpp2
         TrimRight(str);
     }
     
-    void Internal::SplitString( const std::string& stringToSplit, 
-                                const std::string& splitter, 
-                                std::vector<std::string>& outStrings)
+    void SplitString(   const std::string& stringToSplit, 
+                        const std::string& splitter, 
+                        std::vector<std::string>& outStrings)
     {
         if(splitter.empty())
         {

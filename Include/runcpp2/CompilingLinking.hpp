@@ -7,18 +7,6 @@
 
 namespace runcpp2 
 {
-    bool CompileScript( const std::string& scriptPath, 
-                        const ScriptInfo& scriptInfo,
-                        const CompilerProfile& profile,
-                        std::string& outScriptObjectFilePath);
-    
-    bool LinkScript(    const std::string& scriptPath, 
-                        const ScriptInfo& scriptInfo,
-                        const CompilerProfile& profile,
-                        const std::string& scriptObjectFilePath,
-                        const std::vector<std::string>& copiedDependenciesBinariesNames);
-    
-    
     bool CompileAndLinkScript(  const std::string& scriptPath, 
                                 const ScriptInfo& scriptInfo,
                                 const CompilerProfile& profile,

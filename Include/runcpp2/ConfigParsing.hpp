@@ -7,10 +7,6 @@
 #include <vector>
 namespace runcpp2
 {
-    bool ParseCompilerProfiles( const std::string& compilerProfilesString, 
-                                std::vector<CompilerProfile>& outProfiles,
-                                std::string& outPreferredProfile);
-    
     bool ReadUserConfig(std::vector<CompilerProfile>& outProfiles, 
                         std::string& outPreferredProfile);
     

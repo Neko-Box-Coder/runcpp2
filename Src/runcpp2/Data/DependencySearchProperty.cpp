@@ -3,54 +3,51 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-namespace runcpp2
+bool runcpp2::DependencySearchProperty::ParseYAML_Node(YAML::Node& node)
 {
-    bool DependencySearchProperty::ParseYAML_Node(YAML::Node& node)
+    INTERNAL_RUNCPP2_SAFE_START();
+    
+    if(!node.IsMap())
     {
-        INTERNAL_RUNCPP2_SAFE_START();
-        
-        if(!node.IsMap())
-        {
-            ssLOG_ERROR("DependencySearchProperty: Node is not a Map");
-            return false;
-        }
-        
-        std::vector<Internal::NodeRequirement> requirements =
-        {
-            Internal::NodeRequirement("SearchLibraryNames", YAML::NodeType::Sequence, true, false),
-            Internal::NodeRequirement("SearchDirectories", YAML::NodeType::Sequence, true, false)
-        };
-        
-        if(!Internal::CheckNodeRequirements(node, requirements))
-        {
-            ssLOG_ERROR("DependencySource: Failed to meet requirements");
-            return false;
-        }
-        
-        for(int i = 0; i < node["SearchLibraryNames"].size(); ++i)
-            SearchLibraryNames.push_back(node["SearchLibraryNames"][i].as<std::string>());
-        
-        for(int i = 0; i < node["SearchDirectories"].size(); ++i)
-            SearchDirectories.push_back(node["SearchDirectories"][i].as<std::string>());
-        
-        return true;
-        
-        INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+        ssLOG_ERROR("DependencySearchProperty: Node is not a Map");
+        return false;
     }
     
-    std::string DependencySearchProperty::ToString(std::string indentation) const
+    std::vector<NodeRequirement> requirements =
     {
-        std::string out;
-        out += indentation + "SearchLibraryName: \n";
-        
-        for(int i = 0; i < SearchLibraryNames.size(); ++i)
-            out += indentation + "-   " + SearchLibraryNames[i] + "\n";
-        
-        out += indentation + "SearchDirectories: \n";
-        
-        for(int i = 0; i < SearchDirectories.size(); ++i)
-            out += indentation + "-   " + SearchDirectories[i] + "\n";
-        
-        return out;
+        NodeRequirement("SearchLibraryNames", YAML::NodeType::Sequence, true, false),
+        NodeRequirement("SearchDirectories", YAML::NodeType::Sequence, true, false)
+    };
+    
+    if(!CheckNodeRequirements(node, requirements))
+    {
+        ssLOG_ERROR("DependencySource: Failed to meet requirements");
+        return false;
     }
+    
+    for(int i = 0; i < node["SearchLibraryNames"].size(); ++i)
+        SearchLibraryNames.push_back(node["SearchLibraryNames"][i].as<std::string>());
+    
+    for(int i = 0; i < node["SearchDirectories"].size(); ++i)
+        SearchDirectories.push_back(node["SearchDirectories"][i].as<std::string>());
+    
+    return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+std::string runcpp2::DependencySearchProperty::ToString(std::string indentation) const
+{
+    std::string out;
+    out += indentation + "SearchLibraryName: \n";
+    
+    for(int i = 0; i < SearchLibraryNames.size(); ++i)
+        out += indentation + "-   " + SearchLibraryNames[i] + "\n";
+    
+    out += indentation + "SearchDirectories: \n";
+    
+    for(int i = 0; i < SearchDirectories.size(); ++i)
+        out += indentation + "-   " + SearchDirectories[i] + "\n";
+    
+    return out;
 }

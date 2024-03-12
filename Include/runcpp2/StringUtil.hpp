@@ -6,18 +6,13 @@
 
 namespace runcpp2
 {
-    namespace Internal
-    {
+    void TrimLeft(std::string& str);
+    void TrimRight(std::string& str);
+    void Trim(std::string& str);
     
-        void TrimLeft(std::string& str);
-        void TrimRight(std::string& str);
-        void Trim(std::string& str);
-        
-        void SplitString(   const std::string& stringToSplit, 
-                            const std::string& splitter, 
-                            std::vector<std::string>& outStrings);
-    }
-    
+    void SplitString(   const std::string& stringToSplit, 
+                        const std::string& splitter, 
+                        std::vector<std::string>& outStrings);
 }
 
 #endif
