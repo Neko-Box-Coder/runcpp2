@@ -3,7 +3,9 @@
 
 #include "runcpp2/Data/DependencyInfo.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
+#include "runcpp2/Data/CompilerProfile.hpp"
 #include <vector>
+
 namespace runcpp2
 {
     bool IsDependencyAvailableForThisPlatform(const DependencyInfo& dependency);
@@ -32,6 +34,16 @@ namespace runcpp2
                                     bool resetDependencies,
                                     std::vector<std::string>& outDependenciesLocalCopiesPaths,
                                     std::vector<std::string>& outDependenciesSourcePaths);
+
+    bool GetDependencyBinariesExtensionsToCopy( const DependencyInfo& dependencyInfo,
+                                                const CompilerProfile& profile,
+                                                std::vector<std::string>& outExtensionsToCopy);
+
+    bool CopyDependenciesBinaries(  const std::string& scriptPath, 
+                                    const ScriptInfo& scriptInfo,
+                                    const std::vector<std::string>& dependenciesCopiesPaths,
+                                    const CompilerProfile& profile,
+                                    std::vector<std::string>& outCopiedBinariesNames);
 }
 
 #endif

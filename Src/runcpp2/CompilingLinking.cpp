@@ -6,9 +6,11 @@
 #include "runcpp2/StringUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::CompileAndLinkScript( const std::string& scriptPath, 
-                                    const ScriptInfo& scriptInfo,
-                                    const CompilerProfile& profile)
+
+bool runcpp2::CompileScript(const std::string& scriptPath, 
+                            const ScriptInfo& scriptInfo,
+                            const CompilerProfile& profile,
+                            std::string& outScriptObjectFilePath)
 {
     std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
     std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
@@ -115,10 +117,10 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
         return false;
     }
     
-    std::string objectFileName = Internal::ProcessPath( runcpp2ScriptDir + "/" + 
+    std::string objectFilePath = Internal::ProcessPath( runcpp2ScriptDir + "/" + 
                                                         scriptName + "." + objectFileExt);
     
-    compileCommand.replace(foundIndex, objectFileSubstitution.size(), objectFileName);
+    compileCommand.replace(foundIndex, objectFileSubstitution.size(), objectFilePath);
     
     //Compile the script
     ssLOG_INFO("running compile command: " << compileCommand);
@@ -172,11 +174,24 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
         return false;
     }
     
+    outScriptObjectFilePath = objectFilePath;
+    return true;
+}
+
+bool runcpp2::LinkScript(   const std::string& scriptPath, 
+                            const ScriptInfo& scriptInfo,
+                            const CompilerProfile& profile,
+                            const std::string& scriptObjectFilePath,
+                            const std::vector<std::string>& copiedDependenciesBinariesNames)
+{
+    std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
+    
     //Link the script to the dependencies
     std::string linkCommand = profile.Linker.Executable + " ";
     std::string currentOutputPart = profile.Linker.LinkerArgs.OutputPart;
     const std::string linkFlagsSubstitution = "{LinkFlags}";
     const std::string outputFileSubstitution = "{OutputFile}";
+    const std::string objectFileSubstitution = "{ObjectFile}";
     
     std::string linkFlags = profile.Linker.DefaultLinkFlags;
     std::string outputName = scriptName;
@@ -208,7 +223,7 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
     }
     
     //Replace for {LinkFlags} for output part
-    foundIndex = currentOutputPart.find(linkFlagsSubstitution);
+    std::size_t foundIndex = currentOutputPart.find(linkFlagsSubstitution);
     if(foundIndex == std::string::npos)
     {
         ssLOG_ERROR("'" + linkFlagsSubstitution + "' missing in LinkerArgs");
@@ -233,7 +248,7 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
         return false;
     }
     
-    currentOutputPart.replace(foundIndex, objectFileSubstitution.size(), objectFileName);
+    currentOutputPart.replace(foundIndex, objectFileSubstitution.size(), scriptObjectFilePath);
     Internal::Trim(currentOutputPart);
     linkCommand += currentOutputPart;
     
@@ -248,27 +263,23 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
         return false;
     }
     
-    for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+    for(int i = 0; i < copiedDependenciesBinariesNames.size(); ++i)
     {
-        if(scriptInfo.Dependencies.at(i).LibraryType == DependencyLibraryType::HEADER)
-            continue;
-        
-        std::string dependencyName = scriptInfo .Dependencies
-                                                .at(i)
-                                                .SearchProperties
-                                                .at(profile.Name)
-                                                .SearchLibraryName;
-        
         std::string currentDependencyPart = dependencyPart;
-        currentDependencyPart.replace(foundIndex, dependencySubstitution.size(), dependencyName);
+        currentDependencyPart.replace(  foundIndex, 
+                                        dependencySubstitution.size(), 
+                                        copiedDependenciesBinariesNames[i]);
+        
         linkCommand += " " + currentDependencyPart;
     }
     
+    std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
+    std::string runcpp2ScriptDir = Internal::ProcessPath(scriptDirectory + "/.runcpp2");
     linkCommand = "cd " + runcpp2ScriptDir + " && " + linkCommand;
     
     //Do Linking
     System2CommandInfo linkCommandInfo;
-    result = System2Run(linkCommand.c_str(), &linkCommandInfo);
+    SYSTEM2_RESULT result = System2Run(linkCommand.c_str(), &linkCommandInfo);
     
     ssLOG_INFO("running link command: " << linkCommand);
     
@@ -278,20 +289,21 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
         return false;
     }
     
-    output.clear();
+    std::string output;
+    
+    //output.clear();
     do
     {
         uint32_t byteRead = 0;
-        
-        output.resize(output.size() + 4096);
+        char tempBuffer[4096];
         
         result = System2ReadFromOutput( &linkCommandInfo, 
-                                        output.data() + output.size() - 4096, 
+                                        tempBuffer, 
                                         4096 - 1, 
                                         &byteRead);
         
-        output.resize(output.size() - 4096 + byteRead + 1);
-        output.back() = '\0';
+        tempBuffer[byteRead] = '\0';
+        output += tempBuffer;
     }
     while(result == SYSTEM2_RESULT_READ_NOT_FINISHED);
     
@@ -303,7 +315,7 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
     
     ssLOG_DEBUG("Link Output: \n" << output.data());
     
-    statusCode = 0;
+    int statusCode = 0;
     result = System2GetCommandReturnValueSync(&linkCommandInfo, &statusCode);
     
     if(result != SYSTEM2_RESULT_SUCCESS)
@@ -318,6 +330,32 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
         return false;
     }
     
+    return true;
+}
+
+
+bool runcpp2::CompileAndLinkScript( const std::string& scriptPath, 
+                                    const ScriptInfo& scriptInfo,
+                                    const CompilerProfile& profile,
+                                    const std::vector<std::string>& copiedDependenciesBinariesNames)
+{
+    std::string scriptObjectFilePath;
+
+    if(!CompileScript(scriptPath, scriptInfo, profile, scriptObjectFilePath))
+    {
+        ssLOG_ERROR("CompileScript failed");
+        return false;
+    }
+    
+    if(!LinkScript( scriptPath, 
+                    scriptInfo,
+                    profile,
+                    scriptObjectFilePath,
+                    copiedDependenciesBinariesNames))
+    {
+        ssLOG_ERROR("LinkScript failed");
+        return false;
+    }
     
     return true;
 }

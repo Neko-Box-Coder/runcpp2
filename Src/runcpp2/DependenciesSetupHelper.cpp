@@ -379,3 +379,254 @@ bool runcpp2::SetupScriptDependencies(  const ProfileName& profileName,
 
     return true;
 }
+
+bool runcpp2::GetDependencyBinariesExtensionsToCopy(const runcpp2::DependencyInfo& dependencyInfo,
+                                                    const CompilerProfile& profile,
+                                                    std::vector<std::string>& outExtensionsToCopy)
+{
+    std::vector<std::string> platformNames = Internal::GetPlatformNames();
+    
+    static_assert((int)DependencyLibraryType::COUNT == 4, "");
+    switch(dependencyInfo.LibraryType)
+    {
+        case DependencyLibraryType::STATIC:
+        {
+            for(int j = 0; j < platformNames.size(); ++j)
+            {
+                if( profile.StaticLibraryExtensions.find(platformNames.at(j)) == 
+                    profile.StaticLibraryExtensions.end())
+                {
+                    if(j == platformNames.size() - 1)
+                    {
+                        ssLOG_ERROR("Failed to find static library extensions for dependency " << 
+                                    dependencyInfo.Name);
+                        
+                        return false;
+                    }
+                    
+                    continue;
+                }
+                
+                outExtensionsToCopy = profile.StaticLibraryExtensions.at(platformNames.at(j));
+                break;
+            }
+            
+            break;
+        }
+        case DependencyLibraryType::SHARED:
+        {
+            for(int j = 0; j < platformNames.size(); ++j)
+            {
+                if( profile.SharedLibraryExtensions.find(platformNames.at(j)) == 
+                    profile.SharedLibraryExtensions.end())
+                {
+                    if(j == platformNames.size() - 1)
+                    {
+                        ssLOG_ERROR("Failed to find shared library extensions for dependency " << 
+                                    dependencyInfo.Name);
+                        
+                        return false;
+                    }
+                    
+                    continue;
+                }
+                
+                outExtensionsToCopy = profile.SharedLibraryExtensions.at(platformNames.at(j));
+                break;
+            }
+            
+            break;
+        }
+        case DependencyLibraryType::OBJECT:
+        {
+            for(int j = 0; j < platformNames.size(); ++j)
+            {
+                if( profile.ObjectFileExtensions.find(platformNames.at(j)) == 
+                    profile.ObjectFileExtensions.end())
+                {
+                    if(j == platformNames.size() - 1)
+                    {
+                        ssLOG_ERROR("Failed to find shared library extensions for dependency " << 
+                                    dependencyInfo.Name);
+                        
+                        return false;
+                    }
+                    
+                    continue;
+                }
+                
+                outExtensionsToCopy.push_back(profile.ObjectFileExtensions.at(platformNames.at(j)));
+                break;
+            }
+            
+            break;
+        }
+        case DependencyLibraryType::HEADER:
+            break;
+        default:
+            ssLOG_ERROR("Invalid library type: " << (int)dependencyInfo.LibraryType);
+            return false;
+    }
+    
+    return true;
+}
+
+bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath, 
+                                        const ScriptInfo& scriptInfo,
+                                        const std::vector<std::string>& dependenciesCopiesPaths,
+                                        const CompilerProfile& profile,
+                                        std::vector<std::string>& outCopiedBinariesNames)
+{
+    std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
+    std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
+    std::string runcpp2ScriptDir = scriptDirectory + "/.runcpp2";
+    std::vector<std::string> platformNames = Internal::GetPlatformNames();
+    
+    if(scriptInfo.Dependencies.size() != dependenciesCopiesPaths.size())
+    {
+        ssLOG_ERROR("The amount of dependencies do not match the amount of dependencies copies paths");
+        return false;
+    }
+    
+    for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+    {
+        std::string foundPlatformName;
+        
+        //Find the platform name we use for setup
+        {
+            for(int j = 0; j < platformNames.size(); ++j)
+            {
+                if( scriptInfo.Dependencies.at(i).Platforms.find(platformNames.at(j)) == 
+                    scriptInfo.Dependencies.at(i).Platforms.end())
+                {
+                    continue;
+                }
+                
+                foundPlatformName = platformNames.at(j);
+            }
+            
+            if(foundPlatformName.empty())
+            {
+                ssLOG_ERROR("Failed to find setup for current platform for dependency: " << 
+                            scriptInfo.Dependencies.at(i).Name);
+
+                return false;
+            }
+        }
+        
+        std::vector<std::string> extensionsToCopy;
+        
+        //Get all the file extensions to copy
+        {
+            if(!GetDependencyBinariesExtensionsToCopy(  scriptInfo.Dependencies.at(i),
+                                                        profile,
+                                                        extensionsToCopy))
+            {
+                return false;
+            }
+        
+            for(int j = 0; j < platformNames.size(); ++j)
+            {
+                if( profile.DebugSymbolFileExtensions.find(platformNames.at(j)) == 
+                    profile.DebugSymbolFileExtensions.end())
+                {
+                    continue;
+                }
+                
+                const std::vector<std::string>& debugSymbolExtensions = profile .DebugSymbolFileExtensions
+                                                                                .at(platformNames.at(j));
+                
+                extensionsToCopy.insert(extensionsToCopy.end(), 
+                                        debugSymbolExtensions.begin(), 
+                                        debugSymbolExtensions.end());
+
+                break;
+            }
+        }
+        
+        if(scriptInfo.Dependencies.at(i).LibraryType == DependencyLibraryType::HEADER)
+            return true;
+        
+        const DependencySearchProperty& searchProperty = scriptInfo .Dependencies
+                                                                    .at(i)
+                                                                    .SearchProperties
+                                                                    .at(profile.Name);
+        
+        //Get the Search path and search library name
+        if( scriptInfo.Dependencies.at(i).SearchProperties.find(profile.Name) == 
+            scriptInfo.Dependencies.at(i).SearchProperties.end())
+        {
+            ssLOG_ERROR("Search properties for dependency " << scriptInfo.Dependencies.at(i).Name <<
+                        " is missing profile " << profile.Name);
+            
+            return false;
+        }
+        
+        //Copy the files with extensions that contains the search name
+        for(int j = 0; j < searchProperty.SearchLibraryNames.size(); ++j)
+        {
+            for(int k = 0; k < searchProperty.SearchDirectories.size(); ++k)
+            {
+                std::string currentSearchLibraryName = searchProperty.SearchLibraryNames.at(j);
+                std::string currentSearchDirectory = searchProperty.SearchDirectories.at(k);
+            
+                if(!ghc::filesystem::path(currentSearchDirectory).is_absolute())
+                    currentSearchDirectory = scriptDirectory + "/" + currentSearchDirectory;
+            
+                std::error_code _;
+                if( !ghc::filesystem::exists(currentSearchDirectory, _) || 
+                    !ghc::filesystem::is_directory(currentSearchDirectory, _))
+                {
+                    ssLOG_ERROR("Invalid search path: " << currentSearchDirectory);
+                    return false;
+                }
+            
+                for(auto it :  ghc::filesystem::directory_iterator(currentSearchDirectory, _))
+                {
+                    if(it.is_directory())
+                        continue;
+                    
+                    std::string currentFileName = it.path().stem().string();
+                    std::string currentExtension = it.path().extension().string();
+                    
+                    //TODO: Make it not case sensitive?
+                    bool nameMatched = false;
+                    if(currentFileName.find(currentSearchLibraryName) != std::string::npos)
+                        nameMatched = true;
+                    
+                    if(!nameMatched)
+                        continue;
+                    
+                    bool extensionMatched = false;
+                    
+                    for(int j = 0; j < extensionsToCopy.size(); ++j)
+                    {
+                        if(currentExtension == extensionsToCopy.at(j))
+                        {
+                            extensionMatched = true;
+                            break;
+                        }
+                    }
+                    
+                    if(!extensionMatched)
+                        continue;
+                    
+                    if(!ghc::filesystem::copy_file( it.path(), 
+                                                    runcpp2ScriptDir, 
+                                                    ghc::filesystem::copy_options::overwrite_existing,  
+                                                    _))
+                    {
+                        ssLOG_ERROR("Failed to copy file from " << it.path().string() << 
+                                    " to " << runcpp2ScriptDir);
+
+                        return false;
+                    }
+                    
+                    outCopiedBinariesNames.push_back(currentFileName);
+                }
+            }
+        }
+    }
+    
+    return true;
+}

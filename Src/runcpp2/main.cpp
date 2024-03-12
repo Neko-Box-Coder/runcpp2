@@ -5,15 +5,7 @@
 #include "ssLogger/ssLog.hpp"
 
 
-
-enum class runcpp2_CmdOptions
-{
-    NONE,
-    SETUP,
-    COUNT
-};
-
-
+//Usage: runcpp2 [--setup] input_file [args]
 int main(int argc, char* argv[])
 {
     std::vector<runcpp2::CompilerProfile> compilerProfiles;
@@ -34,33 +26,34 @@ int main(int argc, char* argv[])
         return 1;
     }
     
-    std::unordered_map<std::string, runcpp2_CmdOptions> optionsMap =
+    std::unordered_map<std::string, runcpp2::CmdOptions> optionsMap =
     {
-        {"--setup", runcpp2_CmdOptions::SETUP}
+        {"--setup", runcpp2::CmdOptions::SETUP}
     };
     
-    runcpp2_CmdOptions currentOption = runcpp2_CmdOptions::NONE;
-    (void)currentOption;
-    
+    std::unordered_map<runcpp2::CmdOptions, std::string> currentOptions;
     int currentArgIndex = 1;
-    if(optionsMap.find(std::string(argv[currentArgIndex])) != optionsMap.end())
+    for(int i = 1; i < argc; ++i)
     {
-        static_assert((int)runcpp2_CmdOptions::COUNT == 2, "Add a case for the new runcpp2_CmdOptions");
-        
-        switch(optionsMap.at(std::string(argv[1])))
+        if(optionsMap.find(std::string(argv[i])) != optionsMap.end())
         {
-            case runcpp2_CmdOptions::NONE:
-            case runcpp2_CmdOptions::COUNT:
-                break;
-            case runcpp2_CmdOptions::SETUP:
-                currentOption = runcpp2_CmdOptions::SETUP;
-                ++currentArgIndex;
-                break;
+            currentArgIndex = i;
+            
+            static_assert((int)runcpp2::CmdOptions::COUNT == 2, "Add a case for the new runcpp2_CmdOptions");
+            switch(optionsMap[std::string(argv[1])])
+            {
+                case runcpp2::CmdOptions::SETUP:
+                    currentOptions[runcpp2::CmdOptions::SETUP] = "";
+                    break;
+                default:
+                    break;
+            }
         }
+        else
+            break;
     }
     
-    //TODO(NOW): Use command line option
-    
+    ++currentArgIndex;
     std::vector<std::string> scriptArgs;
     if(currentArgIndex >= argc)
     {
@@ -76,7 +69,7 @@ int main(int argc, char* argv[])
         scriptArgs.push_back(std::string(argv[currentArgIndex]));
     }
     
-    if(!runcpp2::RunScript(script, compilerProfiles, preferredProfile, scriptArgs))
+    if(!runcpp2::RunScript(script, compilerProfiles, preferredProfile, currentOptions, scriptArgs))
     {
         ssLOG_FATAL("Failed to run script: " << script);
         return 2;

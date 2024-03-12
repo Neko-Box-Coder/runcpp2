@@ -147,18 +147,20 @@
                                 "type": "object",
                                 "properties": 
                                 {
-                                    "SearchLibraryName": 
+                                    "SearchLibraryNames": 
                                     {
-                                        "type": "string",
+                                        "type": "array",
+                                        "items": { "type":"string" },
                                         "description": "The library name to be searched for when linking against the script"
                                     },
-                                    "SearchPath": 
+                                    "SearchDirectories": 
                                     {
-                                        "type": "string",
+                                        "type": "array",
+                                        "items": { "type":"string" },
                                         "description": "The path to be searched for the dependency. {BuildType} will be replaced accordingly"
                                     }
                                 },
-                                "required": ["SearchLibraryName", "SearchPath"],
+                                "required": ["SearchLibraryNames", "SearchDirectories"],
                                 "additionalProperties": false,
                                 "description": "Properties for searching the library binary for the profile"
                             }

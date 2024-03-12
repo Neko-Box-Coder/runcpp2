@@ -17,8 +17,8 @@ namespace runcpp2
         
         std::vector<Internal::NodeRequirement> requirements =
         {
-            Internal::NodeRequirement("SearchLibraryName", YAML::NodeType::Scalar, true, false),
-            Internal::NodeRequirement("SearchPath", YAML::NodeType::Scalar, true, false)
+            Internal::NodeRequirement("SearchLibraryNames", YAML::NodeType::Sequence, true, false),
+            Internal::NodeRequirement("SearchDirectories", YAML::NodeType::Sequence, true, false)
         };
         
         if(!Internal::CheckNodeRequirements(node, requirements))
@@ -27,8 +27,12 @@ namespace runcpp2
             return false;
         }
         
-        SearchLibraryName = node["SearchLibraryName"].as<std::string>();
-        SearchPath = node["SearchPath"].as<std::string>();
+        for(int i = 0; i < node["SearchLibraryNames"].size(); ++i)
+            SearchLibraryNames.push_back(node["SearchLibraryNames"][i].as<std::string>());
+        
+        for(int i = 0; i < node["SearchDirectories"].size(); ++i)
+            SearchDirectories.push_back(node["SearchDirectories"][i].as<std::string>());
+        
         return true;
         
         INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
@@ -37,8 +41,15 @@ namespace runcpp2
     std::string DependencySearchProperty::ToString(std::string indentation) const
     {
         std::string out;
-        out += indentation + "SearchLibraryName: " + SearchLibraryName + "\n";
-        out += indentation + "SearchPath: " + SearchPath + "\n";
+        out += indentation + "SearchLibraryName: \n";
+        
+        for(int i = 0; i < SearchLibraryNames.size(); ++i)
+            out += indentation + "-   " + SearchLibraryNames[i] + "\n";
+        
+        out += indentation + "SearchDirectories: \n";
+        
+        for(int i = 0; i < SearchDirectories.size(); ++i)
+            out += indentation + "-   " + SearchDirectories[i] + "\n";
         
         return out;
     }

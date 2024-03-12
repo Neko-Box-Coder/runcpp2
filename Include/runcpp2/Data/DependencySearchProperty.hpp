@@ -9,8 +9,8 @@ namespace runcpp2
     class DependencySearchProperty
     {
         public:
-            std::string SearchLibraryName;
-            std::string SearchPath;
+            std::vector<std::string> SearchLibraryNames;
+            std::vector<std::string> SearchDirectories;
             
             bool ParseYAML_Node(YAML::Node& node);
             std::string ToString(std::string indentation) const;

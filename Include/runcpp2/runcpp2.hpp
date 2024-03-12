@@ -9,12 +9,14 @@
 
 namespace runcpp2
 {
-    bool CreateRuncpp2ScriptDirectory(const std::string& scriptPath);
+    enum class CmdOptions
+    {
+        NONE,
+        SETUP,
+        COUNT
+    };
 
-    bool CopyDependenciesBinaries(  const std::string& scriptPath, 
-                                    const ScriptInfo& scriptInfo,
-                                    const std::vector<std::string>& dependenciesCopiesPaths,
-                                    const CompilerProfile& profile);
+    bool CreateRuncpp2ScriptDirectory(const std::string& scriptPath);
 
     //--------------------------------------------
     //Running
@@ -22,6 +24,7 @@ namespace runcpp2
     bool RunScript( const std::string& scriptPath, 
                     const std::vector<CompilerProfile>& profiles,
                     const std::string& configPreferredProfile,
+                    const std::unordered_map<CmdOptions, std::string> currentOptions,
                     const std::vector<std::string>& runArgs);
 
 

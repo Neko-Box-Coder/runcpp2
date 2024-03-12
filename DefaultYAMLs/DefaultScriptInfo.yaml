@@ -56,12 +56,10 @@ Dependencies:
         # Properties for searching the library binary for the profile
         "g++":
             # The library name to be searched for when linking against the script
-            SearchLibraryName: lib1
+            SearchLibraryNames: ["lib1"]
             
             # The path (relative to the dependency folder) to be searched for the dependency binaries
-            # TODO: Maybe rename this to SearchDirectories
-            # TODO: Make this a list
-            SearchPath: ./build
+            SearchDirectories: ["./build"]
     
     # (Optional) List of setup commands for the supported platforms
     Setup:
