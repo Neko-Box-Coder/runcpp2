@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
     };
     
     std::unordered_map<runcpp2::CmdOptions, std::string> currentOptions;
-    int currentArgIndex = 1;
+    int currentArgIndex = 0;
     for(int i = 1; i < argc; ++i)
     {
         if(optionsMap.find(std::string(argv[i])) != optionsMap.end())
