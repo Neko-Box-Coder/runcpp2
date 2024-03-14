@@ -137,7 +137,7 @@
                         "items": { "type":"string" },
                         "description": "Paths to be added to include paths"
                     },
-                    "SearchProperties": 
+                    "LinkProperties": 
                     {
                         "type": "object",
                         "patternProperties":
@@ -200,7 +200,7 @@
                     "Platforms",
                     "Source",
                     "LibraryType", 
-                    "SearchProperties"
+                    "LinkProperties"
                 ],
                 "uniqueItems": true
             }

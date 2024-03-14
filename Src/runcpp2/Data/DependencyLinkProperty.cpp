@@ -1,9 +1,9 @@
-#include "runcpp2/Data/DependencySearchProperty.hpp"
+#include "runcpp2/Data/DependencyLinkProperty.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::DependencySearchProperty::ParseYAML_Node(YAML::Node& node)
+bool runcpp2::DependencyLinkProperty::ParseYAML_Node(YAML::Node& node)
 {
     INTERNAL_RUNCPP2_SAFE_START();
     
@@ -36,7 +36,7 @@ bool runcpp2::DependencySearchProperty::ParseYAML_Node(YAML::Node& node)
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
-std::string runcpp2::DependencySearchProperty::ToString(std::string indentation) const
+std::string runcpp2::DependencyLinkProperty::ToString(std::string indentation) const
 {
     std::string out;
     out += indentation + "SearchLibraryName: \n";

@@ -14,7 +14,7 @@ bool runcpp2::DependencyInfo::ParseYAML_Node(YAML::Node& node)
         NodeRequirement("Source", YAML::NodeType::Map, true, false),
         NodeRequirement("LibraryType", YAML::NodeType::Scalar, true, false),
         NodeRequirement("IncludePaths", YAML::NodeType::Sequence, false, true),
-        NodeRequirement("SearchProperties", YAML::NodeType::Map, false, false),
+        NodeRequirement("LinkProperties", YAML::NodeType::Map, false, false),
         NodeRequirement("Setup", YAML::NodeType::Map, false, true)
     };
     
@@ -60,21 +60,21 @@ bool runcpp2::DependencyInfo::ParseYAML_Node(YAML::Node& node)
             IncludePaths.push_back(includePathsNode[i].as<std::string>());
     }
     
-    if(node["SearchProperties"])
+    if(node["LinkProperties"])
     {
-        YAML::Node searchPropertiesNode = node["SearchProperties"];
+        YAML::Node linkPropertiesNode = node["LinkProperties"];
         
-        for(auto it = searchPropertiesNode.begin(); it != searchPropertiesNode.end(); ++it)
+        for(auto it = linkPropertiesNode.begin(); it != linkPropertiesNode.end(); ++it)
         {
             ProfileName profile = it->first.as<ProfileName>();
-            DependencySearchProperty property;
+            DependencyLinkProperty property;
             if(!property.ParseYAML_Node(it->second))
             {
                 ssLOG_ERROR("DependencyInfo: Failed to parse SearchProperties");
                 return false;
             }
             
-            SearchProperties[profile] = property;
+            LinkProperties[profile] = property;
         }
     }
     
@@ -125,8 +125,8 @@ std::string runcpp2::DependencyInfo::ToString(std::string indentation) const
     for(auto it = IncludePaths.begin(); it != IncludePaths.end(); ++it)
         out += indentation + "    -   " + *it + "\n";
     
-    out += indentation + "    SearchProperties:\n";
-    for(auto it = SearchProperties.begin(); it != SearchProperties.end(); ++it)
+    out += indentation + "    LinkProperties:\n";
+    for(auto it = LinkProperties.begin(); it != LinkProperties.end(); ++it)
     {
         out += indentation + "        " + it->first + ":\n";
         out += it->second.ToString(indentation + "            ");

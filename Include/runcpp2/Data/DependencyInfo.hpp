@@ -3,7 +3,7 @@
 
 #include "runcpp2/Data/DependencyLibraryType.hpp"
 #include "runcpp2/Data/DependencySource.hpp"
-#include "runcpp2/Data/DependencySearchProperty.hpp"
+#include "runcpp2/Data/DependencyLinkProperty.hpp"
 #include "runcpp2/Data/DependencySetup.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
 
@@ -21,7 +21,7 @@ namespace runcpp2
             DependencyLibraryType LibraryType;
             std::vector<std::string> IncludePaths;
             std::vector<std::string> AbsoluteIncludePaths;
-            std::unordered_map<ProfileName, DependencySearchProperty> SearchProperties;
+            std::unordered_map<ProfileName, DependencyLinkProperty> LinkProperties;
             std::unordered_map<PlatformName, DependencySetup> Setup;
             
             bool ParseYAML_Node(YAML::Node& node);

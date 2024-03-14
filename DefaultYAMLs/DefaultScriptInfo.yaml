@@ -50,16 +50,21 @@ Dependencies:
     IncludePaths:
     -   "src/include"
     
-    # TODO: Maybe rename to LinkSearchProperties?
     # (Optional if Header type) Searchable properties of the dependency
-    SearchProperties:
+    LinkProperties:
         # Properties for searching the library binary for the profile
         "g++":
             # The library name to be searched for when linking against the script
             SearchLibraryNames: ["lib1"]
             
+            # TODO(NOW): Add option to exclude names
+            
             # The path (relative to the dependency folder) to be searched for the dependency binaries
             SearchDirectories: ["./build"]
+            
+            # TODO(NOW): Add additional link option?
+            
+
     
     # (Optional) List of setup commands for the supported platforms
     Setup:

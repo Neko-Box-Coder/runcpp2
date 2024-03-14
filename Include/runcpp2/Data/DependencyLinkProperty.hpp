@@ -1,12 +1,12 @@
-#ifndef RUNCPP2_DATA_DEPENDENCY_SEARCH_PROPERTY_HPP
-#define RUNCPP2_DATA_DEPENDENCY_SEARCH_PROPERTY_HPP
+#ifndef RUNCPP2_DATA_DEPENDENCY_LINK_PROPERTY_HPP
+#define RUNCPP2_DATA_DEPENDENCY_LINK_PROPERTY_HPP
 
 #include "yaml-cpp/yaml.h"
 #include <string>
 
 namespace runcpp2
 {
-    class DependencySearchProperty
+    class DependencyLinkProperty
     {
         public:
             std::vector<std::string> SearchLibraryNames;
