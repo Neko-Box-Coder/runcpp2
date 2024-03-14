@@ -21,6 +21,7 @@ add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/filesystem")
 # =========================================================================
 # Generate yaml files as c
 # =========================================================================
+# TODO(NOW): Use target instead 
 if(RUNCPP2_UPDATE_DEFAULT_YAMLS)
     add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/Embed2C")
     include("${CMAKE_CURRENT_LIST_DIR}/External/Embed2C/embedFile.cmake")

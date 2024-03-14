@@ -63,8 +63,10 @@ namespace
                                     const std::string& scriptPath)
     {
         std::string scriptExtension = ghc::filesystem::path(scriptPath).extension().string();
+        if(!scriptExtension.empty())
+            scriptExtension.erase(0, 1);
         
-        if(profile.FileExtensions.find(scriptExtension.substr(1)) == profile.FileExtensions.end())
+        if(profile.FileExtensions.find(scriptExtension) == profile.FileExtensions.end())
             return false;
         
         if(!scriptInfo.Language.empty())

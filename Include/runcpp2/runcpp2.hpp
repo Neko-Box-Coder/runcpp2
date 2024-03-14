@@ -16,8 +16,6 @@ namespace runcpp2
         COUNT
     };
 
-    bool CreateRuncpp2ScriptDirectory(const std::string& scriptPath);
-
     //--------------------------------------------
     //Running
     //--------------------------------------------
@@ -26,9 +24,6 @@ namespace runcpp2
                     const std::string& configPreferredProfile,
                     const std::unordered_map<CmdOptions, std::string> currentOptions,
                     const std::vector<std::string>& runArgs);
-
-
-
 }
 
 

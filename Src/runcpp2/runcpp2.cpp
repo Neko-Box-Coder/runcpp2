@@ -14,185 +14,37 @@
 
 #include <fstream>
 
-
-bool runcpp2::CreateRuncpp2ScriptDirectory(const std::string& scriptPath)
+namespace
 {
-    std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
-    
-    //Create the runcpp2 directory
-    std::string runcpp2Dir = scriptDirectory + "/.runcpp2";
-    
-    if(!ghc::filesystem::exists(runcpp2Dir))
+    bool CreateRuncpp2ScriptDirectory(const std::string& scriptPath)
     {
-        std::error_code _;
-        if(!ghc::filesystem::create_directory(runcpp2Dir, _))
+        std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
+        
+        //Create the runcpp2 directory
+        std::string runcpp2Dir = scriptDirectory + "/.runcpp2";
+        
+        if(!ghc::filesystem::exists(runcpp2Dir))
         {
-            ssLOG_ERROR("Failed to create runcpp2 directory");
-            return false;
+            std::error_code _;
+            if(!ghc::filesystem::create_directory(runcpp2Dir, _))
+            {
+                ssLOG_ERROR("Failed to create runcpp2 directory");
+                return false;
+            }
         }
+        
+        return true;
     }
-    
-    return true;
-}
 
-bool runcpp2::RunScript(const std::string& scriptPath, 
-                        const std::vector<CompilerProfile>& profiles,
-                        const std::string& configPreferredProfile,
-                        const std::unordered_map<CmdOptions, std::string> currentOptions,
-                        const std::vector<std::string>& runArgs)
-{
-    if(profiles.empty())
-    {
-        ssLOG_ERROR("No compiler profiles found");
-        return false;
-    }
-    
-    //Check if input file exists
+    bool RunCompiledScript( const std::string& scriptDirectory,
+                            const std::string& scriptName,
+                            const std::string& exeExt,
+                            const std::vector<std::string>& runArgs)
     {
         std::error_code _;
         
-        if(!ghc::filesystem::exists(scriptPath, _))
-        {
-            ssLOG_ERROR("Failed to check if file exists: " << scriptPath);
-            return false;
-        }
-        
-        if(ghc::filesystem::is_directory(scriptPath, _))
-        {
-            ssLOG_ERROR("The input file must not be a directory: " << scriptPath);
-            return false;
-        }
-    }
-    
-    std::string absoluteScriptPath = ghc::filesystem::absolute(scriptPath).string();
-    std::string scriptDirectory = ghc::filesystem::path(absoluteScriptPath).parent_path().string();
-    std::string scriptName = ghc::filesystem::path(absoluteScriptPath).stem().string();
-
-    ssLOG_DEBUG("scriptPath: " << scriptPath);
-    ssLOG_DEBUG("absoluteScriptPath: " << absoluteScriptPath);
-    ssLOG_DEBUG("scriptDirectory: " << scriptDirectory);
-    ssLOG_DEBUG("scriptName: " << scriptName);
-    
-    ssLOG_DEBUG("is_directory: " << ghc::filesystem::is_directory(scriptDirectory));
-    
-
-    //Read from a c/cpp file
-    //TODO: Check is it c or cpp
-
-    std::ifstream inputFile(absoluteScriptPath);
-    if (!inputFile)
-    {
-        ssLOG_ERROR("Failed to open file: " << absoluteScriptPath);
-        return false;
-    }
-
-    std::stringstream buffer;
-    buffer << inputFile.rdbuf();
-    std::string source(buffer.str());
-
-    std::string parsableInfo;
-    if(!GetParsableInfo(source, parsableInfo))
-    {
-        ssLOG_ERROR("An error has been encountered when parsing info: " << absoluteScriptPath);
-        return false;
-    }
-    
-    //TODO: Check if there's script info as yaml file instead
-
-    //Try to parse the runcpp2 info
-    ScriptInfo scriptInfo;
-    if(!ParseScriptInfo(parsableInfo, scriptInfo))
-    {
-        ssLOG_ERROR("Failed to parse info");
-        ssLOG_ERROR("Content trying to parse: " << "\n" << parsableInfo);
-        return false;
-    }
-    
-    if(!parsableInfo.empty())
-    {
-        ssLOG_INFO("Parsed script info YAML:\n");
-        ssLOG_INFO(scriptInfo.ToString(""));
-    }
-
-    if(!CreateRuncpp2ScriptDirectory(absoluteScriptPath))
-    {
-        ssLOG_ERROR("Failed to create runcpp2 script directory: " << absoluteScriptPath);
-        return false;
-    }
-
-    int profileIndex = GetPreferredProfileIndex(absoluteScriptPath, 
-                                                scriptInfo, 
-                                                profiles, 
-                                                configPreferredProfile);
-
-    if(profileIndex == -1)
-    {
-        ssLOG_ERROR("Failed to find a profile to run");
-        return false;
-    }
-
-    std::vector<std::string> dependenciesLocalCopiesPaths;
-    std::vector<std::string> dependenciesSourcePaths;
-    if(!SetupScriptDependencies(profiles[profileIndex].Name, 
-                                absoluteScriptPath, 
-                                scriptInfo, 
-                                currentOptions.find(CmdOptions::SETUP) != currentOptions.end(),
-                                dependenciesLocalCopiesPaths,
-                                dependenciesSourcePaths))
-    {
-        ssLOG_ERROR("Failed to setup script dependencies");
-        return false;
-    }
-
-    std::vector<std::string> copiedBinariesNames;
-
-    if(!CopyDependenciesBinaries(   absoluteScriptPath, 
-                                    scriptInfo,
-                                    dependenciesLocalCopiesPaths,
-                                    profiles[profileIndex],
-                                    copiedBinariesNames))
-    {
-        ssLOG_ERROR("Failed to copy dependencies binaries");
-        return false;
-    }
-
-    if(!CompileAndLinkScript(   absoluteScriptPath, 
-                                scriptInfo,
-                                profiles[profileIndex],
-                                copiedBinariesNames))
-    {
-        ssLOG_ERROR("Failed to compile or link script");
-        return false;
-    }
-
-    //Copying the compiled file to script directory
-    std::string exeExt = "";
-    std::error_code _;
-    {
-        #ifdef _WIN32
-            exeExt = ".exe";
-        #endif
-        
-        std::string exeToCopy = scriptDirectory + "/.runcpp2/" + scriptName + exeExt;
-        
-        if(!ghc::filesystem::exists(exeToCopy))
-        {
-            ssLOG_ERROR("Failed to find the compiled file: " << exeToCopy);
-            return false;
-        }
-        
-        if(!ghc::filesystem::copy_file(exeToCopy, scriptDirectory + "/" + scriptName + exeExt, _))
-        {
-            ssLOG_ERROR("Failed to copy file from " << exeToCopy << " to " << scriptDirectory);
-            ssLOG_ERROR("Error code: " << _.message());
-            return false;
-        }
-    }
-
-    //Running the script
-    {
-        std::string runCommand = ProcessPath(   "cd " + scriptDirectory + 
-                                               " && ./" + scriptName + exeExt);
+        std::string runCommand = runcpp2::ProcessPath(  "cd " + scriptDirectory + 
+                                                        " && ./" + scriptName + exeExt);
         
         if(!runArgs.empty())
         {
@@ -256,7 +108,199 @@ bool runcpp2::RunScript(const std::string& scriptPath,
         }
         
         ghc::filesystem::remove(scriptDirectory + "/" + std::string(scriptName + exeExt), _);
+        return true;
     }
+}
+
+bool runcpp2::RunScript(const std::string& scriptPath, 
+                        const std::vector<CompilerProfile>& profiles,
+                        const std::string& configPreferredProfile,
+                        const std::unordered_map<CmdOptions, std::string> currentOptions,
+                        const std::vector<std::string>& runArgs)
+{
+    if(profiles.empty())
+    {
+        ssLOG_ERROR("No compiler profiles found");
+        return false;
+    }
+    
+    //Check if input file exists
+    {
+        std::error_code _;
+        
+        if(!ghc::filesystem::exists(scriptPath, _))
+        {
+            ssLOG_ERROR("Failed to check if file exists: " << scriptPath);
+            return false;
+        }
+        
+        if(ghc::filesystem::is_directory(scriptPath, _))
+        {
+            ssLOG_ERROR("The input file must not be a directory: " << scriptPath);
+            return false;
+        }
+    }
+    
+    std::string absoluteScriptPath = ghc::filesystem::absolute(scriptPath).string();
+    std::string scriptDirectory = ghc::filesystem::path(absoluteScriptPath).parent_path().string();
+    std::string scriptName = ghc::filesystem::path(absoluteScriptPath).stem().string();
+
+    ssLOG_DEBUG("scriptPath: " << scriptPath);
+    ssLOG_DEBUG("absoluteScriptPath: " << absoluteScriptPath);
+    ssLOG_DEBUG("scriptDirectory: " << scriptDirectory);
+    ssLOG_DEBUG("scriptName: " << scriptName);
+    
+    ssLOG_DEBUG("is_directory: " << ghc::filesystem::is_directory(scriptDirectory));
+    
+
+    //Read from a c/cpp file
+    //TODO: Check is it c or cpp
+
+    std::string exeExt = "";
+    #ifdef _WIN32
+        exeExt = ".exe";
+    #endif
+
+    //Check if we have already compiled before and if so, 
+    //  check if the c/cpp file is newer than the compiled c/c++ file
+    {
+        std::string exeToCopy = scriptDirectory + "/.runcpp2/" + scriptName + exeExt;
+        std::error_code _;
+        
+        if(ghc::filesystem::exists(exeToCopy, _))
+        {
+            ghc::filesystem::file_time_type lastExecutableWriteTime = 
+                ghc::filesystem::last_write_time(exeToCopy, _);
+            
+            ghc::filesystem::file_time_type lastScriptWriteTime = 
+                ghc::filesystem::last_write_time(absoluteScriptPath, _);
+            
+            if(lastExecutableWriteTime < lastScriptWriteTime)
+                ssLOG_INFO("Compiled file is older than the source file");
+            else
+                goto copyAndRun;
+        }
+    }
+
+    //Parsing the script, setting up dependencies, compiling and linking
+    {
+        std::ifstream inputFile(absoluteScriptPath);
+        if (!inputFile)
+        {
+            ssLOG_ERROR("Failed to open file: " << absoluteScriptPath);
+            return false;
+        }
+
+        std::stringstream buffer;
+        buffer << inputFile.rdbuf();
+        std::string source(buffer.str());
+
+        std::string parsableInfo;
+        if(!GetParsableInfo(source, parsableInfo))
+        {
+            ssLOG_ERROR("An error has been encountered when parsing info: " << absoluteScriptPath);
+            return false;
+        }
+        
+        //TODO: Check if there's script info as yaml file instead
+
+        //Try to parse the runcpp2 info
+        ScriptInfo scriptInfo;
+        if(!ParseScriptInfo(parsableInfo, scriptInfo))
+        {
+            ssLOG_ERROR("Failed to parse info");
+            ssLOG_ERROR("Content trying to parse: " << "\n" << parsableInfo);
+            return false;
+        }
+        
+        if(!parsableInfo.empty())
+        {
+            ssLOG_INFO("Parsed script info YAML:\n");
+            ssLOG_INFO(scriptInfo.ToString(""));
+        }
+
+        if(!CreateRuncpp2ScriptDirectory(absoluteScriptPath))
+        {
+            ssLOG_ERROR("Failed to create runcpp2 script directory: " << absoluteScriptPath);
+            return false;
+        }
+
+        int profileIndex = GetPreferredProfileIndex(absoluteScriptPath, 
+                                                    scriptInfo, 
+                                                    profiles, 
+                                                    configPreferredProfile);
+
+        if(profileIndex == -1)
+        {
+            ssLOG_ERROR("Failed to find a profile to run");
+            return false;
+        }
+
+        std::vector<std::string> dependenciesLocalCopiesPaths;
+        std::vector<std::string> dependenciesSourcePaths;
+        if(!SetupScriptDependencies(profiles[profileIndex].Name, 
+                                    absoluteScriptPath, 
+                                    scriptInfo, 
+                                    currentOptions.find(CmdOptions::SETUP) != currentOptions.end(),
+                                    dependenciesLocalCopiesPaths,
+                                    dependenciesSourcePaths))
+        {
+            ssLOG_ERROR("Failed to setup script dependencies");
+            return false;
+        }
+
+        std::vector<std::string> copiedBinariesNames;
+
+        if(!CopyDependenciesBinaries(   absoluteScriptPath, 
+                                        scriptInfo,
+                                        dependenciesLocalCopiesPaths,
+                                        profiles[profileIndex],
+                                        copiedBinariesNames))
+        {
+            ssLOG_ERROR("Failed to copy dependencies binaries");
+            return false;
+        }
+
+        if(!CompileAndLinkScript(   absoluteScriptPath, 
+                                    scriptInfo,
+                                    profiles[profileIndex],
+                                    copiedBinariesNames))
+        {
+            ssLOG_ERROR("Failed to compile or link script");
+            return false;
+        }
+    }
+
+    //Copying the compiled file to script directory
+    copyAndRun:
+    {
+        std::error_code _;
+        std::string exeToCopy = scriptDirectory + "/.runcpp2/" + scriptName + exeExt;
+        
+        if(!ghc::filesystem::exists(exeToCopy, _))
+        {
+            ssLOG_ERROR("Failed to find the compiled file: " << exeToCopy);
+            return false;
+        }
+        
+        std::error_code copyErrorCode;
+        ghc::filesystem::copy(exeToCopy, scriptDirectory + "/" + scriptName + exeExt, _);
+        
+        if(copyErrorCode)
+        {
+            ssLOG_ERROR("Failed to copy file from " << exeToCopy << " to " << scriptDirectory);
+            ssLOG_ERROR("Error code: " << copyErrorCode.message());
+            return false;
+        }
+    }
+
+    //Running the script
+    if(!RunCompiledScript(scriptDirectory, scriptName, exeExt, runArgs))
+    {
+        ssLOG_ERROR("Failed to run script");
+        return false;
+    }
+    
     return true;
 }
 

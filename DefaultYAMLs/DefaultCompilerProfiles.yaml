@@ -79,6 +79,10 @@ CompilerProfiles:
             # {LinkFlags}, {OutputFile}, {ObjectFile} will be replaced accordingly
             OutputPart: "{LinkFlags} -o {OutputFile} {ObjectFile}"
             
+            # TODO(NOW):    If the thing we want to link is libabc.a (or .so)
+            #               -l either accepts -labc or -l:abc.a
+            
             # Syntax for linking each dependency. 
+            # TODO(NOW): Rename to {DependencyFile}
             # {DependencyName} will be replaced accordingly
-            DependenciesPart: "-l{DependencyName}"
+            DependenciesPart: "-l:{DependencyName}"

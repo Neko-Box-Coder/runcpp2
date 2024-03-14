@@ -265,6 +265,8 @@ namespace
                 System2CommandInfo setupCommandInfo;
                 SYSTEM2_RESULT result = System2Run(setupCommand.c_str(), &setupCommandInfo);
                 
+                ssLOG_INFO("Running setup command: " << setupCommand);
+                
                 if(result != SYSTEM2_RESULT_SUCCESS)
                 {
                     ssLOG_ERROR("Failed to run setup command with result: " << result);
@@ -302,6 +304,8 @@ namespace
                     ssLOG_ERROR("Output: " << output);
                     return false;
                 }
+                
+                ssLOG_INFO("Output: " << output);
             }
         }
         
@@ -560,14 +564,14 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
         if(scriptInfo.Dependencies.at(i).LibraryType == DependencyLibraryType::HEADER)
             return true;
         
-        const DependencySearchProperty& searchProperty = scriptInfo .Dependencies
+        const DependencyLinkProperty& searchProperty = scriptInfo .Dependencies
                                                                     .at(i)
-                                                                    .SearchProperties
+                                                                    .LinkProperties
                                                                     .at(profile.Name);
         
         //Get the Search path and search library name
-        if( scriptInfo.Dependencies.at(i).SearchProperties.find(profile.Name) == 
-            scriptInfo.Dependencies.at(i).SearchProperties.end())
+        if( scriptInfo.Dependencies.at(i).LinkProperties.find(profile.Name) == 
+            scriptInfo.Dependencies.at(i).LinkProperties.end())
         {
             ssLOG_ERROR("Search properties for dependency " << scriptInfo.Dependencies.at(i).Name <<
                         " is missing profile " << profile.Name);
@@ -583,8 +587,11 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                 std::string currentSearchLibraryName = searchProperty.SearchLibraryNames.at(j);
                 std::string currentSearchDirectory = searchProperty.SearchDirectories.at(k);
             
+                ssLOG_DEBUG("currentSearchDirectory: " << currentSearchDirectory);
+                ssLOG_DEBUG("currentSearchLibraryName: " << currentSearchLibraryName);
+            
                 if(!ghc::filesystem::path(currentSearchDirectory).is_absolute())
-                    currentSearchDirectory = scriptDirectory + "/" + currentSearchDirectory;
+                    currentSearchDirectory = dependenciesCopiesPaths[i] + "/" + currentSearchDirectory;
             
                 std::error_code _;
                 if( !ghc::filesystem::exists(currentSearchDirectory, _) || 
@@ -601,6 +608,10 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                     
                     std::string currentFileName = it.path().stem().string();
                     std::string currentExtension = it.path().extension().string();
+                    if(!currentExtension.empty())
+                        currentExtension.erase(0, 1);
+                    
+                    ssLOG_DEBUG("currentFileName: " << currentFileName);
                     
                     //TODO: Make it not case sensitive?
                     bool nameMatched = false;
@@ -624,14 +635,18 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                     if(!extensionMatched)
                         continue;
                     
-                    if(!ghc::filesystem::copy_file( it.path(), 
-                                                    runcpp2ScriptDir, 
-                                                    ghc::filesystem::copy_options::overwrite_existing,  
-                                                    _))
+                    std::error_code copyErrorCode;
+                    ghc::filesystem::copy(  it.path(), 
+                                            runcpp2ScriptDir, 
+                                            ghc::filesystem::copy_options::overwrite_existing,  
+                                            copyErrorCode);
+                    
+                    if(copyErrorCode)
                     {
                         ssLOG_ERROR("Failed to copy file from " << it.path().string() << 
                                     " to " << runcpp2ScriptDir);
 
+                        ssLOG_ERROR("Error: " << copyErrorCode.message());
                         return false;
                     }
                     

@@ -172,6 +172,7 @@ namespace
         if(statusCode != 0)
         {
             ssLOG_ERROR("Compile command returned with non-zero status code: " << statusCode);
+            ssLOG_BASE(output.data());
             return false;
         }
         
@@ -328,6 +329,7 @@ namespace
         if(statusCode != 0)
         {
             ssLOG_ERROR("Link command returned with non-zero status code: " << statusCode);
+            ssLOG_BASE(output.data());
             return false;
         }
         

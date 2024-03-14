@@ -26,6 +26,8 @@ int main(int argc, char* argv[])
         return 1;
     }
     
+    
+    
     std::unordered_map<std::string, runcpp2::CmdOptions> optionsMap =
     {
         {"--setup", runcpp2::CmdOptions::SETUP}
