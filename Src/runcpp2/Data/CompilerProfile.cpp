@@ -3,7 +3,7 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::CompilerProfile::ParseYAML_Node(YAML::Node& profileNode)
+bool runcpp2::Data::CompilerProfile::ParseYAML_Node(YAML::Node& profileNode)
 {
     INTERNAL_RUNCPP2_SAFE_START();
 
@@ -99,7 +99,7 @@ bool runcpp2::CompilerProfile::ParseYAML_Node(YAML::Node& profileNode)
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
-std::string runcpp2::CompilerProfile::ToString(std::string indentation) const
+std::string runcpp2::Data::CompilerProfile::ToString(std::string indentation) const
 {
     std::string out;
     

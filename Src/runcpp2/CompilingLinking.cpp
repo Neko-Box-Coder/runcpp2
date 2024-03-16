@@ -9,8 +9,8 @@
 namespace
 {
     bool CompileScript( const std::string& scriptPath, 
-                        const runcpp2::ScriptInfo& scriptInfo,
-                        const runcpp2::CompilerProfile& profile,
+                        const runcpp2::Data::ScriptInfo& scriptInfo,
+                        const runcpp2::Data::CompilerProfile& profile,
                         std::string& outScriptObjectFilePath)
     {
         std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
@@ -181,10 +181,10 @@ namespace
     }
 
     bool LinkScript(const std::string& scriptPath, 
-                    const runcpp2::ScriptInfo& scriptInfo,
-                    const runcpp2::CompilerProfile& profile,
+                    const runcpp2::Data::ScriptInfo& scriptInfo,
+                    const runcpp2::Data::CompilerProfile& profile,
                     const std::string& scriptObjectFilePath,
-                    const std::vector<std::string>& copiedDependenciesBinariesNames)
+                    const std::vector<std::string>& copiedDependenciesBinariesPaths)
     {
         std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
         
@@ -224,6 +224,40 @@ namespace
             linkFlags += " " + scriptInfo.OverrideLinkFlags.at(profile.Name).Append;
         }
         
+        //Add linker flags for the dependencies
+        {
+            std::vector<std::string> platformNames = runcpp2::GetPlatformNames();
+            for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+            {
+                if(!runcpp2::IsDependencyAvailableForThisPlatform(scriptInfo.Dependencies.at(i)))
+                    continue;
+                
+                if( scriptInfo.Dependencies[i].LinkProperties.find(profile.Name) == 
+                    scriptInfo.Dependencies[i].LinkProperties.end())
+                {
+                    continue;
+                }
+                
+                const runcpp2::Data::DependencyLinkProperty currentLinkProperty = 
+                    scriptInfo.Dependencies[i].LinkProperties.at(profile.Name);
+                
+                for(int j = 0; j < platformNames.size(); ++j)
+                {
+                    if( currentLinkProperty.AdditionalLinkOptions.find(platformNames.at(j)) ==
+                        currentLinkProperty.AdditionalLinkOptions.end())
+                    {
+                        continue;
+                    }
+                    
+                    const std::vector<std::string> additionalLinkOptions = 
+                        currentLinkProperty.AdditionalLinkOptions.at(platformNames.at(j));
+                    
+                    for(int k = 0; k < additionalLinkOptions.size(); ++k)
+                        linkFlags += " " + additionalLinkOptions[k];
+                }
+            }
+        }
+        
         //Replace for {LinkFlags} for output part
         std::size_t foundIndex = currentOutputPart.find(linkFlagsSubstitution);
         if(foundIndex == std::string::npos)
@@ -254,8 +288,8 @@ namespace
         runcpp2::Trim(currentOutputPart);
         linkCommand += currentOutputPart;
         
-        //Replace {DependencyName} for Dependencies part
-        const std::string dependencySubstitution = "{DependencyName}";
+        //Replace {DependencyFile} for Dependencies part
+        const std::string dependencySubstitution = "{DependencyFile}";
         const std::string dependencyPart = profile.Linker.LinkerArgs.DependenciesPart;
         
         foundIndex = dependencyPart.find(dependencySubstitution);
@@ -265,12 +299,12 @@ namespace
             return false;
         }
         
-        for(int i = 0; i < copiedDependenciesBinariesNames.size(); ++i)
+        for(int i = 0; i < copiedDependenciesBinariesPaths.size(); ++i)
         {
             std::string currentDependencyPart = dependencyPart;
             currentDependencyPart.replace(  foundIndex, 
                                             dependencySubstitution.size(), 
-                                            copiedDependenciesBinariesNames[i]);
+                                            copiedDependenciesBinariesPaths[i]);
             
             linkCommand += " " + currentDependencyPart;
         }
@@ -292,8 +326,6 @@ namespace
         }
         
         std::string output;
-        
-        //output.clear();
         do
         {
             uint32_t byteRead = 0;
@@ -339,9 +371,9 @@ namespace
 
 
 bool runcpp2::CompileAndLinkScript( const std::string& scriptPath, 
-                                    const ScriptInfo& scriptInfo,
-                                    const CompilerProfile& profile,
-                                    const std::vector<std::string>& copiedDependenciesBinariesNames)
+                                    const Data::ScriptInfo& scriptInfo,
+                                    const Data::CompilerProfile& profile,
+                                    const std::vector<std::string>& copiedDependenciesBinariesPaths)
 {
     std::string scriptObjectFilePath;
 
@@ -355,7 +387,7 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
                     scriptInfo,
                     profile,
                     scriptObjectFilePath,
-                    copiedDependenciesBinariesNames))
+                    copiedDependenciesBinariesPaths))
     {
         ssLOG_ERROR("LinkScript failed");
         return false;

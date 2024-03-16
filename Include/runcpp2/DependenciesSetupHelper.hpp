@@ -8,21 +8,21 @@
 
 namespace runcpp2
 {
-    bool IsDependencyAvailableForThisPlatform(const DependencyInfo& dependency);
+    bool IsDependencyAvailableForThisPlatform(const Data::DependencyInfo& dependency);
     
     
     bool SetupScriptDependencies(   const ProfileName& profileName,
                                     const std::string& scriptPath, 
-                                    ScriptInfo& scriptInfo,
+                                    Data::ScriptInfo& scriptInfo,
                                     bool resetDependencies,
                                     std::vector<std::string>& outDependenciesLocalCopiesPaths,
                                     std::vector<std::string>& outDependenciesSourcePaths);
 
     bool CopyDependenciesBinaries(  const std::string& scriptPath, 
-                                    const ScriptInfo& scriptInfo,
+                                    const Data::ScriptInfo& scriptInfo,
                                     const std::vector<std::string>& dependenciesCopiesPaths,
-                                    const CompilerProfile& profile,
-                                    std::vector<std::string>& outCopiedBinariesNames);
+                                    const Data::CompilerProfile& profile,
+                                    std::vector<std::string>& outCopiedBinariesPaths);
 }
 
 #endif

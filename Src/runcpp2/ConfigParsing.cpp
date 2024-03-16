@@ -13,7 +13,7 @@ extern const size_t DefaultScriptDependencies_size;
 namespace 
 {
     bool ParseCompilerProfiles( const std::string& compilerProfilesString, 
-                                std::vector<runcpp2::CompilerProfile>& outProfiles,
+                                std::vector<runcpp2::Data::CompilerProfile>& outProfiles,
                                 std::string& outPreferredProfile)
     {
         YAML::Node compilersProfileYAML;
@@ -68,8 +68,8 @@ namespace
     }
 }
 
-bool runcpp2::ReadUserConfig( std::vector<CompilerProfile>& outProfiles, 
-                                        std::string& outPreferredProfile)
+bool runcpp2::ReadUserConfig(   std::vector<Data::CompilerProfile>& outProfiles, 
+                                std::string& outPreferredProfile)
 {
     //Check if user config exists
     char configDirC_Str[MAX_PATH] = {0};
@@ -152,7 +152,7 @@ bool runcpp2::ReadUserConfig( std::vector<CompilerProfile>& outProfiles,
 }
 
 bool runcpp2::ParseScriptInfo(  const std::string& scriptInfo, 
-                                ScriptInfo& outScriptInfo)
+                                Data::ScriptInfo& outScriptInfo)
 {
     if(scriptInfo.empty())
         return true;

@@ -8,7 +8,7 @@
 //Usage: runcpp2 [--setup] input_file [args]
 int main(int argc, char* argv[])
 {
-    std::vector<runcpp2::CompilerProfile> compilerProfiles;
+    std::vector<runcpp2::Data::CompilerProfile> compilerProfiles;
     std::string preferredProfile;
     
     if(!runcpp2::ReadUserConfig(compilerProfiles, preferredProfile))

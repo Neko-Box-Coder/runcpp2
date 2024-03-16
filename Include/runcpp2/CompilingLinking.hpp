@@ -8,9 +8,9 @@
 namespace runcpp2 
 {
     bool CompileAndLinkScript(  const std::string& scriptPath, 
-                                const ScriptInfo& scriptInfo,
-                                const CompilerProfile& profile,
-                                const std::vector<std::string>& copiedDependenciesBinariesNames);
+                                const Data::ScriptInfo& scriptInfo,
+                                const Data::CompilerProfile& profile,
+                                const std::vector<std::string>& copiedDependenciesBinariesPaths);
 }
 
 #endif

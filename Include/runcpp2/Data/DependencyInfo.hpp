@@ -12,21 +12,24 @@
 
 namespace runcpp2
 {
-    class DependencyInfo
+    namespace Data
     {
-        public:
-            std::string Name;
-            std::unordered_set<PlatformName> Platforms;
-            DependencySource Source;
-            DependencyLibraryType LibraryType;
-            std::vector<std::string> IncludePaths;
-            std::vector<std::string> AbsoluteIncludePaths;
-            std::unordered_map<ProfileName, DependencyLinkProperty> LinkProperties;
-            std::unordered_map<PlatformName, DependencySetup> Setup;
-            
-            bool ParseYAML_Node(YAML::Node& node);
-            std::string ToString(std::string indentation) const;
-    };
+        class DependencyInfo
+        {
+            public:
+                std::string Name;
+                std::unordered_set<PlatformName> Platforms;
+                DependencySource Source;
+                DependencyLibraryType LibraryType;
+                std::vector<std::string> IncludePaths;
+                std::vector<std::string> AbsoluteIncludePaths;
+                std::unordered_map<ProfileName, DependencyLinkProperty> LinkProperties;
+                std::unordered_map<PlatformName, DependencySetup> Setup;
+                
+                bool ParseYAML_Node(YAML::Node& node);
+                std::string ToString(std::string indentation) const;
+        };
+    }
 }
 
 #endif

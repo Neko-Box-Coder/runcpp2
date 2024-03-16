@@ -7,11 +7,11 @@
 #include <vector>
 namespace runcpp2
 {
-    bool ReadUserConfig(std::vector<CompilerProfile>& outProfiles, 
+    bool ReadUserConfig(std::vector<Data::CompilerProfile>& outProfiles, 
                         std::string& outPreferredProfile);
     
     bool ParseScriptInfo(   const std::string& scriptInfo, 
-                            ScriptInfo& outScriptInfo);
+                            Data::ScriptInfo& outScriptInfo);
 }
 
 #endif

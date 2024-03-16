@@ -3,12 +3,15 @@
 
 namespace runcpp2
 {
-    enum class DependencySourceType
+    namespace Data
     {
-        GIT,
-        LOCAL,
-        COUNT
-    };
+        enum class DependencySourceType
+        {
+            GIT,
+            LOCAL,
+            COUNT
+        };
+    }
 }
 
 #endif

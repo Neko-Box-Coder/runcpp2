@@ -7,7 +7,7 @@
 namespace 
 {
 
-    bool GetDependenciesPaths(  const std::vector<runcpp2::DependencyInfo>& dependencies,
+    bool GetDependenciesPaths(  const std::vector<runcpp2::Data::DependencyInfo>& dependencies,
                                 std::vector<std::string>& outCopiesPaths,
                                 std::vector<std::string>& outSourcesPaths,
                                 std::string runcpp2ScriptDir,
@@ -15,16 +15,16 @@ namespace
     {
         for(int i = 0; i < dependencies.size(); ++i)
         {
-            if(!IsDependencyAvailableForThisPlatform(dependencies[i]))
+            if(!runcpp2::IsDependencyAvailableForThisPlatform(dependencies[i]))
                 continue;
             
-            const runcpp2::DependencySource& currentSource = dependencies[i].Source;
+            const runcpp2::Data::DependencySource& currentSource = dependencies[i].Source;
             
-            static_assert((int)runcpp2::DependencySourceType::COUNT == 2, "");
+            static_assert((int)runcpp2::Data::DependencySourceType::COUNT == 2, "");
             
             switch(currentSource.Type)
             {
-                case runcpp2::DependencySourceType::GIT:
+                case runcpp2::Data::DependencySourceType::GIT:
                 {
                     size_t lastSlashFoundIndex = currentSource.Value.find_last_of("/");
                     size_t lastDotGitFoundIndex = currentSource.Value.find_last_of(".git");
@@ -53,7 +53,7 @@ namespace
                     break;
                 }
                 
-                case runcpp2::DependencySourceType::LOCAL:
+                case runcpp2::Data::DependencySourceType::LOCAL:
                 {
                     std::string localDepDirectoryName;
                     std::string curPath = currentSource.Value;
@@ -72,7 +72,7 @@ namespace
                     break;
                 }
                 
-                case runcpp2::DependencySourceType::COUNT:
+                case runcpp2::Data::DependencySourceType::COUNT:
                     return false;
             }
         }
@@ -80,7 +80,7 @@ namespace
         return true;
     }
     
-    bool PopulateLocalDependencies( const std::vector<runcpp2::DependencyInfo>& dependencies,
+    bool PopulateLocalDependencies( const std::vector<runcpp2::Data::DependencyInfo>& dependencies,
                                     const std::vector<std::string>& dependenciesCopiesPaths,
                                     const std::vector<std::string>& dependenciesSourcesPaths,
                                     const std::string runcpp2ScriptDir)
@@ -90,7 +90,7 @@ namespace
         std::error_code _;
         for(int i = 0; i < dependencies.size(); ++i)
         {
-            if(!IsDependencyAvailableForThisPlatform(dependencies[i]))
+            if(!runcpp2::IsDependencyAvailableForThisPlatform(dependencies[i]))
                 continue;
             
             if(ghc::filesystem::exists(dependenciesCopiesPaths[i], _))
@@ -103,11 +103,11 @@ namespace
             }
             else
             {
-                static_assert((int)runcpp2::DependencySourceType::COUNT == 2, "");
+                static_assert((int)runcpp2::Data::DependencySourceType::COUNT == 2, "");
                 
                 switch(dependencies[i].Source.Type)
                 {
-                    case runcpp2::DependencySourceType::GIT:
+                    case runcpp2::Data::DependencySourceType::GIT:
                     {
                         std::string processedRuncpp2ScriptDir = runcpp2::ProcessPath(runcpp2ScriptDir);
                         std::string gitCloneCommand = "cd " + processedRuncpp2ScriptDir;
@@ -156,7 +156,7 @@ namespace
                         break;
                     }
                     
-                    case runcpp2::DependencySourceType::LOCAL:
+                    case runcpp2::Data::DependencySourceType::LOCAL:
                     {
                         std::string sourcePath = dependenciesSourcesPaths[i];
                         std::string destinationPath = dependenciesCopiesPaths[i];
@@ -166,7 +166,7 @@ namespace
                         break;
                     }
                     
-                    case runcpp2::DependencySourceType::COUNT:
+                    case runcpp2::Data::DependencySourceType::COUNT:
                         return false;
                 }
             }
@@ -175,13 +175,13 @@ namespace
         return true;
     }
     
-    bool PopulateAbsoluteIncludePaths(  std::vector<runcpp2::DependencyInfo>& dependencies,
+    bool PopulateAbsoluteIncludePaths(  std::vector<runcpp2::Data::DependencyInfo>& dependencies,
                                         const std::vector<std::string>& dependenciesCopiesPaths)
     {
         //Append absolute include paths from relative include paths
         for(int i = 0; i < dependencies.size(); ++i)
         {
-            if(!IsDependencyAvailableForThisPlatform(dependencies[i]))
+            if(!runcpp2::IsDependencyAvailableForThisPlatform(dependencies[i]))
                 continue;
             
             dependencies[i].AbsoluteIncludePaths.clear();
@@ -207,13 +207,13 @@ namespace
     }
 
     bool RunDependenciesSetupSteps( const ProfileName& profileName,
-                                    std::vector<runcpp2::DependencyInfo>& dependencies,
+                                    std::vector<runcpp2::Data::DependencyInfo>& dependencies,
                                     const std::vector<std::string>& dependenciesCopiesPaths)
     {
         std::vector<std::string> platformNames = runcpp2::GetPlatformNames();
         for(int i = 0; i < dependencies.size(); ++i)
         {
-            if(!IsDependencyAvailableForThisPlatform(dependencies[i]) || dependencies[i].Setup.empty())
+            if(!runcpp2::IsDependencyAvailableForThisPlatform(dependencies[i]) || dependencies[i].Setup.empty())
                 continue;
             
             //Find the platform name we use for setup
@@ -223,7 +223,7 @@ namespace
                 if(dependencies[i].Setup.find(platformNames[j]) == dependencies[i].Setup.end())
                     continue;
                 
-                const runcpp2::DependencySetup& dependencySetup = 
+                const runcpp2::Data::DependencySetup& dependencySetup = 
                     dependencies[i].Setup.find(platformNames[j])->second;
                 
                 
@@ -248,7 +248,7 @@ namespace
             }
             
             //Run the setup command
-            const runcpp2::DependencySetup& dependencySetup = 
+            const runcpp2::Data::DependencySetup& dependencySetup = 
                 dependencies[i].Setup.find(chosenPlatformName)->second;
             
             const std::vector<std::string>& setupCommands = 
@@ -312,16 +312,16 @@ namespace
         return true;
     }
 
-    bool GetDependencyBinariesExtensionsToCopy( const runcpp2::DependencyInfo& dependencyInfo,
-                                                const runcpp2::CompilerProfile& profile,
+    bool GetDependencyBinariesExtensionsToCopy( const runcpp2::Data::DependencyInfo& dependencyInfo,
+                                                const runcpp2::Data::CompilerProfile& profile,
                                                 std::vector<std::string>& outExtensionsToCopy)
     {
         std::vector<std::string> platformNames = runcpp2::GetPlatformNames();
         
-        static_assert((int)runcpp2::DependencyLibraryType::COUNT == 4, "");
+        static_assert((int)runcpp2::Data::DependencyLibraryType::COUNT == 4, "");
         switch(dependencyInfo.LibraryType)
         {
-            case runcpp2::DependencyLibraryType::STATIC:
+            case runcpp2::Data::DependencyLibraryType::STATIC:
             {
                 for(int j = 0; j < platformNames.size(); ++j)
                 {
@@ -345,7 +345,7 @@ namespace
                 
                 break;
             }
-            case runcpp2::DependencyLibraryType::SHARED:
+            case runcpp2::Data::DependencyLibraryType::SHARED:
             {
                 for(int j = 0; j < platformNames.size(); ++j)
                 {
@@ -369,7 +369,7 @@ namespace
                 
                 break;
             }
-            case runcpp2::DependencyLibraryType::OBJECT:
+            case runcpp2::Data::DependencyLibraryType::OBJECT:
             {
                 for(int j = 0; j < platformNames.size(); ++j)
                 {
@@ -393,7 +393,7 @@ namespace
                 
                 break;
             }
-            case runcpp2::DependencyLibraryType::HEADER:
+            case runcpp2::Data::DependencyLibraryType::HEADER:
                 break;
             default:
                 ssLOG_ERROR("Invalid library type: " << (int)dependencyInfo.LibraryType);
@@ -404,7 +404,7 @@ namespace
     }
 }
 
-bool runcpp2::IsDependencyAvailableForThisPlatform(const DependencyInfo& dependency)
+bool runcpp2::IsDependencyAvailableForThisPlatform(const Data::DependencyInfo& dependency)
 {
     std::vector<std::string> platformNames = GetPlatformNames();
     
@@ -422,7 +422,7 @@ bool runcpp2::IsDependencyAvailableForThisPlatform(const DependencyInfo& depende
 
 bool runcpp2::SetupScriptDependencies(  const ProfileName& profileName,
                                         const std::string& scriptPath, 
-                                        ScriptInfo& scriptInfo,
+                                        Data::ScriptInfo& scriptInfo,
                                         bool resetDependencies,
                                         std::vector<std::string>& outDependenciesLocalCopiesPaths,
                                         std::vector<std::string>& outDependenciesSourcePaths)
@@ -489,10 +489,10 @@ bool runcpp2::SetupScriptDependencies(  const ProfileName& profileName,
 }
 
 bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath, 
-                                        const ScriptInfo& scriptInfo,
+                                        const Data::ScriptInfo& scriptInfo,
                                         const std::vector<std::string>& dependenciesCopiesPaths,
-                                        const CompilerProfile& profile,
-                                        std::vector<std::string>& outCopiedBinariesNames)
+                                        const Data::CompilerProfile& profile,
+                                        std::vector<std::string>& outCopiedBinariesPaths)
 {
     std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
     std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
@@ -561,13 +561,13 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
             }
         }
         
-        if(scriptInfo.Dependencies.at(i).LibraryType == DependencyLibraryType::HEADER)
+        if(scriptInfo.Dependencies.at(i).LibraryType == Data::DependencyLibraryType::HEADER)
             return true;
         
-        const DependencyLinkProperty& searchProperty = scriptInfo .Dependencies
-                                                                    .at(i)
-                                                                    .LinkProperties
-                                                                    .at(profile.Name);
+        const Data::DependencyLinkProperty& searchProperty = scriptInfo .Dependencies
+                                                                        .at(i)
+                                                                        .LinkProperties
+                                                                        .at(profile.Name);
         
         //Get the Search path and search library name
         if( scriptInfo.Dependencies.at(i).LinkProperties.find(profile.Name) == 
@@ -618,6 +618,18 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                     if(currentFileName.find(currentSearchLibraryName) != std::string::npos)
                         nameMatched = true;
                     
+                    for(int j = 0; j < searchProperty.ExcludeLibraryNames.size(); ++j)
+                    {
+                        std::string currentExcludeLibraryName = 
+                            searchProperty.ExcludeLibraryNames.at(j);
+                        
+                        if(currentFileName.find(currentExcludeLibraryName) != std::string::npos)
+                        {
+                            nameMatched = false;
+                            break;
+                        }
+                    }
+                    
                     if(!nameMatched)
                         continue;
                     
@@ -650,7 +662,7 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                         return false;
                     }
                     
-                    outCopiedBinariesNames.push_back(currentFileName);
+                    outCopiedBinariesPaths.push_back(currentFileName + "." + currentExtension);
                 }
             }
         }

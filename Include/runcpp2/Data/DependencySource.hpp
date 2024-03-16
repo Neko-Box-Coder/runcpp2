@@ -7,15 +7,18 @@
 
 namespace runcpp2
 {
-    class DependencySource
+    namespace Data
     {
-        public:
-            DependencySourceType Type;
-            std::string Value;
-            
-            bool ParseYAML_Node(YAML::Node& node);
-            std::string ToString(std::string indentation) const;
-    };
+        class DependencySource
+        {
+            public:
+                DependencySourceType Type;
+                std::string Value;
+                
+                bool ParseYAML_Node(YAML::Node& node);
+                std::string ToString(std::string indentation) const;
+        };
+    }
 }
 
 #endif

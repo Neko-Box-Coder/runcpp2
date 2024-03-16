@@ -6,15 +6,18 @@
 
 namespace runcpp2
 {
-    class FlagsOverrideInfo
+    namespace Data
     {
-        public:
-            std::string Remove;
-            std::string Append;
-            
-            bool ParseYAML_Node(YAML::Node& node);
-            std::string ToString(std::string indentation) const;
-    };
+        class FlagsOverrideInfo
+        {
+            public:
+                std::string Remove;
+                std::string Append;
+                
+                bool ParseYAML_Node(YAML::Node& node);
+                std::string ToString(std::string indentation) const;
+        };
+    }
 }
 
 

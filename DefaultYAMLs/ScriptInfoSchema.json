@@ -153,11 +153,28 @@
                                         "items": { "type":"string" },
                                         "description": "The library name to be searched for when linking against the script"
                                     },
+                                    "ExcludeLibraryNames": 
+                                    {
+                                        "type": "array",
+                                        "items": { "type":"string" }
+                                    },
                                     "SearchDirectories": 
                                     {
                                         "type": "array",
                                         "items": { "type":"string" },
                                         "description": "The path to be searched for the dependency. {BuildType} will be replaced accordingly"
+                                    },
+                                    "AdditionalLinkOptions":
+                                    {
+                                        "type": "object",
+                                        "properties": 
+                                        {
+                                            "^.*$":
+                                            {
+                                                "type": "array",
+                                                "items": { "type":"string" }
+                                            }
+                                        }
                                     }
                                 },
                                 "required": ["SearchLibraryNames", "SearchDirectories"],

@@ -3,7 +3,7 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::DependencySource::ParseYAML_Node(YAML::Node& node)
+bool runcpp2::Data::DependencySource::ParseYAML_Node(YAML::Node& node)
 {
     INTERNAL_RUNCPP2_SAFE_START();
     
@@ -37,7 +37,7 @@ bool runcpp2::DependencySource::ParseYAML_Node(YAML::Node& node)
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
-std::string runcpp2::DependencySource::ToString(std::string indentation) const
+std::string runcpp2::Data::DependencySource::ToString(std::string indentation) const
 {
     std::string out = indentation + "Source:\n";
     

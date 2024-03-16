@@ -21,8 +21,13 @@ add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/filesystem")
 # =========================================================================
 # Generate yaml files as c
 # =========================================================================
-# TODO(NOW): Use target instead 
-if(RUNCPP2_UPDATE_DEFAULT_YAMLS)
+if(NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/DefaultYAMLs.c")
+    set(EMBEDDED_FILE_SIZE 0)
+else()
+    file(SIZE "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/DefaultYAMLs.c" EMBEDDED_FILE_SIZE)
+endif()
+
+if(RUNCPP2_UPDATE_DEFAULT_YAMLS OR EMBEDDED_FILE_SIZE LESS 1024)
     add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/Embed2C")
     include("${CMAKE_CURRENT_LIST_DIR}/External/Embed2C/embedFile.cmake")
 
@@ -54,7 +59,7 @@ add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/System2")
 add_executable(runcpp2  "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/CompilerInfo.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/CompilerProfile.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencyInfo.cpp"
-                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencySearchProperty.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencyLinkProperty.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencySetup.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencySource.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/FlagsOverrideInfo.cpp"

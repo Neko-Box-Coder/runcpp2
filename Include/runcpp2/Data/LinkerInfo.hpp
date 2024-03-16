@@ -6,23 +6,26 @@
 
 namespace runcpp2
 {
-    class LinkerInfo
+    namespace Data
     {
-        public:
-            std::string Executable;
-            std::string DefaultLinkFlags;
-            
-            struct Args
-            {
-                std::string OutputPart;
-                std::string DependenciesPart;
-            };
-            
-            Args LinkerArgs;
-            
-            bool ParseYAML_Node(YAML::Node& profileNode);
-            std::string ToString(std::string indentation) const;
-    };
+        class LinkerInfo
+        {
+            public:
+                std::string Executable;
+                std::string DefaultLinkFlags;
+                
+                struct Args
+                {
+                    std::string OutputPart;
+                    std::string DependenciesPart;
+                };
+                
+                Args LinkerArgs;
+                
+                bool ParseYAML_Node(YAML::Node& profileNode);
+                std::string ToString(std::string indentation) const;
+        };
+    }
 }
 
 #endif

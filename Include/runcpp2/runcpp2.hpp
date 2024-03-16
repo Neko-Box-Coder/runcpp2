@@ -20,7 +20,7 @@ namespace runcpp2
     //Running
     //--------------------------------------------
     bool RunScript( const std::string& scriptPath, 
-                    const std::vector<CompilerProfile>& profiles,
+                    const std::vector<Data::CompilerProfile>& profiles,
                     const std::string& configPreferredProfile,
                     const std::unordered_map<CmdOptions, std::string> currentOptions,
                     const std::vector<std::string>& runArgs);

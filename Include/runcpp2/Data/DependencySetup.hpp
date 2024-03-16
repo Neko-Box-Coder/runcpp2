@@ -10,16 +10,17 @@
 
 namespace runcpp2
 {
-    class DependencySetup
+    namespace Data
     {
-        public:
-            std::unordered_map<ProfileName, std::vector<std::string>> SetupSteps;
-            
-            bool ParseYAML_Node(YAML::Node& node);
-            std::string ToString(std::string indentation) const;
-    };
-
-
+        class DependencySetup
+        {
+            public:
+                std::unordered_map<ProfileName, std::vector<std::string>> SetupSteps;
+                
+                bool ParseYAML_Node(YAML::Node& node);
+                std::string ToString(std::string indentation) const;
+        };
+    }
 }
 
 #endif

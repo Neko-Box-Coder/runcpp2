@@ -7,7 +7,7 @@
 namespace  
 {
 
-    bool IsProfileAvailableOnSystem(const runcpp2::CompilerProfile& profile)
+    bool IsProfileAvailableOnSystem(const runcpp2::Data::CompilerProfile& profile)
     {
         //Check compiler
         std::string command = profile.Compiler.Executable + " -v";
@@ -58,8 +58,8 @@ namespace
         return true;
     }
 
-    bool IsProfileValidForScript(   const runcpp2::CompilerProfile& profile, 
-                                    const runcpp2::ScriptInfo& scriptInfo, 
+    bool IsProfileValidForScript(   const runcpp2::Data::CompilerProfile& profile, 
+                                    const runcpp2::Data::ScriptInfo& scriptInfo, 
                                     const std::string& scriptPath)
     {
         std::string scriptExtension = ghc::filesystem::path(scriptPath).extension().string();
@@ -104,18 +104,18 @@ namespace
         return true;
     }
 
-    std::vector<ProfileName> GetAvailableProfiles(  const std::vector<runcpp2::CompilerProfile>& profiles,
-                                                    const runcpp2::ScriptInfo& scriptInfo,
-                                                    const std::string& scriptPath)
+    std::vector<ProfileName> 
+    GetAvailableProfiles(   const std::vector<runcpp2::Data::CompilerProfile>& profiles,
+                            const runcpp2::Data::ScriptInfo& scriptInfo,
+                            const std::string& scriptPath)
     {
         //Check which compiler is available
         std::vector<ProfileName> availableProfiles;
         
         for(int i = 0; i < profiles.size(); ++i)
         {
-            if(IsProfileAvailableOnSystem(profiles.at(i)) && IsProfileValidForScript(   profiles.at(i), 
-                                                                                        scriptInfo, 
-                                                                                        scriptPath))
+            if( IsProfileAvailableOnSystem(profiles.at(i)) && 
+                IsProfileValidForScript(profiles.at(i), scriptInfo, scriptPath))
             {
                 availableProfiles.push_back(profiles.at(i).Name);
             }
@@ -127,8 +127,8 @@ namespace
 
 
 int runcpp2::GetPreferredProfileIndex(  const std::string& scriptPath, 
-                                        const ScriptInfo& scriptInfo,
-                                        const std::vector<CompilerProfile>& profiles, 
+                                        const Data::ScriptInfo& scriptInfo,
+                                        const std::vector<Data::CompilerProfile>& profiles, 
                                         const std::string& configPreferredProfile)
 {
     std::vector<ProfileName> availableProfiles = GetAvailableProfiles(  profiles, 

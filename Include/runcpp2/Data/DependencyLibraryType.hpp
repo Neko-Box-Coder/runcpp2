@@ -3,14 +3,17 @@
 
 namespace runcpp2
 {
-    enum class DependencyLibraryType
+    namespace Data
     {
-        STATIC,
-        SHARED,
-        OBJECT,
-        HEADER,
-        COUNT
-    };
+        enum class DependencyLibraryType
+        {
+            STATIC,
+            SHARED,
+            OBJECT,
+            HEADER,
+            COUNT
+        };
+    }
 }
 
 #endif

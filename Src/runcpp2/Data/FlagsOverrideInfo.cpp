@@ -3,7 +3,7 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::FlagsOverrideInfo::ParseYAML_Node(YAML::Node& node)
+bool runcpp2::Data::FlagsOverrideInfo::ParseYAML_Node(YAML::Node& node)
 {
     INTERNAL_RUNCPP2_SAFE_START();
 
@@ -30,7 +30,7 @@ bool runcpp2::FlagsOverrideInfo::ParseYAML_Node(YAML::Node& node)
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
-std::string runcpp2::FlagsOverrideInfo::ToString(std::string indentation) const
+std::string runcpp2::Data::FlagsOverrideInfo::ToString(std::string indentation) const
 {
     std::string out;
     out += indentation + "Remove: " + Remove + "\n";

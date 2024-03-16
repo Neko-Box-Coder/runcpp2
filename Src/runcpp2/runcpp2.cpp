@@ -113,7 +113,7 @@ namespace
 }
 
 bool runcpp2::RunScript(const std::string& scriptPath, 
-                        const std::vector<CompilerProfile>& profiles,
+                        const std::vector<Data::CompilerProfile>& profiles,
                         const std::string& configPreferredProfile,
                         const std::unordered_map<CmdOptions, std::string> currentOptions,
                         const std::vector<std::string>& runArgs)
@@ -163,6 +163,7 @@ bool runcpp2::RunScript(const std::string& scriptPath,
 
     //Check if we have already compiled before and if so, 
     //  check if the c/cpp file is newer than the compiled c/c++ file
+    if(currentOptions.find(CmdOptions::SETUP) == currentOptions.end())
     {
         std::string exeToCopy = scriptDirectory + "/.runcpp2/" + scriptName + exeExt;
         std::error_code _;
@@ -205,7 +206,7 @@ bool runcpp2::RunScript(const std::string& scriptPath,
         //TODO: Check if there's script info as yaml file instead
 
         //Try to parse the runcpp2 info
-        ScriptInfo scriptInfo;
+        Data::ScriptInfo scriptInfo;
         if(!ParseScriptInfo(parsableInfo, scriptInfo))
         {
             ssLOG_ERROR("Failed to parse info");
@@ -249,13 +250,13 @@ bool runcpp2::RunScript(const std::string& scriptPath,
             return false;
         }
 
-        std::vector<std::string> copiedBinariesNames;
+        std::vector<std::string> copiedBinariesPaths;
 
         if(!CopyDependenciesBinaries(   absoluteScriptPath, 
                                         scriptInfo,
                                         dependenciesLocalCopiesPaths,
                                         profiles[profileIndex],
-                                        copiedBinariesNames))
+                                        copiedBinariesPaths))
         {
             ssLOG_ERROR("Failed to copy dependencies binaries");
             return false;
@@ -264,7 +265,7 @@ bool runcpp2::RunScript(const std::string& scriptPath,
         if(!CompileAndLinkScript(   absoluteScriptPath, 
                                     scriptInfo,
                                     profiles[profileIndex],
-                                    copiedBinariesNames))
+                                    copiedBinariesPaths))
         {
             ssLOG_ERROR("Failed to compile or link script");
             return false;

@@ -11,23 +11,26 @@
 
 namespace runcpp2
 {
-    class ScriptInfo
+    namespace Data
     {
-        public:
-            std::string Language;
-            std::unordered_map<PlatformName, std::vector<ProfileName>> RequiredProfiles;
-            
-            std::unordered_map<ProfileName, FlagsOverrideInfo> OverrideCompileFlags;
-            std::unordered_map<ProfileName, FlagsOverrideInfo> OverrideLinkFlags;
-            
-            std::vector<DependencyInfo> Dependencies;
-            
-            
-            bool Populated = false;
-            
-            bool ParseYAML_Node(YAML::Node& node);
-            std::string ToString(std::string indentation) const;
-    };
+        class ScriptInfo
+        {
+            public:
+                std::string Language;
+                std::unordered_map<PlatformName, std::vector<ProfileName>> RequiredProfiles;
+                
+                std::unordered_map<ProfileName, FlagsOverrideInfo> OverrideCompileFlags;
+                std::unordered_map<ProfileName, FlagsOverrideInfo> OverrideLinkFlags;
+                
+                std::vector<DependencyInfo> Dependencies;
+                
+                
+                bool Populated = false;
+                
+                bool ParseYAML_Node(YAML::Node& node);
+                std::string ToString(std::string indentation) const;
+        };
+    }
 }
 
 #endif

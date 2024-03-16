@@ -33,7 +33,7 @@ OverrideLinkFlags:
 # (Optional) The list of dependencies needed by the script
 Dependencies:
     # Dependency name
--   Name: lib1
+-   Name: MyLibrary
     
     # Supported platforms of the dependency
     Platforms: [Windows, Linux, MacOS]
@@ -41,7 +41,7 @@ Dependencies:
     # The source of getting the dependency
     Source:
         Type: Git
-        Value: "https://github.com/USER/REPO.git"
+        Value: "https://github.com/MyUser/MyLibrary.git"
     
     # Library Type (Static, Object, Shared, Header)
     LibraryType: Static
@@ -50,20 +50,22 @@ Dependencies:
     IncludePaths:
     -   "src/include"
     
-    # (Optional if Header type) Searchable properties of the dependency
+    # (Optional if LibraryType is Header) Link properties of the dependency
     LinkProperties:
         # Properties for searching the library binary for the profile
         "g++":
-            # The library name to be searched for when linking against the script
-            SearchLibraryNames: ["lib1"]
+            # The library names to be searched for when linking against the script
+            SearchLibraryNames: ["MyLibrary"]
             
-            # TODO(NOW): Add option to exclude names
+            # (Optional) The library names to be excluded from being searched
+            ExcludeLibraryNames: []
             
             # The path (relative to the dependency folder) to be searched for the dependency binaries
             SearchDirectories: ["./build"]
             
-            # TODO(NOW): Add additional link option?
-            
+            # (Optional) Additional link options for this dependency
+            AdditionalLinkOptions: 
+                All: []
 
     
     # (Optional) List of setup commands for the supported platforms
