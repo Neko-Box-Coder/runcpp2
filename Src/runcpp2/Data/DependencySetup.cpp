@@ -3,36 +3,28 @@
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::DependencySetup::ParseYAML_Node(YAML::Node& node)
+bool runcpp2::Data::DependencySetup::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
-    INTERNAL_RUNCPP2_SAFE_START();
-    
-    if(!node.IsMap())
+    if(!node.is_map())
     {
         ssLOG_ERROR("DependencySetup: Node is not a Map");
         return false;
     }
     
-    for(auto it = node.begin(); it != node.end(); it++)
+    for(int i = 0; i < node.num_children(); i++)
     {
-        ProfileName profile = it->first.as<std::string>();
-        
-        if(it->second.IsSequence())
+        if(!node[i].is_seq())
         {
-            for(int i = 0; i < it->second.size(); i++)
-                SetupSteps[profile].push_back(it->second[i].as<std::string>());
-        }
-        else
-        {
-            //Can't convert to a sequence
-            ssLOG_ERROR("DependencySetup: Failed to convert to sequence");
+            ssLOG_ERROR("DependencySetup: Node is not a sequence");
             return false;
         }
+        
+        ProfileName profile = GetKey(node[i]);
+        for(int j = 0; j < node[i].num_children(); j++)
+            SetupSteps[profile].push_back(GetValue(node[i][j]));
     }
     
     return true;
-    
-    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 std::string runcpp2::Data::DependencySetup::ToString(std::string indentation) const

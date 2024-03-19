@@ -2,7 +2,11 @@
 #define RUNCPP2_DATA_DEPENDENCY_LINK_PROPERTY_HPP
 
 #include "runcpp2/Data/ParseCommon.hpp"
-#include "yaml-cpp/yaml.h"
+
+#include "ryml.hpp"
+
+#include <vector>
+#include <unordered_map>
 #include <string>
 
 namespace runcpp2
@@ -17,7 +21,7 @@ namespace runcpp2
                 std::vector<std::string> ExcludeLibraryNames;
                 std::unordered_map<PlatformName, std::vector<std::string>> AdditionalLinkOptions;
                 
-                bool ParseYAML_Node(YAML::Node& node);
+                bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;
         };
     }

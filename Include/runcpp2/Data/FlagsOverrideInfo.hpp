@@ -1,7 +1,7 @@
 #ifndef RUNCPP2_DATA_FLAGS_OVERRIDE_INFO_HPP
 #define RUNCPP2_DATA_FLAGS_OVERRIDE_INFO_HPP
 
-#include "yaml-cpp/yaml.h"
+#include "ryml.hpp"
 #include <string>
 
 namespace runcpp2
@@ -14,7 +14,7 @@ namespace runcpp2
                 std::string Remove;
                 std::string Append;
                 
-                bool ParseYAML_Node(YAML::Node& node);
+                bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;
         };
     }

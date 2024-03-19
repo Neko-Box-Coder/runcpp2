@@ -3,17 +3,15 @@
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::ScriptInfo::ParseYAML_Node(YAML::Node& node)
+bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
-    INTERNAL_RUNCPP2_SAFE_START();
-    
     std::vector<NodeRequirement> requirements =
     {
-        NodeRequirement("Language", YAML::NodeType::Scalar, false, true),
-        NodeRequirement("RequiredProfiles", YAML::NodeType::Map, false, true),
-        NodeRequirement("OverrideCompileFlags", YAML::NodeType::Map, false, true),
-        NodeRequirement("OverrideLinkFlags", YAML::NodeType::Map, false, true),
-        NodeRequirement("Dependencies", YAML::NodeType::Sequence, false, true),
+        NodeRequirement("Language", ryml::NodeType_e::KEYVAL, false, true),
+        NodeRequirement("RequiredProfiles", ryml::NodeType_e::MAP, false, true),
+        NodeRequirement("OverrideCompileFlags", ryml::NodeType_e::MAP, false, true),
+        NodeRequirement("OverrideLinkFlags", ryml::NodeType_e::MAP, false, true),
+        NodeRequirement("Dependencies", ryml::NodeType_e::SEQ, false, true),
     };
     
     if(!CheckNodeRequirements(node, requirements))
@@ -22,38 +20,39 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(YAML::Node& node)
         return false;
     }
     
-    if(node["Language"])
-        Language = node["Language"].as<std::string>();
+    if(ExistAndHasChild(node, "Language"))
+        node["Language"] >> Language;
     
-    if(node["RequiredProfiles"])
+    if(ExistAndHasChild(node, "RequiredProfiles"))
     {
-        for(auto it = node["RequiredProfiles"].begin(); it != node["RequiredProfiles"].end(); ++it)
+        for(int i = 0; i < node["RequiredProfiles"].num_children(); ++i)
         {
-            if(it->second.Type() != YAML::NodeType::Sequence)
+            if(!(node["RequiredProfiles"][i].type().type & ryml::NodeType_e::SEQ))
             {
                 ssLOG_ERROR("ScriptInfo: RequiredProfiles requires a sequence");
                 return false;
             }
             
-            PlatformName platform = it->first.as<PlatformName>();
+            PlatformName platform = GetKey(node["RequiredProfiles"][i]);
             std::vector<ProfileName> profiles;
-            for(int i = 0; i < it->second.size(); ++i)
-                profiles.push_back(it->second[i].as<ProfileName>());
+            for(int j = 0; j < node["RequiredProfiles"][i].num_children(); ++j)
+                profiles.push_back(GetValue(node["RequiredProfiles"][i][j]));
             
             RequiredProfiles[platform] = profiles;
         }
     }
     
-    if(node["OverrideCompileFlags"])
+    if(ExistAndHasChild(node, "OverrideCompileFlags"))
     {
-        YAML::Node overrideCompileFlagsNode = node["OverrideCompileFlags"];
+        ryml::ConstNodeRef overrideCompileFlagsNode = node["OverrideCompileFlags"];
         
-        for(auto it = overrideCompileFlagsNode.begin(); it != overrideCompileFlagsNode.end(); ++it)
+        for(int i = 0; i < overrideCompileFlagsNode.num_children(); ++i)
         {
-            ProfileName profile = it->first.as<ProfileName>();
+            ProfileName profile = GetKey(overrideCompileFlagsNode[i]);
             FlagsOverrideInfo compileFlags;
+            ryml::ConstNodeRef currentCompileFlagsNode = overrideCompileFlagsNode[i];
             
-            if(!compileFlags.ParseYAML_Node(it->second))
+            if(!compileFlags.ParseYAML_Node(currentCompileFlagsNode))
             {
                 ssLOG_ERROR("ScriptInfo: Failed to parse OverrideCompileFlags.");
                 return false;
@@ -62,16 +61,17 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(YAML::Node& node)
         }
     }
     
-    if(node["OverrideLinkFlags"])
+    if(ExistAndHasChild(node, "OverrideLinkFlags"))
     {
-        YAML::Node overrideLinkFlagsNode = node["OverrideLinkFlags"];
+        ryml::ConstNodeRef overrideLinkFlagsNode = node["OverrideLinkFlags"];
         
-        for(auto it = overrideLinkFlagsNode.begin(); it != overrideLinkFlagsNode.end(); ++it)
+        for(int i = 0; i < overrideLinkFlagsNode.num_children(); ++i)
         {
-            ProfileName profile = it->first.as<ProfileName>();
+            ProfileName profile = GetKey(overrideLinkFlagsNode[i]);
             FlagsOverrideInfo linkFlags;
+            ryml::ConstNodeRef currentLinkFlagsNode = overrideLinkFlagsNode[i];
             
-            if(!linkFlags.ParseYAML_Node(it->second))
+            if(!linkFlags.ParseYAML_Node(currentLinkFlagsNode))
             {
                 ssLOG_ERROR("ScriptInfo: Failed to parse OverrideLinkFlags.");
                 return false;
@@ -80,10 +80,10 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(YAML::Node& node)
         }
     }
     
-    for(int i = 0; i < node["Dependencies"].size(); ++i)
+    for(int i = 0; i < node["Dependencies"].num_children(); ++i)
     {
         DependencyInfo info;
-        YAML::Node dependencyNode = node["Dependencies"][i];
+        ryml::ConstNodeRef dependencyNode = node["Dependencies"][i];
         
         if(!info.ParseYAML_Node(dependencyNode))
         {
@@ -95,8 +95,6 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(YAML::Node& node)
     }
     
     return true;
-    
-    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 std::string runcpp2::Data::ScriptInfo::ToString(std::string indentation) const

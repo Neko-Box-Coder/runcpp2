@@ -9,7 +9,7 @@
 #include "System2.h"
 #include "runcpp2/StringUtil.hpp"
 #include "ssLogger/ssLog.hpp"
-#include "yaml-cpp/yaml.h"
+#include "ryml.hpp"
 #include "ghc/filesystem.hpp"
 
 #include <fstream>

@@ -1,28 +1,38 @@
 #ifndef RUNCPP2_PARSE_UTIL_HPP
 #define RUNCPP2_PARSE_UTIL_HPP
 
-#include "yaml-cpp/yaml.h"
+#include "ryml.hpp"
+
+#include <vector>
 
 namespace runcpp2
 {
-    //TODO: Use rapidyaml instead
     struct NodeRequirement
     {
         std::string Name;
-        YAML::NodeType::value NodeType;
+        ryml::NodeType NodeType;
         bool Required;
         bool Nullable;
         
         NodeRequirement();
         NodeRequirement(const std::string& name, 
-                        YAML::NodeType::value nodeType, 
+                        ryml::NodeType nodeType, 
                         bool required,
                         bool nullable);
     };
     
-    bool CheckNodeRequirements(YAML::Node& node, const std::vector<NodeRequirement>& requirements);
+    bool CheckNodeRequirements( ryml::ConstNodeRef& node, 
+                                const std::vector<NodeRequirement>& requirements);
 
     bool GetParsableInfo(const std::string& contentToParse, std::string& outParsableInfo);
+    
+    bool ResolveYAML_Stream(ryml::Tree& rootTree, 
+                            ryml::ConstNodeRef& outRootNode);
+    
+    bool ExistAndHasChild(const ryml::ConstNodeRef& node, const std::string& childName);
+    
+    std::string GetValue(ryml::ConstNodeRef node);
+    std::string GetKey(ryml::ConstNodeRef node);
 }
 
 #endif

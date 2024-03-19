@@ -3,23 +3,21 @@
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::CompilerInfo::ParseYAML_Node(YAML::Node& profileNode)
+bool runcpp2::Data::CompilerInfo::ParseYAML_Node(ryml::ConstNodeRef& profileNode)
 {
-    INTERNAL_RUNCPP2_SAFE_START();
-    
     std::vector<NodeRequirement> requirements = 
     {
-        NodeRequirement("Executable", YAML::NodeType::Scalar, true, false),
-        NodeRequirement("DefaultCompileFlags", YAML::NodeType::Scalar, true, true),
-        NodeRequirement("CompileArgs", YAML::NodeType::Map, true, false)
+        NodeRequirement("Executable", ryml::NodeType_e::KEYVAL, true, false),
+        NodeRequirement("DefaultCompileFlags", ryml::NodeType_e::KEYVAL, true, true),
+        NodeRequirement("CompileArgs", ryml::NodeType_e::MAP, true, false)
     };
     
     std::vector<NodeRequirement> argsRequirements = 
     {
-        NodeRequirement("CompilePart", YAML::NodeType::Scalar, true, false),
-        NodeRequirement("IncludePart", YAML::NodeType::Scalar, true, false),
-        NodeRequirement("InputPart", YAML::NodeType::Scalar, true, false),
-        NodeRequirement("OutputPart", YAML::NodeType::Scalar, true, false)
+        NodeRequirement("CompilePart", ryml::NodeType_e::KEYVAL, true, false),
+        NodeRequirement("IncludePart", ryml::NodeType_e::KEYVAL, true, false),
+        NodeRequirement("InputPart", ryml::NodeType_e::KEYVAL, true, false),
+        NodeRequirement("OutputPart", ryml::NodeType_e::KEYVAL, true, false)
     };
     
     if(!CheckNodeRequirements(profileNode, requirements))
@@ -28,10 +26,10 @@ bool runcpp2::Data::CompilerInfo::ParseYAML_Node(YAML::Node& profileNode)
         return false;
     }
     
-    Executable = profileNode["Executable"].as<std::string>();
-    DefaultCompileFlags = profileNode["DefaultCompileFlags"].as<std::string>();
+    profileNode["Executable"] >> Executable;
+    profileNode["DefaultCompileFlags"] >> DefaultCompileFlags;
     
-    YAML::Node compileArgsNode = profileNode["CompileArgs"];
+    ryml::ConstNodeRef compileArgsNode = profileNode["CompileArgs"];
     
     if(!CheckNodeRequirements(compileArgsNode, argsRequirements))
     {
@@ -39,13 +37,11 @@ bool runcpp2::Data::CompilerInfo::ParseYAML_Node(YAML::Node& profileNode)
         return false;
     }
     
-    CompileArgs.CompilePart = compileArgsNode["CompilePart"].as<std::string>();
-    CompileArgs.IncludePart = compileArgsNode["IncludePart"].as<std::string>();
-    CompileArgs.InputPart = compileArgsNode["InputPart"].as<std::string>();
-    CompileArgs.OutputPart = compileArgsNode["OutputPart"].as<std::string>();
+    compileArgsNode["CompilePart"] >> CompileArgs.CompilePart;
+    compileArgsNode["IncludePart"] >> CompileArgs.IncludePart;
+    compileArgsNode["InputPart"] >> CompileArgs.InputPart;
+    compileArgsNode["OutputPart"] >> CompileArgs.OutputPart;
     return true;
-    
-    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 std::string runcpp2::Data::CompilerInfo::ToString(std::string indentation) const

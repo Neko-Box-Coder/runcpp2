@@ -17,5 +17,17 @@ catch(const std::exception& ex)\
     return return_val;\
 }
 
+#define INTERNAL_RUNCPP2_SAFE_CATCH_ACTION(action) \
+}\
+catch(const std::exception& ex)\
+{\
+    ssLOG_ERROR("Exception caught: " << ex.what());\
+    action\
+}\
+catch(...)\
+{\
+    ssLOG_ERROR("Unknown Exception caught");\
+    action\
+}
 
 #endif

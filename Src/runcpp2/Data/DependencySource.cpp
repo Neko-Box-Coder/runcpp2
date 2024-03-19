@@ -3,14 +3,12 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::DependencySource::ParseYAML_Node(YAML::Node& node)
+bool runcpp2::Data::DependencySource::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
-    INTERNAL_RUNCPP2_SAFE_START();
-    
     std::vector<NodeRequirement> requirements =
     {
-        NodeRequirement("Type", YAML::NodeType::Scalar, true, false),
-        NodeRequirement("Value", YAML::NodeType::Scalar, true, false)
+        NodeRequirement("Type", ryml::NodeType_e::KEYVAL, true, false),
+        NodeRequirement("Value", ryml::NodeType_e::KEYVAL, true, false)
     };
     
     if(!CheckNodeRequirements(node, requirements))
@@ -21,9 +19,9 @@ bool runcpp2::Data::DependencySource::ParseYAML_Node(YAML::Node& node)
     
     static_assert((int)DependencySourceType::COUNT == 2, "");
     
-    if(node["Type"].as<std::string>() == "Git")
+    if(node["Type"].val() == "Git")
         Type = DependencySourceType::GIT;
-    else if(node["Type"].as<std::string>() == "Local")
+    else if(node["Type"].val() == "Local")
         Type = DependencySourceType::LOCAL;
     else
     {
@@ -31,10 +29,8 @@ bool runcpp2::Data::DependencySource::ParseYAML_Node(YAML::Node& node)
         return false;
     }
     
-    Value = node["Value"].as<std::string>();
+    node["Value"] >> Value;
     return true;
-    
-    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 std::string runcpp2::Data::DependencySource::ToString(std::string indentation) const

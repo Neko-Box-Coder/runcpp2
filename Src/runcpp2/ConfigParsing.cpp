@@ -1,7 +1,11 @@
 #include "runcpp2/ConfigParsing.hpp"
+
+//#include "ryml_std.hpp"
+#include "runcpp2/ParseUtil.hpp"
+#include "ryml.hpp"
+#include "c4/std/string.hpp"
 #include "cfgpath.h"
 #include "ghc/filesystem.hpp"
-
 #include "ssLogger/ssLog.hpp"
 
 
@@ -16,33 +20,49 @@ namespace
                                 std::vector<runcpp2::Data::CompilerProfile>& outProfiles,
                                 std::string& outPreferredProfile)
     {
-        YAML::Node compilersProfileYAML;
+        #if 0
+            ryml::Callbacks cb;
+            auto errorCallback = [](const char* msg, 
+                                    size_t msg_len, 
+                                    ryml::Location location, 
+                                    void *user_data)
+            {
+                std::string msgStr(msg, msg_len);
+                throw std::runtime_error(msgStr);
+            };
+            
+            cb.m_error = errorCallback;
+            ryml::set_callbacks(cb);
+        #endif
         
-        try
-        {
-            compilersProfileYAML = YAML::Load(compilerProfilesString);
-        }
-        catch(...)
-        {
+        INTERNAL_RUNCPP2_SAFE_START();
+        
+        std::string temp = compilerProfilesString;
+        ryml::Tree rootTree = ryml::parse_in_place(c4::to_substr(temp));
+        ryml::ConstNodeRef rootCompilerProfileNode;
+        
+        if(!runcpp2::ResolveYAML_Stream(rootTree, rootCompilerProfileNode))
             return false;
-        }
-
-        YAML::Node compilerProfilesNode = compilersProfileYAML["CompilerProfiles"];
-        if(!compilerProfilesNode || compilerProfilesNode.Type() != YAML::NodeType::Sequence)
+        
+        
+        if( !runcpp2::ExistAndHasChild(rootCompilerProfileNode, "CompilerProfiles") || 
+            !(rootCompilerProfileNode["CompilerProfiles"].type().type & ryml::NodeType_e::SEQ))
         {
             ssLOG_ERROR("CompilerProfiles is invalid");
             return false;
         }
         
-        if(compilerProfilesNode.size() == 0)
+        ryml::ConstNodeRef compilerProfilesNode = rootCompilerProfileNode["CompilerProfiles"];
+        
+        if(compilerProfilesNode.num_children() == 0)
         {
             ssLOG_ERROR("No compiler profiles found");
             return false;
         }
         
-        for(int i = 0; i < compilerProfilesNode.size(); ++i)
+        for(int i = 0; i < compilerProfilesNode.num_children(); ++i)
         {
-            YAML::Node currentCompilerProfileNode = compilerProfilesNode[i];
+            ryml::ConstNodeRef currentCompilerProfileNode = compilerProfilesNode[i];
             
             outProfiles.push_back({});
             if(!outProfiles.back().ParseYAML_Node(currentCompilerProfileNode))
@@ -53,10 +73,10 @@ namespace
             }
         }
         
-        if( compilersProfileYAML["PreferredProfile"] && 
-            compilersProfileYAML["PreferredProfile"].Type() == YAML::NodeType::Scalar)
+        if( runcpp2::ExistAndHasChild(rootCompilerProfileNode, "PreferredProfile") && 
+            rootCompilerProfileNode["PreferredProfile"].type().type & ryml::NodeType_e::KEYVAL)
         {
-            outPreferredProfile = compilersProfileYAML["PreferredProfile"].as<std::string>();
+            rootCompilerProfileNode["PreferredProfile"] >> outPreferredProfile;
             if(outPreferredProfile.empty())
             {
                 outPreferredProfile = outProfiles.at(0).Name;
@@ -64,7 +84,11 @@ namespace
             }
         }
         
+        ryml::reset_callbacks();
+        
         return true;
+        
+        INTERNAL_RUNCPP2_SAFE_CATCH_ACTION(ryml::reset_callbacks(); return false;);
     }
 }
 
@@ -157,22 +181,40 @@ bool runcpp2::ParseScriptInfo(  const std::string& scriptInfo,
     if(scriptInfo.empty())
         return true;
 
-    YAML::Node scriptYAML;
+    #if 0
+        ryml::Callbacks cb;
+        auto errorCallback = [](const char* msg, 
+                                size_t msg_len, 
+                                ryml::Location location, 
+                                void *user_data)
+        {
+            std::string msgStr(msg, msg_len);
+            throw std::runtime_error(msgStr);
+        };
+        
+        cb.m_error = errorCallback;
+        ryml::set_callbacks(cb);
+    #endif
     
-    try
-    {
-        scriptYAML = YAML::Load(scriptInfo);
-    }
-    catch(...)
-    {
+    INTERNAL_RUNCPP2_SAFE_START();
+
+    ryml::Tree scriptTree;
+    
+    std::string temp = scriptInfo;
+    scriptTree = ryml::parse_in_place(c4::to_substr(temp));
+    
+    ryml::ConstNodeRef rootScriptNode;
+    
+    if(!runcpp2::ResolveYAML_Stream(scriptTree, rootScriptNode))
         return false;
-    }
     
-    if(outScriptInfo.ParseYAML_Node(scriptYAML))
+    if(outScriptInfo.ParseYAML_Node(rootScriptNode))
     {
         outScriptInfo.Populated = true;
         return true;
     }
     else
         return false;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_ACTION(ryml::reset_callbacks(); return false;);
 }

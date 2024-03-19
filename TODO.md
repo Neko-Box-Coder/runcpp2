@@ -1,0 +1,3 @@
+- Allow script info as standalone yaml file
+- Commandline options
+- Allow Languages to override FileExtensions in compiler profile
