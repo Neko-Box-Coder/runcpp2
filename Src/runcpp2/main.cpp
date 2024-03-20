@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
     
     for(; currentArgIndex < argc; ++currentArgIndex)
     {
-        ssLOG_LINE("argv[" << currentArgIndex << "]: " << argv[currentArgIndex]);
+        ssLOG_DEBUG("argv[" << currentArgIndex << "]: " << argv[currentArgIndex]);
         scriptArgs.push_back(std::string(argv[currentArgIndex]));
     }
     

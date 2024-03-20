@@ -48,7 +48,6 @@ namespace
         
         if(!runArgs.empty())
         {
-            //TODO(NOW): Test this double quote wrapping on windows
             for(int i = 0; i < runArgs.size(); ++i)
                 runCommand += " \"" + runArgs[i] + "\"";
         }
