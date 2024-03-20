@@ -197,7 +197,7 @@ namespace
                 
                 dependencies[i] .AbsoluteIncludePaths
                                 .push_back(ghc::filesystem::absolute(   dependenciesCopiesPaths[i] + "/" + 
-                                                                        dependencies[i].IncludePaths[j]));
+                                                                        dependencies[i].IncludePaths[j]).string());
             
                 ssLOG_DEBUG("Include path added: " << dependencies[i].AbsoluteIncludePaths.back());
             }
