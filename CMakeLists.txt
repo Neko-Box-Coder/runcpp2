@@ -92,8 +92,7 @@ add_executable(runcpp2  "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/CompilerInfo
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/StringUtil.cpp"
                         )
 
-target_include_directories(runcpp2 PRIVATE  "${CMAKE_CURRENT_LIST_DIR}/Include"
-                                            "${CMAKE_CURRENT_LIST_DIR}/External/cfgpath")
+target_include_directories(runcpp2 PRIVATE  "${CMAKE_CURRENT_LIST_DIR}/Include")
 
 target_link_libraries(runcpp2 PRIVATE ssLogger ghc_filesystem System2 ryml::ryml)
 

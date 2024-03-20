@@ -2,7 +2,7 @@
 
 setlocal
 
-mkdir Build || goto :error
+mkdir Build
 
 pushd Build || goto :error
 
