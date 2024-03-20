@@ -58,6 +58,16 @@ endif()
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/System2")
 
 # =========================================================================
+# cfgpath
+# =========================================================================
+
+# Copy cfgpath.h
+configure_file( "${CMAKE_CURRENT_LIST_DIR}/External/cfgpath/cfgpath.h" 
+                "${CMAKE_CURRENT_LIST_DIR}/Include/cfgpath.h" COPYONLY)
+
+
+
+# =========================================================================
 # runcpp2
 # =========================================================================
 

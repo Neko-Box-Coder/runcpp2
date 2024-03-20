@@ -60,3 +60,4 @@ compile_commands.json
 
 # Generated file
 Src/runcpp2/DefaultYAMLs.c
+Include/cfgpath.h

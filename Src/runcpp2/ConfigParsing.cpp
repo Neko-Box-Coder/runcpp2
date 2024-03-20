@@ -7,10 +7,10 @@
 #include "ssLogger/ssLog.hpp"
 
 
-extern const uint8_t DefaultCompilerProfiles[];
-extern const size_t DefaultCompilerProfiles_size;
-extern const uint8_t DefaultScriptDependencies[];
-extern const size_t DefaultScriptDependencies_size;
+extern "C" const uint8_t DefaultCompilerProfiles[];
+extern "C" const size_t DefaultCompilerProfiles_size;
+extern "C" const uint8_t DefaultScriptDependencies[];
+extern "C" const size_t DefaultScriptDependencies_size;
 
 namespace 
 {
