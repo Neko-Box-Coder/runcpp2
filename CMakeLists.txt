@@ -9,9 +9,8 @@ set(CMAKE_CXX_STANDARD 11)
 
 option(RUNCPP2_UPDATE_DEFAULT_YAMLS "Update default yaml files" OFF)
 
-add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/CLI11")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/ssLogger")
-add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/yaml-cpp")
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/rapidyaml")
 
 # =========================================================================
 # filesystem
@@ -80,7 +79,7 @@ add_executable(runcpp2  "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/CompilerInfo
 target_include_directories(runcpp2 PRIVATE  "${CMAKE_CURRENT_LIST_DIR}/Include"
                                             "${CMAKE_CURRENT_LIST_DIR}/External/cfgpath")
 
-target_link_libraries(runcpp2 PRIVATE CLI11::CLI11 ssLogger yaml-cpp ghc_filesystem System2)
+target_link_libraries(runcpp2 PRIVATE ssLogger ghc_filesystem System2 ryml::ryml)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(STANDARD_COMPILE_FLAGS "/utf-8;/W1")

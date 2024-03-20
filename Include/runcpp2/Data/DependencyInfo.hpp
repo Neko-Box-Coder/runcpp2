@@ -7,6 +7,8 @@
 #include "runcpp2/Data/DependencySetup.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
 
+#include "ryml.hpp"
+
 #include <string>
 #include <unordered_set>
 
@@ -26,7 +28,7 @@ namespace runcpp2
                 std::unordered_map<ProfileName, DependencyLinkProperty> LinkProperties;
                 std::unordered_map<PlatformName, DependencySetup> Setup;
                 
-                bool ParseYAML_Node(YAML::Node& node);
+                bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;
         };
     }

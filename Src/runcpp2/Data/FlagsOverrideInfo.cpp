@@ -3,14 +3,14 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::FlagsOverrideInfo::ParseYAML_Node(YAML::Node& node)
+bool runcpp2::Data::FlagsOverrideInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
     INTERNAL_RUNCPP2_SAFE_START();
 
     std::vector<NodeRequirement> requirements =
     {
-        NodeRequirement("Remove", YAML::NodeType::Scalar, false, true),
-        NodeRequirement("Append", YAML::NodeType::Scalar, false, true)
+        NodeRequirement("Remove", ryml::NodeType_e::KEYVAL, false, true),
+        NodeRequirement("Append", ryml::NodeType_e::KEYVAL, false, true)
     };
     
     if(!CheckNodeRequirements(node, requirements))
@@ -19,11 +19,11 @@ bool runcpp2::Data::FlagsOverrideInfo::ParseYAML_Node(YAML::Node& node)
         return false;
     }
     
-    if(node["Remove"])
-        Remove = node["Remove"].as<std::string>();
+    if(ExistAndHasChild(node, "Remove"))
+        node["Remove"] >> Remove;
     
-    if(node["Append"])
-        Append = node["Append"].as<std::string>();
+    if(ExistAndHasChild(node, "Append"))
+        node["Append"] >> Append;
     
     return true;
     

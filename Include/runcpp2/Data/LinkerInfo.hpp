@@ -1,7 +1,7 @@
 #ifndef RUNCPP2_DATA_LINKER_INFO_HPP
 #define RUNCPP2_DATA_LINKER_INFO_HPP
 
-#include "yaml-cpp/yaml.h"
+#include "ryml.hpp"
 #include <string>
 
 namespace runcpp2
@@ -22,7 +22,7 @@ namespace runcpp2
                 
                 Args LinkerArgs;
                 
-                bool ParseYAML_Node(YAML::Node& profileNode);
+                bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;
         };
     }

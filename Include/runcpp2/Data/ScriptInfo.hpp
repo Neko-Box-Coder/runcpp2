@@ -27,7 +27,7 @@ namespace runcpp2
                 
                 bool Populated = false;
                 
-                bool ParseYAML_Node(YAML::Node& node);
+                bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;
         };
     }

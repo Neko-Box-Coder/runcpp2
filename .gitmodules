@@ -1,6 +1,3 @@
-[submodule "CLI11"]
-	path = External/CLI11
-	url = https://github.com/CLIUtils/CLI11.git
 [submodule "ssLogger"]
 	path = External/ssLogger
 	url = https://github.com/Neko-Box-Coder/ssLogger.git
@@ -10,12 +7,12 @@
 [submodule "Embed2C"]
 	path = External/Embed2C
 	url = https://github.com/Neko-Box-Coder/Embed2C.git
-[submodule "yaml-cpp"]
-	path = External/yaml-cpp
-	url = https://github.com/jbeder/yaml-cpp.git
 [submodule "filesystem"]
 	path = External/filesystem
 	url = https://github.com/gulrak/filesystem.git
 [submodule "System2"]
 	path = External/System2
 	url = https://github.com/Neko-Box-Coder/System2.git
+[submodule "rapidyaml"]
+	path = External/rapidyaml
+	url = https://github.com/biojppm/rapidyaml.git

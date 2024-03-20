@@ -3,22 +3,22 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::CompilerProfile::ParseYAML_Node(YAML::Node& profileNode)
+bool runcpp2::Data::CompilerProfile::ParseYAML_Node(ryml::ConstNodeRef& profileNode)
 {
     INTERNAL_RUNCPP2_SAFE_START();
 
     std::vector<NodeRequirement> requirements =
     {
-        NodeRequirement("Name", YAML::NodeType::Scalar, true, false),
-        NodeRequirement("FileExtensions", YAML::NodeType::Sequence, true, false),
-        NodeRequirement("Languages", YAML::NodeType::Sequence, false, true),
-        NodeRequirement("SetupSteps", YAML::NodeType::Sequence, false, true),
-        NodeRequirement("ObjectFileExtensions", YAML::NodeType::Map, true, false),
-        NodeRequirement("SharedLibraryExtensions", YAML::NodeType::Map, true, false),
-        NodeRequirement("StaticLibraryExtensions", YAML::NodeType::Map, true, false),
-        NodeRequirement("DebugSymbolFileExtensions", YAML::NodeType::Map, true, false),
-        NodeRequirement("Compiler", YAML::NodeType::Map, true, false),
-        NodeRequirement("Linker", YAML::NodeType::Map, true, false)
+        NodeRequirement("Name", ryml::NodeType_e::KEYVAL, true, false),
+        NodeRequirement("FileExtensions", ryml::NodeType_e::SEQ, true, false),
+        NodeRequirement("Languages", ryml::NodeType_e::SEQ, false, true),
+        NodeRequirement("SetupSteps", ryml::NodeType_e::SEQ, false, true),
+        NodeRequirement("ObjectFileExtensions", ryml::NodeType_e::MAP, true, false),
+        NodeRequirement("SharedLibraryExtensions", ryml::NodeType_e::MAP, true, false),
+        NodeRequirement("StaticLibraryExtensions", ryml::NodeType_e::MAP, true, false),
+        NodeRequirement("DebugSymbolFileExtensions", ryml::NodeType_e::MAP, true, false),
+        NodeRequirement("Compiler", ryml::NodeType_e::MAP, true, false),
+        NodeRequirement("Linker", ryml::NodeType_e::MAP, true, false)
     };
     
     if(!CheckNodeRequirements(profileNode, requirements))
@@ -27,67 +27,77 @@ bool runcpp2::Data::CompilerProfile::ParseYAML_Node(YAML::Node& profileNode)
         return false;
     }
     
-    Name = profileNode["Name"].as<std::string>();
+    profileNode["Name"] >> Name;
     
-    for(int i = 0; i < profileNode["FileExtensions"].size(); ++i)
-        FileExtensions.insert(profileNode["FileExtensions"][i].as<std::string>());
+    for(int i = 0; i < profileNode["FileExtensions"].num_children(); ++i)
+        FileExtensions.insert(GetValue(profileNode["FileExtensions"][i]));
     
-    if(profileNode["Languages"])
+    if(ExistAndHasChild(profileNode, "Languages"))
     {
-        for(int i = 0; i < profileNode["Languages"].size(); ++i)
-            Languages.insert(profileNode["Languages"][i].as<std::string>());
+        for(int i = 0; i < profileNode["Languages"].num_children(); ++i)
+            Languages.insert(GetValue(profileNode["Languages"][i]));
     }
     
-    if(profileNode["SetupSteps"])
+    if(ExistAndHasChild(profileNode, "SetupSteps"))
     {
-        for(int i = 0; i < profileNode["SetupSteps"].size(); ++i)
-            SetupSteps.push_back(profileNode["SetupSteps"][i].as<std::string>());
+        for(int i = 0; i < profileNode["SetupSteps"].num_children(); ++i)
+            SetupSteps.push_back(GetValue(profileNode["SetupSteps"][i]));
     }
     
-    for(auto it = profileNode["ObjectFileExtensions"].begin();
-        it != profileNode["ObjectFileExtensions"].end(); ++it)
+    for(int i = 0; i < profileNode["ObjectFileExtensions"].num_children(); ++i)
     {
-        ObjectFileExtensions[it->first.as<std::string>()] = it->second.as<std::string>();
+        std::string key = GetKey(profileNode["ObjectFileExtensions"][i]);
+        std::string value = GetValue(profileNode["ObjectFileExtensions"][i]);
+        ObjectFileExtensions[key] = value;
     }
     
-    for(auto it = profileNode["SharedLibraryExtensions"].begin();
-        it != profileNode["SharedLibraryExtensions"].end(); ++it)
+    for(int i = 0; i < profileNode["SharedLibraryExtensions"].num_children(); ++i)
     {
-        std::vector<std::string> currentExtensions;
-        for(int i = 0; i < it->second.size(); ++i)
-            currentExtensions.push_back(it->second[i].as<std::string>());
+        ryml::ConstNodeRef currentPlatform = profileNode["SharedLibraryExtensions"][i];
         
-        SharedLibraryExtensions[it->first.as<std::string>()] = currentExtensions;
-    }
-    
-    for(auto it = profileNode["StaticLibraryExtensions"].begin();
-        it != profileNode["StaticLibraryExtensions"].end(); ++it)
-    {
-        std::vector<std::string> currentExtensions;
-        for(int i = 0; i < it->second.size(); ++i)
-            currentExtensions.push_back(it->second[i].as<std::string>());
+        std::string key = GetKey(currentPlatform);
+        std::vector<std::string> extensions;
         
-        StaticLibraryExtensions[it->first.as<std::string>()] = currentExtensions;
-    }
-    
-    for(auto it = profileNode["DebugSymbolFileExtensions"].begin();
-        it != profileNode["DebugSymbolFileExtensions"].end(); ++it)
-    {
-        std::vector<std::string> currentExtensions;
-        for(int i = 0; i < it->second.size(); ++i)
-            currentExtensions.push_back(it->second[i].as<std::string>());
+        for(int j = 0; j < currentPlatform.num_children(); ++j)
+            extensions.push_back(GetValue(currentPlatform[j]));
         
-        DebugSymbolFileExtensions[it->first.as<std::string>()] = currentExtensions;
+        SharedLibraryExtensions[key] = extensions;
     }
     
-    YAML::Node compilerNode = profileNode["Compiler"];
+    for(int i = 0; i < profileNode["StaticLibraryExtensions"].num_children(); ++i)
+    {
+        ryml::ConstNodeRef currentPlatform = profileNode["StaticLibraryExtensions"][i];
+        
+        std::string key = GetKey(currentPlatform);
+        std::vector<std::string> extensions;
+        
+        for(int j = 0; j < currentPlatform.num_children(); ++j)
+            extensions.push_back(GetValue(currentPlatform[j]));
+        
+        StaticLibraryExtensions[key] = extensions;
+    }
+    
+    for(int i = 0; i < profileNode["DebugSymbolFileExtensions"].num_children(); ++i)
+    {
+        ryml::ConstNodeRef currentPlatform = profileNode["DebugSymbolFileExtensions"][i];
+        
+        std::string key = GetKey(currentPlatform);
+        std::vector<std::string> extensions;
+        
+        for(int j = 0; j < currentPlatform.num_children(); ++j)
+            extensions.push_back(GetValue(currentPlatform[j]));
+        
+        DebugSymbolFileExtensions[key] = extensions;
+    }
+    
+    ryml::ConstNodeRef compilerNode = profileNode["Compiler"];
     if(!Compiler.ParseYAML_Node(compilerNode))
     {
         ssLOG_ERROR("Compiler profile: Compiler is invalid");
         return false;
     }
     
-    YAML::Node linkerNode = profileNode["Linker"];
+    ryml::ConstNodeRef linkerNode = profileNode["Linker"];
     if(!Linker.ParseYAML_Node(linkerNode))
     {
         ssLOG_ERROR("Compiler profile: Linker is invalid");

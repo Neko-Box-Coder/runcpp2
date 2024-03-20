@@ -2,7 +2,7 @@
 #define RUNCPP2_DATA_DEPENDENCY_SOURCE_HPP
 
 #include "runcpp2/Data/DependencySourceType.hpp"
-#include "yaml-cpp/yaml.h"
+#include "ryml.hpp"
 #include <string>
 
 namespace runcpp2
@@ -15,7 +15,7 @@ namespace runcpp2
                 DependencySourceType Type;
                 std::string Value;
                 
-                bool ParseYAML_Node(YAML::Node& node);
+                bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;
         };
     }

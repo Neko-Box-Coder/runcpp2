@@ -3,11 +3,11 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(YAML::Node& node)
+bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
     INTERNAL_RUNCPP2_SAFE_START();
     
-    if(!node.IsMap())
+    if(!node.is_map())
     {
         ssLOG_ERROR("DependencySearchProperty: Node is not a Map");
         return false;
@@ -15,10 +15,10 @@ bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(YAML::Node& node)
     
     std::vector<NodeRequirement> requirements =
     {
-        NodeRequirement("SearchLibraryNames", YAML::NodeType::Sequence, true, false),
-        NodeRequirement("SearchDirectories", YAML::NodeType::Sequence, true, false),
-        NodeRequirement("ExcludeLibraryNames", YAML::NodeType::Sequence, false, true),
-        NodeRequirement("AdditionalLinkOptions", YAML::NodeType::Map, false, true)
+        NodeRequirement("SearchLibraryNames", ryml::NodeType_e::SEQ, true, false),
+        NodeRequirement("SearchDirectories", ryml::NodeType_e::SEQ, true, false),
+        NodeRequirement("ExcludeLibraryNames", ryml::NodeType_e::SEQ, false, true),
+        NodeRequirement("AdditionalLinkOptions", ryml::NodeType_e::MAP, false, true)
     };
     
     if(!CheckNodeRequirements(node, requirements))
@@ -27,35 +27,34 @@ bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(YAML::Node& node)
         return false;
     }
     
-    for(int i = 0; i < node["SearchLibraryNames"].size(); ++i)
-        SearchLibraryNames.push_back(node["SearchLibraryNames"][i].as<std::string>());
+    for(int i = 0; i < node["SearchLibraryNames"].num_children(); ++i)
+        SearchLibraryNames.push_back(GetValue(node["SearchLibraryNames"][i]));
     
-    for(int i = 0; i < node["SearchDirectories"].size(); ++i)
-        SearchDirectories.push_back(node["SearchDirectories"][i].as<std::string>());
+    for(int i = 0; i < node["SearchDirectories"].num_children(); ++i)
+        SearchDirectories.push_back(GetValue(node["SearchDirectories"][i]));
 
-    for(int i = 0; i < node["ExcludeLibraryNames"].size(); ++i)
-        ExcludeLibraryNames.push_back(node["ExcludeLibraryNames"][i].as<std::string>());
+    for(int i = 0; i < node["ExcludeLibraryNames"].num_children(); ++i)
+        ExcludeLibraryNames.push_back(GetValue(node["ExcludeLibraryNames"][i]));
 
-    if(node["AdditionalLinkOptions"])
+    if(ExistAndHasChild(node, "AdditionalLinkOptions"))
     {
-        YAML::Node additionalLinkNode = node["AdditionalLinkOptions"];
+        ryml::ConstNodeRef additionalLinkNode = node["AdditionalLinkOptions"];
 
-        for(auto it = additionalLinkNode.begin(); it != additionalLinkNode.end(); ++it)
+        for(int i = 0; i < additionalLinkNode.num_children(); ++i)
         {
-            if(!it->second.IsSequence())
+            ryml::ConstNodeRef currentLinkNode = additionalLinkNode[i];
+            
+            if(!currentLinkNode.is_seq())
             {
                 ssLOG_ERROR("Sequence is expected for AdditionalLinkOptions at " << 
-                            it->first.as<std::string>());
+                            GetKey(currentLinkNode));
                 
                 return false;
             }
             
-            const std::string currentPlatform = it->first.as<std::string>();
-            for(int i = 0; i < it->second.size(); ++i)
-            {
-                std::string currentOption = it->second[i].as<std::string>();
-                AdditionalLinkOptions[currentPlatform].push_back(currentOption);
-            }
+            const std::string currentPlatform = GetKey(currentLinkNode);
+            for(int j = 0; j < currentLinkNode.num_children(); ++j)
+                AdditionalLinkOptions[currentPlatform].push_back(GetValue(currentLinkNode[j]));
         }
     }
 

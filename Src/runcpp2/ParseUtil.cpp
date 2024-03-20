@@ -1,17 +1,18 @@
 #include "runcpp2/ParseUtil.hpp"
+#include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/StringUtil.hpp"
 
 #include "ssLogger/ssLog.hpp"
 
-runcpp2::NodeRequirement::NodeRequirement() : Name(""),
-                                                        NodeType(YAML::NodeType::Null),
-                                                        Required(false),
-                                                        Nullable(true)
+runcpp2::NodeRequirement::NodeRequirement() :   Name(""),
+                                                NodeType(),
+                                                Required(false),
+                                                Nullable(true)
 {
 }
     
-runcpp2::NodeRequirement::NodeRequirement( const std::string& name, 
-                                            YAML::NodeType::value nodeType, 
+runcpp2::NodeRequirement::NodeRequirement(  const std::string& name, 
+                                            ryml::NodeType nodeType, 
                                             bool required,
                                             bool nullable) :    Name(name), 
                                                                 NodeType(nodeType), 
@@ -19,36 +20,57 @@ runcpp2::NodeRequirement::NodeRequirement( const std::string& name,
                                                                 Nullable(nullable)
 {}
     
-bool runcpp2::CheckNodeRequirements(YAML::Node& node, 
+bool runcpp2::CheckNodeRequirements(ryml::ConstNodeRef& node, 
                                     const std::vector<NodeRequirement>& requirements)
 {
+    INTERNAL_RUNCPP2_SAFE_START();
+    
+    if(!node.valid())
+    {
+        ssLOG_ERROR("Node is invalid");
+        return false;
+    }
+    
+    if( !(node.type().type & ryml::NodeType_e::MAP) && 
+        !(node.type().type & ryml::NodeType_e::KEYVAL))
+    {
+        ssLOG_ERROR("Node is not a map: " << node.type().type_str());
+        return false;
+    }
+    
     for(int i = 0; i < requirements.size(); ++i)
     {
-        if(!node[requirements[i].Name])
+        if(!ExistAndHasChild(node, requirements[i].Name))
         {
             if(requirements[i].Required)
             {
+                ssLOG_DEBUG("node.num_children(): " << node.num_children());
+                
+                for(int j = 0; j < node.num_children(); ++j)
+                    ssLOG_DEBUG(node[j].key());
+                
                 ssLOG_ERROR("Required field not found: " << requirements[i].Name);
                 return false;
             }
             continue;
         }
         
-        if(node[requirements[i].Name].Type() != requirements[i].NodeType)
+        if(!(node[requirements[i].Name.c_str()].type().type & requirements[i].NodeType.type))
         {
             if( requirements[i].Nullable && 
-                node[requirements[i].Name].Type() == YAML::NodeType::Null)
+                node[requirements[i].Name.c_str()].val_is_null())
             {
                 continue;
             }
             
             ssLOG_ERROR("Field type is invalid: " << requirements[i].Name);
             ssLOG_ERROR("Expected: " << requirements[i].NodeType);
-            ssLOG_ERROR("Found: " << node[requirements[i].Name].Type());
+            ssLOG_ERROR("Found: " << node[requirements[i].Name.c_str()].type_str());
             return false;
         }
     }
     return true;
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 bool runcpp2::GetParsableInfo(const std::string& contentToParse, std::string& outParsableInfo)
@@ -214,4 +236,60 @@ bool runcpp2::GetParsableInfo(const std::string& contentToParse, std::string& ou
         outParsableInfo.clear();
     
     return true;
+}
+
+bool runcpp2::ResolveYAML_Stream(   ryml::Tree& rootTree, 
+                                    ryml::ConstNodeRef& outRootNode)
+{
+    INTERNAL_RUNCPP2_SAFE_START();
+    
+    //Resolve the merge keys in the yaml first
+    rootTree.resolve();
+    
+    std::string temp;
+    
+    if(rootTree.rootref().is_stream())
+    {
+        ssLOG_DEBUG("rootTree.rootref().num_children(): " << rootTree.rootref().num_children());
+        
+        for(int i = 0; i < rootTree.rootref().num_children(); ++i)
+        {
+            if( rootTree.rootref()[i].num_children() > 0 &&
+                rootTree.rootref()[i].is_map())
+            {
+                outRootNode = rootTree.rootref()[i];
+                ssLOG_DEBUG( "rootTree.rootref()[" << i << "].num_children(): " << 
+                            rootTree.rootref()[i].num_children());
+                
+                return true;
+            }
+        }
+        
+        ssLOG_ERROR("Invalid format");
+        return false;
+    }
+    else
+        outRootNode = rootTree.rootref();
+    
+    return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::ExistAndHasChild(const ryml::ConstNodeRef& node, const std::string& childName)
+{
+    if(node.num_children() > 0 && node.has_child(childName.c_str()))
+        return true;
+    
+    return false;
+}
+
+std::string runcpp2::GetValue(ryml::ConstNodeRef node)
+{
+    return std::string(node.val().str, node.val().len);
+}
+
+std::string runcpp2::GetKey(ryml::ConstNodeRef node)
+{
+    return std::string(node.key().str, node.key().len);
 }

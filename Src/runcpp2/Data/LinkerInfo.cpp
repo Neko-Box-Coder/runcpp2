@@ -4,33 +4,33 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::LinkerInfo::ParseYAML_Node(YAML::Node& profileNode)
+bool runcpp2::Data::LinkerInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
     INTERNAL_RUNCPP2_SAFE_START();
     
     std::vector<NodeRequirement> requirements = 
     {
-        NodeRequirement("Executable", YAML::NodeType::Scalar, true, false),
-        NodeRequirement("DefaultLinkFlags", YAML::NodeType::Scalar, true, true),
-        NodeRequirement("LinkerArgs", YAML::NodeType::Map, true, false)
+        NodeRequirement("Executable", ryml::NodeType_e::KEYVAL, true, false),
+        NodeRequirement("DefaultLinkFlags", ryml::NodeType_e::KEYVAL, true, true),
+        NodeRequirement("LinkerArgs", ryml::NodeType_e::MAP, true, false)
     };
     
     std::vector<NodeRequirement> argsRequirements = 
     {
-        NodeRequirement("OutputPart", YAML::NodeType::Scalar, true, false),
-        NodeRequirement("DependenciesPart", YAML::NodeType::Scalar, true, false)
+        NodeRequirement("OutputPart", ryml::NodeType_e::KEYVAL, true, false),
+        NodeRequirement("DependenciesPart", ryml::NodeType_e::KEYVAL, true, false)
     };
     
-    if(!CheckNodeRequirements(profileNode, requirements))
+    if(!CheckNodeRequirements(node, requirements))
     {
         ssLOG_ERROR("Linker Info: Failed to meet requirements");
         return false;
     }
     
-    Executable = profileNode["Executable"].as<std::string>();
-    DefaultLinkFlags = profileNode["DefaultLinkFlags"].as<std::string>();
+    node["Executable"] >> Executable;
+    node["DefaultLinkFlags"] >> DefaultLinkFlags;
     
-    YAML::Node linkerArgsNode = profileNode["LinkerArgs"];
+    ryml::ConstNodeRef linkerArgsNode = node["LinkerArgs"];
     
     if(!CheckNodeRequirements(linkerArgsNode, argsRequirements))
     {
@@ -38,8 +38,8 @@ bool runcpp2::Data::LinkerInfo::ParseYAML_Node(YAML::Node& profileNode)
         return false;
     }
     
-    LinkerArgs.OutputPart = linkerArgsNode["OutputPart"].as<std::string>();
-    LinkerArgs.DependenciesPart = linkerArgsNode["DependenciesPart"].as<std::string>();
+    linkerArgsNode["OutputPart"] >> LinkerArgs.OutputPart;
+    linkerArgsNode["DependenciesPart"] >> LinkerArgs.DependenciesPart;
     
     return true;
     
