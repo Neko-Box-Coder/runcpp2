@@ -5,6 +5,8 @@
 
 bool runcpp2::Data::FlagsOverrideInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
+    INTERNAL_RUNCPP2_SAFE_START();
+
     std::vector<NodeRequirement> requirements =
     {
         NodeRequirement("Remove", ryml::NodeType_e::KEYVAL, false, true),
@@ -24,6 +26,8 @@ bool runcpp2::Data::FlagsOverrideInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
         node["Append"] >> Append;
     
     return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 std::string runcpp2::Data::FlagsOverrideInfo::ToString(std::string indentation) const

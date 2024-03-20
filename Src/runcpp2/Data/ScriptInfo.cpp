@@ -5,6 +5,8 @@
 
 bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     std::vector<NodeRequirement> requirements =
     {
         NodeRequirement("Language", ryml::NodeType_e::KEYVAL, false, true),
@@ -95,6 +97,8 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     }
     
     return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 std::string runcpp2::Data::ScriptInfo::ToString(std::string indentation) const

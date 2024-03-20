@@ -5,6 +5,8 @@
 
 bool runcpp2::Data::DependencySetup::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     if(!node.is_map())
     {
         ssLOG_ERROR("DependencySetup: Node is not a Map");
@@ -25,6 +27,8 @@ bool runcpp2::Data::DependencySetup::ParseYAML_Node(ryml::ConstNodeRef& node)
     }
     
     return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 std::string runcpp2::Data::DependencySetup::ToString(std::string indentation) const

@@ -5,6 +5,8 @@
 
 bool runcpp2::Data::CompilerInfo::ParseYAML_Node(ryml::ConstNodeRef& profileNode)
 {
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     std::vector<NodeRequirement> requirements = 
     {
         NodeRequirement("Executable", ryml::NodeType_e::KEYVAL, true, false),
@@ -42,6 +44,8 @@ bool runcpp2::Data::CompilerInfo::ParseYAML_Node(ryml::ConstNodeRef& profileNode
     compileArgsNode["InputPart"] >> CompileArgs.InputPart;
     compileArgsNode["OutputPart"] >> CompileArgs.OutputPart;
     return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 std::string runcpp2::Data::CompilerInfo::ToString(std::string indentation) const

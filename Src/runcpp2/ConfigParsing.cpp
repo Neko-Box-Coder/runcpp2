@@ -1,6 +1,4 @@
 #include "runcpp2/ConfigParsing.hpp"
-
-//#include "ryml_std.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "ryml.hpp"
 #include "c4/std/string.hpp"
@@ -20,6 +18,7 @@ namespace
                                 std::vector<runcpp2::Data::CompilerProfile>& outProfiles,
                                 std::string& outPreferredProfile)
     {
+        //TODO: Use callback once ryml noexcept are dropped
         #if 0
             ryml::Callbacks cb;
             auto errorCallback = [](const char* msg, 
@@ -181,6 +180,7 @@ bool runcpp2::ParseScriptInfo(  const std::string& scriptInfo,
     if(scriptInfo.empty())
         return true;
 
+    //TODO: Use callback once ryml noexcept are dropped
     #if 0
         ryml::Callbacks cb;
         auto errorCallback = [](const char* msg, 

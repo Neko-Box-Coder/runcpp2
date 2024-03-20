@@ -6,6 +6,8 @@
 
 bool runcpp2::Data::LinkerInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     std::vector<NodeRequirement> requirements = 
     {
         NodeRequirement("Executable", ryml::NodeType_e::KEYVAL, true, false),
@@ -40,6 +42,8 @@ bool runcpp2::Data::LinkerInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     linkerArgsNode["DependenciesPart"] >> LinkerArgs.DependenciesPart;
     
     return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 std::string runcpp2::Data::LinkerInfo::ToString(std::string indentation) const

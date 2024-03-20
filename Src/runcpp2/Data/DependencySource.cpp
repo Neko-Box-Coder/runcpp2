@@ -5,6 +5,8 @@
 
 bool runcpp2::Data::DependencySource::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     std::vector<NodeRequirement> requirements =
     {
         NodeRequirement("Type", ryml::NodeType_e::KEYVAL, true, false),
@@ -31,6 +33,8 @@ bool runcpp2::Data::DependencySource::ParseYAML_Node(ryml::ConstNodeRef& node)
     
     node["Value"] >> Value;
     return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 std::string runcpp2::Data::DependencySource::ToString(std::string indentation) const

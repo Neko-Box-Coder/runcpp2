@@ -5,6 +5,8 @@
 
 bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     if(!node.is_map())
     {
         ssLOG_ERROR("DependencySearchProperty: Node is not a Map");
@@ -57,6 +59,8 @@ bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(ryml::ConstNodeRef& n
     }
 
     return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 std::string runcpp2::Data::DependencyLinkProperty::ToString(std::string indentation) const

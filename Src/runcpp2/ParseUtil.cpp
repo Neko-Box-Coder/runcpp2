@@ -243,6 +243,9 @@ bool runcpp2::ResolveYAML_Stream(   ryml::Tree& rootTree,
 {
     INTERNAL_RUNCPP2_SAFE_START();
     
+    //Resolve the merge keys in the yaml first
+    rootTree.resolve();
+    
     std::string temp;
     
     if(rootTree.rootref().is_stream())
