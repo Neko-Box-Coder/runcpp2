@@ -13,6 +13,7 @@
 #include "ghc/filesystem.hpp"
 
 #include <fstream>
+#include <chrono>
 
 namespace
 {
@@ -64,37 +65,55 @@ namespace
             return false;
         }
         
-        std::vector<char> output;
+        int statusCode = 0;
         do
         {
             uint32_t byteRead = 0;
-            output.resize(output.size() + 4096);
+            const int bufferSize = 4096;
+            char output[bufferSize] = {0};
             
             result = System2ReadFromOutput( &runCommandInfo, 
-                                            output.data() + output.size() - 4096, 
-                                            4096 - 1, 
+                                            output, 
+                                            bufferSize, 
                                             &byteRead);
 
-            output.resize(output.size() - 4096 + byteRead + 1);
-            output.back() = '\0';
+            output[byteRead] = '\0';
+            
+            //Log the output and continue fetching output
+            if(result == SYSTEM2_RESULT_READ_NOT_FINISHED)
+            {
+                ssLOG_SIMPLE(output);
+                continue;
+            }
+            
+            //If we have finished reading the output, check if the command has finished
+            if(result == SYSTEM2_RESULT_SUCCESS)
+            {
+                ssLOG_SIMPLE(output);
+                
+                result = System2GetCommandReturnValueAsync(&runCommandInfo, &statusCode);
+                
+                //If the command is not finished, continue reading output
+                if(result == SYSTEM2_RESULT_COMMAND_NOT_FINISHED)
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    continue;
+                }
+                else
+                    break;
+            }
+            else
+            {
+                ssLOG_ERROR("Failed to read from output with result: " << result);
+                ghc::filesystem::remove(scriptDirectory + "/" + std::string(scriptName + exeExt), _);
+                return false;
+            }
         }
-        while(result == SYSTEM2_RESULT_READ_NOT_FINISHED);
+        while(true);
         
         if(result != SYSTEM2_RESULT_SUCCESS)
         {
-            ssLOG_ERROR("Failed to read from output with result: " << result);
-            ghc::filesystem::remove(scriptDirectory + "/" + std::string(scriptName + exeExt), _);
-            return false;
-        }
-        
-        ssLOG_SIMPLE(output.data());
-        
-        int statusCode = 0;
-        result = System2GetCommandReturnValueSync(&runCommandInfo, &statusCode);
-        
-        if(result != SYSTEM2_RESULT_SUCCESS)
-        {
-            ssLOG_ERROR("System2GetCommandReturnValueSync failed with result: " << result);
+            ssLOG_ERROR("System2GetCommandReturnValueASync failed with result: " << result);
             ghc::filesystem::remove(scriptDirectory + "/" + std::string(scriptName + exeExt), _);
             return false;
         }
