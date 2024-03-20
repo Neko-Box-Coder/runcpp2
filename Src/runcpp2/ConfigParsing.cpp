@@ -114,7 +114,7 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::CompilerProfile>& outProfiles,
     };
     int foundConfigFilePathIndex = -1;
     
-    bool writeDefaultProfiles = false;
+    bool writeDefaultProfiles = true;
     
     //config directory is created by get_user_config_folder if it doesn't exist
     {
@@ -128,8 +128,6 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::CompilerProfile>& outProfiles,
                 break;
             }
         }
-        
-        writeDefaultProfiles = true;
     }
     
     //Create default compiler profiles
