@@ -1,3 +1,4 @@
 - Allow script info as standalone yaml file
+- Copy shared libraries to be next to the executable
 - Commandline options
 - Allow Languages to override FileExtensions in compiler profile

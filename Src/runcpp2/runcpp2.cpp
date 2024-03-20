@@ -43,8 +43,7 @@ namespace
     {
         std::error_code _;
         
-        std::string runCommand = runcpp2::ProcessPath(  "cd " + scriptDirectory + 
-                                                        " && ./" + scriptName + exeExt);
+        std::string runCommand = runcpp2::ProcessPath(scriptDirectory + "/" + scriptName + exeExt);
         
         if(!runArgs.empty())
         {
@@ -286,6 +285,8 @@ bool runcpp2::RunScript(const std::string& scriptPath,
         
         std::error_code copyErrorCode;
         ghc::filesystem::copy(exeToCopy, scriptDirectory + "/" + scriptName + exeExt, _);
+        
+        //TODO: Copy shared library files as well
         
         if(copyErrorCode)
         {

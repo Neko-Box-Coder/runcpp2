@@ -26,22 +26,28 @@ else()
     file(SIZE "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/DefaultYAMLs.c" EMBEDDED_FILE_SIZE)
 endif()
 
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/Embed2C")
+
 if(RUNCPP2_UPDATE_DEFAULT_YAMLS OR EMBEDDED_FILE_SIZE LESS 1024)
-    add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/Embed2C")
     include("${CMAKE_CURRENT_LIST_DIR}/External/Embed2C/embedFile.cmake")
 
     set(EMBED_EXEC_PATH "")
     GET_EXEC_PATH(EMBED_EXEC_PATH)
 
-    set(FILES_TO_EMBED "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/DefaultCompilerProfiles.yaml"
-                        "DefaultCompilerProfiles"
-                        "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/DefaultScriptInfo.yaml"
-                        "DefaultScriptInfo"
-                        )
+    if("${EMBED_EXEC_PATH}" STREQUAL "")
+        message(WARNING "Please build Embed2C first")
+        return()
+    else()
+        set(FILES_TO_EMBED "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/DefaultCompilerProfiles.yaml"
+                            "DefaultCompilerProfiles"
+                            "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/DefaultScriptInfo.yaml"
+                            "DefaultScriptInfo"
+                            )
 
-    EMBED_FILES("${EMBED_EXEC_PATH}"
-                "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/DefaultYAMLs.c"
-                "${FILES_TO_EMBED}")
+        EMBED_FILES("${EMBED_EXEC_PATH}"
+                    "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/DefaultYAMLs.c"
+                    "${FILES_TO_EMBED}")
+    endif()
 endif()
 
 
