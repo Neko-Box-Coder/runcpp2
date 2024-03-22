@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=./CompilerProfilesSchema.json
+# yaml-language-server: $schema=./UserConfigSchema.json
 
 ---
 # A default compiler profile to be used if not specified while running the build script

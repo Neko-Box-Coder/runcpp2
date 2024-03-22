@@ -1,4 +1,3 @@
-- Rename compiler profiles to user config
 - Loading dynamic library instead of executable
 - Output compile_command.json
 - Allow script info as standalone yaml file
