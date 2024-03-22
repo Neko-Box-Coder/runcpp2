@@ -40,6 +40,8 @@ bool runcpp2::CheckNodeRequirements(ryml::ConstNodeRef& node,
     
     for(int i = 0; i < requirements.size(); ++i)
     {
+        ssLOG_DEBUG("Checking: " << requirements[i].Name << " exists");
+        
         if(!ExistAndHasChild(node, requirements[i].Name))
         {
             if(requirements[i].Required)
@@ -55,16 +57,20 @@ bool runcpp2::CheckNodeRequirements(ryml::ConstNodeRef& node,
             continue;
         }
         
+        ssLOG_DEBUG("Checking: " << requirements[i].Name << " type");
+        
+        if( requirements[i].Nullable && 
+            node[requirements[i].Name.c_str()].is_keyval() &&
+            node[requirements[i].Name.c_str()].val_is_null())
+        {
+            continue;
+        }
+        
         if(!(node[requirements[i].Name.c_str()].type().type & requirements[i].NodeType.type))
         {
-            if( requirements[i].Nullable && 
-                node[requirements[i].Name.c_str()].val_is_null())
-            {
-                continue;
-            }
             
             ssLOG_ERROR("Field type is invalid: " << requirements[i].Name);
-            ssLOG_ERROR("Expected: " << requirements[i].NodeType);
+            ssLOG_ERROR("Expected: " << c4::yml::NodeType::type_str(requirements[i].NodeType));
             ssLOG_ERROR("Found: " << node[requirements[i].Name.c_str()].type_str());
             return false;
         }

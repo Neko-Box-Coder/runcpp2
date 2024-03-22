@@ -14,8 +14,11 @@ CompilerProfiles:
     # The languages supported by the profile
     Languages: ["c++"]
     
-    # (Optional) Steps in commandline to setup the environment
-    SetupSteps: []
+    # (Optional) Steps to run before calling the compiler/linker. 
+    #            This is run inside the .runcpp2 directory where the build happens.
+    SetupSteps: 
+        # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
+        All: []
     
     # The file extension for the object files for each platform
     ObjectFileExtensions:
@@ -41,8 +44,10 @@ CompilerProfiles:
     # Specify the compiler settings, so the final flow will be:
     # [Setup steps if any] --> {Executable} {CompileArgs}
     Compiler:
-        # (Optional) Steps in commandline to setup the compiler
-        SetupSteps: []
+        # (Optional) The command to run together before running each compile command
+        EnvironmentSetup: 
+            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
+            All: ""
         
         # Executable to be called
         Executable: "g++"
@@ -63,8 +68,10 @@ CompilerProfiles:
     # Specify the linker settings, so the final flow will be:
     # [Setup steps if any] --> {Executable} {OutputPart} {DependenciesPart}...(for each dependency)
     Linker:
-        # (Optional) Steps in commandline to setup the linker
-        SetupSteps: []
+        # (Optional) The command to run together before running each link command
+        EnvironmentSetup: 
+            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
+            All: ""
         
         # Executable to be called
         Executable: "g++"

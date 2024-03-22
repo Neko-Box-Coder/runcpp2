@@ -12,7 +12,7 @@ bool runcpp2::Data::CompilerProfile::ParseYAML_Node(ryml::ConstNodeRef& profileN
         NodeRequirement("Name", ryml::NodeType_e::KEYVAL, true, false),
         NodeRequirement("FileExtensions", ryml::NodeType_e::SEQ, true, false),
         NodeRequirement("Languages", ryml::NodeType_e::SEQ, false, true),
-        NodeRequirement("SetupSteps", ryml::NodeType_e::SEQ, false, true),
+        NodeRequirement("SetupSteps", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("ObjectFileExtensions", ryml::NodeType_e::MAP, true, false),
         NodeRequirement("SharedLibraryExtensions", ryml::NodeType_e::MAP, true, false),
         NodeRequirement("StaticLibraryExtensions", ryml::NodeType_e::MAP, true, false),
@@ -41,7 +41,17 @@ bool runcpp2::Data::CompilerProfile::ParseYAML_Node(ryml::ConstNodeRef& profileN
     if(ExistAndHasChild(profileNode, "SetupSteps"))
     {
         for(int i = 0; i < profileNode["SetupSteps"].num_children(); ++i)
-            SetupSteps.push_back(GetValue(profileNode["SetupSteps"][i]));
+        {
+            ryml::ConstNodeRef currentPlatform = profileNode["SetupSteps"][i];
+            
+            std::string key = GetKey(currentPlatform);
+            std::vector<std::string> extensions;
+            
+            for(int j = 0; j < currentPlatform.num_children(); ++j)
+                extensions.push_back(GetValue(currentPlatform[j]));
+            
+            SetupSteps[key] = extensions;
+        }
     }
     
     for(int i = 0; i < profileNode["ObjectFileExtensions"].num_children(); ++i)
@@ -124,8 +134,12 @@ std::string runcpp2::Data::CompilerProfile::ToString(std::string indentation) co
         out += indentation + "-   " + *it + "\n";
     
     out += indentation + "SetupSteps:\n";
-    for(int i = 0; i < SetupSteps.size(); ++i)
-        out += indentation + "-   " + SetupSteps[i] + "\n";
+    for(auto it = SetupSteps.begin(); it != SetupSteps.end(); ++it)
+    {
+        out += indentation + it->first + ":\n";
+        for(int i = 0; i < it->second.size(); ++i)
+            out += indentation + "-   " + it->second[i] + "\n";
+    }
     
     out += indentation + "ObjectFileExtensions:\n";
     for(auto it = ObjectFileExtensions.begin(); it != ObjectFileExtensions.end(); ++it)

@@ -10,6 +10,7 @@ bool runcpp2::Data::LinkerInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     
     std::vector<NodeRequirement> requirements = 
     {
+        NodeRequirement("EnvironmentSetup", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("Executable", ryml::NodeType_e::KEYVAL, true, false),
         NodeRequirement("DefaultLinkFlags", ryml::NodeType_e::KEYVAL, true, true),
         NodeRequirement("LinkerArgs", ryml::NodeType_e::MAP, true, false)
@@ -25,6 +26,23 @@ bool runcpp2::Data::LinkerInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     {
         ssLOG_ERROR("Linker Info: Failed to meet requirements");
         return false;
+    }
+    
+    if(node.has_child("EnvironmentSetup"))
+    {
+        for(int i = 0; i < node["EnvironmentSetup"].num_children(); ++i)
+        {
+            ryml::ConstNodeRef currentPlatform = node["EnvironmentSetup"][i];
+            
+            if(!currentPlatform.is_keyval())
+            {
+                ssLOG_ERROR("Linker Info: EnvironmentSetup should be a keyval");
+                return false;
+            }
+            
+            std::string key = GetKey(currentPlatform);
+            EnvironmentSetup[key] = GetValue(currentPlatform);
+        }
     }
     
     node["Executable"] >> Executable;
@@ -51,6 +69,14 @@ std::string runcpp2::Data::LinkerInfo::ToString(std::string indentation) const
     std::string out;
     
     out += indentation + "LinkerInfo:\n";
+    
+    if(EnvironmentSetup.size() != 0)
+    {
+        out += indentation + "    EnvironmentSetup:\n";
+        for(auto it = EnvironmentSetup.begin(); it != EnvironmentSetup.end(); ++it)
+            out += indentation + "        " + it->first + ": " + it->second + "\n";
+    }
+    
     out += indentation + "    Executable: " + Executable + "\n";
     out += indentation + "    DefaultLinkFlags: " + DefaultLinkFlags + "\n";
     out += indentation + "    LinkerArgs:\n";

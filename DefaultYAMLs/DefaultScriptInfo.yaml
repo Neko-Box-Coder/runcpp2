@@ -12,7 +12,7 @@ RequiredProfiles:
 
 # (Optional) Override the default compile flags
 OverrideCompileFlags:
-    # Applies to all platforms (Can be Linux, MacOS, Windows, Unix, etc.)
+    # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
     All:
         # Profile with the respective flags to override
         "g++":
@@ -25,7 +25,7 @@ OverrideCompileFlags:
         
 # (Optional) Override the default link flags
 OverrideLinkFlags:
-    # Applies to all platforms
+    # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
     All:
         # Profile with the respective flags to override
         "g++":
@@ -70,12 +70,13 @@ Dependencies:
             
             # (Optional) Additional link options for this dependency
             AdditionalLinkOptions: 
+                # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
                 All: []
 
     
     # (Optional) List of setup commands for the supported platforms
     Setup:
-        # Setup commands for the specified platform
+        # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
         All:
             # Setup commands for the specified profile. 
             # All commands are run in the dependency folder

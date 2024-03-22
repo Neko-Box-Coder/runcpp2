@@ -28,8 +28,16 @@
                     },
                     "SetupSteps" : 
                     {
-                        "type": "array",
-                        "items": { "type":"string" }
+                        "type": "object",
+                        "patternProperties":
+                        {
+                            "^.*$": 
+                            {
+                                "type": "array",
+                                "items": { "type":"string" }
+                            }
+                        },
+                        "additionalProperties": false
                     },
                     "ObjectFileExtensions":
                     {
@@ -86,8 +94,16 @@
                         {
                             "SetupSteps" : 
                             {
-                                "type": "array",
-                                "items": { "type":"string" }
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": 
+                                    {
+                                        "type": "array",
+                                        "items": { "type":"string" }
+                                    }
+                                },
+                                "additionalProperties": false
                             },
                             "Executable": { "type": "string" },
                             "DefaultCompileFlags": { "type": "string" },
@@ -124,8 +140,16 @@
                         {
                             "SetupSteps" : 
                             {
-                                "type": "array",
-                                "items": { "type":"string" }
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": 
+                                    {
+                                        "type": "array",
+                                        "items": { "type":"string" }
+                                    }
+                                },
+                                "additionalProperties": false
                             },
                             "Executable": { "type": "string" },
                             "DefaultLinkFlags": { "type": "string" },
