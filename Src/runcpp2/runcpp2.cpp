@@ -68,12 +68,12 @@ namespace
         do
         {
             uint32_t byteRead = 0;
-            const int bufferSize = 4096;
+            const int bufferSize = 32;
             char output[bufferSize] = {0};
             
             result = System2ReadFromOutput( &runCommandInfo, 
                                             output, 
-                                            bufferSize, 
+                                            bufferSize - 1, 
                                             &byteRead);
 
             output[byteRead] = '\0';
@@ -81,14 +81,14 @@ namespace
             //Log the output and continue fetching output
             if(result == SYSTEM2_RESULT_READ_NOT_FINISHED)
             {
-                ssLOG_SIMPLE(output);
+                std::cout << output << std::flush;
                 continue;
             }
             
             //If we have finished reading the output, check if the command has finished
             if(result == SYSTEM2_RESULT_SUCCESS)
             {
-                ssLOG_SIMPLE(output);
+                std::cout << output << std::flush;
                 
                 result = System2GetCommandReturnValueAsync(&runCommandInfo, &statusCode);
                 
