@@ -1,57 +1,35 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "Compiler profiles",
-    "description": "Compiler profiles configuraion",
     "type": "object",
     "properties": 
     {
-        "PreferredProfile": 
-        {
-            "type": "string",
-            "description": "A default compiler/linker profile to be used if not specified while running the build script"
-        },
+        "PreferredProfile": { "type": "string" },
         "CompilerProfiles": 
         {
             "type": "array",
-            "description": "List of compiler/linker profiles that instruct how to compile/link",
             "items": 
             {
                 "type": "object",
                 "properties": 
                 {
-                    "Name": 
-                    {
-                        "type": "string",
-                        "description": "Name of the compiler profile"
-                    },
+                    "Name": { "type": "string" },
                     "FileExtensions" : 
                     {
                         "type": "array",
-                        "items":
-                        {
-                            "type":"string"
-                        },
-                        "uniqueItems": true,
-                        "description": "The file extensions associated with the profile"
+                        "items": { "type":"string" },
+                        "uniqueItems": true
                     },
                     "Languages":
                     {
                         "type": "array",
-                        "items":
-                        {
-                            "type":"string"
-                        },
-                        "uniqueItems": true,
-                        "description": "The languages supported by the profile"
+                        "items": { "type":"string" },
+                        "uniqueItems": true
                     },
                     "SetupSteps" : 
                     {
                         "type": "array",
-                        "items":
-                        {
-                            "type":"string"
-                        },
-                        "description": "(Optional) Steps in commandline to setup the environment"
+                        "items": { "type":"string" }
                     },
                     "ObjectFileExtensions":
                     {
@@ -60,8 +38,7 @@
                         {
                             "^.*$": { "type": "string" }
                         },
-                        "additionalProperties": false,
-                        "description": "The file extension for the object files for each platform"
+                        "additionalProperties": false
                     },
                     "SharedLibraryExtensions":
                     {
@@ -71,14 +48,10 @@
                             "^.*$": 
                             {
                                 "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                }
+                                "items": { "type":"string" }
                             }
                         },
-                        "additionalProperties": false,
-                        "description": "The file extensions for the shared libraries for each platform"
+                        "additionalProperties": false
                     },
                     "StaticLibraryExtensions":
                     {
@@ -88,14 +61,10 @@
                             "^.*$": 
                             {
                                 "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                }
+                                "items": { "type":"string" }
                             }
                         },
-                        "additionalProperties": false,
-                        "description": "The file extensions for the static libraries for each platform"
+                        "additionalProperties": false
                     },
                     "DebugSymbolFileExtensions":
                     {
@@ -105,14 +74,10 @@
                             "^.*$": 
                             {
                                 "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                }
+                                "items": { "type":"string" }
                             }
                         },
-                        "additionalProperties": false,
-                        "description": "(Optional) The file extensions for debug symbols to be copied alongside the binary"
+                        "additionalProperties": false
                     },
                     "Compiler":
                     {
@@ -122,22 +87,10 @@
                             "SetupSteps" : 
                             {
                                 "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                },
-                                "description": "(Optional) Steps in commandline to setup the compiler"
+                                "items": { "type":"string" }
                             },
-                            "Executable": 
-                            {
-                                "type": "string",
-                                "description": "Executable to be called"
-                            },
-                            "DefaultCompileFlags": 
-                            {
-                                "type": "string",
-                                "description": "Default arguments to provide for compilation which can be overriden by the script"
-                            },
+                            "Executable": { "type": "string" },
+                            "DefaultCompileFlags": { "type": "string" },
                             "CompileArgs": 
                             {
                                 "type": "object",
@@ -162,56 +115,33 @@
                             "Executable",
                             "DefaultCompileFlags",
                             "CompileArgs"
-                        ],
-                        "description": "Specify the compiler settings, so the final flow will be:\n[Setup steps if any] --> {Executable} {CompileArgs}"
+                        ]
                     },
                     "Linker":
                     {
                         "type": "object",
-                        "description": "Specify the linker settings, so the final flow will be:\n[Setup steps if any] --> {Executable} {OutputPart} {DependenciesPart}...(for each dependency)",
                         "properties": 
                         {
                             "SetupSteps" : 
                             {
                                 "type": "array",
-                                "items":
-                                {
-                                    "type":"string"
-                                },
-                                "description": "(Optional) Steps in commandline to setup the linker"
+                                "items": { "type":"string" }
                             },
-                            "Executable": 
-                            {
-                                "type": "string",
-                                "description": "Executable to be called"
-                            },
-                            "DefaultLinkFlags": 
-                            {
-                                "type": "string",
-                                "description": "Default arguments to provide for linking dependencies to the binary, which can be overriden by the script"
-                            },
+                            "Executable": { "type": "string" },
+                            "DefaultLinkFlags": { "type": "string" },
                             "LinkerArgs": 
                             {
                                 "type": "object",
                                 "properties": 
                                 {
-                                    "OutputPart": 
-                                    {
-                                        "type": "string",
-                                        "description": "Syntax for outputting to the binary. {LinkFlags}, {ProgramName} will be replaced accordingly"
-                                    },
-                                    "DependenciesPart": 
-                                    {
-                                        "type": "string",
-                                        "description": "Syntax for linking each dependency. {DependencyName} will be replaced accordingly"
-                                    }
+                                    "OutputPart": { "type": "string" },
+                                    "DependenciesPart": { "type": "string" }
                                 },
                                 "required": 
                                 [
                                     "OutputPart",
                                     "DependenciesPart"
-                                ],
-                                "description": "The syntax to link the given file"
+                                ]
                             }
                         },
                         "required": 

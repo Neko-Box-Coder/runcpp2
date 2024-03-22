@@ -12,23 +12,28 @@ RequiredProfiles:
 
 # (Optional) Override the default compile flags
 OverrideCompileFlags:
-    # Profile with the respective flags to override
-    "g++":
-        # Flags to be removed from the default compile flags, separated by space
-        Remove: ""
-        
-        # Additional flags to be appended to the default compile flags
-        Append: ""
+    # Applies to all platforms (Can be Linux, MacOS, Windows, Unix, etc.)
+    All:
+        # Profile with the respective flags to override
+        "g++":
+            # Flags to be removed from the default compile flags, separated by space
+            Remove: ""
+            
+            # Additional flags to be appended to the default compile flags
+            Append: ""
+    
         
 # (Optional) Override the default link flags
 OverrideLinkFlags:
-    # Profile with the respective flags to override
-    "g++":
-        # Flags to be removed from the default compile flags, separated by space
-        Remove: ""
-        
-        # Additional flags to be appended to the default compile flags
-        Append: ""
+    # Applies to all platforms
+    All:
+        # Profile with the respective flags to override
+        "g++":
+            # Flags to be removed from the default compile flags, separated by space
+            Remove: ""
+            
+            # Additional flags to be appended to the default compile flags
+            Append: ""
 
 # (Optional) The list of dependencies needed by the script
 Dependencies:
