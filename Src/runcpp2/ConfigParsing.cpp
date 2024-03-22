@@ -97,7 +97,7 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::CompilerProfile>& outProfiles,
     //Check if user config exists
     char configDirC_Str[MAX_PATH] = {0};
     
-    get_user_config_folder(configDirC_Str, 512, "runcpp2");
+    get_user_config_folder(configDirC_Str, MAX_PATH, "runcpp2");
     
     if(strlen(configDirC_Str) == 0)
     {
