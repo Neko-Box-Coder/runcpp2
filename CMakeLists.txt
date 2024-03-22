@@ -9,13 +9,19 @@ set(CMAKE_CXX_STANDARD 11)
 
 option(RUNCPP2_UPDATE_DEFAULT_YAMLS "Update default yaml files" OFF)
 
+# =========================================================================
+# External Dependencies
+# =========================================================================
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/ssLogger")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/rapidyaml")
-
-# =========================================================================
-# filesystem
-# =========================================================================
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/filesystem")
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/System2")
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/dylib")
+
+# Copy cfgpath.h
+configure_file( "${CMAKE_CURRENT_LIST_DIR}/External/cfgpath/cfgpath.h" 
+                "${CMAKE_CURRENT_LIST_DIR}/Include/cfgpath.h" COPYONLY)
+
 
 # =========================================================================
 # Generate yaml files as c
@@ -50,23 +56,6 @@ if(RUNCPP2_UPDATE_DEFAULT_YAMLS OR EMBEDDED_FILE_SIZE LESS 1024)
     endif()
 endif()
 
-
-# =========================================================================
-# System2
-# =========================================================================
-
-add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/System2")
-
-# =========================================================================
-# cfgpath
-# =========================================================================
-
-# Copy cfgpath.h
-configure_file( "${CMAKE_CURRENT_LIST_DIR}/External/cfgpath/cfgpath.h" 
-                "${CMAKE_CURRENT_LIST_DIR}/Include/cfgpath.h" COPYONLY)
-
-
-
 # =========================================================================
 # runcpp2
 # =========================================================================
@@ -94,7 +83,7 @@ add_executable(runcpp2  "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/CompilerInfo
 
 target_include_directories(runcpp2 PRIVATE  "${CMAKE_CURRENT_LIST_DIR}/Include")
 
-target_link_libraries(runcpp2 PRIVATE ssLogger ghc_filesystem System2 ryml::ryml)
+target_link_libraries(runcpp2 PRIVATE ssLogger ghc_filesystem System2 ryml::ryml dylib)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(STANDARD_COMPILE_FLAGS "/utf-8;/W1")

@@ -16,3 +16,6 @@
 [submodule "rapidyaml"]
 	path = External/rapidyaml
 	url = https://github.com/biojppm/rapidyaml.git
+[submodule "dylib"]
+	path = External/dylib
+	url = https://github.com/martin-olivier/dylib.git
