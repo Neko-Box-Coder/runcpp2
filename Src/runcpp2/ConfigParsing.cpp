@@ -7,8 +7,8 @@
 #include "ssLogger/ssLog.hpp"
 
 
-extern "C" const uint8_t DefaultCompilerProfiles[];
-extern "C" const size_t DefaultCompilerProfiles_size;
+extern "C" const uint8_t DefaultUserConfig[];
+extern "C" const size_t DefaultUserConfig_size;
 extern "C" const uint8_t DefaultScriptDependencies[];
 extern "C" const size_t DefaultScriptDependencies_size;
 
@@ -140,7 +140,7 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::CompilerProfile>& outProfiles,
             ssLOG_ERROR("Failed to create default config file: " << compilerConfigFilePaths[0]);
             return false;
         }
-        configFile.write((const char*)DefaultCompilerProfiles, DefaultCompilerProfiles_size);
+        configFile.write((const char*)DefaultUserConfig, DefaultUserConfig_size);
         configFile.close();
         foundConfigFilePathIndex = 0;
     }

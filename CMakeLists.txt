@@ -38,8 +38,8 @@ if(RUNCPP2_UPDATE_DEFAULT_YAMLS OR EMBEDDED_FILE_SIZE LESS 1024)
         message(WARNING "Please build Embed2C first")
         return()
     else()
-        set(FILES_TO_EMBED "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/DefaultCompilerProfiles.yaml"
-                            "DefaultCompilerProfiles"
+        set(FILES_TO_EMBED "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/DefaultUserConfig.yaml"
+                            "DefaultUserConfig"
                             "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/DefaultScriptInfo.yaml"
                             "DefaultScriptInfo"
                             )
@@ -78,6 +78,7 @@ add_executable(runcpp2  "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/CompilerInfo
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencySetup.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencySource.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/FlagsOverrideInfo.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ProfilesFlagsOverride.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/LinkerInfo.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ScriptInfo.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/CompilerProfileHelper.cpp"

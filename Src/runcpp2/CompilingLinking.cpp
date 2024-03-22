@@ -32,28 +32,53 @@ namespace
         }
         
         //Override the compile flags from the script info
-        if(scriptInfo.OverrideCompileFlags.find(profile.Name) != scriptInfo.OverrideCompileFlags.end())
         {
-            std::vector<std::string> compileArgsToRemove; 
-            runcpp2::SplitString(   scriptInfo.OverrideCompileFlags.at(profile.Name).Remove, 
-                                    " ", 
-                                    compileArgsToRemove);
-            
-            for(int i = 0; i < compileArgsToRemove.size(); ++i)
+            int foundPlatformIndex = -1;
+            for(int i = 0; i < platformNames.size(); ++i)
             {
-                std::size_t foundIndex = compileArgs.find(compileArgsToRemove.at(i));
-                
-                if(foundIndex != std::string::npos)
+                if( scriptInfo.RequiredProfiles.find(platformNames.at(i)) != 
+                    scriptInfo.RequiredProfiles.end())
                 {
-                    compileArgs.erase(foundIndex, compileArgsToRemove.at(i).size() + 1);
-                    continue;
+                    foundPlatformIndex = i;
+                    break;
                 }
-                
-                ssLOG_WARNING("Compile flag to remove not found: " << compileArgsToRemove.at(i));
             }
             
-            runcpp2::TrimRight(compileArgs);
-            compileArgs += " " + scriptInfo.OverrideCompileFlags.at(profile.Name).Append;
+            if(foundPlatformIndex != -1)
+            {
+                using namespace runcpp2::Data;
+                
+                const std::unordered_map<ProfileName, FlagsOverrideInfo>& 
+                currentOverrideCompileFlags = scriptInfo.OverrideCompileFlags
+                                                        .at(platformNames.at(foundPlatformIndex))
+                                                        .FlagsOverrides;
+                
+                if( currentOverrideCompileFlags.find(profile.Name) != 
+                    currentOverrideCompileFlags.end())
+                {
+                    std::vector<std::string> compileArgsToRemove; 
+                    runcpp2::SplitString(   currentOverrideCompileFlags.at(profile.Name).Remove, 
+                                            " ", 
+                                            compileArgsToRemove);
+                    
+                    for(int i = 0; i < compileArgsToRemove.size(); ++i)
+                    {
+                        std::size_t foundIndex = compileArgs.find(compileArgsToRemove.at(i));
+                        
+                        if(foundIndex != std::string::npos)
+                        {
+                            compileArgs.erase(foundIndex, compileArgsToRemove.at(i).size() + 1);
+                            continue;
+                        }
+                        
+                        ssLOG_WARNING(  "Compile flag to remove not found: " << 
+                                        compileArgsToRemove.at(i));
+                    }
+                    
+                    runcpp2::TrimRight(compileArgs);
+                    compileArgs += " " + currentOverrideCompileFlags.at(profile.Name).Append;
+                }
+            }
         }
         
         compileCommand.replace( foundIndex, 
@@ -187,6 +212,7 @@ namespace
                     const std::vector<std::string>& copiedDependenciesBinariesPaths)
     {
         std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
+        std::vector<std::string> platformNames = runcpp2::GetPlatformNames();
         
         //Link the script to the dependencies
         std::string linkCommand = profile.Linker.Executable + " ";
@@ -199,29 +225,52 @@ namespace
         std::string outputName = scriptName;
         
         //Override the default link flags from the script info
-        if(scriptInfo.OverrideLinkFlags.find(profile.Name) != scriptInfo.OverrideLinkFlags.end())
         {
-            std::vector<std::string> linkFlagsToRemove;
-            
-            runcpp2::SplitString(  scriptInfo.OverrideLinkFlags.at(profile.Name).Remove, 
-                                    " ", 
-                                    linkFlagsToRemove);
-            
-            for(int i = 0; i < linkFlagsToRemove.size(); ++i)
+            int foundPlatformIndex = -1;
+            for(int i = 0; i < platformNames.size(); ++i)
             {
-                std::size_t foundIndex = linkFlags.find(linkFlagsToRemove.at(i));
-                
-                if(foundIndex != std::string::npos)
+                if( scriptInfo.RequiredProfiles.find(platformNames.at(i)) != 
+                    scriptInfo.RequiredProfiles.end())
                 {
-                    linkFlags.erase(foundIndex, linkFlagsToRemove.at(i).size() + 1);
-                    continue;
+                    foundPlatformIndex = i;
+                    break;
                 }
-                
-                ssLOG_WARNING("Link flag to remove not found: " << linkFlagsToRemove.at(i));
             }
             
-            runcpp2::TrimRight(linkFlags);
-            linkFlags += " " + scriptInfo.OverrideLinkFlags.at(profile.Name).Append;
+            if(foundPlatformIndex != -1)
+            {
+                using namespace runcpp2::Data;
+                
+                const std::unordered_map<ProfileName, FlagsOverrideInfo>& 
+                currentOverrideLinkFlags = scriptInfo   .OverrideLinkFlags
+                                                        .at(platformNames.at(foundPlatformIndex))
+                                                        .FlagsOverrides;
+        
+                if(currentOverrideLinkFlags.find(profile.Name) != currentOverrideLinkFlags.end())
+                {
+                    std::vector<std::string> linkFlagsToRemove;
+                    
+                    runcpp2::SplitString(   currentOverrideLinkFlags.at(profile.Name).Remove, 
+                                            " ", 
+                                            linkFlagsToRemove);
+                    
+                    for(int i = 0; i < linkFlagsToRemove.size(); ++i)
+                    {
+                        std::size_t foundIndex = linkFlags.find(linkFlagsToRemove.at(i));
+                        
+                        if(foundIndex != std::string::npos)
+                        {
+                            linkFlags.erase(foundIndex, linkFlagsToRemove.at(i).size() + 1);
+                            continue;
+                        }
+                        
+                        ssLOG_WARNING("Link flag to remove not found: " << linkFlagsToRemove.at(i));
+                    }
+                    
+                    runcpp2::TrimRight(linkFlags);
+                    linkFlags += " " + currentOverrideLinkFlags.at(profile.Name).Append;
+                }
+            }
         }
         
         //Add linker flags for the dependencies
