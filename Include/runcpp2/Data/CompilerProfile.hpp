@@ -22,7 +22,7 @@ namespace runcpp2
                 std::string Name;
                 std::unordered_set<std::string> FileExtensions;
                 std::unordered_set<std::string> Languages;
-                std::vector<std::string> SetupSteps;
+                std::unordered_map<PlatformName, std::vector<std::string>> SetupSteps;
                 std::unordered_map<PlatformName, std::string> ObjectFileExtensions;
                 std::unordered_map<PlatformName, std::vector<std::string>> SharedLibraryExtensions;
                 std::unordered_map<PlatformName, std::vector<std::string>> StaticLibraryExtensions;

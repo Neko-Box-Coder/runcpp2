@@ -3,14 +3,18 @@
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::CompilerInfo::ParseYAML_Node(ryml::ConstNodeRef& profileNode)
+bool runcpp2::Data::CompilerInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
     INTERNAL_RUNCPP2_SAFE_START();
     
     std::vector<NodeRequirement> requirements = 
     {
+        NodeRequirement("EnvironmentSetup", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("Executable", ryml::NodeType_e::KEYVAL, true, false),
-        NodeRequirement("DefaultCompileFlags", ryml::NodeType_e::KEYVAL, true, true),
+        NodeRequirement("DefaultCompileFlags", ryml::NodeType_e::MAP, true, true),
+        NodeRequirement("ExecutableCompileFlags", ryml::NodeType_e::MAP, true, true),
+        NodeRequirement("StaticLibCompileFlags", ryml::NodeType_e::MAP, true, true),
+        NodeRequirement("SharedLibCompileFlags", ryml::NodeType_e::MAP, true, true),
         NodeRequirement("CompileArgs", ryml::NodeType_e::MAP, true, false)
     };
     
@@ -22,16 +26,88 @@ bool runcpp2::Data::CompilerInfo::ParseYAML_Node(ryml::ConstNodeRef& profileNode
         NodeRequirement("OutputPart", ryml::NodeType_e::KEYVAL, true, false)
     };
     
-    if(!CheckNodeRequirements(profileNode, requirements))
+    if(!CheckNodeRequirements(node, requirements))
     {
         ssLOG_ERROR("Compiler Info: Failed to meet requirements");
         return false;
     }
     
-    profileNode["Executable"] >> Executable;
-    profileNode["DefaultCompileFlags"] >> DefaultCompileFlags;
+    if(node.has_child("EnvironmentSetup"))
+    {
+        for(int i = 0; i < node["EnvironmentSetup"].num_children(); ++i)
+        {
+            ryml::ConstNodeRef currentPlatform = node["EnvironmentSetup"][i];
+            
+            if(!currentPlatform.is_keyval())
+            {
+                ssLOG_ERROR("Compiler Info: EnvironmentSetup should be a map of keyvals");
+                return false;
+            }
+            
+            std::string key = GetKey(currentPlatform);
+            EnvironmentSetup[key] = GetValue(currentPlatform);
+        }
+    }
     
-    ryml::ConstNodeRef compileArgsNode = profileNode["CompileArgs"];
+    node["Executable"] >> Executable;
+    
+    for(int i = 0; i < node["DefaultCompileFlags"].num_children(); ++i)
+    {
+        ryml::ConstNodeRef currentPlatform = node["DefaultCompileFlags"][i];
+        
+        if(!currentPlatform.is_keyval())
+        {
+            ssLOG_ERROR("Compiler Info: DefaultCompileFlags should be a map of keyvals");
+            return false;
+        }
+        
+        std::string key = GetKey(currentPlatform);
+        DefaultCompileFlags[key] = GetValue(currentPlatform);
+    }
+    
+    for(int i = 0; i < node["ExecutableCompileFlags"].num_children(); ++i)
+    {
+        ryml::ConstNodeRef currentPlatform = node["ExecutableCompileFlags"][i];
+        
+        if(!currentPlatform.is_keyval())
+        {
+            ssLOG_ERROR("Compiler Info: ExecutableCompileFlags should be a map of keyvals");
+            return false;
+        }
+        
+        std::string key = GetKey(currentPlatform);
+        ExecutableCompileFlags[key] = GetValue(currentPlatform);
+    }
+    
+    for(int i = 0; i < node["StaticLibCompileFlags"].num_children(); ++i)
+    {
+        ryml::ConstNodeRef currentPlatform = node["StaticLibCompileFlags"][i];
+        
+        if(!currentPlatform.is_keyval())
+        {
+            ssLOG_ERROR("Compiler Info: StaticLibCompileFlags should be a map of keyvals");
+            return false;
+        }
+        
+        std::string key = GetKey(currentPlatform);
+        StaticLibCompileFlags[key] = GetValue(currentPlatform);
+    }
+    
+    for(int i = 0; i < node["SharedLibCompileFlags"].num_children(); ++i)
+    {
+        ryml::ConstNodeRef currentPlatform = node["SharedLibCompileFlags"][i];
+        
+        if(!currentPlatform.is_keyval())
+        {
+            ssLOG_ERROR("Compiler Info: SharedLibCompileFlags should be a map of keyvals");
+            return false;
+        }
+        
+        std::string key = GetKey(currentPlatform);
+        SharedLibCompileFlags[key] = GetValue(currentPlatform);
+    }
+    
+    ryml::ConstNodeRef compileArgsNode = node["CompileArgs"];
     
     if(!CheckNodeRequirements(compileArgsNode, argsRequirements))
     {
@@ -53,8 +129,31 @@ std::string runcpp2::Data::CompilerInfo::ToString(std::string indentation) const
     std::string out;
     
     out += indentation + "CompilerInfo:\n";
+    
+    if(EnvironmentSetup.size() != 0)
+    {
+        out += indentation + "    EnvironmentSetup:\n";
+        for(auto it = EnvironmentSetup.begin(); it != EnvironmentSetup.end(); ++it)
+            out += indentation + "        " + it->first + ": " + it->second + "\n";
+    }
+    
     out += indentation + "    Executable: " + Executable + "\n";
-    out += indentation + "    DefaultCompileFlags: " + DefaultCompileFlags + "\n";
+    out += indentation + "    DefaultCompileFlags: \n";
+    for(auto it = DefaultCompileFlags.begin(); it != DefaultCompileFlags.end(); ++it)
+        out += indentation + "        " + it->first + ": " + it->second + "\n";
+    
+    out += indentation + "    ExecutableCompileFlags: \n";
+    for(auto it = ExecutableCompileFlags.begin(); it != ExecutableCompileFlags.end(); ++it)
+        out += indentation + "        " + it->first + ": " + it->second + "\n";
+    
+    out += indentation + "    StaticLibCompileFlags: \n";
+    for(auto it = StaticLibCompileFlags.begin(); it != StaticLibCompileFlags.end(); ++it)
+        out += indentation + "        " + it->first + ": " + it->second + "\n";
+    
+    out += indentation + "    SharedLibCompileFlags: \n";
+    for(auto it = SharedLibCompileFlags.begin(); it != SharedLibCompileFlags.end(); ++it)
+        out += indentation + "        " + it->first + ": " + it->second + "\n";
+    
     out += indentation + "    CompileArgs: \n";
     out += indentation + "        CompilePart: " + CompileArgs.CompilePart + "\n";
     out += indentation + "        IncludePart: " + CompileArgs.IncludePart + "\n";

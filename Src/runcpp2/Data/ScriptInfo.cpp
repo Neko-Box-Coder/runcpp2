@@ -50,8 +50,8 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
         
         for(int i = 0; i < overrideCompileFlagsNode.num_children(); ++i)
         {
-            ProfileName profile = GetKey(overrideCompileFlagsNode[i]);
-            FlagsOverrideInfo compileFlags;
+            PlatformName platform = GetKey(overrideCompileFlagsNode[i]);
+            ProfilesFlagsOverride compileFlags;
             ryml::ConstNodeRef currentCompileFlagsNode = overrideCompileFlagsNode[i];
             
             if(!compileFlags.ParseYAML_Node(currentCompileFlagsNode))
@@ -59,7 +59,7 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
                 ssLOG_ERROR("ScriptInfo: Failed to parse OverrideCompileFlags.");
                 return false;
             }
-            OverrideCompileFlags[profile] = compileFlags;
+            OverrideCompileFlags[platform] = compileFlags;
         }
     }
     
@@ -69,8 +69,8 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
         
         for(int i = 0; i < overrideLinkFlagsNode.num_children(); ++i)
         {
-            ProfileName profile = GetKey(overrideLinkFlagsNode[i]);
-            FlagsOverrideInfo linkFlags;
+            PlatformName platform = GetKey(overrideLinkFlagsNode[i]);
+            ProfilesFlagsOverride linkFlags;
             ryml::ConstNodeRef currentLinkFlagsNode = overrideLinkFlagsNode[i];
             
             if(!linkFlags.ParseYAML_Node(currentLinkFlagsNode))
@@ -78,7 +78,7 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
                 ssLOG_ERROR("ScriptInfo: Failed to parse OverrideLinkFlags.");
                 return false;
             }
-            OverrideLinkFlags[profile] = linkFlags;
+            OverrideLinkFlags[platform] = linkFlags;
         }
     }
     
