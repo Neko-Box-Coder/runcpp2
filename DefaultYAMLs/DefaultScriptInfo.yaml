@@ -19,7 +19,7 @@ OverrideCompileFlags:
             # Flags to be removed from the default compile flags, separated by space
             Remove: ""
             
-            # Additional flags to be appended to the default compile flags
+            # Additional flags to be appended to the default compile flags, separated by space
             Append: ""
     
         
@@ -29,10 +29,10 @@ OverrideLinkFlags:
     All:
         # Profile with the respective flags to override
         "g++":
-            # Flags to be removed from the default compile flags, separated by space
+            # Flags to be removed from the default link flags, separated by space
             Remove: ""
             
-            # Additional flags to be appended to the default compile flags
+            # Additional flags to be appended to the default link flags, separated by space
             Append: ""
 
 # (Optional) The list of dependencies needed by the script
