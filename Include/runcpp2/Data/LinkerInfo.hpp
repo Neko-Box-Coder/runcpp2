@@ -17,7 +17,11 @@ namespace runcpp2
             public:
                 std::unordered_map<PlatformName, std::string> EnvironmentSetup;
                 std::string Executable;
-                std::string DefaultLinkFlags;
+                
+                std::unordered_map<PlatformName, std::string> DefaultLinkFlags;
+                std::unordered_map<PlatformName, std::string> ExecutableLinkFlags;
+                std::unordered_map<PlatformName, std::string> StaticLibLinkFlags;
+                std::unordered_map<PlatformName, std::string> SharedLibLinkFlags;
                 
                 struct Args
                 {

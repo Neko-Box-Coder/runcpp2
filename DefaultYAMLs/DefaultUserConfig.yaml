@@ -53,7 +53,24 @@ CompilerProfiles:
         Executable: "g++"
         
         # Default arguments to provide for compilation which can be overridden by the script
-        DefaultCompileFlags: "-std=c++17 -Wall -Werror"
+        DefaultCompileFlags: 
+            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
+            All: "-std=c++17 -Wall -Werror"
+        
+        # Flags for compiling to an executable
+        ExecutableCompileFlags: 
+            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
+            All: ""
+        
+        # Flags for compiling to a static library
+        StaticLibCompileFlags: 
+            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
+            All: ""
+        
+        # Flags for compiling to a shared library
+        SharedLibCompileFlags: 
+            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
+            All: ""
         
         # The syntax to compile the given file. 
         # [Setup steps if any] --> 
@@ -78,7 +95,24 @@ CompilerProfiles:
         
         # Default arguments to provide for linking dependencies to the binary, 
         # which can be overridden by the script
-        DefaultLinkFlags: ""
+        DefaultLinkFlags: 
+            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
+            All: ""
+        
+        # Flags for linking as an executable
+        ExecutableLinkFlags: 
+            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
+            All: ""
+        
+        # Flags for linking as a static library
+        StaticLibLinkFlags: 
+            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
+            All: ""
+        
+        # Flags for linking as a shared library
+        SharedLibLinkFlags: 
+            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
+            All: ""
         
         # The syntax to link the given file
         LinkerArgs:

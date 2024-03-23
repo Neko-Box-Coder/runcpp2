@@ -16,28 +16,13 @@ namespace
         std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
         std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
         std::string runcpp2ScriptDir = runcpp2::ProcessPath(scriptDirectory + "/.runcpp2");
-        std::vector<std::string> platformNames = runcpp2::GetPlatformNames();
         std::string compileCommand;
         
         //Getting EnvironmentSetup command
         {
-            int foundPlatformIndex = -1;
-            for(int i = 0; i < platformNames.size(); ++i)
-            {
-                if(profile.Compiler.EnvironmentSetup.find(platformNames.at(i)) != 
-                   profile.Compiler.EnvironmentSetup.end())
-                {
-                    foundPlatformIndex = i;
-                    break;
-                }
-            }
-            
-            if(foundPlatformIndex != -1)
-            {
-                compileCommand = profile.Compiler
-                                        .EnvironmentSetup
-                                        .at(platformNames.at(foundPlatformIndex));
-            }
+            compileCommand = 
+                runcpp2::HasValueFromPlatformMap(profile.Compiler.EnvironmentSetup) ?
+                *runcpp2::GetValueFromPlatformMap(profile.Compiler.EnvironmentSetup) : "";
             
             if(!compileCommand.empty())
                 compileCommand += " && ";
@@ -49,7 +34,10 @@ namespace
         //Replace for {CompileFlags} for compile part
         const std::string compileFlagSubstitution = "{CompileFlags}";
         std::size_t foundIndex = compileCommand.find(compileFlagSubstitution);
-        std::string compileArgs = profile.Compiler.DefaultCompileFlags;
+        std::string compileArgs = 
+            runcpp2::HasValueFromPlatformMap(profile.Compiler.DefaultCompileFlags) ? 
+            *runcpp2::GetValueFromPlatformMap(profile.Compiler.DefaultCompileFlags) : "";
+        
         if(foundIndex == std::string::npos)
         {
             ssLOG_ERROR("'" + compileFlagSubstitution + "' missing in CompileArgs.CompilePart");
@@ -58,25 +46,13 @@ namespace
         
         //Override the compile flags from the script info
         {
-            int foundPlatformIndex = -1;
-            for(int i = 0; i < platformNames.size(); ++i)
-            {
-                if( scriptInfo.RequiredProfiles.find(platformNames.at(i)) != 
-                    scriptInfo.RequiredProfiles.end())
-                {
-                    foundPlatformIndex = i;
-                    break;
-                }
-            }
-            
-            if(foundPlatformIndex != -1)
+            if(runcpp2::HasValueFromPlatformMap(scriptInfo.OverrideCompileFlags))
             {
                 using namespace runcpp2::Data;
                 
                 const std::unordered_map<ProfileName, FlagsOverrideInfo>& 
-                currentOverrideCompileFlags = scriptInfo.OverrideCompileFlags
-                                                        .at(platformNames.at(foundPlatformIndex))
-                                                        .FlagsOverrides;
+                currentOverrideCompileFlags = 
+                    runcpp2::GetValueFromPlatformMap(scriptInfo.OverrideCompileFlags)->FlagsOverrides;
                 
                 if( currentOverrideCompileFlags.find(profile.Name) != 
                     currentOverrideCompileFlags.end())
@@ -153,16 +129,12 @@ namespace
         
         //Replace {ObjectFile} for output part
         const std::string objectFileSubstitution = "{ObjectFile}";
-        std::string objectFileExt; 
+        std::string objectFileExt = 
+            runcpp2::HasValueFromPlatformMap(profile.ObjectFileExtensions) ?
+            *runcpp2::GetValueFromPlatformMap(profile.ObjectFileExtensions) : "";
         
-        for(int i = 0; i < platformNames.size(); ++i)
-        {
-            if(profile.ObjectFileExtensions.find(platformNames.at(i)) != profile.ObjectFileExtensions.end())
-            {
-                objectFileExt = profile.ObjectFileExtensions.at(platformNames.at(i));
-                break;
-            }
-        }
+        if(objectFileExt.empty())
+            ssLOG_WARNING("Object file extension is empty");
         
         compileCommand += " " + profile.Compiler.CompileArgs.OutputPart;
         foundIndex = compileCommand.find(objectFileSubstitution);
@@ -241,28 +213,12 @@ namespace
                     const std::vector<std::string>& copiedDependenciesBinariesPaths)
     {
         std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
-        std::vector<std::string> platformNames = runcpp2::GetPlatformNames();
         std::string linkCommand;
         
         //Getting EnvironmentSetup command
         {
-            int foundPlatformIndex = -1;
-            for(int i = 0; i < platformNames.size(); ++i)
-            {
-                if(profile.Linker.EnvironmentSetup.find(platformNames.at(i)) != 
-                   profile.Linker.EnvironmentSetup.end())
-                {
-                    foundPlatformIndex = i;
-                    break;
-                }
-            }
-            
-            if(foundPlatformIndex != -1)
-            {
-                linkCommand = profile   .Linker
-                                        .EnvironmentSetup
-                                        .at(platformNames.at(foundPlatformIndex));
-            }
+            linkCommand =   runcpp2::HasValueFromPlatformMap(profile.Linker.EnvironmentSetup) ? 
+                            *runcpp2::GetValueFromPlatformMap(profile.Linker.EnvironmentSetup) : "";
             
             if(!linkCommand.empty())
                 linkCommand += " && ";
@@ -275,31 +231,22 @@ namespace
         const std::string outputFileSubstitution = "{OutputFile}";
         const std::string objectFileSubstitution = "{ObjectFile}";
         
-        std::string linkFlags = profile.Linker.DefaultLinkFlags;
+        std::string linkFlags = 
+            runcpp2::HasValueFromPlatformMap(profile.Linker.DefaultLinkFlags) ? 
+            *runcpp2::GetValueFromPlatformMap(profile.Linker.DefaultLinkFlags) : "";
+        
         std::string outputName = scriptName;
         
         //Override the default link flags from the script info
         {
-            int foundPlatformIndex = -1;
-            for(int i = 0; i < platformNames.size(); ++i)
-            {
-                if( scriptInfo.RequiredProfiles.find(platformNames.at(i)) != 
-                    scriptInfo.RequiredProfiles.end())
-                {
-                    foundPlatformIndex = i;
-                    break;
-                }
-            }
-            
-            if(foundPlatformIndex != -1)
+            if(runcpp2::HasValueFromPlatformMap(scriptInfo.OverrideLinkFlags))
             {
                 using namespace runcpp2::Data;
                 
                 const std::unordered_map<ProfileName, FlagsOverrideInfo>& 
-                currentOverrideLinkFlags = scriptInfo   .OverrideLinkFlags
-                                                        .at(platformNames.at(foundPlatformIndex))
-                                                        .FlagsOverrides;
-        
+                currentOverrideLinkFlags =  
+                    runcpp2::GetValueFromPlatformMap(scriptInfo.OverrideLinkFlags)->FlagsOverrides;
+
                 if(currentOverrideLinkFlags.find(profile.Name) != currentOverrideLinkFlags.end())
                 {
                     std::vector<std::string> linkFlagsToRemove;
@@ -334,7 +281,6 @@ namespace
         
         //Add linker flags for the dependencies
         {
-            std::vector<std::string> platformNames = runcpp2::GetPlatformNames();
             for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
             {
                 if(!runcpp2::IsDependencyAvailableForThisPlatform(scriptInfo.Dependencies.at(i)))
@@ -349,21 +295,13 @@ namespace
                 const runcpp2::Data::DependencyLinkProperty currentLinkProperty = 
                     scriptInfo.Dependencies[i].LinkProperties.at(profile.Name);
                 
-                for(int j = 0; j < platformNames.size(); ++j)
+                if(runcpp2::HasValueFromPlatformMap(currentLinkProperty.AdditionalLinkOptions))
                 {
-                    if( currentLinkProperty.AdditionalLinkOptions.find(platformNames.at(j)) ==
-                        currentLinkProperty.AdditionalLinkOptions.end())
-                    {
-                        continue;
-                    }
-                    
                     const std::vector<std::string> additionalLinkOptions = 
-                        currentLinkProperty.AdditionalLinkOptions.at(platformNames.at(j));
+                        *runcpp2::GetValueFromPlatformMap(currentLinkProperty.AdditionalLinkOptions);
                     
                     for(int k = 0; k < additionalLinkOptions.size(); ++k)
                         linkFlags += " " + additionalLinkOptions[k];
-                    
-                    break;
                 }
             }
         }
@@ -481,23 +419,10 @@ namespace
     bool RunSetupSteps( const std::string& scriptPath,
                         const runcpp2::Data::CompilerProfile& profile)
     {
-        std::vector<std::string> platformNames = runcpp2::GetPlatformNames();
-    
         if(!profile.SetupSteps.empty())
         {
-            int foundPlatformIndex = -1;
-            for(int i = 0; i < platformNames.size(); ++i)
-            {
-                if( profile.SetupSteps.find(platformNames.at(i)) != 
-                    profile.SetupSteps.end())
-                {
-                    foundPlatformIndex = i;
-                    break;
-                }
-            }
-            
-            if( foundPlatformIndex != -1 && 
-                !profile.SetupSteps.at(platformNames.at(foundPlatformIndex)).empty())
+            if( runcpp2::HasValueFromPlatformMap(profile.SetupSteps) &&
+                !runcpp2::GetValueFromPlatformMap(profile.SetupSteps)->empty())
             {
                 std::string scriptDirectory = ghc::filesystem::path(scriptPath) .parent_path()
                                                                                 .string();
@@ -506,7 +431,7 @@ namespace
                 std::string setupCommand = "cd " + runcpp2ScriptDir;
                 
                 const std::vector<std::string>& currentSetupSteps =
-                    profile.SetupSteps.at(platformNames.at(foundPlatformIndex));
+                    *runcpp2::GetValueFromPlatformMap(profile.SetupSteps);
                 
                 for(int i = 0; i < currentSetupSteps.size(); ++i)
                     setupCommand += " && " + currentSetupSteps.at(i);
@@ -568,7 +493,6 @@ namespace
         return true;
     }
 }
-
 
 bool runcpp2::CompileAndLinkScript( const std::string& scriptPath, 
                                     const Data::ScriptInfo& scriptInfo,

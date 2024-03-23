@@ -85,8 +85,6 @@ namespace
                                     const std::vector<std::string>& dependenciesSourcesPaths,
                                     const std::string runcpp2ScriptDir)
     {
-        std::vector<std::string> platformNames = runcpp2::GetPlatformNames();
-        
         std::error_code _;
         for(int i = 0; i < dependencies.size(); ++i)
         {
@@ -210,47 +208,35 @@ namespace
                                     std::vector<runcpp2::Data::DependencyInfo>& dependencies,
                                     const std::vector<std::string>& dependenciesCopiesPaths)
     {
-        std::vector<std::string> platformNames = runcpp2::GetPlatformNames();
         for(int i = 0; i < dependencies.size(); ++i)
         {
-            if(!runcpp2::IsDependencyAvailableForThisPlatform(dependencies[i]) || dependencies[i].Setup.empty())
+            if( !runcpp2::IsDependencyAvailableForThisPlatform(dependencies[i]) || 
+                dependencies[i].Setup.empty())
+            {
                 continue;
+            }
             
             //Find the platform name we use for setup
             PlatformName chosenPlatformName;
-            for(int j = 0; j < platformNames.size(); ++j)
-            {
-                if(dependencies[i].Setup.find(platformNames[j]) == dependencies[i].Setup.end())
-                    continue;
-                
-                const runcpp2::Data::DependencySetup& dependencySetup = 
-                    dependencies[i].Setup.find(platformNames[j])->second;
-                
-                
-                if(dependencySetup.SetupSteps.find(profileName) == dependencySetup.SetupSteps.end())
-                {
-                    ssLOG_ERROR("Dependency " << dependencies[i].Name << " failed to find setup " 
-                                "with profile " << profileName);
-                    
-                    return false;
-                }
-                
-                chosenPlatformName = platformNames[j];
-                break;
-            }
             
-            if(chosenPlatformName.empty())
+            if(!runcpp2::HasValueFromPlatformMap(dependencies[i].Setup))
             {
                 ssLOG_ERROR("Dependency " << dependencies[i].Name << " failed to find setup " 
                             "with current platform");
-
+            }
+            
+            const runcpp2::Data::DependencySetup& dependencySetup = 
+                *runcpp2::GetValueFromPlatformMap(dependencies[i].Setup);
+            
+            if( dependencySetup.SetupSteps.find(profileName) == dependencySetup.SetupSteps.end())
+            {
+                ssLOG_ERROR("Dependency " << dependencies[i].Name << " failed to find setup " 
+                            "with profile " << profileName);
+                    
                 return false;
             }
             
             //Run the setup command
-            const runcpp2::Data::DependencySetup& dependencySetup = 
-                dependencies[i].Setup.find(chosenPlatformName)->second;
-            
             const std::vector<std::string>& setupCommands = 
                 dependencySetup.SetupSteps.at(profileName);
             
@@ -316,81 +302,53 @@ namespace
                                                 const runcpp2::Data::CompilerProfile& profile,
                                                 std::vector<std::string>& outExtensionsToCopy)
     {
-        std::vector<std::string> platformNames = runcpp2::GetPlatformNames();
-        
         static_assert((int)runcpp2::Data::DependencyLibraryType::COUNT == 4, "");
         switch(dependencyInfo.LibraryType)
         {
             case runcpp2::Data::DependencyLibraryType::STATIC:
             {
-                for(int j = 0; j < platformNames.size(); ++j)
+                if(!runcpp2::HasValueFromPlatformMap(profile.StaticLibraryExtensions))
                 {
-                    if( profile.StaticLibraryExtensions.find(platformNames.at(j)) == 
-                        profile.StaticLibraryExtensions.end())
-                    {
-                        if(j == platformNames.size() - 1)
-                        {
-                            ssLOG_ERROR("Failed to find static library extensions for dependency " << 
-                                        dependencyInfo.Name);
-                            
-                            return false;
-                        }
-                        
-                        continue;
-                    }
+                    ssLOG_ERROR("Failed to find static library extensions for dependency " << 
+                                dependencyInfo.Name);
                     
-                    outExtensionsToCopy = profile.StaticLibraryExtensions.at(platformNames.at(j));
-                    break;
+                    return false;
                 }
+                
+                outExtensionsToCopy = 
+                    *runcpp2::GetValueFromPlatformMap(profile.StaticLibraryExtensions);
                 
                 break;
             }
             case runcpp2::Data::DependencyLibraryType::SHARED:
             {
-                for(int j = 0; j < platformNames.size(); ++j)
+                if(!runcpp2::HasValueFromPlatformMap(profile.SharedLibraryExtensions))
                 {
-                    if( profile.SharedLibraryExtensions.find(platformNames.at(j)) == 
-                        profile.SharedLibraryExtensions.end())
-                    {
-                        if(j == platformNames.size() - 1)
-                        {
-                            ssLOG_ERROR("Failed to find shared library extensions for dependency " << 
-                                        dependencyInfo.Name);
-                            
-                            return false;
-                        }
-                        
-                        continue;
-                    }
+                    ssLOG_ERROR("Failed to find shared library extensions for dependency " << 
+                                dependencyInfo.Name);
                     
-                    outExtensionsToCopy = profile.SharedLibraryExtensions.at(platformNames.at(j));
-                    break;
+                    return false;
                 }
+                
+                outExtensionsToCopy = 
+                    *runcpp2::GetValueFromPlatformMap(profile.SharedLibraryExtensions);
                 
                 break;
             }
             case runcpp2::Data::DependencyLibraryType::OBJECT:
             {
-                for(int j = 0; j < platformNames.size(); ++j)
+                if(!runcpp2::HasValueFromPlatformMap(profile.ObjectFileExtensions))
                 {
-                    if( profile.ObjectFileExtensions.find(platformNames.at(j)) == 
-                        profile.ObjectFileExtensions.end())
-                    {
-                        if(j == platformNames.size() - 1)
-                        {
-                            ssLOG_ERROR("Failed to find shared library extensions for dependency " << 
-                                        dependencyInfo.Name);
-                            
-                            return false;
-                        }
-                        
-                        continue;
-                    }
+                    ssLOG_ERROR("Failed to find shared library extensions for dependency " << 
+                                dependencyInfo.Name);
                     
-                    outExtensionsToCopy.push_back(profile.ObjectFileExtensions.at(platformNames.at(j)));
-                    break;
+                    return false;
                 }
                 
+                const std::string objExtension = 
+                    *runcpp2::GetValueFromPlatformMap(profile.ObjectFileExtensions);
+                
+                outExtensionsToCopy.push_back(objExtension);
                 break;
             }
             case runcpp2::Data::DependencyLibraryType::HEADER:

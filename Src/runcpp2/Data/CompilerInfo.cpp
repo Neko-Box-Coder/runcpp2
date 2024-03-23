@@ -11,7 +11,10 @@ bool runcpp2::Data::CompilerInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     {
         NodeRequirement("EnvironmentSetup", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("Executable", ryml::NodeType_e::KEYVAL, true, false),
-        NodeRequirement("DefaultCompileFlags", ryml::NodeType_e::KEYVAL, true, true),
+        NodeRequirement("DefaultCompileFlags", ryml::NodeType_e::MAP, true, true),
+        NodeRequirement("ExecutableCompileFlags", ryml::NodeType_e::MAP, true, true),
+        NodeRequirement("StaticLibCompileFlags", ryml::NodeType_e::MAP, true, true),
+        NodeRequirement("SharedLibCompileFlags", ryml::NodeType_e::MAP, true, true),
         NodeRequirement("CompileArgs", ryml::NodeType_e::MAP, true, false)
     };
     
@@ -37,7 +40,7 @@ bool runcpp2::Data::CompilerInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
             
             if(!currentPlatform.is_keyval())
             {
-                ssLOG_ERROR("Compiler Info: EnvironmentSetup should be a keyval");
+                ssLOG_ERROR("Compiler Info: EnvironmentSetup should be a map of keyvals");
                 return false;
             }
             
@@ -47,7 +50,62 @@ bool runcpp2::Data::CompilerInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     }
     
     node["Executable"] >> Executable;
-    node["DefaultCompileFlags"] >> DefaultCompileFlags;
+    
+    for(int i = 0; i < node["DefaultCompileFlags"].num_children(); ++i)
+    {
+        ryml::ConstNodeRef currentPlatform = node["DefaultCompileFlags"][i];
+        
+        if(!currentPlatform.is_keyval())
+        {
+            ssLOG_ERROR("Compiler Info: DefaultCompileFlags should be a map of keyvals");
+            return false;
+        }
+        
+        std::string key = GetKey(currentPlatform);
+        DefaultCompileFlags[key] = GetValue(currentPlatform);
+    }
+    
+    for(int i = 0; i < node["ExecutableCompileFlags"].num_children(); ++i)
+    {
+        ryml::ConstNodeRef currentPlatform = node["ExecutableCompileFlags"][i];
+        
+        if(!currentPlatform.is_keyval())
+        {
+            ssLOG_ERROR("Compiler Info: ExecutableCompileFlags should be a map of keyvals");
+            return false;
+        }
+        
+        std::string key = GetKey(currentPlatform);
+        ExecutableCompileFlags[key] = GetValue(currentPlatform);
+    }
+    
+    for(int i = 0; i < node["StaticLibCompileFlags"].num_children(); ++i)
+    {
+        ryml::ConstNodeRef currentPlatform = node["StaticLibCompileFlags"][i];
+        
+        if(!currentPlatform.is_keyval())
+        {
+            ssLOG_ERROR("Compiler Info: StaticLibCompileFlags should be a map of keyvals");
+            return false;
+        }
+        
+        std::string key = GetKey(currentPlatform);
+        StaticLibCompileFlags[key] = GetValue(currentPlatform);
+    }
+    
+    for(int i = 0; i < node["SharedLibCompileFlags"].num_children(); ++i)
+    {
+        ryml::ConstNodeRef currentPlatform = node["SharedLibCompileFlags"][i];
+        
+        if(!currentPlatform.is_keyval())
+        {
+            ssLOG_ERROR("Compiler Info: SharedLibCompileFlags should be a map of keyvals");
+            return false;
+        }
+        
+        std::string key = GetKey(currentPlatform);
+        SharedLibCompileFlags[key] = GetValue(currentPlatform);
+    }
     
     ryml::ConstNodeRef compileArgsNode = node["CompileArgs"];
     
@@ -80,7 +138,22 @@ std::string runcpp2::Data::CompilerInfo::ToString(std::string indentation) const
     }
     
     out += indentation + "    Executable: " + Executable + "\n";
-    out += indentation + "    DefaultCompileFlags: " + DefaultCompileFlags + "\n";
+    out += indentation + "    DefaultCompileFlags: \n";
+    for(auto it = DefaultCompileFlags.begin(); it != DefaultCompileFlags.end(); ++it)
+        out += indentation + "        " + it->first + ": " + it->second + "\n";
+    
+    out += indentation + "    ExecutableCompileFlags: \n";
+    for(auto it = ExecutableCompileFlags.begin(); it != ExecutableCompileFlags.end(); ++it)
+        out += indentation + "        " + it->first + ": " + it->second + "\n";
+    
+    out += indentation + "    StaticLibCompileFlags: \n";
+    for(auto it = StaticLibCompileFlags.begin(); it != StaticLibCompileFlags.end(); ++it)
+        out += indentation + "        " + it->first + ": " + it->second + "\n";
+    
+    out += indentation + "    SharedLibCompileFlags: \n";
+    for(auto it = SharedLibCompileFlags.begin(); it != SharedLibCompileFlags.end(); ++it)
+        out += indentation + "        " + it->first + ": " + it->second + "\n";
+    
     out += indentation + "    CompileArgs: \n";
     out += indentation + "        CompilePart: " + CompileArgs.CompilePart + "\n";
     out += indentation + "        IncludePart: " + CompileArgs.IncludePart + "\n";

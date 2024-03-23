@@ -106,7 +106,42 @@
                                 "additionalProperties": false
                             },
                             "Executable": { "type": "string" },
-                            "DefaultCompileFlags": { "type": "string" },
+                            "DefaultCompileFlags": 
+                            { 
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
+                            },
+                            "ExecutableCompileFlags": 
+                            { 
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
+                            },
+                            "StaticLibCompileFlags": 
+                            { 
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
+                            },
+                            "SharedLibCompileFlags": 
+                            { 
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
+                            },
                             "CompileArgs": 
                             {
                                 "type": "object",
@@ -130,6 +165,9 @@
                         [
                             "Executable",
                             "DefaultCompileFlags",
+                            "ExecutableCompileFlags",
+                            "StaticLibCompileFlags",
+                            "SharedLibCompileFlags",
                             "CompileArgs"
                         ]
                     },
@@ -152,7 +190,42 @@
                                 "additionalProperties": false
                             },
                             "Executable": { "type": "string" },
-                            "DefaultLinkFlags": { "type": "string" },
+                            "DefaultLinkFlags": 
+                            { 
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
+                            },
+                            "ExecutableLinkFlags": 
+                            { 
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
+                            },
+                            "StaticLibLinkFlags": 
+                            { 
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
+                            },
+                            "SharedLibLinkFlags": 
+                            { 
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
+                            },
                             "LinkerArgs": 
                             {
                                 "type": "object",
@@ -172,6 +245,9 @@
                         [
                             "Executable",
                             "DefaultLinkFlags",
+                            "ExecutableLinkFlags",
+                            "StaticLibLinkFlags",
+                            "SharedLibLinkFlags",
                             "LinkerArgs"
                         ]
                     }
