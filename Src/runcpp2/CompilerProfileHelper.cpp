@@ -77,24 +77,16 @@ namespace
         
         if(!scriptInfo.RequiredProfiles.empty())
         {
-            std::vector<PlatformName> platformNames = runcpp2::GetPlatformNames();
-            
-            for(int i = 0; i < platformNames.size(); ++i)
-            {
-                if(scriptInfo.RequiredProfiles.find(platformNames.at(i)) == scriptInfo.RequiredProfiles.end())
-                    continue;
-                
-                const std::vector<ProfileName> allowedProfileNames = scriptInfo .RequiredProfiles
-                                                                                .at(platformNames.at(i));
-
-                for(int j = 0; j < allowedProfileNames.size(); ++j)
-                {
-                    if(allowedProfileNames.at(j) == profile.Name)
-                        return true;
-                }
-                
-                //If we went through all the specified profile names, exit
+            if(!runcpp2::HasValueFromPlatformMap(scriptInfo.RequiredProfiles))
                 return false;
+            
+            const std::vector<ProfileName>& allowedProfileNames = 
+                *runcpp2::GetValueFromPlatformMap(scriptInfo.RequiredProfiles);
+
+            for(int j = 0; j < allowedProfileNames.size(); ++j)
+            {
+                if(allowedProfileNames.at(j) == profile.Name)
+                    return true;
             }
             
             //If we went through all the specified platform names for required profiles, exit

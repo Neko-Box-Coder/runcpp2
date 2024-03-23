@@ -7,8 +7,8 @@
 #include "ssLogger/ssLog.hpp"
 
 
-extern "C" const uint8_t DefaultCompilerProfiles[];
-extern "C" const size_t DefaultCompilerProfiles_size;
+extern "C" const uint8_t DefaultUserConfig[];
+extern "C" const size_t DefaultUserConfig_size;
 extern "C" const uint8_t DefaultScriptDependencies[];
 extern "C" const size_t DefaultScriptDependencies_size;
 
@@ -18,6 +18,8 @@ namespace
                                 std::vector<runcpp2::Data::CompilerProfile>& outProfiles,
                                 std::string& outPreferredProfile)
     {
+        ssLOG_FUNC_DEBUG();
+        
         //TODO: Use callback once ryml noexcept are dropped
         #if 0
             ryml::Callbacks cb;
@@ -42,7 +44,6 @@ namespace
         
         if(!runcpp2::ResolveYAML_Stream(rootTree, rootCompilerProfileNode))
             return false;
-        
         
         if( !runcpp2::ExistAndHasChild(rootCompilerProfileNode, "CompilerProfiles") || 
             !(rootCompilerProfileNode["CompilerProfiles"].type().type & ryml::NodeType_e::SEQ))
@@ -94,6 +95,8 @@ namespace
 bool runcpp2::ReadUserConfig(   std::vector<Data::CompilerProfile>& outProfiles, 
                                 std::string& outPreferredProfile)
 {
+    ssLOG_FUNC_DEBUG();
+    
     //Check if user config exists
     char configDirC_Str[MAX_PATH] = {0};
     
@@ -106,6 +109,8 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::CompilerProfile>& outProfiles,
     }
     
     std::string configDir = std::string(configDirC_Str);
+    
+    ssLOG_INFO("configDir: " << configDir);
     
     std::string compilerConfigFilePaths[2] = 
     {
@@ -140,7 +145,7 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::CompilerProfile>& outProfiles,
             ssLOG_ERROR("Failed to create default config file: " << compilerConfigFilePaths[0]);
             return false;
         }
-        configFile.write((const char*)DefaultCompilerProfiles, DefaultCompilerProfiles_size);
+        configFile.write((const char*)DefaultUserConfig, DefaultUserConfig_size);
         configFile.close();
         foundConfigFilePathIndex = 0;
     }
