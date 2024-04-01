@@ -16,13 +16,13 @@ bool runcpp2::Data::LinkerInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
         NodeRequirement("ExecutableLinkFlags", ryml::NodeType_e::KEYVAL, true, true),
         NodeRequirement("StaticLibLinkFlags", ryml::NodeType_e::KEYVAL, true, true),
         NodeRequirement("SharedLibLinkFlags", ryml::NodeType_e::KEYVAL, true, true),
-        NodeRequirement("LinkerArgs", ryml::NodeType_e::MAP, true, false)
+        NodeRequirement("LinkArgs", ryml::NodeType_e::MAP, true, false)
     };
     
-    std::vector<NodeRequirement> argsRequirements = 
+    std::vector<NodeRequirement> linkArgsRequirements = 
     {
         NodeRequirement("OutputPart", ryml::NodeType_e::KEYVAL, true, false),
-        NodeRequirement("DependenciesPart", ryml::NodeType_e::KEYVAL, true, false)
+        NodeRequirement("LinkPart", ryml::NodeType_e::KEYVAL, true, false)
     };
     
     if(!CheckNodeRequirements(node, requirements))
@@ -106,16 +106,16 @@ bool runcpp2::Data::LinkerInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
         SharedLibLinkFlags[key] = GetValue(currentPlatform);
     }
     
-    ryml::ConstNodeRef linkerArgsNode = node["LinkerArgs"];
+    ryml::ConstNodeRef linkerArgsNode = node["LinkArgs"];
     
-    if(!CheckNodeRequirements(linkerArgsNode, argsRequirements))
+    if(!CheckNodeRequirements(linkerArgsNode, linkArgsRequirements))
     {
-        ssLOG_ERROR("Linker Info: LinkerArgs failed to meet requirements");
+        ssLOG_ERROR("Linker Info: LinkArgs failed to meet requirements");
         return false;
     }
     
-    linkerArgsNode["OutputPart"] >> LinkerArgs.OutputPart;
-    linkerArgsNode["DependenciesPart"] >> LinkerArgs.DependenciesPart;
+    linkerArgsNode["OutputPart"] >> LinkArgs.OutputPart;
+    linkerArgsNode["LinkPart"] >> LinkArgs.LinkPart;
     
     return true;
     
@@ -153,8 +153,8 @@ std::string runcpp2::Data::LinkerInfo::ToString(std::string indentation) const
         out += indentation + "        " + it->first + ": " + it->second + "\n";
     
     out += indentation + "    LinkerArgs:\n";
-    out += indentation + "        OutputPart: " + LinkerArgs.OutputPart + "\n";
-    out += indentation + "        DependenciesPart: " + LinkerArgs.DependenciesPart + "\n";
+    out += indentation + "        OutputPart: " + LinkArgs.OutputPart + "\n";
+    out += indentation + "        LinkPart: " + LinkArgs.LinkPart + "\n";
     
     return out;
 }

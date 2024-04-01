@@ -1,7 +1,7 @@
 #ifndef RUNCPP2_RUNCPP2_HPP
 #define RUNCPP2_RUNCPP2_HPP
 
-#include "runcpp2/Data/CompilerProfile.hpp"
+#include "runcpp2/Data/Profile.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
 
 #include <string>
@@ -12,15 +12,27 @@ namespace runcpp2
     enum class CmdOptions
     {
         NONE,
-        SETUP,
+        RESET_DEPENDENCIES,
+        RESET_USER_CONFIG,
+        EXECUTABLE,
         COUNT
+    };
+    
+    struct OptionInfo
+    {
+        CmdOptions Option;
+        bool HasValue;
+        std::string Value;
+        
+        OptionInfo(CmdOptions option, bool hasValue = false, const std::string& value = "")
+            : Option(option), HasValue(hasValue), Value(value) {}
     };
 
     //--------------------------------------------
     //Running
     //--------------------------------------------
-    bool RunScript( const std::string& scriptPath, 
-                    const std::vector<Data::CompilerProfile>& profiles,
+    int RunScript(  const std::string& scriptPath, 
+                    const std::vector<Data::Profile>& profiles,
                     const std::string& configPreferredProfile,
                     const std::unordered_map<CmdOptions, std::string> currentOptions,
                     const std::vector<std::string>& runArgs);

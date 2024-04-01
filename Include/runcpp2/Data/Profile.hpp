@@ -1,10 +1,11 @@
-#ifndef RUNCPP2_DATA_COMPILER_PROFILE_HPP
-#define RUNCPP2_DATA_COMPILER_PROFILE_HPP
+#ifndef RUNCPP2_DATA_PROFILE_HPP
+#define RUNCPP2_DATA_PROFILE_HPP
 
 #include "runcpp2/Data/CompilerInfo.hpp"
 #include "runcpp2/Data/LinkerInfo.hpp"
-
 #include "runcpp2/Data/ParseCommon.hpp"
+#include "runcpp2/Data/FileProperties.hpp"
+
 #include "ryml.hpp"
 
 #include <string>
@@ -16,17 +17,18 @@ namespace runcpp2
 {
     namespace Data
     {
-        class CompilerProfile
+        class Profile
         {
             public:
                 std::string Name;
                 std::unordered_set<std::string> FileExtensions;
                 std::unordered_set<std::string> Languages;
                 std::unordered_map<PlatformName, std::vector<std::string>> SetupSteps;
-                std::unordered_map<PlatformName, std::string> ObjectFileExtensions;
-                std::unordered_map<PlatformName, std::vector<std::string>> SharedLibraryExtensions;
-                std::unordered_map<PlatformName, std::vector<std::string>> StaticLibraryExtensions;
-                std::unordered_map<PlatformName, std::vector<std::string>> DebugSymbolFileExtensions;
+                FileProperties ObjectLinkFile;
+                FileProperties SharedLinkFile;
+                FileProperties SharedLibraryFile;
+                FileProperties StaticLinkFile;
+                FileProperties DebugSymbolFile;
                 
                 CompilerInfo Compiler;
                 LinkerInfo Linker;

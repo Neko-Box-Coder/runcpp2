@@ -159,5 +159,6 @@ std::string runcpp2::Data::CompilerInfo::ToString(std::string indentation) const
     out += indentation + "        IncludePart: " + CompileArgs.IncludePart + "\n";
     out += indentation + "        InputPart: " + CompileArgs.InputPart + "\n";
     out += indentation + "        OutputPart: " + CompileArgs.OutputPart + "\n";
+    out += "\n";
     return out;
 }

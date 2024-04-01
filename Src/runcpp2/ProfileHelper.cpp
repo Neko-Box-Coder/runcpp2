@@ -1,4 +1,4 @@
-#include "runcpp2/CompilerProfileHelper.hpp"
+#include "runcpp2/ProfileHelper.hpp"
 #include "ghc/filesystem.hpp"
 #include "runcpp2/PlatformUtil.hpp"
 #include "ssLogger/ssLog.hpp"
@@ -7,7 +7,7 @@
 namespace  
 {
 
-    bool IsProfileAvailableOnSystem(const runcpp2::Data::CompilerProfile& profile)
+    bool IsProfileAvailableOnSystem(const runcpp2::Data::Profile& profile)
     {
         //Check compiler
         std::string command = profile.Compiler.Executable + " -v";
@@ -58,7 +58,7 @@ namespace
         return true;
     }
 
-    bool IsProfileValidForScript(   const runcpp2::Data::CompilerProfile& profile, 
+    bool IsProfileValidForScript(   const runcpp2::Data::Profile& profile, 
                                     const runcpp2::Data::ScriptInfo& scriptInfo, 
                                     const std::string& scriptPath)
     {
@@ -97,7 +97,7 @@ namespace
     }
 
     std::vector<ProfileName> 
-    GetAvailableProfiles(   const std::vector<runcpp2::Data::CompilerProfile>& profiles,
+    GetAvailableProfiles(   const std::vector<runcpp2::Data::Profile>& profiles,
                             const runcpp2::Data::ScriptInfo& scriptInfo,
                             const std::string& scriptPath)
     {
@@ -120,7 +120,7 @@ namespace
 
 int runcpp2::GetPreferredProfileIndex(  const std::string& scriptPath, 
                                         const Data::ScriptInfo& scriptInfo,
-                                        const std::vector<Data::CompilerProfile>& profiles, 
+                                        const std::vector<Data::Profile>& profiles, 
                                         const std::string& configPreferredProfile)
 {
     std::vector<ProfileName> availableProfiles = GetAvailableProfiles(  profiles, 

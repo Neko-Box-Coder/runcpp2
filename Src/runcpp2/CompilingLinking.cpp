@@ -10,7 +10,8 @@ namespace
 {
     bool CompileScript( const std::string& scriptPath, 
                         const runcpp2::Data::ScriptInfo& scriptInfo,
-                        const runcpp2::Data::CompilerProfile& profile,
+                        const runcpp2::Data::Profile& profile,
+                        bool compileAsExecutable,
                         std::string& outScriptObjectFilePath)
     {
         std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
@@ -34,15 +35,36 @@ namespace
         //Replace for {CompileFlags} for compile part
         const std::string compileFlagSubstitution = "{CompileFlags}";
         std::size_t foundIndex = compileCommand.find(compileFlagSubstitution);
-        std::string compileArgs = 
-            runcpp2::HasValueFromPlatformMap(profile.Compiler.DefaultCompileFlags) ? 
-            *runcpp2::GetValueFromPlatformMap(profile.Compiler.DefaultCompileFlags) : "";
-        
         if(foundIndex == std::string::npos)
         {
             ssLOG_ERROR("'" + compileFlagSubstitution + "' missing in CompileArgs.CompilePart");
             return false;
         }
+        
+        std::string compileArgs = 
+            runcpp2::HasValueFromPlatformMap(profile.Compiler.DefaultCompileFlags) ? 
+            *runcpp2::GetValueFromPlatformMap(profile.Compiler.DefaultCompileFlags) : "";
+        
+        std::string additionalCompileFlags = "";
+        
+        if(compileAsExecutable)
+        {
+            if(runcpp2::HasValueFromPlatformMap(profile.Compiler.ExecutableCompileFlags))
+            {
+                additionalCompileFlags = 
+                    *runcpp2::GetValueFromPlatformMap(profile.Compiler.ExecutableCompileFlags);
+            }
+        }
+        else
+        {
+            if(runcpp2::HasValueFromPlatformMap(profile.Compiler.SharedLibCompileFlags))
+            {
+                additionalCompileFlags = 
+                    *runcpp2::GetValueFromPlatformMap(profile.Compiler.SharedLibCompileFlags);
+            }
+        }
+        
+        compileArgs +=  (compileArgs.empty() ? "" : " ") + additionalCompileFlags;
         
         //Override the compile flags from the script info
         {
@@ -130,8 +152,7 @@ namespace
         //Replace {ObjectFile} for output part
         const std::string objectFileSubstitution = "{ObjectFile}";
         std::string objectFileExt = 
-            runcpp2::HasValueFromPlatformMap(profile.ObjectFileExtensions) ?
-            *runcpp2::GetValueFromPlatformMap(profile.ObjectFileExtensions) : "";
+            *runcpp2::GetValueFromPlatformMap(profile.ObjectLinkFile.Extension);
         
         if(objectFileExt.empty())
             ssLOG_WARNING("Object file extension is empty");
@@ -145,7 +166,7 @@ namespace
         }
         
         std::string objectFilePath = runcpp2::ProcessPath(  runcpp2ScriptDir + "/" + 
-                                                            scriptName + "." + objectFileExt);
+                                                            scriptName + objectFileExt);
         
         compileCommand.replace(foundIndex, objectFileSubstitution.size(), objectFilePath);
         
@@ -208,9 +229,11 @@ namespace
 
     bool LinkScript(const std::string& scriptPath, 
                     const runcpp2::Data::ScriptInfo& scriptInfo,
-                    const runcpp2::Data::CompilerProfile& profile,
+                    const runcpp2::Data::Profile& profile,
                     const std::string& scriptObjectFilePath,
-                    const std::vector<std::string>& copiedDependenciesBinariesPaths)
+                    const std::vector<std::string>& copiedDependenciesBinariesPaths,
+                    bool linkAsExecutable,
+                    const std::string& exeExt)
     {
         std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
         std::string linkCommand;
@@ -226,7 +249,8 @@ namespace
         
         //Link the script to the dependencies
         linkCommand += profile.Linker.Executable + " ";
-        std::string currentOutputPart = profile.Linker.LinkerArgs.OutputPart;
+        std::string currentOutputPart = profile.Linker.LinkArgs.OutputPart;
+        
         const std::string linkFlagsSubstitution = "{LinkFlags}";
         const std::string outputFileSubstitution = "{OutputFile}";
         const std::string objectFileSubstitution = "{ObjectFile}";
@@ -235,7 +259,42 @@ namespace
             runcpp2::HasValueFromPlatformMap(profile.Linker.DefaultLinkFlags) ? 
             *runcpp2::GetValueFromPlatformMap(profile.Linker.DefaultLinkFlags) : "";
         
-        std::string outputName = scriptName;
+        std::string additionalLinkFlags = "";
+        
+        if(linkAsExecutable)
+        {
+            if(!runcpp2::HasValueFromPlatformMap(profile.Linker.ExecutableLinkFlags))
+            {
+                ssLOG_ERROR("No Link flags for executable");
+                return false;
+            }
+            
+            additionalLinkFlags = 
+                *runcpp2::GetValueFromPlatformMap(profile.Linker.ExecutableLinkFlags);
+        }
+        else
+        {
+            if(!runcpp2::HasValueFromPlatformMap(profile.Linker.SharedLibLinkFlags))
+            {
+                ssLOG_ERROR("No Link flags for shared library");
+                return false;
+            }
+            
+            additionalLinkFlags = 
+                *runcpp2::GetValueFromPlatformMap(profile.Linker.SharedLibLinkFlags);
+        }
+        
+        linkFlags +=  (linkFlags.empty() ? "" : " ") + additionalLinkFlags;
+        
+        const std::string sharedLibPrefix = 
+            *runcpp2::GetValueFromPlatformMap(profile.SharedLinkFile.Prefix);
+        
+        const std::string sharedLibExtension =
+            *runcpp2::GetValueFromPlatformMap(profile.SharedLinkFile.Extension);
+
+        std::string outputFile =    linkAsExecutable ? 
+                                    scriptName + exeExt : 
+                                    sharedLibPrefix + scriptName + sharedLibExtension;
         
         //Override the default link flags from the script info
         {
@@ -322,7 +381,7 @@ namespace
             ssLOG_ERROR("'" + outputFileSubstitution + "' missing in LinkerArgs");
             return false;
         }
-        currentOutputPart.replace(foundIndex, outputFileSubstitution.size(), outputName);
+        currentOutputPart.replace(foundIndex, outputFileSubstitution.size(), outputFile);
         
         //Replace {ObjectFile} for output part
         foundIndex = currentOutputPart.find(objectFileSubstitution);
@@ -336,25 +395,46 @@ namespace
         runcpp2::Trim(currentOutputPart);
         linkCommand += currentOutputPart;
         
-        //Replace {DependencyFile} for Dependencies part
-        const std::string dependencySubstitution = "{DependencyFile}";
-        const std::string dependencyPart = profile.Linker.LinkerArgs.DependenciesPart;
+        //Replace {LinkFile} for LinkPart part
+        const std::string linkSubstitution = "{LinkFile}";
+        const std::string linkPart = profile.Linker.LinkArgs.LinkPart;
         
-        foundIndex = dependencyPart.find(dependencySubstitution);
+        foundIndex = linkPart.find(linkSubstitution);
         if(foundIndex == std::string::npos)
         {
-            ssLOG_ERROR("'" + dependencySubstitution + "' missing in LinkerArgs");
+            ssLOG_ERROR("'" + linkSubstitution + "' missing in LinkerArgs");
             return false;
         }
         
         for(int i = 0; i < copiedDependenciesBinariesPaths.size(); ++i)
         {
-            std::string currentDependencyPart = dependencyPart;
-            currentDependencyPart.replace(  foundIndex, 
-                                            dependencySubstitution.size(), 
-                                            copiedDependenciesBinariesPaths[i]);
+            size_t foundIndex = copiedDependenciesBinariesPaths[i].find_last_of(".");
             
-            linkCommand += " " + currentDependencyPart;
+            if( foundIndex == std::string::npos &&
+                !runcpp2::GetValueFromPlatformMap(profile.SharedLinkFile.Extension)->empty() &&
+                !runcpp2::GetValueFromPlatformMap(profile.StaticLinkFile.Extension)->empty())
+            {
+                continue;
+            }
+            
+            //Check if this is a file we can link
+            if(foundIndex != std::string::npos)
+            {
+                std::string extension = copiedDependenciesBinariesPaths[i].substr(foundIndex);
+                
+                if( extension != *runcpp2::GetValueFromPlatformMap(profile.SharedLinkFile.Extension) &&
+                    extension != *runcpp2::GetValueFromPlatformMap(profile.StaticLinkFile.Extension))
+                {
+                    continue;
+                }
+            }
+            
+            std::string currentLinkPart = linkPart;
+            currentLinkPart.replace(foundIndex, 
+                                    linkSubstitution.size(), 
+                                    copiedDependenciesBinariesPaths[i]);
+            
+            linkCommand += " " + currentLinkPart;
         }
         
         std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
@@ -417,7 +497,7 @@ namespace
     }
     
     bool RunSetupSteps( const std::string& scriptPath,
-                        const runcpp2::Data::CompilerProfile& profile)
+                        const runcpp2::Data::Profile& profile)
     {
         if(!profile.SetupSteps.empty())
         {
@@ -496,8 +576,10 @@ namespace
 
 bool runcpp2::CompileAndLinkScript( const std::string& scriptPath, 
                                     const Data::ScriptInfo& scriptInfo,
-                                    const Data::CompilerProfile& profile,
-                                    const std::vector<std::string>& copiedDependenciesBinariesPaths)
+                                    const Data::Profile& profile,
+                                    const std::vector<std::string>& copiedDependenciesBinariesPaths,
+                                    bool buildExecutable,
+                                    const std::string exeExt)
 {
     if(!RunSetupSteps(scriptPath, profile))
     {
@@ -507,7 +589,7 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
     
     std::string scriptObjectFilePath;
 
-    if(!CompileScript(scriptPath, scriptInfo, profile, scriptObjectFilePath))
+    if(!CompileScript(scriptPath, scriptInfo, profile, buildExecutable, scriptObjectFilePath))
     {
         ssLOG_ERROR("CompileScript failed");
         return false;
@@ -517,7 +599,9 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
                     scriptInfo,
                     profile,
                     scriptObjectFilePath,
-                    copiedDependenciesBinariesPaths))
+                    copiedDependenciesBinariesPaths,
+                    buildExecutable,
+                    exeExt))
     {
         ssLOG_ERROR("LinkScript failed");
         return false;

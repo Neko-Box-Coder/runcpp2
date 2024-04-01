@@ -3,7 +3,7 @@
 
 #include "runcpp2/Data/DependencyInfo.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
-#include "runcpp2/Data/CompilerProfile.hpp"
+#include "runcpp2/Data/Profile.hpp"
 #include <vector>
 
 namespace runcpp2
@@ -21,7 +21,7 @@ namespace runcpp2
     bool CopyDependenciesBinaries(  const std::string& scriptPath, 
                                     const Data::ScriptInfo& scriptInfo,
                                     const std::vector<std::string>& dependenciesCopiesPaths,
-                                    const Data::CompilerProfile& profile,
+                                    const Data::Profile& profile,
                                     std::vector<std::string>& outCopiedBinariesPaths);
 }
 

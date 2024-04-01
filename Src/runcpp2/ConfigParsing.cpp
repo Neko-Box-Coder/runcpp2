@@ -15,7 +15,7 @@ extern "C" const size_t DefaultScriptDependencies_size;
 namespace 
 {
     bool ParseUserConfig( const std::string& userConfigString, 
-                                std::vector<runcpp2::Data::CompilerProfile>& outProfiles,
+                                std::vector<runcpp2::Data::Profile>& outProfiles,
                                 std::string& outPreferredProfile)
     {
         ssLOG_FUNC_DEBUG();
@@ -40,32 +40,32 @@ namespace
         
         std::string temp = userConfigString;
         ryml::Tree rootTree = ryml::parse_in_place(c4::to_substr(temp));
-        ryml::ConstNodeRef rootCompilerProfileNode;
+        ryml::ConstNodeRef rootProfileNode;
         
-        if(!runcpp2::ResolveYAML_Stream(rootTree, rootCompilerProfileNode))
+        if(!runcpp2::ResolveYAML_Stream(rootTree, rootProfileNode))
             return false;
         
-        if( !runcpp2::ExistAndHasChild(rootCompilerProfileNode, "CompilerProfiles") || 
-            !(rootCompilerProfileNode["CompilerProfiles"].type().type & ryml::NodeType_e::SEQ))
+        if( !runcpp2::ExistAndHasChild(rootProfileNode, "Profiles") || 
+            !(rootProfileNode["Profiles"].type().type & ryml::NodeType_e::SEQ))
         {
-            ssLOG_ERROR("CompilerProfiles is invalid");
+            ssLOG_ERROR("Profiles is invalid");
             return false;
         }
         
-        ryml::ConstNodeRef compilerProfilesNode = rootCompilerProfileNode["CompilerProfiles"];
+        ryml::ConstNodeRef profilesNode = rootProfileNode["Profiles"];
         
-        if(compilerProfilesNode.num_children() == 0)
+        if(profilesNode.num_children() == 0)
         {
             ssLOG_ERROR("No compiler profiles found");
             return false;
         }
         
-        for(int i = 0; i < compilerProfilesNode.num_children(); ++i)
+        for(int i = 0; i < profilesNode.num_children(); ++i)
         {
-            ryml::ConstNodeRef currentCompilerProfileNode = compilerProfilesNode[i];
+            ryml::ConstNodeRef currentProfileNode = profilesNode[i];
             
             outProfiles.push_back({});
-            if(!outProfiles.back().ParseYAML_Node(currentCompilerProfileNode))
+            if(!outProfiles.back().ParseYAML_Node(currentProfileNode))
             {
                 outProfiles.erase(outProfiles.end() - 1);
                 ssLOG_ERROR("Failed to parse compiler profile at index " << i);
@@ -73,10 +73,10 @@ namespace
             }
         }
         
-        if( runcpp2::ExistAndHasChild(rootCompilerProfileNode, "PreferredProfile") && 
-            rootCompilerProfileNode["PreferredProfile"].type().type & ryml::NodeType_e::KEYVAL)
+        if( runcpp2::ExistAndHasChild(rootProfileNode, "PreferredProfile") && 
+            rootProfileNode["PreferredProfile"].type().type & ryml::NodeType_e::KEYVAL)
         {
-            rootCompilerProfileNode["PreferredProfile"] >> outPreferredProfile;
+            rootProfileNode["PreferredProfile"] >> outPreferredProfile;
             if(outPreferredProfile.empty())
             {
                 outPreferredProfile = outProfiles.at(0).Name;
@@ -90,13 +90,11 @@ namespace
         
         INTERNAL_RUNCPP2_SAFE_CATCH_ACTION(ryml::reset_callbacks(); return false;);
     }
+    
 }
 
-bool runcpp2::ReadUserConfig(   std::vector<Data::CompilerProfile>& outProfiles, 
-                                std::string& outPreferredProfile)
+std::string runcpp2::GetConfigFilePath()
 {
-    ssLOG_FUNC_DEBUG();
-    
     //Check if user config exists
     char configDirC_Str[MAX_PATH] = {0};
     
@@ -105,7 +103,7 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::CompilerProfile>& outProfiles,
     if(strlen(configDirC_Str) == 0)
     {
         ssLOG_ERROR("Failed to retrieve user config path");
-        return false;
+        return "";
     }
     
     std::string configDir = std::string(configDirC_Str);
@@ -114,12 +112,9 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::CompilerProfile>& outProfiles,
     
     std::string compilerConfigFilePaths[2] = 
     {
-        configDir + "/UserConfig.yaml", 
-        configDir + "/UserConfig.yml"
+        configDir + "UserConfig.yaml", 
+        configDir + "UserConfig.yml"
     };
-    int foundConfigFilePathIndex = -1;
-    
-    bool writeDefaultConfig = true;
     
     //config directory is created by get_user_config_folder if it doesn't exist
     {
@@ -127,38 +122,95 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::CompilerProfile>& outProfiles,
         {
             //Check if the config file exists
             if(ghc::filesystem::exists(compilerConfigFilePaths[i]))
-            {
-                foundConfigFilePathIndex = i;
-                writeDefaultConfig = false;
-                break;
-            }
+                return compilerConfigFilePaths[i];
         }
     }
     
-    //Create default compiler profiles
-    if(writeDefaultConfig)
+    return compilerConfigFilePaths[0];
+}
+
+bool runcpp2::WriteDefaultConfig(const std::string& userConfigPath)
+{
+    std::error_code _;
+    if(ghc::filesystem::exists(userConfigPath, _))
     {
-        //Create default compiler profiles
-        std::ofstream configFile(compilerConfigFilePaths[0], std::ios::binary);
-        if(!configFile)
+        std::string backupPath = userConfigPath;
+        int backupCount = 0;
+        do
         {
-            ssLOG_ERROR("Failed to create default config file: " << compilerConfigFilePaths[0]);
-            return false;
+            if(backupCount > 10)
+            {
+                ssLOG_ERROR("Failed to backup existing user config: " << userConfigPath);
+                return false;
+            }
+            
+            backupPath += ".bak";
+            
+            if(ghc::filesystem::exists(backupPath, _))
+            {
+                ssLOG_WARNING("Backup path exists: " << backupPath);
+                ++backupCount;
+                continue;
+            }
+            
+            std::error_code copyErrorCode;
+            ghc::filesystem::copy(userConfigPath, backupPath, copyErrorCode);
+            if(copyErrorCode)
+            {
+                ssLOG_ERROR("Failed to backup existing user config: " << userConfigPath <<
+                            " with error: " << _.message());
+                
+                return false;
+            }
+            
+            ssLOG_INFO("Backed up existing user config: " << backupPath);
+            if(!ghc::filesystem::remove(userConfigPath, _))
+            {
+                ssLOG_ERROR("Failed to delete existing user config: " << userConfigPath);
+                return false;
+            }
+            
+            break;
         }
-        configFile.write((const char*)DefaultUserConfig, DefaultUserConfig_size);
-        configFile.close();
-        foundConfigFilePathIndex = 0;
+        while(true);
+    }
+    
+    //Create default compiler profiles
+    std::ofstream configFile(userConfigPath, std::ios::binary);
+    if(!configFile)
+    {
+        ssLOG_ERROR("Failed to create default config file: " << userConfigPath);
+        return false;
+    }
+    configFile.write((const char*)DefaultUserConfig, DefaultUserConfig_size);
+    configFile.close();
+    return true;
+}
+
+
+bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles, 
+                                std::string& outPreferredProfile)
+{
+    ssLOG_FUNC_DEBUG();
+    
+    std::string configPath = GetConfigFilePath();
+    if(configPath.empty())
+        return false;
+    
+    if(!ghc::filesystem::exists(configPath))
+    {
+        ssLOG_INFO("Config file doesn't exist. Creating one at: " << configPath);
+        if(!WriteDefaultConfig(configPath))
+            return false;
     }
     
     //Read compiler profiles
     std::string userConfigContent;
     {
-        std::ifstream userConfigFilePath(compilerConfigFilePaths[foundConfigFilePathIndex]);
+        std::ifstream userConfigFilePath(configPath);
         if(!userConfigFilePath)
         {
-            ssLOG_ERROR("Failed to open config file: " << 
-                        compilerConfigFilePaths[foundConfigFilePathIndex]);
-            
+            ssLOG_ERROR("Failed to open config file: " << configPath);
             return false;
         }
         std::stringstream buffer;
@@ -168,9 +220,7 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::CompilerProfile>& outProfiles,
     
     if(!ParseUserConfig(userConfigContent, outProfiles, outPreferredProfile))
     {
-        ssLOG_ERROR("Failed to parse config file: " << 
-                    compilerConfigFilePaths[foundConfigFilePathIndex]);
-        
+        ssLOG_ERROR("Failed to parse config file: " << configPath);
         return false;
     }
 

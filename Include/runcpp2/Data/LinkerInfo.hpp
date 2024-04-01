@@ -26,10 +26,10 @@ namespace runcpp2
                 struct Args
                 {
                     std::string OutputPart;
-                    std::string DependenciesPart;
+                    std::string LinkPart;
                 };
                 
-                Args LinkerArgs;
+                Args LinkArgs;
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;

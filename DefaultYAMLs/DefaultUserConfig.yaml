@@ -5,7 +5,7 @@
 PreferredProfile: "g++"
 
 # List of compiler/linker profiles that instruct how to compile/link
-CompilerProfiles:
+Profiles:
 -   Name: "g++"
     
     # The file extensions associated with the profile
@@ -20,26 +20,54 @@ CompilerProfiles:
         # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
         All: []
     
-    # The file extension for the object files for each platform
-    ObjectFileExtensions:
-        Windows: obj
-        Unix: o
+    # The file properties for the object files for each platform
+    ObjectLinkFile:
+        Prefix:
+            Windows: ""
+            Unix: ""
+        Extension:
+            Windows: ".obj"
+            Unix: ".o"
     
-    # The file extensions for the shared libraries for each platform
-    SharedLibraryExtensions:
-        Windows: [dll, lib]
-        Linux: [so]
-        MacOS: [dylib]
+    # The file properties for the files to be linked as shared libraries for each platform
+    SharedLinkFile:
+        Prefix:
+            Windows: ""
+            Linux: "lib"
+            MacOS: ""
+        Extension:
+            Windows: ".lib"
+            Linux: ".so"
+            MacOS: ".dylib"
     
-    # The file extensions for the static libraries for each platform
-    StaticLibraryExtensions:
-        Windows: [lib]
-        Unix: [a]
+    # The file properties for the files to be copied as shared libraries for each platform
+    SharedLibraryFile:
+        Prefix:
+            Windows: ""
+            Linux: "lib"
+            MacOS: ""
+        Extension:
+            Windows: ".dll"
+            Linux: ".so"
+            MacOS: ".dylib"
     
-    # (Optional) The file extensions for debug symbols to be copied alongside the binary
-    DebugSymbolFileExtensions:
-        Windows: []
-        Unix: []
+    # The file properties for the files to be linked as static libraries for each platform
+    StaticLinkFile:
+        Prefix:
+            Unix: "lib"
+            Windows: ""
+        Extension:
+            Windows: ".lib"
+            Unix: ".a"
+    
+    # (Optional) The file properties for debug symbols to be copied alongside the binary
+    DebugSymbolFile:
+        Prefix:
+            Windows: ""
+            Unix: ""
+        Extension:
+            Windows: ""
+            Unix: ""
     
     # Specify the compiler settings, so the final flow will be:
     # [Setup steps if any] --> {Executable} {CompileArgs}
@@ -70,7 +98,7 @@ CompilerProfiles:
         # Flags for compiling to a shared library
         SharedLibCompileFlags: 
             # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
-            All: ""
+            All: "-fpic"
         
         # The syntax to compile the given file. 
         # [Setup steps if any] --> 
@@ -112,15 +140,15 @@ CompilerProfiles:
         # Flags for linking as a shared library
         SharedLibLinkFlags: 
             # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
-            All: ""
+            All: "-shared"
         
         # The syntax to link the given file
-        LinkerArgs:
+        LinkArgs:
             # Syntax for outputting to the binary. 
             # {LinkFlags}, {OutputFile}, {ObjectFile} will be replaced accordingly
             OutputPart: "{LinkFlags} -o {OutputFile} {ObjectFile}"
             
             # Syntax for linking each dependency. 
-            # {DependencyFile} will be replaced accordingly
-            #DependenciesPart: "-l:{DependencyFile}"
-            DependenciesPart: "{DependencyFile}"
+            # {LinkFile} will be replaced accordingly
+            # LinkPart: "-l:{LinkFile}"
+            LinkPart: "{LinkFile}"
