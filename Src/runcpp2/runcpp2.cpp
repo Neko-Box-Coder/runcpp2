@@ -300,6 +300,10 @@ namespace
                     runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .SharedLibraryFile
                                                                             .Extension);
 
+                const std::string* debugExtToCopy = 
+                    runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .DebugSymbolFile
+                                                                            .Extension);
+
                 if(sharedLibExtToCopy == nullptr)
                 {
                     ssLOG_ERROR("Shared library extension not found in compiler profile");
@@ -331,6 +335,11 @@ namespace
                             
                             if(currentExtension == *sharedLibExtToCopy)
                                 outCopiedBinariesPaths.push_back(it.path().string());
+                            else if(debugExtToCopy != nullptr && 
+                                    currentExtension == *debugExtToCopy)
+                            {
+                                outCopiedBinariesPaths.push_back(it.path().string());
+                            }
                         }
                         
                         return true;
