@@ -33,7 +33,7 @@ Profiles:
     SharedLinkFile:
         Prefix:
             Windows: ""
-            Linux: "lib"
+            Linux: ".lib"
             MacOS: ""
         Extension:
             Windows: ".lib"
@@ -44,7 +44,7 @@ Profiles:
     SharedLibraryFile:
         Prefix:
             Windows: ""
-            Linux: "lib"
+            Linux: ".lib"
             MacOS: ""
         Extension:
             Windows: ".dll"
@@ -54,7 +54,7 @@ Profiles:
     # The file properties for the files to be linked as static libraries for each platform
     StaticLinkFile:
         Prefix:
-            Unix: "lib"
+            Unix: ".lib"
             Windows: ""
         Extension:
             Windows: ".lib"
