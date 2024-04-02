@@ -41,6 +41,7 @@ namespace
                             const std::string& exeExt,
                             const std::vector<std::string>& runArgs)
     {
+        INTERNAL_RUNCPP2_SAFE_START();
         ssLOG_FUNC_DEBUG();
         
         std::error_code _;
@@ -127,6 +128,7 @@ namespace
         
         ghc::filesystem::remove(scriptDirectory + "/" + std::string(scriptName + exeExt), _);
         return true;
+        INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
     }
     
     bool CopyCompiledExecutable(const std::string& scriptDirectory,
@@ -193,6 +195,7 @@ namespace
                                 const std::string& compiledSharedLibPath,
                                 const std::vector<std::string>& runArgs)
     {
+        INTERNAL_RUNCPP2_SAFE_START();
         ssLOG_FUNC_DEBUG();
         
         std::error_code _;
@@ -269,6 +272,8 @@ namespace
             result = scriptMain();
         
         return result;
+        
+        INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(-1);
     }
     
     bool HasCompiledCache(  const std::unordered_map<   runcpp2::CmdOptions, 
