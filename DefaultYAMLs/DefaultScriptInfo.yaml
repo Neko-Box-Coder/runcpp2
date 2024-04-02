@@ -43,7 +43,7 @@ Dependencies:
     # Supported platforms of the dependency
     Platforms: [Windows, Linux, MacOS]
     
-    # The source of getting the dependency
+    # The source of getting the dependency (Git, Local)
     Source:
         Type: Git
         Value: "https://github.com/MyUser/MyLibrary.git"
@@ -55,7 +55,7 @@ Dependencies:
     IncludePaths:
     -   "src/include"
     
-    # (Optional if LibraryType is Header) Link properties of the dependency
+    # (Optional) Link properties of the dependency
     LinkProperties:
         # Properties for searching the library binary for the profile
         "g++":

@@ -1,3 +1,4 @@
+- Make SearchLibraryNames and SearchDirectories optional
 - Add System Source Type
 - Change cache to be in the config folder
 - Output compile_command.json
