@@ -1,3 +1,5 @@
+- Add option to add Default Script Info to script
+- Add tests and examples (On Windows as well)
 - Make SearchLibraryNames and SearchDirectories optional
 - Add System Source Type
 - Change cache to be in the config folder
