@@ -538,7 +538,7 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                     return false;
                 }
             
-                for(auto it :  ghc::filesystem::directory_iterator(currentSearchDirectory, _))
+                for(auto it : ghc::filesystem::directory_iterator(currentSearchDirectory, _))
                 {
                     if(it.is_directory())
                         continue;

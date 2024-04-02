@@ -81,6 +81,8 @@ bool runcpp2::CheckNodeRequirements(ryml::ConstNodeRef& node,
 
 bool runcpp2::GetParsableInfo(const std::string& contentToParse, std::string& outParsableInfo)
 {
+    ssLOG_FUNC_DEBUG();
+
     std::string source = contentToParse;
     
     //Remove all \r characters

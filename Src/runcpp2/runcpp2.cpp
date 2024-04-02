@@ -258,28 +258,6 @@ int runcpp2::RunScript( const std::string& scriptPath,
         exeExt = ".exe";
     #endif
 
-    //Check if we have already compiled to executable before.
-    //If so, check if the c/cpp file is newer than the compiled c/c++ file
-    std::error_code _;
-    ghc::filesystem::file_time_type lastScriptWriteTime = 
-        ghc::filesystem::last_write_time(absoluteScriptPath, _);
-
-    if(currentOptions.find(CmdOptions::RESET_DEPENDENCIES) == currentOptions.end())
-    {
-        std::string exeToCopy = scriptDirectory + "/.runcpp2/" + scriptName + exeExt;
-        
-        if(ghc::filesystem::exists(exeToCopy, _))
-        {
-            ghc::filesystem::file_time_type lastExecutableWriteTime = 
-                ghc::filesystem::last_write_time(exeToCopy, _);
-            
-            if(lastExecutableWriteTime < lastScriptWriteTime)
-                ssLOG_INFO("Compiled file is older than the source file");
-            else
-                goto copyAndRun;
-        }
-    }
-
     //Parsing the script, setting up dependencies, compiling and linking
     {
         std::ifstream inputFile(absoluteScriptPath);
@@ -334,39 +312,93 @@ int runcpp2::RunScript( const std::string& scriptPath,
             return -1;
         }
         
-        //Check if there's any existing shared library build that is newer than the script
-        if( currentOptions.find(CmdOptions::RESET_DEPENDENCIES) == currentOptions.end() &&
-            currentOptions.find(CmdOptions::EXECUTABLE) == currentOptions.end())
+        //Check if we have already compiled before.
+        //If so, check if the c/cpp file is newer than the compiled c/c++ file
+        std::error_code _;
+        ghc::filesystem::file_time_type lastScriptWriteTime = 
+            ghc::filesystem::last_write_time(absoluteScriptPath, _);
+
+        if(currentOptions.find(CmdOptions::RESET_DEPENDENCIES) == currentOptions.end())
         {
-            const std::string* targetSharedLibExt = 
-                runcpp2::GetValueFromPlatformMap(profiles[profileIndex].SharedLibraryFile.Extension);
-            
-            const std::string* targetSharedLibPrefix =
-                runcpp2::GetValueFromPlatformMap(profiles[profileIndex].SharedLibraryFile.Prefix);
-            
-            if(targetSharedLibExt == nullptr || targetSharedLibPrefix == nullptr)
+            //If we are compiling to an executable
+            if(currentOptions.find(CmdOptions::EXECUTABLE) != currentOptions.end())
             {
-                ssLOG_ERROR("Shared library extension or prefix not found in compiler profile");
-                return -1;
+                std::string exeToCopy = scriptDirectory + "/.runcpp2/" + scriptName + exeExt;
+                const std::string* sharedLibExtToCopy = 
+                    runcpp2::GetValueFromPlatformMap(profiles[profileIndex].SharedLibraryFile.Extension);
+
+                if(sharedLibExtToCopy == nullptr)
+                {
+                    ssLOG_ERROR("Shared library extension not found in compiler profile");
+                    return -1;
+                }
+
+                //If the executable already exists, check if it's newer than the script
+                if(ghc::filesystem::exists(exeToCopy, _))
+                {
+                    ghc::filesystem::file_time_type lastExecutableWriteTime = 
+                        ghc::filesystem::last_write_time(exeToCopy, _);
+                    
+                    if(lastExecutableWriteTime < lastScriptWriteTime)
+                        ssLOG_INFO("Compiled file is older than the source file");
+                    else
+                    {
+                        using namespace ghc::filesystem;
+                        
+                        //Copy the shared libraries as well
+                        for(auto it : directory_iterator(scriptDirectory + "/.runcpp2/", _))
+                        {
+                            if(it.is_directory())
+                                continue;
+                            
+                            std::string currentFileName = it.path().stem().string();
+                            std::string currentExtension = it.path().extension().string();
+                            
+                            ssLOG_DEBUG("currentFileName: " << currentFileName);
+                            
+                            if(currentExtension == *sharedLibExtToCopy)
+                                copiedBinariesPaths.push_back(it.path().string());
+                        }
+                        
+                        goto copyAndRun;
+                    }
+                }
             }
-            
-            std::string sharedLibBuild =    scriptDirectory + 
-                                            "/.runcpp2/" + 
-                                            *targetSharedLibPrefix + 
-                                            scriptName + 
-                                            *targetSharedLibExt;
-            
-            if(ghc::filesystem::exists(sharedLibBuild, _))
+            //If we are compiling to a shared library
+            else
             {
-                ghc::filesystem::file_time_type lastSharedLibWriteTime = 
-                    ghc::filesystem::last_write_time(sharedLibBuild, _);
+                //Check if there's any existing shared library build that is newer than the script
+                const std::string* targetSharedLibExt = 
+                    runcpp2::GetValueFromPlatformMap(profiles[profileIndex].SharedLibraryFile.Extension);
                 
-                if(lastSharedLibWriteTime < lastScriptWriteTime)
-                    ssLOG_INFO("Compiled file is older than the source file");
-                else
-                    goto copyAndRun;
+                const std::string* targetSharedLibPrefix =
+                    runcpp2::GetValueFromPlatformMap(profiles[profileIndex].SharedLibraryFile.Prefix);
+                
+                if(targetSharedLibExt == nullptr || targetSharedLibPrefix == nullptr)
+                {
+                    ssLOG_ERROR("Shared library extension or prefix not found in compiler profile");
+                    return -1;
+                }
+                
+                std::string sharedLibBuild =    scriptDirectory + 
+                                                "/.runcpp2/" + 
+                                                *targetSharedLibPrefix + 
+                                                scriptName + 
+                                                *targetSharedLibExt;
+                
+                if(ghc::filesystem::exists(sharedLibBuild, _))
+                {
+                    ghc::filesystem::file_time_type lastSharedLibWriteTime = 
+                        ghc::filesystem::last_write_time(sharedLibBuild, _);
+                    
+                    if(lastSharedLibWriteTime < lastScriptWriteTime)
+                        ssLOG_INFO("Compiled file is older than the source file");
+                    else
+                        goto copyAndRun;
+                }
             }
         }
+        
         
         std::vector<std::string> dependenciesLocalCopiesPaths;
         std::vector<std::string> dependenciesSourcePaths;
@@ -406,6 +438,9 @@ int runcpp2::RunScript( const std::string& scriptPath,
     //Copying the compiled file to script directory
     copyAndRun:
     {
+        ssLOG_INFO("Copying script...");
+        
+        std::error_code _;
         std::string target = scriptDirectory + "/.runcpp2/";
         
         const std::string* targetSharedLibExt = 
