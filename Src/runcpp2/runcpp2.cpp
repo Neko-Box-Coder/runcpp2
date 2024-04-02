@@ -41,6 +41,8 @@ namespace
                             const std::string& exeExt,
                             const std::vector<std::string>& runArgs)
     {
+        ssLOG_FUNC_DEBUG();
+        
         std::error_code _;
         
         std::string runCommand = runcpp2::ProcessPath(scriptDirectory + "/" + scriptName + exeExt);
@@ -127,11 +129,72 @@ namespace
         return true;
     }
     
-    int RunCompiledSharedLib(  const std::string& scriptDirectory,
+    bool CopyCompiledExecutable(const std::string& scriptDirectory,
+                                const std::string& scriptName,
+                                const std::string& target,
+                                const std::string& exeExt,
+                                const std::vector<std::string>& copiedBinariesPaths,
+                                const std::string& targetSharedLibExt)
+    {
+        ssLOG_FUNC_DEBUG();
+        
+        std::error_code _;
+        std::error_code copyErrorCode;
+        ghc::filesystem::copy(  target, 
+                                scriptDirectory + "/" + scriptName + 
+                                exeExt, 
+                                copyErrorCode);
+        
+        if(copyErrorCode)
+        {
+            ssLOG_ERROR("Failed to copy file from " << target << " to " << scriptDirectory);
+            ssLOG_ERROR("Error code: " << copyErrorCode.message());
+            return -1;
+        }
+        
+        //Copy library files as well
+        for(int i = 0; i < copiedBinariesPaths.size(); ++i)
+        {
+            if(!ghc::filesystem::exists(copiedBinariesPaths[i], _))
+            {
+                ssLOG_ERROR("Failed to find copied file: " << copiedBinariesPaths[i]);
+                return -1;
+            }
+            
+            size_t foundIndex = copiedBinariesPaths[i].find_last_of(".");
+            if(foundIndex != std::string::npos)
+            {
+                std::string ext = copiedBinariesPaths[i].substr(foundIndex);
+                
+                if(ext == targetSharedLibExt)
+                {
+                    const std::string targetFileName =
+                        ghc::filesystem::path(copiedBinariesPaths[i]).filename().string();
+                    
+                    ghc::filesystem::copy(  copiedBinariesPaths[i], 
+                                            scriptDirectory + "/" + targetFileName,
+                                            copyErrorCode);
+                }
+            }
+        }
+        
+        if(copyErrorCode)
+        {
+            ssLOG_ERROR("Failed to copy file from " << target << " to " << scriptDirectory);
+            ssLOG_ERROR("Error code: " << copyErrorCode.message());
+            return -1;
+        }
+        
+        return 0;
+    }
+    
+    int RunCompiledSharedLib(   const std::string& scriptDirectory,
                                 const std::string& scriptPath,
                                 const std::string& compiledSharedLibPath,
                                 const std::vector<std::string>& runArgs)
     {
+        ssLOG_FUNC_DEBUG();
+        
         std::error_code _;
         if(!ghc::filesystem::exists(compiledSharedLibPath, _))
         {
@@ -206,6 +269,112 @@ namespace
             result = scriptMain();
         
         return result;
+    }
+    
+    bool HasCompiledCache(  const std::unordered_map<   runcpp2::CmdOptions, 
+                                                        std::string>& currentOptions,
+                            const std::string& absoluteScriptPath,
+                            const std::string& exeExt,
+                            const std::vector<runcpp2::Data::Profile>& profiles,
+                            int profileIndex,
+                            std::vector<std::string>& outCopiedBinariesPaths)
+    {
+        ssLOG_FUNC_DEBUG();
+        
+        std::string scriptDirectory = ghc::filesystem::path(absoluteScriptPath) .parent_path()
+                                                                                .string();
+        
+        std::string scriptName = ghc::filesystem::path(absoluteScriptPath).stem().string();
+        std::error_code _;
+        ghc::filesystem::file_time_type lastScriptWriteTime = 
+            ghc::filesystem::last_write_time(absoluteScriptPath, _);
+        
+        //Check if the c/cpp file is newer than the compiled c/c++ file
+        if(currentOptions.find(runcpp2::CmdOptions::RESET_DEPENDENCIES) == currentOptions.end())
+        {
+            //If we are compiling to an executable
+            if(currentOptions.find(runcpp2::CmdOptions::EXECUTABLE) != currentOptions.end())
+            {
+                std::string exeToCopy = scriptDirectory + "/.runcpp2/" + scriptName + exeExt;
+                const std::string* sharedLibExtToCopy = 
+                    runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .SharedLibraryFile
+                                                                            .Extension);
+
+                if(sharedLibExtToCopy == nullptr)
+                {
+                    ssLOG_ERROR("Shared library extension not found in compiler profile");
+                    return -1;
+                }
+
+                //If the executable already exists, check if it's newer than the script
+                if(ghc::filesystem::exists(exeToCopy, _))
+                {
+                    ghc::filesystem::file_time_type lastExecutableWriteTime = 
+                        ghc::filesystem::last_write_time(exeToCopy, _);
+                    
+                    if(lastExecutableWriteTime < lastScriptWriteTime)
+                        ssLOG_INFO("Compiled file is older than the source file");
+                    else
+                    {
+                        using namespace ghc::filesystem;
+                        
+                        //Copy the shared libraries as well
+                        for(auto it : directory_iterator(scriptDirectory + "/.runcpp2/", _))
+                        {
+                            if(it.is_directory())
+                                continue;
+                            
+                            std::string currentFileName = it.path().stem().string();
+                            std::string currentExtension = it.path().extension().string();
+                            
+                            ssLOG_DEBUG("currentFileName: " << currentFileName);
+                            
+                            if(currentExtension == *sharedLibExtToCopy)
+                                outCopiedBinariesPaths.push_back(it.path().string());
+                        }
+                        
+                        return true;
+                    }
+                }
+            }
+            //If we are compiling to a shared library
+            else
+            {
+                //Check if there's any existing shared library build that is newer than the script
+                const std::string* targetSharedLibExt = 
+                    runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .SharedLibraryFile
+                                                                            .Extension);
+                
+                const std::string* targetSharedLibPrefix =
+                    runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .SharedLibraryFile
+                                                                            .Prefix);
+                
+                if(targetSharedLibExt == nullptr || targetSharedLibPrefix == nullptr)
+                {
+                    ssLOG_ERROR("Shared library extension or prefix not found in compiler profile");
+                    return -1;
+                }
+                
+                std::string sharedLibBuild =    scriptDirectory + 
+                                                "/.runcpp2/" + 
+                                                *targetSharedLibPrefix + 
+                                                scriptName + 
+                                                *targetSharedLibExt;
+                
+                if(ghc::filesystem::exists(sharedLibBuild, _))
+                {
+                    ghc::filesystem::file_time_type lastSharedLibWriteTime = 
+                        ghc::filesystem::last_write_time(sharedLibBuild, _);
+                    
+                    if(lastSharedLibWriteTime < lastScriptWriteTime)
+                        ssLOG_INFO("Compiled file is older than the source file");
+                    else
+                        return true;
+                }
+            }
+        }
+        
+        return false;
     }
 }
 
@@ -313,130 +482,50 @@ int runcpp2::RunScript( const std::string& scriptPath,
         }
         
         //Check if we have already compiled before.
-        //If so, check if the c/cpp file is newer than the compiled c/c++ file
-        std::error_code _;
-        ghc::filesystem::file_time_type lastScriptWriteTime = 
-            ghc::filesystem::last_write_time(absoluteScriptPath, _);
-
-        if(currentOptions.find(CmdOptions::RESET_DEPENDENCIES) == currentOptions.end())
+        if(!HasCompiledCache(   currentOptions, 
+                                absoluteScriptPath, 
+                                exeExt, 
+                                profiles, 
+                                profileIndex, 
+                                copiedBinariesPaths))
         {
-            //If we are compiling to an executable
-            if(currentOptions.find(CmdOptions::EXECUTABLE) != currentOptions.end())
-            {
-                std::string exeToCopy = scriptDirectory + "/.runcpp2/" + scriptName + exeExt;
-                const std::string* sharedLibExtToCopy = 
-                    runcpp2::GetValueFromPlatformMap(profiles[profileIndex].SharedLibraryFile.Extension);
-
-                if(sharedLibExtToCopy == nullptr)
-                {
-                    ssLOG_ERROR("Shared library extension not found in compiler profile");
-                    return -1;
-                }
-
-                //If the executable already exists, check if it's newer than the script
-                if(ghc::filesystem::exists(exeToCopy, _))
-                {
-                    ghc::filesystem::file_time_type lastExecutableWriteTime = 
-                        ghc::filesystem::last_write_time(exeToCopy, _);
-                    
-                    if(lastExecutableWriteTime < lastScriptWriteTime)
-                        ssLOG_INFO("Compiled file is older than the source file");
-                    else
-                    {
-                        using namespace ghc::filesystem;
-                        
-                        //Copy the shared libraries as well
-                        for(auto it : directory_iterator(scriptDirectory + "/.runcpp2/", _))
-                        {
-                            if(it.is_directory())
-                                continue;
-                            
-                            std::string currentFileName = it.path().stem().string();
-                            std::string currentExtension = it.path().extension().string();
-                            
-                            ssLOG_DEBUG("currentFileName: " << currentFileName);
-                            
-                            if(currentExtension == *sharedLibExtToCopy)
-                                copiedBinariesPaths.push_back(it.path().string());
-                        }
-                        
-                        goto copyAndRun;
-                    }
-                }
-            }
-            //If we are compiling to a shared library
-            else
-            {
-                //Check if there's any existing shared library build that is newer than the script
-                const std::string* targetSharedLibExt = 
-                    runcpp2::GetValueFromPlatformMap(profiles[profileIndex].SharedLibraryFile.Extension);
-                
-                const std::string* targetSharedLibPrefix =
-                    runcpp2::GetValueFromPlatformMap(profiles[profileIndex].SharedLibraryFile.Prefix);
-                
-                if(targetSharedLibExt == nullptr || targetSharedLibPrefix == nullptr)
-                {
-                    ssLOG_ERROR("Shared library extension or prefix not found in compiler profile");
-                    return -1;
-                }
-                
-                std::string sharedLibBuild =    scriptDirectory + 
-                                                "/.runcpp2/" + 
-                                                *targetSharedLibPrefix + 
-                                                scriptName + 
-                                                *targetSharedLibExt;
-                
-                if(ghc::filesystem::exists(sharedLibBuild, _))
-                {
-                    ghc::filesystem::file_time_type lastSharedLibWriteTime = 
-                        ghc::filesystem::last_write_time(sharedLibBuild, _);
-                    
-                    if(lastSharedLibWriteTime < lastScriptWriteTime)
-                        ssLOG_INFO("Compiled file is older than the source file");
-                    else
-                        goto copyAndRun;
-                }
-            }
-        }
-        
-        
-        std::vector<std::string> dependenciesLocalCopiesPaths;
-        std::vector<std::string> dependenciesSourcePaths;
-        if(!SetupScriptDependencies(profiles[profileIndex].Name, 
-                                    absoluteScriptPath, 
-                                    scriptInfo, 
-                                    currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0,
-                                    dependenciesLocalCopiesPaths,
-                                    dependenciesSourcePaths))
-        {
-            ssLOG_ERROR("Failed to setup script dependencies");
-            return -1;
-        }
-
-        if(!CopyDependenciesBinaries(   absoluteScriptPath, 
-                                        scriptInfo,
+            std::vector<std::string> dependenciesLocalCopiesPaths;
+            std::vector<std::string> dependenciesSourcePaths;
+            if(!SetupScriptDependencies(profiles[profileIndex].Name, 
+                                        absoluteScriptPath, 
+                                        scriptInfo, 
+                                        currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0,
                                         dependenciesLocalCopiesPaths,
-                                        profiles[profileIndex],
-                                        copiedBinariesPaths))
-        {
-            ssLOG_ERROR("Failed to copy dependencies binaries");
-            return -1;
-        }
+                                        dependenciesSourcePaths))
+            {
+                ssLOG_ERROR("Failed to setup script dependencies");
+                return -1;
+            }
 
-        if(!CompileAndLinkScript(   absoluteScriptPath, 
-                                    scriptInfo,
-                                    profiles[profileIndex],
-                                    copiedBinariesPaths,
-                                    (currentOptions.count(CmdOptions::EXECUTABLE) > 0),
-                                    exeExt))
-        {
-            ssLOG_ERROR("Failed to compile or link script");
-            return -1;
+            if(!CopyDependenciesBinaries(   absoluteScriptPath, 
+                                            scriptInfo,
+                                            dependenciesLocalCopiesPaths,
+                                            profiles[profileIndex],
+                                            copiedBinariesPaths))
+            {
+                ssLOG_ERROR("Failed to copy dependencies binaries");
+                return -1;
+            }
+
+            if(!CompileAndLinkScript(   absoluteScriptPath, 
+                                        scriptInfo,
+                                        profiles[profileIndex],
+                                        copiedBinariesPaths,
+                                        (currentOptions.count(CmdOptions::EXECUTABLE) > 0),
+                                        exeExt))
+            {
+                ssLOG_ERROR("Failed to compile or link script");
+                return -1;
+            }
         }
     }
 
     //Copying the compiled file to script directory
-    copyAndRun:
     {
         ssLOG_INFO("Copying script...");
         
@@ -470,49 +559,14 @@ int runcpp2::RunScript( const std::string& scriptPath,
         
         if(currentOptions.count(CmdOptions::EXECUTABLE) > 0)
         {
-            std::error_code copyErrorCode;
-            ghc::filesystem::copy(  target, 
-                                    scriptDirectory + "/" + scriptName + 
-                                    exeExt, 
-                                    copyErrorCode);
-            
-            if(copyErrorCode)
+            if(!CopyCompiledExecutable( scriptDirectory,
+                                        scriptName,
+                                        target,
+                                        exeExt,
+                                        copiedBinariesPaths,
+                                        *targetSharedLibExt))
             {
-                ssLOG_ERROR("Failed to copy file from " << target << " to " << scriptDirectory);
-                ssLOG_ERROR("Error code: " << copyErrorCode.message());
-                return -1;
-            }
-            
-            //Copy library files as well
-            for(int i = 0; i < copiedBinariesPaths.size(); ++i)
-            {
-                if(!ghc::filesystem::exists(copiedBinariesPaths[i], _))
-                {
-                    ssLOG_ERROR("Failed to find copied file: " << copiedBinariesPaths[i]);
-                    return -1;
-                }
-                
-                size_t foundIndex = copiedBinariesPaths[i].find_last_of(".");
-                if(foundIndex != std::string::npos)
-                {
-                    std::string ext = copiedBinariesPaths[i].substr(foundIndex);
-                    
-                    if(ext == *targetSharedLibExt)
-                    {
-                        const std::string targetFileName =
-                            ghc::filesystem::path(copiedBinariesPaths[i]).filename().string();
-                        
-                        ghc::filesystem::copy(  copiedBinariesPaths[i], 
-                                                scriptDirectory + "/" + targetFileName,
-                                                copyErrorCode);
-                    }
-                }
-            }
-            
-            if(copyErrorCode)
-            {
-                ssLOG_ERROR("Failed to copy file from " << target << " to " << scriptDirectory);
-                ssLOG_ERROR("Error code: " << copyErrorCode.message());
+                ssLOG_ERROR("Failed to copy compiled executable: " << target);
                 return -1;
             }
             
