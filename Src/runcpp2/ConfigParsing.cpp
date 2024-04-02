@@ -254,6 +254,7 @@ bool runcpp2::ParseScriptInfo(  const std::string& scriptInfo,
     ryml::Tree scriptTree;
     
     std::string temp = scriptInfo;
+    ssLOG_DEBUG("scriptInfo: " << "\n" << scriptInfo);
     scriptTree = ryml::parse_in_place(c4::to_substr(temp));
     
     ryml::ConstNodeRef rootScriptNode;

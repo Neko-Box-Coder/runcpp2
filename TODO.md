@@ -1,3 +1,4 @@
+- Add System Source Type
 - Change cache to be in the config folder
 - Output compile_command.json
 - Allow script info as standalone yaml file
