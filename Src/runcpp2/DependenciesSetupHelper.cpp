@@ -418,10 +418,11 @@ bool runcpp2::SetupScriptDependencies(  const ProfileName& profileName,
     {
         std::error_code _;
         
-        for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+        for(int i = 0; i < outDependenciesLocalCopiesPaths.size(); ++i)
         {
             //Remove the directory
-            if(!ghc::filesystem::remove_all(outDependenciesLocalCopiesPaths[i], _))
+            if( ghc::filesystem::exists(outDependenciesLocalCopiesPaths[i], _) &&
+                !ghc::filesystem::remove_all(outDependenciesLocalCopiesPaths[i], _))
             {
                 ssLOG_ERROR("Failed to reset dependency directory: " << 
                             outDependenciesLocalCopiesPaths[i]);
@@ -468,9 +469,21 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
     std::string runcpp2ScriptDir = scriptDirectory + "/.runcpp2";
     std::vector<std::string> platformNames = GetPlatformNames();
     
-    if(scriptInfo.Dependencies.size() != dependenciesCopiesPaths.size())
+    int minimumDependenciesCopiesCount = 0;
+    for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
     {
-        ssLOG_ERROR("The amount of dependencies do not match the amount of dependencies copies paths");
+        if( runcpp2::IsDependencyAvailableForThisPlatform(scriptInfo.Dependencies[i]) &&
+            scriptInfo.Dependencies[i].LibraryType != runcpp2::Data::DependencyLibraryType::HEADER)
+        {
+            ++minimumDependenciesCopiesCount;
+        }
+    }
+
+    if(minimumDependenciesCopiesCount > dependenciesCopiesPaths.size())
+    {
+        ssLOG_ERROR("The amount of available dependencies do not match" <<
+                    " the amount of dependencies copies paths");
+        
         return false;
     }
     
@@ -549,6 +562,7 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                     std::string currentExtension = it.path().extension().string();
                     
                     ssLOG_DEBUG("currentFileName: " << currentFileName);
+                    ssLOG_DEBUG("currentExtension: " << currentExtension);
                     
                     //TODO: Make it not case sensitive?
                     bool nameMatched = false;
@@ -599,10 +613,21 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                         return false;
                     }
                     
+                    ssLOG_INFO("Copied " << it.path().string());
                     outCopiedBinariesPaths.push_back(currentFileName + currentExtension);
                 }
             }
         }
+    }
+    
+    //Do a check to see if any dependencies are copied
+    if(outCopiedBinariesPaths.size() < minimumDependenciesCopiesCount)
+    {
+        ssLOG_WARNING("outCopiedBinariesPaths.size() does not match minimumDependenciesCopiesCount");
+        ssLOG_WARNING("outCopiedBinariesPaths are");
+        
+        for(int i = 0; i < outCopiedBinariesPaths.size(); ++i)
+            ssLOG_WARNING("outCopiedBinariesPaths[" << i << "]: " << outCopiedBinariesPaths[i]);
     }
     
     return true;
