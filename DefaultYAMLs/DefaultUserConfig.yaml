@@ -140,7 +140,7 @@ Profiles:
         # Flags for linking as a shared library
         SharedLibLinkFlags: 
             # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
-            All: "-shared"
+            All: "-shared -Wl,-rpath,\\$ORIGIN"
         
         # The syntax to link the given file
         LinkArgs:
