@@ -2,26 +2,33 @@
 #include "runcpp2/StringUtil.hpp"
 #include "runcpp2/runcpp2.hpp"
 
+//#include "TupleHash.hpp"
+
 #include "ssLogger/ssLog.hpp"
 
-int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& optionsMap,
+int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& longOptionsMap,
+                const std::unordered_map<std::string, const runcpp2::OptionInfo&>& shortOptionsMap,
                 std::unordered_map<runcpp2::CmdOptions, std::string>& outOptions,
                 int argc, 
                 char* argv[])
 {
     int currentArgIndex = 0;
-    runcpp2::CmdOptions currentOption = runcpp2::CmdOptions::NONE;
+    runcpp2::CmdOptions optionForCapturingValue = runcpp2::CmdOptions::NONE;
     
     for(int i = 1; i < argc; ++i)
     {
+        std::string currentArg = std::string(argv[i]);
+        
         //Storing value for last option
-        if(currentOption != runcpp2::CmdOptions::NONE)
+        if(optionForCapturingValue != runcpp2::CmdOptions::NONE)
         {
-            if(optionsMap.find(std::string(argv[i])) != optionsMap.end())
+            //If the current argument matches one of the options, error out
+            if( longOptionsMap.count(currentArg) || shortOptionsMap.count(currentArg))
             {
-                for(auto it = optionsMap.begin(); it != optionsMap.end(); ++it)
+                //Find the string for the option to error out
+                for(auto it = longOptionsMap.begin(); it != longOptionsMap.end(); ++it)
                 {
-                    if(it->second.Option == currentOption)
+                    if(it->second.Option == optionForCapturingValue)
                     {
                         ssLOG_ERROR("Missing value for option: " << it->first);
                         return -1;
@@ -31,8 +38,8 @@ int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& opti
                 return -1;
             }
             
-            outOptions[currentOption] = std::string(argv[i]);
-            currentOption = runcpp2::CmdOptions::NONE;
+            outOptions[optionForCapturingValue] = currentArg;
+            optionForCapturingValue = runcpp2::CmdOptions::NONE;
             currentArgIndex = i;
             ssLOG_DEBUG("currentArgIndex: " << currentArgIndex);
             ssLOG_DEBUG("argv: " << argv[i]);
@@ -40,25 +47,34 @@ int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& opti
         }
         
         //Checking for options
-        if(optionsMap.find(std::string(argv[i])) != optionsMap.end())
+        if(longOptionsMap.count(currentArg) || shortOptionsMap.count(currentArg))
         {
             currentArgIndex = i;
             ssLOG_DEBUG("currentArgIndex: " << currentArgIndex);
             ssLOG_DEBUG("argv: " << argv[i]);
             
-            static_assert(  (int)runcpp2::CmdOptions::COUNT == 4, 
+            static_assert(  (int)runcpp2::CmdOptions::COUNT == 5, 
                             "Add a case for the new runcpp2_CmdOptions");
             
-            if(optionsMap.at(std::string(argv[i])).HasValue)
+            const runcpp2::OptionInfo& currentInfo =    longOptionsMap.count(currentArg) ?
+                                                        longOptionsMap.at(currentArg) :
+                                                        shortOptionsMap.at(currentArg);
+            
+            if(currentInfo.HasValue)
             {
-                currentOption = optionsMap.at(std::string(argv[i])).Option;
+                optionForCapturingValue = currentInfo.Option;
                 continue;
             }
             else
             {
-                outOptions[optionsMap.at(std::string(argv[i])).Option] = "";
+                outOptions[currentInfo.Option] = "";
                 continue;
             }
+        }
+        else if(!currentArg.empty() && currentArg[0] == '-')
+        {
+            ssLOG_ERROR("Invalid option: " << currentArg);
+            return -1;
         }
         else
             break;
@@ -74,12 +90,14 @@ int main(int argc, char* argv[])
     //Parse command line options
     int currentArgIndex = 0;
     std::unordered_map<runcpp2::CmdOptions, std::string> currentOptions;
+    //std::unordered_set<runcpp2::CmdOptions> currentOptions;
+
     {
-        std::unordered_map<std::string, runcpp2::OptionInfo> optionsMap =
+        std::unordered_map<std::string, runcpp2::OptionInfo> longOptionsMap =
         {
             {
-                "--reset-dependencies", 
-                runcpp2::OptionInfo(runcpp2::CmdOptions::RESET_DEPENDENCIES, false, "")
+                "--reset-cache", 
+                runcpp2::OptionInfo(runcpp2::CmdOptions::RESET_CACHE, false)
             },
             {
                 "--reset-user-config", 
@@ -89,26 +107,51 @@ int main(int argc, char* argv[])
                 "--executable", 
                 runcpp2::OptionInfo(runcpp2::CmdOptions::EXECUTABLE, false)
             },
+            {
+                "--help", 
+                runcpp2::OptionInfo(runcpp2::CmdOptions::HELP, false)
+            },
         };
         
-        currentArgIndex = ParseArgs(optionsMap, currentOptions, argc, argv);
+        std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
+        {
+            {"-r", longOptionsMap.at("--reset-cache")},
+            {"-c", longOptionsMap.at("--reset-user-config")},
+            {"-e", longOptionsMap.at("--executable")},
+            {"-h", longOptionsMap.at("--help")},
+        };
+        
+        currentArgIndex = ParseArgs(longOptionsMap, shortOptionsMap, currentOptions, argc, argv);
         
         if(currentArgIndex == -1)
         {
-            ssLOG_FATAL("Invalid option");
+            ssLOG_ERROR("Invalid option");
             return -1;
         }
         
         ++currentArgIndex;
     }
     
+    //Help message
+    if(currentOptions.count(runcpp2::CmdOptions::HELP))
+    {
+        ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
+        ssLOG_BASE("Options:");
+        ssLOG_BASE("    -r, --reset-cache           Deletes all cache and build everything from scratch");
+        ssLOG_BASE("    -c, --reset-user-config     Replace current user config with the default one");
+        ssLOG_BASE("    -e, --executable            Builds executable instead of running the file");
+        ssLOG_BASE("    -h, --help                  Show this help message");
+        
+        return 0;
+    }
+    
     //Resetting user config
-    if(currentOptions.find(runcpp2::CmdOptions::RESET_USER_CONFIG) != currentOptions.end())
+    if(currentOptions.count(runcpp2::CmdOptions::RESET_USER_CONFIG))
     {
         ssLOG_INFO("Resetting user config");
         if(!runcpp2::WriteDefaultConfig(runcpp2::GetConfigFilePath()))
         {
-            ssLOG_FATAL("Failed reset user config");
+            ssLOG_ERROR("Failed reset user config");
             return -1;
         }
         
@@ -120,7 +163,7 @@ int main(int argc, char* argv[])
     
     if(!runcpp2::ReadUserConfig(profiles, preferredProfile))
     {
-        ssLOG_FATAL("Failed read user config");
+        ssLOG_ERROR("Failed read user config");
         return -1;
     }
 
@@ -131,7 +174,7 @@ int main(int argc, char* argv[])
     std::vector<std::string> scriptArgs;
     if(currentArgIndex >= argc)
     {
-        ssLOG_FATAL("An input file is required");
+        ssLOG_ERROR("An input file is required");
         return 1;
     }
     

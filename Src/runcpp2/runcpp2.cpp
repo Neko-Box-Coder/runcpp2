@@ -317,96 +317,101 @@ namespace
             ghc::filesystem::last_write_time(absoluteScriptPath, _);
         
         //Check if the c/cpp file is newer than the compiled c/c++ file
-        if(currentOptions.find(runcpp2::CmdOptions::RESET_DEPENDENCIES) == currentOptions.end())
+        if(currentOptions.find(runcpp2::CmdOptions::RESET_CACHE) != currentOptions.end())
+            return false;
+        
+        //If we are compiling to an executable
+        if(currentOptions.find(runcpp2::CmdOptions::EXECUTABLE) != currentOptions.end())
         {
-            //If we are compiling to an executable
-            if(currentOptions.find(runcpp2::CmdOptions::EXECUTABLE) != currentOptions.end())
+            std::string exeToCopy = scriptDirectory + "/.runcpp2/" + scriptName + exeExt;
+            ssLOG_INFO("Trying to use cache: " << exeToCopy);
+            
+            const std::string* sharedLibExtToCopy = 
+                runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .SharedLibraryFile
+                                                                        .Extension);
+
+            const std::string* debugExtToCopy = 
+                runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .DebugSymbolFile
+                                                                        .Extension);
+
+            if(sharedLibExtToCopy == nullptr)
             {
-                std::string exeToCopy = scriptDirectory + "/.runcpp2/" + scriptName + exeExt;
-                const std::string* sharedLibExtToCopy = 
-                    runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .SharedLibraryFile
-                                                                            .Extension);
+                ssLOG_ERROR("Shared library extension not found in compiler profile");
+                return -1;
+            }
 
-                const std::string* debugExtToCopy = 
-                    runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .DebugSymbolFile
-                                                                            .Extension);
-
-                if(sharedLibExtToCopy == nullptr)
+            //If the executable already exists, check if it's newer than the script
+            if(ghc::filesystem::exists(exeToCopy, _) && ghc::filesystem::file_size(exeToCopy, _) > 0)
+            {
+                ghc::filesystem::file_time_type lastExecutableWriteTime = 
+                    ghc::filesystem::last_write_time(exeToCopy, _);
+                
+                if(lastExecutableWriteTime < lastScriptWriteTime)
+                    ssLOG_INFO("Compiled file is older than the source file");
+                else
                 {
-                    ssLOG_ERROR("Shared library extension not found in compiler profile");
-                    return -1;
-                }
-
-                //If the executable already exists, check if it's newer than the script
-                if(ghc::filesystem::exists(exeToCopy, _))
-                {
-                    ghc::filesystem::file_time_type lastExecutableWriteTime = 
-                        ghc::filesystem::last_write_time(exeToCopy, _);
+                    using namespace ghc::filesystem;
                     
-                    if(lastExecutableWriteTime < lastScriptWriteTime)
-                        ssLOG_INFO("Compiled file is older than the source file");
-                    else
+                    //Copy the shared libraries as well
+                    for(auto it : directory_iterator(scriptDirectory + "/.runcpp2/", _))
                     {
-                        using namespace ghc::filesystem;
+                        if(it.is_directory())
+                            continue;
                         
-                        //Copy the shared libraries as well
-                        for(auto it : directory_iterator(scriptDirectory + "/.runcpp2/", _))
+                        std::string currentFileName = it.path().stem().string();
+                        std::string currentExtension = it.path().extension().string();
+                        
+                        ssLOG_DEBUG("currentFileName: " << currentFileName);
+                        
+                        if(currentExtension == *sharedLibExtToCopy)
+                            outCopiedBinariesPaths.push_back(it.path().string());
+                        else if(debugExtToCopy != nullptr && 
+                                currentExtension == *debugExtToCopy)
                         {
-                            if(it.is_directory())
-                                continue;
-                            
-                            std::string currentFileName = it.path().stem().string();
-                            std::string currentExtension = it.path().extension().string();
-                            
-                            ssLOG_DEBUG("currentFileName: " << currentFileName);
-                            
-                            if(currentExtension == *sharedLibExtToCopy)
-                                outCopiedBinariesPaths.push_back(it.path().string());
-                            else if(debugExtToCopy != nullptr && 
-                                    currentExtension == *debugExtToCopy)
-                            {
-                                outCopiedBinariesPaths.push_back(it.path().string());
-                            }
+                            outCopiedBinariesPaths.push_back(it.path().string());
                         }
-                        
-                        return true;
                     }
+                    
+                    return true;
                 }
             }
-            //If we are compiling to a shared library
-            else
+        }
+        //If we are compiling to a shared library
+        else
+        {
+            //Check if there's any existing shared library build that is newer than the script
+            const std::string* targetSharedLibExt = 
+                runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .SharedLibraryFile
+                                                                        .Extension);
+            
+            const std::string* targetSharedLibPrefix =
+                runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .SharedLibraryFile
+                                                                        .Prefix);
+            
+            if(targetSharedLibExt == nullptr || targetSharedLibPrefix == nullptr)
             {
-                //Check if there's any existing shared library build that is newer than the script
-                const std::string* targetSharedLibExt = 
-                    runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .SharedLibraryFile
-                                                                            .Extension);
+                ssLOG_ERROR("Shared library extension or prefix not found in compiler profile");
+                return -1;
+            }
+            
+            std::string sharedLibBuild =    scriptDirectory + 
+                                            "/.runcpp2/" + 
+                                            *targetSharedLibPrefix + 
+                                            scriptName + 
+                                            *targetSharedLibExt;
+            
+            ssLOG_INFO("Trying to use cache: " << sharedLibBuild);
+            
+            if( ghc::filesystem::exists(sharedLibBuild, _) && 
+                ghc::filesystem::file_size(sharedLibBuild, _) > 0)
+            {
+                ghc::filesystem::file_time_type lastSharedLibWriteTime = 
+                    ghc::filesystem::last_write_time(sharedLibBuild, _);
                 
-                const std::string* targetSharedLibPrefix =
-                    runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .SharedLibraryFile
-                                                                            .Prefix);
-                
-                if(targetSharedLibExt == nullptr || targetSharedLibPrefix == nullptr)
-                {
-                    ssLOG_ERROR("Shared library extension or prefix not found in compiler profile");
-                    return -1;
-                }
-                
-                std::string sharedLibBuild =    scriptDirectory + 
-                                                "/.runcpp2/" + 
-                                                *targetSharedLibPrefix + 
-                                                scriptName + 
-                                                *targetSharedLibExt;
-                
-                if(ghc::filesystem::exists(sharedLibBuild, _))
-                {
-                    ghc::filesystem::file_time_type lastSharedLibWriteTime = 
-                        ghc::filesystem::last_write_time(sharedLibBuild, _);
-                    
-                    if(lastSharedLibWriteTime < lastScriptWriteTime)
-                        ssLOG_INFO("Compiled file is older than the source file");
-                    else
-                        return true;
-                }
+                if(lastSharedLibWriteTime < lastScriptWriteTime)
+                    ssLOG_INFO("Compiled file is older than the source file");
+                else
+                    return true;
             }
         }
         
@@ -496,7 +501,7 @@ int runcpp2::RunScript( const std::string& scriptPath,
         
         if(!parsableInfo.empty())
         {
-            ssLOG_INFO("Parsed script info YAML:\n");
+            ssLOG_INFO("Parsed script info YAML:");
             ssLOG_INFO(scriptInfo.ToString(""));
         }
 
@@ -530,7 +535,7 @@ int runcpp2::RunScript( const std::string& scriptPath,
             if(!SetupScriptDependencies(profiles[profileIndex].Name, 
                                         absoluteScriptPath, 
                                         scriptInfo, 
-                                        currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0,
+                                        currentOptions.count(CmdOptions::RESET_CACHE) > 0,
                                         dependenciesLocalCopiesPaths,
                                         dependenciesSourcePaths))
             {

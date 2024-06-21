@@ -12,9 +12,10 @@ namespace runcpp2
     enum class CmdOptions
     {
         NONE,
-        RESET_DEPENDENCIES,
+        RESET_CACHE,
         RESET_USER_CONFIG,
         EXECUTABLE,
+        HELP,
         COUNT
     };
     
@@ -37,6 +38,5 @@ namespace runcpp2
                     const std::unordered_map<CmdOptions, std::string> currentOptions,
                     const std::vector<std::string>& runArgs);
 }
-
 
 #endif
