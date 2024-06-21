@@ -56,7 +56,8 @@ namespace
         
         ssLOG_INFO("Running: " << runCommand);
         
-        System2CommandInfo runCommandInfo;
+        System2CommandInfo runCommandInfo = {};
+        runCommandInfo.RedirectOutput = true;
         SYSTEM2_RESULT result = System2Run(runCommand.c_str(), &runCommandInfo);
         
         if(result != SYSTEM2_RESULT_SUCCESS)

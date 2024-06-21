@@ -12,7 +12,8 @@ namespace
         //Check compiler
         std::string command = profile.Compiler.Executable + " -v";
         
-        System2CommandInfo compilerCommandInfo;
+        System2CommandInfo compilerCommandInfo = {};
+        compilerCommandInfo.RedirectOutput = true;
         SYSTEM2_RESULT sys2Result = System2Run(command.c_str(), &compilerCommandInfo);
         
         if(sys2Result != SYSTEM2_RESULT_SUCCESS)
@@ -35,7 +36,8 @@ namespace
         //Check linker
         command = profile.Linker.Executable + " -v";
         
-        System2CommandInfo linkerCommandInfo;
+        System2CommandInfo linkerCommandInfo = {};
+        linkerCommandInfo.RedirectOutput = true;
         sys2Result = System2Run(command.c_str(), &linkerCommandInfo);
         
         if(sys2Result != SYSTEM2_RESULT_SUCCESS)

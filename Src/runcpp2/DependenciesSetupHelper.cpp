@@ -111,7 +111,8 @@ namespace
                         std::string gitCloneCommand = "cd " + processedRuncpp2ScriptDir;
                         gitCloneCommand += " && git clone " + dependencies[i].Source.Value;
                         
-                        System2CommandInfo gitCommandInfo;
+                        System2CommandInfo gitCommandInfo = {};
+                        gitCommandInfo.RedirectOutput = true;
                         SYSTEM2_RESULT result = System2Run(gitCloneCommand.c_str(), &gitCommandInfo);
                         
                         if(result != SYSTEM2_RESULT_SUCCESS)
@@ -248,7 +249,8 @@ namespace
                 std::string setupCommand = "cd " + processedDependencyPath;
                 setupCommand += " && " + setupCommands[k];
                 
-                System2CommandInfo setupCommandInfo;
+                System2CommandInfo setupCommandInfo = {};
+                setupCommandInfo.RedirectOutput = true;
                 SYSTEM2_RESULT result = System2Run(setupCommand.c_str(), &setupCommandInfo);
                 
                 ssLOG_INFO("Running setup command: " << setupCommand);

@@ -173,7 +173,8 @@ namespace
         //Compile the script
         ssLOG_INFO("running compile command: " << compileCommand);
         
-        System2CommandInfo compileCommandInfo;
+        System2CommandInfo compileCommandInfo = {};
+        compileCommandInfo.RedirectOutput = true;
         SYSTEM2_RESULT result = System2Run(compileCommand.c_str(), &compileCommandInfo);
         
         if(result != SYSTEM2_RESULT_SUCCESS)
@@ -194,7 +195,7 @@ namespace
                                             4096 - 1, 
                                             &byteRead);
 
-            output.resize(output.size() - 4096+ byteRead + 1);
+            output.resize(output.size() - 4096 + byteRead + 1);
             output.back() = '\0';
         }
         while(result == SYSTEM2_RESULT_READ_NOT_FINISHED);
@@ -442,7 +443,8 @@ namespace
         linkCommand = "cd " + runcpp2ScriptDir + " && " + linkCommand;
         
         //Do Linking
-        System2CommandInfo linkCommandInfo;
+        System2CommandInfo linkCommandInfo = {};
+        linkCommandInfo.RedirectOutput = true;
         SYSTEM2_RESULT result = System2Run(linkCommand.c_str(), &linkCommandInfo);
         
         ssLOG_INFO("running link command: " << linkCommand);
@@ -516,7 +518,8 @@ namespace
                 for(int i = 0; i < currentSetupSteps.size(); ++i)
                     setupCommand += " && " + currentSetupSteps.at(i);
                 
-                System2CommandInfo setupCommandInfo;
+                System2CommandInfo setupCommandInfo = {};
+                setupCommandInfo.RedirectOutput = true;
                 ssLOG_INFO("running setup command: " << setupCommand);
                 SYSTEM2_RESULT result = System2Run(setupCommand.c_str(), &setupCommandInfo);
                 
