@@ -25,7 +25,7 @@ bool runcpp2::CheckNodeRequirements(ryml::ConstNodeRef& node,
 {
     INTERNAL_RUNCPP2_SAFE_START();
     
-    if(!node.valid())
+    if(node.invalid())
     {
         ssLOG_ERROR("Node is invalid");
         return false;
