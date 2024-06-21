@@ -526,11 +526,11 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                 std::string currentSearchLibraryName = searchProperty.SearchLibraryNames.at(j);
                 std::string currentSearchDirectory = searchProperty.SearchDirectories.at(k);
             
-                ssLOG_DEBUG("currentSearchDirectory: " << currentSearchDirectory);
-                ssLOG_DEBUG("currentSearchLibraryName: " << currentSearchLibraryName);
-            
                 if(!ghc::filesystem::path(currentSearchDirectory).is_absolute())
                     currentSearchDirectory = dependenciesCopiesPaths[i] + "/" + currentSearchDirectory;
+            
+                ssLOG_DEBUG("currentSearchDirectory: " << currentSearchDirectory);
+                ssLOG_DEBUG("currentSearchLibraryName: " << currentSearchLibraryName);
             
                 std::error_code _;
                 if( !ghc::filesystem::exists(currentSearchDirectory, _) || 

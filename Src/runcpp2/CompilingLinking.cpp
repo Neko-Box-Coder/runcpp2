@@ -14,6 +14,8 @@ namespace
                         bool compileAsExecutable,
                         std::string& outScriptObjectFilePath)
     {
+        ssLOG_FUNC_DEBUG();
+        
         std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
         std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
         std::string runcpp2ScriptDir = runcpp2::ProcessPath(scriptDirectory + "/.runcpp2");
@@ -236,6 +238,8 @@ namespace
                     bool linkAsExecutable,
                     const std::string& exeExt)
     {
+        ssLOG_FUNC_DEBUG();
+        
         std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
         std::string linkCommand;
         
@@ -409,9 +413,9 @@ namespace
         
         for(int i = 0; i < copiedDependenciesBinariesPaths.size(); ++i)
         {
-            size_t foundIndex = copiedDependenciesBinariesPaths[i].find_last_of(".");
+            size_t extensionFoundIndex = copiedDependenciesBinariesPaths[i].find_last_of(".");
             
-            if( foundIndex == std::string::npos &&
+            if( extensionFoundIndex == std::string::npos &&
                 !runcpp2::GetValueFromPlatformMap(profile.SharedLinkFile.Extension)->empty() &&
                 !runcpp2::GetValueFromPlatformMap(profile.StaticLinkFile.Extension)->empty())
             {
@@ -419,9 +423,9 @@ namespace
             }
             
             //Check if this is a file we can link
-            if(foundIndex != std::string::npos)
+            if(extensionFoundIndex != std::string::npos)
             {
-                std::string extension = copiedDependenciesBinariesPaths[i].substr(foundIndex);
+                std::string extension = copiedDependenciesBinariesPaths[i].substr(extensionFoundIndex);
                 
                 if( extension != *runcpp2::GetValueFromPlatformMap(profile.SharedLinkFile.Extension) &&
                     extension != *runcpp2::GetValueFromPlatformMap(profile.StaticLinkFile.Extension))
