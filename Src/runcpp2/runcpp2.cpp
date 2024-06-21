@@ -207,10 +207,23 @@ namespace
         }
         
         //Load it
-        dylib sharedLib(compiledSharedLibPath, dylib::no_filename_decorations);
+        std::unique_ptr<dylib> sharedLib;
+        
+        try
+        {
+             sharedLib = std::unique_ptr<dylib>(new dylib(compiledSharedLibPath, dylib::no_filename_decorations));
+        }
+        catch(std::exception& e)
+        {
+            ssLOG_ERROR("Failed to load shared library " << compiledSharedLibPath << 
+                        " with exception: ");
+            
+            ssLOG_ERROR(e.what());
+            return -1;
+        }
         
         //Get main as entry point
-        if(sharedLib.has_symbol("main") == false)
+        if(sharedLib->has_symbol("main") == false)
         {
             ssLOG_ERROR("The shared library does not have a main function");
             return -1;
@@ -221,7 +234,7 @@ namespace
         
         try
         {
-            scriptFullMain = sharedLib.get_function<int(int, char**)>("main");
+            scriptFullMain = sharedLib->get_function<int(int, char**)>("main");
         }
         catch(const dylib::exception& ex)
         {
@@ -237,7 +250,7 @@ namespace
         {
             try
             {
-                scriptMain = sharedLib.get_function<int()>("_main");
+                scriptMain = sharedLib->get_function<int()>("_main");
             }
             catch(const dylib::exception& ex)
             {
@@ -258,22 +271,30 @@ namespace
         
         //Run the entry point
         int result = 0;
-        if(scriptFullMain != nullptr)
+        try
         {
-            std::vector<std::string> runArgsCopy = runArgs;
-            runArgsCopy.insert(runArgsCopy.begin(), scriptPath);
-            
-            std::vector<char*> runArgsCStr(runArgsCopy.size());
-            for(int i = 0; i < runArgsCopy.size(); ++i)
-                runArgsCStr[i] = &runArgsCopy[i][0];
-            
-            result = scriptFullMain(runArgsCStr.size(), runArgsCStr.data());
+            if(scriptFullMain != nullptr)
+            {
+                std::vector<std::string> runArgsCopy = runArgs;
+                runArgsCopy.insert(runArgsCopy.begin(), scriptPath);
+                
+                std::vector<char*> runArgsCStr(runArgsCopy.size());
+                for(int i = 0; i < runArgsCopy.size(); ++i)
+                    runArgsCStr[i] = &runArgsCopy[i][0];
+                
+                result = scriptFullMain(runArgsCStr.size(), runArgsCStr.data());
+            }
+            else if(scriptMain != nullptr)
+                result = scriptMain();
         }
-        else if(scriptMain != nullptr)
-            result = scriptMain();
+        catch(std::exception& e)
+        {
+            ssLOG_ERROR("Failed to run script main with exception: " << e.what());
+            return -1;
+        }
         
         return result;
-        
+
         INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(-1);
     }
     
