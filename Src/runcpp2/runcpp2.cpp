@@ -36,34 +36,42 @@ namespace
         return true;
     }
 
-    bool RunCompiledScript( const std::string& scriptDirectory,
-                            const std::string& scriptName,
-                            const std::string& exeExt,
+    bool RunCompiledScript( const std::string& executable,
+                            const std::string& scriptDirectory,
+                            const std::string& scriptPath,
                             const std::vector<std::string>& runArgs)
     {
         INTERNAL_RUNCPP2_SAFE_START();
         ssLOG_FUNC_DEBUG();
         
         std::error_code _;
-        
-        std::string runCommand = runcpp2::ProcessPath(scriptDirectory + "/" + scriptName + exeExt);
+        std::string interpretedRunPath = runcpp2::ProcessPath(scriptPath);
+        std::string processedScriptDir = runcpp2::ProcessPath(scriptDirectory);
+        std::vector<const char*> args = { interpretedRunPath.c_str() };
         
         if(!runArgs.empty())
         {
             for(int i = 0; i < runArgs.size(); ++i)
-                runCommand += " \"" + runArgs[i] + "\"";
+                args.push_back(runArgs[i].c_str());
         }
         
-        ssLOG_INFO("Running: " << runCommand);
-        
         System2CommandInfo runCommandInfo = {};
+        runCommandInfo.RunDirectory = processedScriptDir.c_str();
         runCommandInfo.RedirectOutput = true;
-        SYSTEM2_RESULT result = System2Run(runCommand.c_str(), &runCommandInfo);
+        
+        SYSTEM2_RESULT result = System2RunSubprocess(   executable.c_str(),
+                                                        args.data(),
+                                                        args.size(),
+                                                        &runCommandInfo);
+        
+        ssLOG_INFO("Running: " << executable);
+        ssLOG_INFO("At: " << processedScriptDir);
+        for(int i = 0; i < runArgs.size(); ++i)
+            ssLOG_INFO("-   " << runArgs[i]);
         
         if(result != SYSTEM2_RESULT_SUCCESS)
         {
             ssLOG_ERROR("System2Run failed with result: " << result);
-            ghc::filesystem::remove(scriptDirectory + "/" + std::string(scriptName + exeExt), _);
             return false;
         }
         
@@ -107,7 +115,6 @@ namespace
             else
             {
                 ssLOG_ERROR("Failed to read from output with result: " << result);
-                ghc::filesystem::remove(scriptDirectory + "/" + std::string(scriptName + exeExt), _);
                 return false;
             }
         }
@@ -116,79 +123,17 @@ namespace
         if(result != SYSTEM2_RESULT_SUCCESS)
         {
             ssLOG_ERROR("System2GetCommandReturnValueASync failed with result: " << result);
-            ghc::filesystem::remove(scriptDirectory + "/" + std::string(scriptName + exeExt), _);
             return false;
         }
         
         if(statusCode != 0)
         {
             ssLOG_ERROR("Run command returned with non-zero status code: " << statusCode);
-            ghc::filesystem::remove(scriptDirectory + "/" + std::string(scriptName + exeExt), _);
             return false;
         }
         
-        ghc::filesystem::remove(scriptDirectory + "/" + std::string(scriptName + exeExt), _);
         return true;
         INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
-    }
-    
-    bool CopyCompiledExecutable(const std::string& scriptDirectory,
-                                const std::string& scriptName,
-                                const std::string& target,
-                                const std::string& exeExt,
-                                const std::vector<std::string>& copiedBinariesPaths,
-                                const std::string& targetSharedLibExt)
-    {
-        ssLOG_FUNC_DEBUG();
-        
-        std::error_code _;
-        std::error_code copyErrorCode;
-        ghc::filesystem::copy(  target, 
-                                scriptDirectory + "/" + scriptName + 
-                                exeExt, 
-                                copyErrorCode);
-        
-        if(copyErrorCode)
-        {
-            ssLOG_ERROR("Failed to copy file from " << target << " to " << scriptDirectory);
-            ssLOG_ERROR("Error code: " << copyErrorCode.message());
-            return -1;
-        }
-        
-        //Copy library files as well
-        for(int i = 0; i < copiedBinariesPaths.size(); ++i)
-        {
-            if(!ghc::filesystem::exists(copiedBinariesPaths[i], _))
-            {
-                ssLOG_ERROR("Failed to find copied file: " << copiedBinariesPaths[i]);
-                return -1;
-            }
-            
-            size_t foundIndex = copiedBinariesPaths[i].find_last_of(".");
-            if(foundIndex != std::string::npos)
-            {
-                std::string ext = copiedBinariesPaths[i].substr(foundIndex);
-                
-                if(ext == targetSharedLibExt)
-                {
-                    const std::string targetFileName =
-                        ghc::filesystem::path(copiedBinariesPaths[i]).filename().string();
-                    
-                    ghc::filesystem::copy(  copiedBinariesPaths[i], 
-                                            scriptDirectory + "/" + targetFileName,
-                                            copyErrorCode);
-                }
-            }
-        }
-        
-        if(copyErrorCode)
-        {
-            ssLOG_ERROR("Failed to copy file from " << target << " to " << scriptDirectory);
-            ssLOG_ERROR("Error code: " << copyErrorCode.message());
-            return -1;
-        }
-        
-        return 0;
     }
     
     int RunCompiledSharedLib(   const std::string& scriptDirectory,
@@ -316,7 +261,6 @@ namespace
         ghc::filesystem::file_time_type lastScriptWriteTime = 
             ghc::filesystem::last_write_time(absoluteScriptPath, _);
         
-        //Check if the c/cpp file is newer than the compiled c/c++ file
         if(currentOptions.find(runcpp2::CmdOptions::RESET_CACHE) != currentOptions.end())
             return false;
         
@@ -362,6 +306,7 @@ namespace
                         std::string currentExtension = it.path().extension().string();
                         
                         ssLOG_DEBUG("currentFileName: " << currentFileName);
+                        ssLOG_DEBUG("currentExtension: " << currentExtension);
                         
                         if(currentExtension == *sharedLibExtToCopy)
                             outCopiedBinariesPaths.push_back(it.path().string());
@@ -425,6 +370,8 @@ int runcpp2::RunScript( const std::string& scriptPath,
                         const std::unordered_map<CmdOptions, std::string> currentOptions,
                         const std::vector<std::string>& runArgs)
 {
+    ssLOG_FUNC_DEBUG();
+    
     if(profiles.empty())
     {
         ssLOG_ERROR("No compiler profiles found");
@@ -566,9 +513,9 @@ int runcpp2::RunScript( const std::string& scriptPath,
         }
     }
 
-    //Copying the compiled file to script directory
+    //Run the compiled file at script directory
     {
-        ssLOG_INFO("Copying script...");
+        ssLOG_INFO("Running script...");
         
         std::error_code _;
         std::string target = scriptDirectory + "/.runcpp2/";
@@ -600,26 +547,11 @@ int runcpp2::RunScript( const std::string& scriptPath,
         
         if(currentOptions.count(CmdOptions::EXECUTABLE) > 0)
         {
-            if(!CopyCompiledExecutable( scriptDirectory,
-                                        scriptName,
-                                        target,
-                                        exeExt,
-                                        copiedBinariesPaths,
-                                        *targetSharedLibExt))
+            //Running the script
+            if(!RunCompiledScript(target, scriptDirectory, absoluteScriptPath, runArgs))
             {
-                ssLOG_ERROR("Failed to copy compiled executable: " << target);
-                return -1;
-            }
-            
-            //Run it?
-            if(false)
-            {
-                //Running the script
-                if(!RunCompiledScript(scriptDirectory, scriptName, exeExt, runArgs))
-                {
-                    ssLOG_ERROR("Failed to run script");
-                    return false;
-                }
+                ssLOG_ERROR("Failed to run script");
+                return false;
             }
             
             return 0;
