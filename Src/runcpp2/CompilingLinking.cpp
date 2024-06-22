@@ -444,14 +444,15 @@ namespace
         
         std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
         std::string runcpp2ScriptDir = runcpp2::ProcessPath(scriptDirectory + "/.runcpp2");
-        linkCommand = "cd " + runcpp2ScriptDir + " && " + linkCommand;
         
         //Do Linking
         System2CommandInfo linkCommandInfo = {};
         linkCommandInfo.RedirectOutput = true;
+        linkCommandInfo.RunDirectory = runcpp2ScriptDir.c_str();
         SYSTEM2_RESULT result = System2Run(linkCommand.c_str(), &linkCommandInfo);
         
         ssLOG_INFO("running link command: " << linkCommand);
+        ssLOG_INFO("in " << runcpp2ScriptDir);
         
         if(result != SYSTEM2_RESULT_SUCCESS)
         {
@@ -514,17 +515,24 @@ namespace
                                                                                 .string();
                 
                 std::string runcpp2ScriptDir = runcpp2::ProcessPath(scriptDirectory + "/.runcpp2");
-                std::string setupCommand = "cd " + runcpp2ScriptDir;
+                std::string setupCommand;
                 
                 const std::vector<std::string>& currentSetupSteps =
                     *runcpp2::GetValueFromPlatformMap(profile.SetupSteps);
                 
                 for(int i = 0; i < currentSetupSteps.size(); ++i)
-                    setupCommand += " && " + currentSetupSteps.at(i);
+                {
+                    setupCommand += currentSetupSteps.at(i);
+                    if(i != currentSetupSteps.size() - 1)
+                        setupCommand += " && ";
+                }
                 
                 System2CommandInfo setupCommandInfo = {};
+                setupCommandInfo.RunDirectory = runcpp2ScriptDir.c_str();
                 setupCommandInfo.RedirectOutput = true;
+                
                 ssLOG_INFO("running setup command: " << setupCommand);
+                ssLOG_INFO("in " << runcpp2ScriptDir);
                 SYSTEM2_RESULT result = System2Run(setupCommand.c_str(), &setupCommandInfo);
                 
                 if(result != SYSTEM2_RESULT_SUCCESS)
