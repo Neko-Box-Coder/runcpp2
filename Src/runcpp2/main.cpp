@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
         ssLOG_BASE("Options:");
         ssLOG_BASE("    -r, --reset-cache           Deletes all cache and build everything from scratch");
         ssLOG_BASE("    -c, --reset-user-config     Replace current user config with the default one");
-        ssLOG_BASE("    -e, --executable            Builds executable instead of running the file");
+        ssLOG_BASE("    -e, --executable            Runs as executable instead of shared library");
         ssLOG_BASE("    -h, --help                  Show this help message");
         
         return 0;
