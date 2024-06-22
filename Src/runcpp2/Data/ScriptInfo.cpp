@@ -82,18 +82,21 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
         }
     }
     
-    for(int i = 0; i < node["Dependencies"].num_children(); ++i)
+    if(ExistAndHasChild(node, "Dependencies"))
     {
-        DependencyInfo info;
-        ryml::ConstNodeRef dependencyNode = node["Dependencies"][i];
-        
-        if(!info.ParseYAML_Node(dependencyNode))
+        for(int i = 0; i < node["Dependencies"].num_children(); ++i)
         {
-            ssLOG_ERROR("ScriptInfo: Failed to parse DependencyInfo at index " << i);
-            return false;
+            DependencyInfo info;
+            ryml::ConstNodeRef dependencyNode = node["Dependencies"][i];
+            
+            if(!info.ParseYAML_Node(dependencyNode))
+            {
+                ssLOG_ERROR("ScriptInfo: Failed to parse DependencyInfo at index " << i);
+                return false;
+            }
+            
+            Dependencies.push_back(info);
         }
-        
-        Dependencies.push_back(info);
     }
     
     return true;

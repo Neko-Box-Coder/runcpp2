@@ -111,7 +111,8 @@ namespace
                         std::string gitCloneCommand = "cd " + processedRuncpp2ScriptDir;
                         gitCloneCommand += " && git clone " + dependencies[i].Source.Value;
                         
-                        System2CommandInfo gitCommandInfo;
+                        System2CommandInfo gitCommandInfo = {};
+                        gitCommandInfo.RedirectOutput = true;
                         SYSTEM2_RESULT result = System2Run(gitCloneCommand.c_str(), &gitCommandInfo);
                         
                         if(result != SYSTEM2_RESULT_SUCCESS)
@@ -248,7 +249,8 @@ namespace
                 std::string setupCommand = "cd " + processedDependencyPath;
                 setupCommand += " && " + setupCommands[k];
                 
-                System2CommandInfo setupCommandInfo;
+                System2CommandInfo setupCommandInfo = {};
+                setupCommandInfo.RedirectOutput = true;
                 SYSTEM2_RESULT result = System2Run(setupCommand.c_str(), &setupCommandInfo);
                 
                 ssLOG_INFO("Running setup command: " << setupCommand);
@@ -299,7 +301,7 @@ namespace
     }
 
     bool GetDependencyBinariesExtensionsToCopy( const runcpp2::Data::DependencyInfo& dependencyInfo,
-                                                const runcpp2::Data::CompilerProfile& profile,
+                                                const runcpp2::Data::Profile& profile,
                                                 std::vector<std::string>& outExtensionsToCopy)
     {
         static_assert((int)runcpp2::Data::DependencyLibraryType::COUNT == 4, "");
@@ -307,7 +309,7 @@ namespace
         {
             case runcpp2::Data::DependencyLibraryType::STATIC:
             {
-                if(!runcpp2::HasValueFromPlatformMap(profile.StaticLibraryExtensions))
+                if(!runcpp2::HasValueFromPlatformMap(profile.StaticLinkFile.Extension))
                 {
                     ssLOG_ERROR("Failed to find static library extensions for dependency " << 
                                 dependencyInfo.Name);
@@ -315,14 +317,15 @@ namespace
                     return false;
                 }
                 
-                outExtensionsToCopy = 
-                    *runcpp2::GetValueFromPlatformMap(profile.StaticLibraryExtensions);
+                outExtensionsToCopy.push_back(
+                    *runcpp2::GetValueFromPlatformMap(profile.StaticLinkFile.Extension));
                 
                 break;
             }
             case runcpp2::Data::DependencyLibraryType::SHARED:
             {
-                if(!runcpp2::HasValueFromPlatformMap(profile.SharedLibraryExtensions))
+                if( !runcpp2::HasValueFromPlatformMap(profile.SharedLinkFile.Extension) ||
+                    !runcpp2::HasValueFromPlatformMap(profile.SharedLibraryFile.Extension))
                 {
                     ssLOG_ERROR("Failed to find shared library extensions for dependency " << 
                                 dependencyInfo.Name);
@@ -330,14 +333,21 @@ namespace
                     return false;
                 }
                 
-                outExtensionsToCopy = 
-                    *runcpp2::GetValueFromPlatformMap(profile.SharedLibraryExtensions);
+                outExtensionsToCopy.push_back(
+                    *runcpp2::GetValueFromPlatformMap(profile.SharedLinkFile.Extension));
                 
+                if( *runcpp2::GetValueFromPlatformMap(profile.SharedLinkFile.Extension) != 
+                    *runcpp2::GetValueFromPlatformMap(profile.SharedLibraryFile.Extension))
+                {
+                    outExtensionsToCopy.push_back(
+                        *runcpp2::GetValueFromPlatformMap(profile.SharedLibraryFile.Extension));
+                }
+               
                 break;
             }
             case runcpp2::Data::DependencyLibraryType::OBJECT:
             {
-                if(!runcpp2::HasValueFromPlatformMap(profile.ObjectFileExtensions))
+                if(!runcpp2::HasValueFromPlatformMap(profile.ObjectLinkFile.Extension))
                 {
                     ssLOG_ERROR("Failed to find shared library extensions for dependency " << 
                                 dependencyInfo.Name);
@@ -345,10 +355,9 @@ namespace
                     return false;
                 }
                 
-                const std::string objExtension = 
-                    *runcpp2::GetValueFromPlatformMap(profile.ObjectFileExtensions);
+                outExtensionsToCopy.push_back(
+                    *runcpp2::GetValueFromPlatformMap(profile.ObjectLinkFile.Extension));
                 
-                outExtensionsToCopy.push_back(objExtension);
                 break;
             }
             case runcpp2::Data::DependencyLibraryType::HEADER:
@@ -407,10 +416,11 @@ bool runcpp2::SetupScriptDependencies(  const ProfileName& profileName,
     {
         std::error_code _;
         
-        for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+        for(int i = 0; i < outDependenciesLocalCopiesPaths.size(); ++i)
         {
             //Remove the directory
-            if(!ghc::filesystem::remove_all(outDependenciesLocalCopiesPaths[i], _))
+            if( ghc::filesystem::exists(outDependenciesLocalCopiesPaths[i], _) &&
+                !ghc::filesystem::remove_all(outDependenciesLocalCopiesPaths[i], _))
             {
                 ssLOG_ERROR("Failed to reset dependency directory: " << 
                             outDependenciesLocalCopiesPaths[i]);
@@ -449,7 +459,7 @@ bool runcpp2::SetupScriptDependencies(  const ProfileName& profileName,
 bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath, 
                                         const Data::ScriptInfo& scriptInfo,
                                         const std::vector<std::string>& dependenciesCopiesPaths,
-                                        const Data::CompilerProfile& profile,
+                                        const Data::Profile& profile,
                                         std::vector<std::string>& outCopiedBinariesPaths)
 {
     std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
@@ -457,38 +467,26 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
     std::string runcpp2ScriptDir = scriptDirectory + "/.runcpp2";
     std::vector<std::string> platformNames = GetPlatformNames();
     
-    if(scriptInfo.Dependencies.size() != dependenciesCopiesPaths.size())
+    int minimumDependenciesCopiesCount = 0;
+    for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
     {
-        ssLOG_ERROR("The amount of dependencies do not match the amount of dependencies copies paths");
+        if( runcpp2::IsDependencyAvailableForThisPlatform(scriptInfo.Dependencies[i]) &&
+            scriptInfo.Dependencies[i].LibraryType != runcpp2::Data::DependencyLibraryType::HEADER)
+        {
+            ++minimumDependenciesCopiesCount;
+        }
+    }
+
+    if(minimumDependenciesCopiesCount > dependenciesCopiesPaths.size())
+    {
+        ssLOG_ERROR("The amount of available dependencies do not match" <<
+                    " the amount of dependencies copies paths");
+        
         return false;
     }
     
     for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
     {
-        std::string foundPlatformName;
-        
-        //Find the platform name we use for setup
-        {
-            for(int j = 0; j < platformNames.size(); ++j)
-            {
-                if( scriptInfo.Dependencies.at(i).Platforms.find(platformNames.at(j)) == 
-                    scriptInfo.Dependencies.at(i).Platforms.end())
-                {
-                    continue;
-                }
-                
-                foundPlatformName = platformNames.at(j);
-            }
-            
-            if(foundPlatformName.empty())
-            {
-                ssLOG_ERROR("Failed to find setup for current platform for dependency: " << 
-                            scriptInfo.Dependencies.at(i).Name);
-
-                return false;
-            }
-        }
-        
         std::vector<std::string> extensionsToCopy;
         
         //Get all the file extensions to copy
@@ -502,19 +500,13 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
         
             for(int j = 0; j < platformNames.size(); ++j)
             {
-                if( profile.DebugSymbolFileExtensions.find(platformNames.at(j)) == 
-                    profile.DebugSymbolFileExtensions.end())
+                if( profile.DebugSymbolFile.Extension.find(platformNames.at(j)) == 
+                    profile.DebugSymbolFile.Extension.end())
                 {
                     continue;
                 }
                 
-                const std::vector<std::string>& debugSymbolExtensions = 
-                    profile .DebugSymbolFileExtensions.at(platformNames.at(j));
-                
-                extensionsToCopy.insert(extensionsToCopy.end(), 
-                                        debugSymbolExtensions.begin(), 
-                                        debugSymbolExtensions.end());
-
+                extensionsToCopy.push_back(profile.DebugSymbolFile.Extension.at(platformNames.at(j)));
                 break;
             }
         }
@@ -545,11 +537,11 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                 std::string currentSearchLibraryName = searchProperty.SearchLibraryNames.at(j);
                 std::string currentSearchDirectory = searchProperty.SearchDirectories.at(k);
             
-                ssLOG_DEBUG("currentSearchDirectory: " << currentSearchDirectory);
-                ssLOG_DEBUG("currentSearchLibraryName: " << currentSearchLibraryName);
-            
                 if(!ghc::filesystem::path(currentSearchDirectory).is_absolute())
                     currentSearchDirectory = dependenciesCopiesPaths[i] + "/" + currentSearchDirectory;
+            
+                ssLOG_DEBUG("currentSearchDirectory: " << currentSearchDirectory);
+                ssLOG_DEBUG("currentSearchLibraryName: " << currentSearchLibraryName);
             
                 std::error_code _;
                 if( !ghc::filesystem::exists(currentSearchDirectory, _) || 
@@ -559,17 +551,16 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                     return false;
                 }
             
-                for(auto it :  ghc::filesystem::directory_iterator(currentSearchDirectory, _))
+                for(auto it : ghc::filesystem::directory_iterator(currentSearchDirectory, _))
                 {
                     if(it.is_directory())
                         continue;
                     
                     std::string currentFileName = it.path().stem().string();
                     std::string currentExtension = it.path().extension().string();
-                    if(!currentExtension.empty())
-                        currentExtension.erase(0, 1);
                     
                     ssLOG_DEBUG("currentFileName: " << currentFileName);
+                    ssLOG_DEBUG("currentExtension: " << currentExtension);
                     
                     //TODO: Make it not case sensitive?
                     bool nameMatched = false;
@@ -620,10 +611,21 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                         return false;
                     }
                     
-                    outCopiedBinariesPaths.push_back(currentFileName + "." + currentExtension);
+                    ssLOG_INFO("Copied " << it.path().string());
+                    outCopiedBinariesPaths.push_back(currentFileName + currentExtension);
                 }
             }
         }
+    }
+    
+    //Do a check to see if any dependencies are copied
+    if(outCopiedBinariesPaths.size() < minimumDependenciesCopiesCount)
+    {
+        ssLOG_WARNING("outCopiedBinariesPaths.size() does not match minimumDependenciesCopiesCount");
+        ssLOG_WARNING("outCopiedBinariesPaths are");
+        
+        for(int i = 0; i < outCopiedBinariesPaths.size(); ++i)
+            ssLOG_WARNING("outCopiedBinariesPaths[" << i << "]: " << outCopiedBinariesPaths[i]);
     }
     
     return true;

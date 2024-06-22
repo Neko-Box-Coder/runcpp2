@@ -25,7 +25,7 @@ bool runcpp2::CheckNodeRequirements(ryml::ConstNodeRef& node,
 {
     INTERNAL_RUNCPP2_SAFE_START();
     
-    if(!node.valid())
+    if(node.invalid())
     {
         ssLOG_ERROR("Node is invalid");
         return false;
@@ -81,6 +81,8 @@ bool runcpp2::CheckNodeRequirements(ryml::ConstNodeRef& node,
 
 bool runcpp2::GetParsableInfo(const std::string& contentToParse, std::string& outParsableInfo)
 {
+    ssLOG_FUNC_DEBUG();
+
     std::string source = contentToParse;
     
     //Remove all \r characters
@@ -285,7 +287,15 @@ bool runcpp2::ResolveYAML_Stream(   ryml::Tree& rootTree,
 bool runcpp2::ExistAndHasChild(const ryml::ConstNodeRef& node, const std::string& childName)
 {
     if(node.num_children() > 0 && node.has_child(childName.c_str()))
+    {
+        if(node[childName.c_str()].has_val())
+        {
+            if(node[childName.c_str()].val_is_null() || node[childName.c_str()].val().empty())
+                return false;
+        }
+        
         return true;
+    }
     
     return false;
 }

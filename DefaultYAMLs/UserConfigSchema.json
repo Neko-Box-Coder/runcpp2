@@ -5,7 +5,7 @@
     "properties": 
     {
         "PreferredProfile": { "type": "string" },
-        "CompilerProfiles": 
+        "Profiles": 
         {
             "type": "array",
             "items": 
@@ -39,69 +39,173 @@
                         },
                         "additionalProperties": false
                     },
-                    "ObjectFileExtensions":
+                    "ObjectLinkFile":
                     {
                         "type": "object",
-                        "patternProperties":
+                        "properties": 
                         {
-                            "^.*$": { "type": "string" }
-                        },
-                        "additionalProperties": false
-                    },
-                    "SharedLibraryExtensions":
-                    {
-                        "type": "object",
-                        "patternProperties":
-                        {
-                            "^.*$": 
+                            "Prefix": 
                             {
-                                "type": "array",
-                                "items": { "type":"string" }
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
+                            },
+                            "Extension": 
+                            {
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
                             }
                         },
-                        "additionalProperties": false
+                        "additionalProperties": false,
+                        "required": 
+                        [
+                            "Prefix",
+                            "Extension"
+                        ]
                     },
-                    "StaticLibraryExtensions":
+                    "SharedLinkFile":
                     {
                         "type": "object",
-                        "patternProperties":
+                        "properties": 
                         {
-                            "^.*$": 
+                            "Prefix": 
                             {
-                                "type": "array",
-                                "items": { "type":"string" }
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
+                            },
+                            "Extension": 
+                            {
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
                             }
                         },
-                        "additionalProperties": false
+                        "additionalProperties": false,
+                        "required": 
+                        [
+                            "Prefix",
+                            "Extension"
+                        ]
                     },
-                    "DebugSymbolFileExtensions":
+                    "SharedLibraryFile":
                     {
                         "type": "object",
-                        "patternProperties":
+                        "properties": 
                         {
-                            "^.*$": 
+                            "Prefix": 
                             {
-                                "type": "array",
-                                "items": { "type":"string" }
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
+                            },
+                            "Extension": 
+                            {
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
                             }
                         },
-                        "additionalProperties": false
+                        "additionalProperties": false,
+                        "required": 
+                        [
+                            "Prefix",
+                            "Extension"
+                        ]
+                    },
+                    "StaticLinkFile":
+                    {
+                        "type": "object",
+                        "properties": 
+                        {
+                            "Prefix": 
+                            {
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
+                            },
+                            "Extension": 
+                            {
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
+                            }
+                        },
+                        "additionalProperties": false,
+                        "required": 
+                        [
+                            "Prefix",
+                            "Extension"
+                        ]
+                    },
+                    "DebugSymbolFile":
+                    {
+                        "type": "object",
+                        "properties": 
+                        {
+                            "Prefix": 
+                            {
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
+                            },
+                            "Extension": 
+                            {
+                                "type": "object",
+                                "patternProperties":
+                                {
+                                    "^.*$": { "type": "string" }
+                                },
+                                "additionalProperties": false
+                            }
+                        },
+                        "additionalProperties": false,
+                        "required": 
+                        [
+                            "Prefix",
+                            "Extension"
+                        ]
                     },
                     "Compiler":
                     {
                         "type": "object",
                         "properties": 
                         {
-                            "SetupSteps" : 
+                            "EnvironmentSetup" : 
                             {
                                 "type": "object",
                                 "patternProperties":
                                 {
-                                    "^.*$": 
-                                    {
-                                        "type": "array",
-                                        "items": { "type":"string" }
-                                    }
+                                    "^.*$": { "type": "string"},
+                                    "additionalProperties": false
                                 },
                                 "additionalProperties": false
                             },
@@ -176,16 +280,13 @@
                         "type": "object",
                         "properties": 
                         {
-                            "SetupSteps" : 
+                            "EnvironmentSetup" : 
                             {
                                 "type": "object",
                                 "patternProperties":
                                 {
-                                    "^.*$": 
-                                    {
-                                        "type": "array",
-                                        "items": { "type":"string" }
-                                    }
+                                    "^.*$": { "type": "string"},
+                                    "additionalProperties": false
                                 },
                                 "additionalProperties": false
                             },
@@ -226,18 +327,18 @@
                                 },
                                 "additionalProperties": false
                             },
-                            "LinkerArgs": 
+                            "LinkArgs": 
                             {
                                 "type": "object",
                                 "properties": 
                                 {
                                     "OutputPart": { "type": "string" },
-                                    "DependenciesPart": { "type": "string" }
+                                    "LinkPart": { "type": "string" }
                                 },
                                 "required": 
                                 [
                                     "OutputPart",
-                                    "DependenciesPart"
+                                    "LinkPart"
                                 ]
                             }
                         },
@@ -248,7 +349,7 @@
                             "ExecutableLinkFlags",
                             "StaticLibLinkFlags",
                             "SharedLibLinkFlags",
-                            "LinkerArgs"
+                            "LinkArgs"
                         ]
                     }
                 },
@@ -256,9 +357,11 @@
                 [
                     "Name", 
                     "FileExtensions", 
-                    "ObjectFileExtensions", 
-                    "SharedLibraryExtensions", 
-                    "StaticLibraryExtensions", 
+                    "Languages",
+                    "ObjectLinkFile", 
+                    "SharedLinkFile", 
+                    "SharedLibraryFile", 
+                    "StaticLinkFile", 
                     "Compiler", 
                     "Linker"
                 ],
@@ -266,5 +369,5 @@
             }
         }
     },
-    "required": ["CompilerProfiles"]
+    "required": ["Profiles"]
 }

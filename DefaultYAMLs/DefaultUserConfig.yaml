@@ -1,11 +1,11 @@
 # yaml-language-server: $schema=./UserConfigSchema.json
 
 ---
-# A default compiler profile to be used if not specified while running the build script
+# A profile to be used if not specified while running the build script
 PreferredProfile: "g++"
 
 # List of compiler/linker profiles that instruct how to compile/link
-CompilerProfiles:
+Profiles:
 -   Name: "g++"
     
     # The file extensions associated with the profile
@@ -16,111 +16,151 @@ CompilerProfiles:
     
     # (Optional) Steps to run before calling the compiler/linker. 
     #            This is run inside the .runcpp2 directory where the build happens.
-    SetupSteps: 
-        # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
-        All: []
+    # SetupSteps: 
+    #     # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
+    #     All: []
     
-    # The file extension for the object files for each platform
-    ObjectFileExtensions:
-        Windows: obj
-        Unix: o
+    # The following fields set the prefixes and extensions for each type of the files
+    # If the name of an object files are libtest.so and libtest2.so,
+    #   the prefixes and extensions are "lib" and ".so"
     
-    # The file extensions for the shared libraries for each platform
-    SharedLibraryExtensions:
-        Windows: [dll, lib]
-        Linux: [so]
-        MacOS: [dylib]
+    # Each of the platform dependent settings can be listed under
+    # - All
+    # - Windows
+    # - Linux
+    # - MacOS
+    # - Unix
     
-    # The file extensions for the static libraries for each platform
-    StaticLibraryExtensions:
-        Windows: [lib]
-        Unix: [a]
+    # The file properties for the object files for each platform.
+    ObjectLinkFile:
+        Prefix:
+            All: ""
+        Extension:
+            Windows: ".obj"
+            Unix: ".o"
     
-    # (Optional) The file extensions for debug symbols to be copied alongside the binary
-    DebugSymbolFileExtensions:
-        Windows: []
-        Unix: []
+    # The file properties for the files to be **linked** as shared libraries for each platform
+    SharedLinkFile:
+        Prefix:
+            Windows: ""
+            Linux: "lib"
+            MacOS: ""
+        Extension:
+            Windows: ".lib"
+            Linux: ".so"
+            MacOS: ".dylib"
     
-    # Specify the compiler settings, so the final flow will be:
-    # [Setup steps if any] --> {Executable} {CompileArgs}
+    # The file properties for the files to be **copied** as shared libraries for each platform
+    SharedLibraryFile:
+        Prefix:
+            Windows: ""
+            Linux: "lib"
+            MacOS: ""
+        Extension:
+            Windows: ".dll"
+            Linux: ".so"
+            MacOS: ".dylib"
+    
+    # The file properties for the files to be linked as static libraries for each platform
+    StaticLinkFile:
+        Prefix:
+            Unix: "lib"
+            Windows: ""
+        Extension:
+            Windows: ".lib"
+            Unix: ".a"
+    
+    # (Optional) The file properties for debug symbols to be copied alongside the binary 
+    #   for each platform
+    # DebugSymbolFile:
+    #     Prefix:
+    #         Windows: ""
+    #         Unix: ""
+    #     Extension:
+    #         Windows: ""
+    #         Unix: ""
+    
+    # Specify the compiler settings
     Compiler:
         # (Optional) The command to run together before running each compile command
-        EnvironmentSetup: 
-            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
-            All: ""
+        #   in **shell** for each platform
+        # EnvironmentSetup: 
+        #     All: ""
         
         # Executable to be called
         Executable: "g++"
         
-        # Default arguments to provide for compilation which can be overridden by the script
+        # Default arguments to provide for compilation which can be overridden 
+        #   by the script for each platform
         DefaultCompileFlags: 
-            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
             All: "-std=c++17 -Wall -Werror"
         
-        # Flags for compiling to an executable
+        # Flags for compiling to an executable for each platform
         ExecutableCompileFlags: 
-            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
             All: ""
         
-        # Flags for compiling to a static library
+        # Flags for compiling to a static library for each platform
         StaticLibCompileFlags: 
-            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
             All: ""
         
-        # Flags for compiling to a shared library
+        # Flags for compiling to a shared library for each platform
         SharedLibCompileFlags: 
-            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
-            All: ""
+            All: "-fpic"
         
-        # The syntax to compile the given file. 
-        # [Setup steps if any] --> 
-        # {Executable} {CompilePart} {IncludePart}...(for each dependency) {InputPart} {OutputPart}
-        # {CompileFlags}, {IncludePath}, {InputFile}, {ObjectFile} will be replaced accordingly
+        # The compile syntax in shell for a given file:
+        # {Executable} {CompilePart} [ {IncludePart}...(for each dependency) ] 
+        #   {InputPart} {OutputPart}
         CompileArgs: 
+            # {CompileFlags} will be replaced by *CompileFlags set above depending on what 
+            #   we are compiling
             CompilePart: "-c {CompileFlags}"
-            IncludePart: "-I{IncludePath}"
-            InputPart: "{InputFile}"
-            OutputPart: "-o {ObjectFile}"
+            
+            # {IncludeDirectoryPath} will be replaced by the IncludePaths set by the dependencies
+            IncludePart: "-I{IncludeDirectoryPath}"
+            
+            # {InputFilePath} will be replaced by the path to the script we are trying to compile
+            InputPart: "{InputFilePath}"
+            
+            # {ObjectFilePath} will be replaced by the path to the output object file
+            OutputPart: "-o {ObjectFilePath}"
 
-    # Specify the linker settings, so the final flow will be:
-    # [Setup steps if any] --> {Executable} {OutputPart} {DependenciesPart}...(for each dependency)
+    # Specify the linker settings
     Linker:
-        # (Optional) The command to run together before running each link command
-        EnvironmentSetup: 
-            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
-            All: ""
+        # (Optional) The command to run together before running each link command 
+        #   in **shell** for each platform
+        # EnvironmentSetup: 
+        #     All: ""
         
         # Executable to be called
         Executable: "g++"
         
         # Default arguments to provide for linking dependencies to the binary, 
-        # which can be overridden by the script
+        #   which can be overridden by the script for each platform
         DefaultLinkFlags: 
-            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
             All: ""
         
-        # Flags for linking as an executable
+        # Flags for linking as an executable for each platform
         ExecutableLinkFlags: 
-            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
-            All: ""
+            All: "-Wl,-rpath,\\$ORIGIN"
         
-        # Flags for linking as a static library
+        # Flags for linking as a static library for each platform
         StaticLibLinkFlags: 
-            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
             All: ""
         
-        # Flags for linking as a shared library
+        # Flags for linking as a shared library for each platform
         SharedLibLinkFlags: 
-            # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
-            All: ""
+            Unix: "-shared -Wl,-rpath,\\$ORIGIN"
+            Windows: "-shared -Wl,-rpath,$ORIGIN"
         
-        # The syntax to link the given file
-        LinkerArgs:
-            # Syntax for outputting to the binary. 
-            # {LinkFlags}, {OutputFile}, {ObjectFile} will be replaced accordingly
-            OutputPart: "{LinkFlags} -o {OutputFile} {ObjectFile}"
+        # The link syntax in shell for a given file:
+        # {OutputPart} {LinkPart}...(for script object file and each dependencies if any)
+        LinkArgs:
+            # {LinkFlags} will be replaced by *LinkFlags set above depending on what 
+            #   we are linking to
+            #
+            # {OutputFilePath} will be replaced by the path to the output file
+            OutputPart: "{LinkFlags} -o {OutputFilePath}"
             
-            # Syntax for linking each dependency. 
-            # {DependencyFile} will be replaced accordingly
-            #DependenciesPart: "-l:{DependencyFile}"
-            DependenciesPart: "{DependencyFile}"
+            # {LinkFilePath} will be replaced by the path to the object file 
+            #   we are linking against
+            LinkPart: "{LinkFilePath}"

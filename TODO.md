@@ -1,6 +1,8 @@
-- Loading dynamic library instead of executable
+- Add option to add Default Script Info to script
+- Add tests and examples (On Windows as well)
+- Make SearchLibraryNames and SearchDirectories optional
+- Add System Source Type
+- Change cache to be in the config folder
 - Output compile_command.json
 - Allow script info as standalone yaml file
-- Copy shared libraries to be next to the executable
-- Commandline options
 - Allow Languages to override FileExtensions in compiler profile

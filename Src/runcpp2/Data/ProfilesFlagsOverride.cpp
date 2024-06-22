@@ -19,7 +19,7 @@ bool runcpp2::Data::ProfilesFlagsOverride::ParseYAML_Node(ryml::ConstNodeRef& no
             return false;
         }
         
-        ProfileName profile(node.key().data(), node.key().len);
+        ProfileName profile(node[i].key().data(), node[i].key().len);
         FlagsOverrideInfo flags;
         
         ryml::ConstNodeRef flagsOverrideNode = node[i];
