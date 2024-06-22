@@ -17,7 +17,7 @@ bool runcpp2::Data::Profile::ParseYAML_Node(ryml::ConstNodeRef& profileNode)
         NodeRequirement("SharedLinkFile", ryml::NodeType_e::MAP, true, false),
         NodeRequirement("SharedLibraryFile", ryml::NodeType_e::MAP, true, false),
         NodeRequirement("StaticLinkFile", ryml::NodeType_e::MAP, true, false),
-        NodeRequirement("DebugSymbolFile", ryml::NodeType_e::MAP, true, false),
+        NodeRequirement("DebugSymbolFile", ryml::NodeType_e::MAP, false, false),
         NodeRequirement("Compiler", ryml::NodeType_e::MAP, true, false),
         NodeRequirement("Linker", ryml::NodeType_e::MAP, true, false)
     };
