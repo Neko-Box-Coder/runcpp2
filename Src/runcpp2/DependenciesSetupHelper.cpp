@@ -337,14 +337,12 @@ namespace
                     *runcpp2::GetValueFromPlatformMap(profile.SharedLinkFile.Extension));
                 
                 if( *runcpp2::GetValueFromPlatformMap(profile.SharedLinkFile.Extension) != 
-                    *runcpp2::GetValueFromPlatformMap(profile.SharedLibraryFile.Extension) ||
-                    *runcpp2::GetValueFromPlatformMap(profile.SharedLinkFile.Prefix) !=
-                    *runcpp2::GetValueFromPlatformMap(profile.SharedLibraryFile.Prefix))
+                    *runcpp2::GetValueFromPlatformMap(profile.SharedLibraryFile.Extension))
                 {
                     outExtensionsToCopy.push_back(
                         *runcpp2::GetValueFromPlatformMap(profile.SharedLibraryFile.Extension));
                 }
-                
+               
                 break;
             }
             case runcpp2::Data::DependencyLibraryType::OBJECT:

@@ -5,5 +5,4 @@
 - Change cache to be in the config folder
 - Output compile_command.json
 - Allow script info as standalone yaml file
-- Commandline options
 - Allow Languages to override FileExtensions in compiler profile

@@ -429,7 +429,7 @@ namespace
                 
                 if(!linkAsExecutable)
                 {
-                    if(GetValueFromPlatformMap(profile.SharedLinkFile.Extension) == nullptr)
+                    if(!HasValueFromPlatformMap(profile.SharedLinkFile.Extension))
                     {
                         ssLOG_WARNING(  "profile " << profile.Name << " missing extension for " <<
                                         "shared link file");
@@ -442,7 +442,7 @@ namespace
                 }
                 else
                 {
-                    if(GetValueFromPlatformMap(profile.SharedLinkFile.Extension) == nullptr)
+                    if(!HasValueFromPlatformMap(profile.SharedLinkFile.Extension))
                     {
                         ssLOG_WARNING(  "profile " << profile.Name << " missing extension for " <<
                                         "shared link file");
@@ -450,7 +450,7 @@ namespace
                         continue;
                     }
                     
-                    if(GetValueFromPlatformMap(profile.StaticLinkFile.Extension) == nullptr)
+                    if(!HasValueFromPlatformMap(profile.StaticLinkFile.Extension))
                     {
                         ssLOG_WARNING(  "profile " << profile.Name << " missing extension for " <<
                                         "static link file");
