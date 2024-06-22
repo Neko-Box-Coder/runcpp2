@@ -4,58 +4,79 @@
 #include "ssLogger/ssLog.hpp"
 #include "System2.h"
 
-namespace  
+namespace
 {
-
     bool IsProfileAvailableOnSystem(const runcpp2::Data::Profile& profile)
     {
         //Check compiler
-        std::string command = profile.Compiler.Executable + " -v";
-        
-        System2CommandInfo compilerCommandInfo = {};
-        compilerCommandInfo.RedirectOutput = true;
-        SYSTEM2_RESULT sys2Result = System2Run(command.c_str(), &compilerCommandInfo);
-        
-        if(sys2Result != SYSTEM2_RESULT_SUCCESS)
         {
-            ssLOG_ERROR("System2Run failed with result: " << sys2Result);
-            return false;
+            //Getting EnvironmentSetup command
+            std::string command;
+            {
+                command =   runcpp2::HasValueFromPlatformMap(profile.Compiler.EnvironmentSetup) ? 
+                            *runcpp2::GetValueFromPlatformMap(profile.Compiler.EnvironmentSetup) : "";
+                
+                if(!command.empty())
+                    command += " && ";
+            }
+           
+            command += profile.Compiler.Executable + " -v";
+            System2CommandInfo compilerCommandInfo = {};
+            compilerCommandInfo.RedirectOutput = true;
+            SYSTEM2_RESULT sys2Result = System2Run(command.c_str(), &compilerCommandInfo);
+            
+            if(sys2Result != SYSTEM2_RESULT_SUCCESS)
+            {
+                ssLOG_ERROR("System2Run failed with result: " << sys2Result);
+                return false;
+            }
+            
+            int returnCode = 0;
+            sys2Result = System2GetCommandReturnValueSync(&compilerCommandInfo, &returnCode);
+            if(sys2Result != SYSTEM2_RESULT_SUCCESS)
+            {
+                ssLOG_ERROR("System2GetCommandReturnValueSync failed with result: " << sys2Result);
+                return false;
+            }
+            
+            if(returnCode != 0)
+                return false;
         }
-        
-        int returnCode = 0;
-        sys2Result = System2GetCommandReturnValueSync(&compilerCommandInfo, &returnCode);
-        if(sys2Result != SYSTEM2_RESULT_SUCCESS)
-        {
-            ssLOG_ERROR("System2GetCommandReturnValueSync failed with result: " << sys2Result);
-            return false;
-        }
-        
-        if(returnCode != 0)
-            return false;
         
         //Check linker
-        command = profile.Linker.Executable + " -v";
-        
-        System2CommandInfo linkerCommandInfo = {};
-        linkerCommandInfo.RedirectOutput = true;
-        sys2Result = System2Run(command.c_str(), &linkerCommandInfo);
-        
-        if(sys2Result != SYSTEM2_RESULT_SUCCESS)
         {
-            ssLOG_ERROR("System2Run failed with result: " << sys2Result);
-            return false;
+            //Getting EnvironmentSetup command
+            std::string command;
+            {
+                command =   runcpp2::HasValueFromPlatformMap(profile.Compiler.EnvironmentSetup) ? 
+                            *runcpp2::GetValueFromPlatformMap(profile.Compiler.EnvironmentSetup) : "";
+                
+                if(!command.empty())
+                    command += " && ";
+            }
+            
+            command += profile.Linker.Executable + " -v";
+            System2CommandInfo linkerCommandInfo = {};
+            linkerCommandInfo.RedirectOutput = true;
+            SYSTEM2_RESULT sys2Result = System2Run(command.c_str(), &linkerCommandInfo);
+            
+            if(sys2Result != SYSTEM2_RESULT_SUCCESS)
+            {
+                ssLOG_ERROR("System2Run failed with result: " << sys2Result);
+                return false;
+            }
+            
+            int returnCode = 0;
+            sys2Result = System2GetCommandReturnValueSync(&linkerCommandInfo, &returnCode);
+            if(sys2Result != SYSTEM2_RESULT_SUCCESS)
+            {
+                ssLOG_ERROR("System2GetCommandReturnValueSync failed with result: " << sys2Result);
+                return false;
+            }
+            
+            if(returnCode != 0)
+                return false;
         }
-        
-        returnCode = 0;
-        sys2Result = System2GetCommandReturnValueSync(&linkerCommandInfo, &returnCode);
-        if(sys2Result != SYSTEM2_RESULT_SUCCESS)
-        {
-            ssLOG_ERROR("System2GetCommandReturnValueSync failed with result: " << sys2Result);
-            return false;
-        }
-        
-        if(returnCode != 0)
-            return false;
 
         return true;
     }
