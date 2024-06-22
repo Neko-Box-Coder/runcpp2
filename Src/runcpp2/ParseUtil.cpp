@@ -287,7 +287,15 @@ bool runcpp2::ResolveYAML_Stream(   ryml::Tree& rootTree,
 bool runcpp2::ExistAndHasChild(const ryml::ConstNodeRef& node, const std::string& childName)
 {
     if(node.num_children() > 0 && node.has_child(childName.c_str()))
+    {
+        if(node[childName.c_str()].has_val())
+        {
+            if(node[childName.c_str()].val_is_null() || node[childName.c_str()].val().empty())
+                return false;
+        }
+        
         return true;
+    }
     
     return false;
 }
