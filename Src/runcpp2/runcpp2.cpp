@@ -281,7 +281,7 @@ namespace
             if(sharedLibExtToCopy == nullptr)
             {
                 ssLOG_ERROR("Shared library extension not found in compiler profile");
-                return -1;
+                return false;
             }
 
             //If the executable already exists, check if it's newer than the script
@@ -336,7 +336,7 @@ namespace
             if(targetSharedLibExt == nullptr || targetSharedLibPrefix == nullptr)
             {
                 ssLOG_ERROR("Shared library extension or prefix not found in compiler profile");
-                return -1;
+                return false;
             }
             
             std::string sharedLibBuild =    scriptDirectory + 
