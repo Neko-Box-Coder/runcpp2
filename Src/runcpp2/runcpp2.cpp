@@ -479,7 +479,7 @@ int runcpp2::RunScript( const std::string& scriptPath,
         {
             std::vector<std::string> dependenciesLocalCopiesPaths;
             std::vector<std::string> dependenciesSourcePaths;
-            if(!SetupScriptDependencies(profiles[profileIndex].Name, 
+            if(!SetupScriptDependencies(profiles[profileIndex], 
                                         absoluteScriptPath, 
                                         scriptInfo, 
                                         currentOptions.count(CmdOptions::RESET_CACHE) > 0,

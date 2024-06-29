@@ -10,6 +10,7 @@ bool runcpp2::Data::Profile::ParseYAML_Node(ryml::ConstNodeRef& profileNode)
     std::vector<NodeRequirement> requirements =
     {
         NodeRequirement("Name", ryml::NodeType_e::KEYVAL, true, false),
+        NodeRequirement("NameAliases", ryml::NodeType_e::SEQ, false, true),
         NodeRequirement("FileExtensions", ryml::NodeType_e::SEQ, true, false),
         NodeRequirement("Languages", ryml::NodeType_e::SEQ, false, true),
         NodeRequirement("SetupSteps", ryml::NodeType_e::MAP, false, true),
@@ -30,6 +31,12 @@ bool runcpp2::Data::Profile::ParseYAML_Node(ryml::ConstNodeRef& profileNode)
     
     profileNode["Name"] >> Name;
     
+    if(ExistAndHasChild(profileNode, "NameAliases"))
+    {
+        for(int i = 0; i < profileNode["NameAliases"].num_children(); ++i)
+            NameAliases.insert(GetValue(profileNode["NameAliases"][i]));
+    }
+
     for(int i = 0; i < profileNode["FileExtensions"].num_children(); ++i)
         FileExtensions.insert(GetValue(profileNode["FileExtensions"][i]));
     
@@ -117,6 +124,9 @@ std::string runcpp2::Data::Profile::ToString(std::string indentation) const
     std::string out;
     
     out += indentation + "Name: " + Name + "\n";
+    out += indentation + "NameAliases:\n";
+    for(auto it = NameAliases.begin(); it != NameAliases.end(); ++it)
+        out += indentation + "-   " + *it + "\n";
     
     out += indentation + "FileExtensions:\n";
     for(auto it = FileExtensions.begin(); it != FileExtensions.end(); ++it)
@@ -129,9 +139,9 @@ std::string runcpp2::Data::Profile::ToString(std::string indentation) const
     out += indentation + "SetupSteps:\n";
     for(auto it = SetupSteps.begin(); it != SetupSteps.end(); ++it)
     {
-        out += indentation + it->first + ":\n";
+        out += indentation + "    " + it->first + ":\n";
         for(int i = 0; i < it->second.size(); ++i)
-            out += indentation + "-   " + it->second[i] + "\n";
+            out += indentation + "    -   " + it->second[i] + "\n";
     }
     
     out += indentation + "ObjectLinkFile:\n";

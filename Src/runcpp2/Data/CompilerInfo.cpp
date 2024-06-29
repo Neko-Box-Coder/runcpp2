@@ -11,6 +11,7 @@ bool runcpp2::Data::CompilerInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     {
         NodeRequirement("EnvironmentSetup", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("Executable", ryml::NodeType_e::KEYVAL, true, false),
+        NodeRequirement("CheckExistence", ryml::NodeType_e::KEYVAL, true, false),
         NodeRequirement("DefaultCompileFlags", ryml::NodeType_e::MAP, true, true),
         NodeRequirement("ExecutableCompileFlags", ryml::NodeType_e::MAP, true, true),
         NodeRequirement("StaticLibCompileFlags", ryml::NodeType_e::MAP, true, true),
@@ -50,6 +51,7 @@ bool runcpp2::Data::CompilerInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     }
     
     node["Executable"] >> Executable;
+    node["CheckExistence"] >> CheckExistence;
     
     for(int i = 0; i < node["DefaultCompileFlags"].num_children(); ++i)
     {
@@ -138,6 +140,7 @@ std::string runcpp2::Data::CompilerInfo::ToString(std::string indentation) const
     }
     
     out += indentation + "    Executable: " + Executable + "\n";
+    out += indentation + "    CheckExistence: " + CheckExistence + "\n";
     out += indentation + "    DefaultCompileFlags: \n";
     for(auto it = DefaultCompileFlags.begin(); it != DefaultCompileFlags.end(); ++it)
         out += indentation + "        " + it->first + ": " + it->second + "\n";

@@ -13,7 +13,10 @@ option(RUNCPP2_UPDATE_DEFAULT_YAMLS "Update default yaml files" OFF)
 # External Dependencies
 # =========================================================================
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/ssLogger")
+
+set(RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS ON CACHE BOOL "" FORCE)
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/rapidyaml")
+
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/filesystem")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/System2")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/dylib")

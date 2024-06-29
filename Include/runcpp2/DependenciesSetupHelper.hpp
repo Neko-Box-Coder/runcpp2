@@ -11,7 +11,7 @@ namespace runcpp2
     bool IsDependencyAvailableForThisPlatform(const Data::DependencyInfo& dependency);
     
     
-    bool SetupScriptDependencies(   const ProfileName& profileName,
+    bool SetupScriptDependencies(   const Data::Profile& profile,
                                     const std::string& scriptPath, 
                                     Data::ScriptInfo& scriptInfo,
                                     bool resetDependencies,
