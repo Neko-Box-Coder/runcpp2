@@ -6,19 +6,17 @@ PreferredProfile: "g++"
 
 # List of compiler/linker profiles that instruct how to compile/link
 Profiles:
+    # Name (case sensitive) of the profile that can be queried from a script
 -   Name: "g++"
+    
+    # (Optional) Name aliases (case sensitive) of the current profile
+    NameAliases: ["mingw"]
     
     # The file extensions associated with the profile
     FileExtensions: [cpp, cc, cxx]
     
     # The languages supported by the profile
     Languages: ["c++"]
-    
-    # (Optional) Steps to run before calling the compiler/linker. 
-    #            This is run inside the .runcpp2 directory where the build happens.
-    # SetupSteps: 
-    #     # Applies to all platforms (Can be changed to Linux, MacOS, Windows, Unix, etc.)
-    #     All: []
     
     # The following fields set the prefixes and extensions for each type of the files
     # If the name of an object files are libtest.so and libtest2.so,
@@ -31,6 +29,12 @@ Profiles:
     # - MacOS
     # - Unix
     
+    # (Optional) The commands to run in **shell**  before calling the compiler/linker for each platform.
+    #            This is run inside the .runcpp2 directory where the build happens.
+    # SetupSteps: 
+    #     All: []
+    
+    # TODO: Make this common
     # The file properties for the object files for each platform.
     ObjectLinkFile:
         Prefix:
@@ -90,6 +94,9 @@ Profiles:
         # Executable to be called
         Executable: "g++"
         
+        # Shell command to use for checking if the executable exists or not
+        CheckExistence: "g++ -v"
+        
         # Default arguments to provide for compilation which can be overridden 
         #   by the script for each platform
         DefaultCompileFlags: 
@@ -134,6 +141,9 @@ Profiles:
         # Executable to be called
         Executable: "g++"
         
+        # Shell command to use for checking if the executable exists or not
+        CheckExistence: "g++ -v"
+        
         # Default arguments to provide for linking dependencies to the binary, 
         #   which can be overridden by the script for each platform
         DefaultLinkFlags: 
@@ -163,4 +173,92 @@ Profiles:
             
             # {LinkFilePath} will be replaced by the path to the object file 
             #   we are linking against
+            LinkPart: "{LinkFilePath}"
+
+# https://learn.microsoft.com/en-us/cpp/overview/compiler-versions?view=msvc-170
+-   &MSVC_2022
+    Name: "vs2022_v17+"
+    NameAliases: ["msvc1930+", "msvc"]
+    FileExtensions: [cpp, cc, cxx]
+    Languages: ["c++"]
+    
+    ObjectLinkFile:
+        Prefix:
+            Windows: ""
+        Extension:
+            Windows: ".obj"
+    
+    SharedLinkFile:
+        Prefix:
+            Windows: ""
+        Extension:
+            Windows: ".lib"
+    
+    SharedLibraryFile:
+        Prefix:
+            Windows: ""
+        Extension:
+            Windows: ".dll"
+    
+    StaticLinkFile:
+        Prefix:
+            Windows: ""
+        Extension:
+            Windows: ".lib"
+    
+    DebugSymbolFile:
+        Prefix:
+            Windows: ""
+        Extension:
+            Windows: ".pdb"
+    
+    Compiler:
+        EnvironmentSetup: 
+            Windows: "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat\" x64"
+    
+        Executable: "CL.exe"
+        
+        CheckExistence: "where.exe CL.exe"
+
+        DefaultCompileFlags: 
+            Windows: "/utf-8 /MD /EHa /TP"
+        
+        ExecutableCompileFlags: 
+            Windows: ""
+        
+        StaticLibCompileFlags: 
+            Windows: ""
+        
+        SharedLibCompileFlags: 
+            Windows: ""
+        
+        # Should be: CL.exe /c {CompileFlags} /I{IncludeDirectoryPath} /Fo"{ObjectFilePath}" {InputFilePath}
+        CompileArgs: 
+            CompilePart: "/c {CompileFlags}"
+            IncludePart: "/I{IncludeDirectoryPath}"
+            InputPart: "{InputFilePath}"
+            OutputPart: "/Fo\"{ObjectFilePath}\""
+    
+    Linker:
+        EnvironmentSetup: 
+            Windows: "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat\" x64"
+    
+        Executable: "link.exe"
+        
+        CheckExistence: "where.exe link.exe"
+        
+        DefaultLinkFlags: 
+            Windows: ""
+        
+        ExecutableLinkFlags: 
+            Windows: ""
+        
+        StaticLibLinkFlags: 
+            Windows: ""
+        
+        SharedLibLinkFlags: 
+            Windows: ""
+        
+        LinkArgs:
+            OutputPart: "{LinkFlags} -o {OutputFilePath}"
             LinkPart: "{LinkFilePath}"

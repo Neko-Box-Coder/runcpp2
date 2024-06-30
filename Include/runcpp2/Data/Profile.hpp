@@ -21,6 +21,7 @@ namespace runcpp2
         {
             public:
                 std::string Name;
+                std::unordered_set<std::string> NameAliases;
                 std::unordered_set<std::string> FileExtensions;
                 std::unordered_set<std::string> Languages;
                 std::unordered_map<PlatformName, std::vector<std::string>> SetupSteps;

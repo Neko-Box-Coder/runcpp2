@@ -12,6 +12,7 @@ bool runcpp2::Data::LinkerInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     {
         NodeRequirement("EnvironmentSetup", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("Executable", ryml::NodeType_e::KEYVAL, true, false),
+        NodeRequirement("CheckExistence", ryml::NodeType_e::KEYVAL, true, false),
         NodeRequirement("DefaultLinkFlags", ryml::NodeType_e::KEYVAL, true, true),
         NodeRequirement("ExecutableLinkFlags", ryml::NodeType_e::KEYVAL, true, true),
         NodeRequirement("StaticLibLinkFlags", ryml::NodeType_e::KEYVAL, true, true),
@@ -49,6 +50,7 @@ bool runcpp2::Data::LinkerInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     }
     
     node["Executable"] >> Executable;
+    node["CheckExistence"] >> CheckExistence;
     
     for(int i = 0; i < node["DefaultLinkFlags"].num_children(); ++i)
     {
@@ -136,6 +138,7 @@ std::string runcpp2::Data::LinkerInfo::ToString(std::string indentation) const
     }
     
     out += indentation + "    Executable: " + Executable + "\n";
+    out += indentation + "    CheckExistence: " + CheckExistence + "\n";
     out += indentation + "    DefaultLinkFlags: \n";
     for(auto it = DefaultLinkFlags.begin(); it != DefaultLinkFlags.end(); ++it)
         out += indentation + "        " + it->first + ": " + it->second + "\n";

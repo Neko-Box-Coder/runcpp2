@@ -17,7 +17,7 @@ namespace runcpp2
             public:
                 std::unordered_map<PlatformName, std::string> EnvironmentSetup;
                 std::string Executable;
-                
+                std::string CheckExistence;
                 std::unordered_map<PlatformName, std::string> DefaultCompileFlags;
                 std::unordered_map<PlatformName, std::string> ExecutableCompileFlags;
                 std::unordered_map<PlatformName, std::string> StaticLibCompileFlags;

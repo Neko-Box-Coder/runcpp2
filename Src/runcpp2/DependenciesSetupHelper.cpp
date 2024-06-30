@@ -4,9 +4,8 @@
 #include "runcpp2/PlatformUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-namespace 
+namespace
 {
-
     bool GetDependenciesPaths(  const std::vector<runcpp2::Data::DependencyInfo>& dependencies,
                                 std::vector<std::string>& outCopiesPaths,
                                 std::vector<std::string>& outSourcesPaths,
@@ -205,7 +204,7 @@ namespace
         return true;
     }
 
-    bool RunDependenciesSetupSteps( const ProfileName& profileName,
+    bool RunDependenciesSetupSteps( const runcpp2::Data::Profile& profile,
                                     std::vector<runcpp2::Data::DependencyInfo>& dependencies,
                                     const std::vector<std::string>& dependenciesCopiesPaths)
     {
@@ -229,17 +228,35 @@ namespace
             const runcpp2::Data::DependencySetup& dependencySetup = 
                 *runcpp2::GetValueFromPlatformMap(dependencies[i].Setup);
             
-            if( dependencySetup.SetupSteps.find(profileName) == dependencySetup.SetupSteps.end())
+            std::string profileNameToUse;
+            
+            if(dependencySetup.SetupSteps.count(profile.Name) > 0)
+                profileNameToUse = profile.Name;
+            else
             {
-                ssLOG_ERROR("Dependency " << dependencies[i].Name << " failed to find setup " 
-                            "with profile " << profileName);
-                    
-                return false;
+                for(std::unordered_set<std::string>::iterator& it = profile.NameAliases.begin();
+                    it != profile.NameAliases.end(); 
+                    ++it)
+                {
+                    if(dependencySetup.SetupSteps.count(*it) > 0)
+                    {
+                        profileNameToUse = *it;
+                        break;
+                    }
+                }
+                
+                if(profileNameToUse.empty())
+                {
+                    ssLOG_ERROR("Dependency " << dependencies[i].Name << " failed to find setup " 
+                                "with profile " << profile.Name);
+                        
+                    return false;
+                }
             }
             
             //Run the setup command
             const std::vector<std::string>& setupCommands = 
-                dependencySetup.SetupSteps.at(profileName);
+                dependencySetup.SetupSteps.at(profile.Name);
             
             for(int k = 0; k < setupCommands.size(); ++k)
             {
@@ -387,7 +404,7 @@ bool runcpp2::IsDependencyAvailableForThisPlatform(const Data::DependencyInfo& d
     return false;
 }
 
-bool runcpp2::SetupScriptDependencies(  const ProfileName& profileName,
+bool runcpp2::SetupScriptDependencies(  const runcpp2::Data::Profile& profile,
                                         const std::string& scriptPath, 
                                         Data::ScriptInfo& scriptInfo,
                                         bool resetDependencies,
@@ -439,16 +456,13 @@ bool runcpp2::SetupScriptDependencies(  const ProfileName& profileName,
         return false;
     }
     
-    if(!PopulateAbsoluteIncludePaths(   scriptInfo.Dependencies, 
-                                        outDependenciesLocalCopiesPaths))
+    if(!PopulateAbsoluteIncludePaths(scriptInfo.Dependencies, outDependenciesLocalCopiesPaths))
     {
         return false;
     }
     
     //Run setup steps
-    if(!RunDependenciesSetupSteps(  profileName,
-                                    scriptInfo.Dependencies, 
-                                    outDependenciesLocalCopiesPaths))
+    if(!RunDependenciesSetupSteps(profile, scriptInfo.Dependencies, outDependenciesLocalCopiesPaths))
     {
         return false;
     }
