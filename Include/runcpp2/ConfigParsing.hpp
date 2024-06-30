@@ -2,7 +2,7 @@
 #define RUNCPP2_CONFIG_PARSING_HPP
 
 #include "runcpp2/Data/Profile.hpp"
-#include "runcpp2/Data/ScriptInfo.hpp"
+// #include "runcpp2/Data/ScriptInfo.hpp"
 #include <string>
 #include <vector>
 namespace runcpp2
@@ -14,8 +14,8 @@ namespace runcpp2
     bool ReadUserConfig(std::vector<Data::Profile>& outProfiles, 
                         std::string& outPreferredProfile);
     
-    bool ParseScriptInfo(   const std::string& scriptInfo, 
-                            Data::ScriptInfo& outScriptInfo);
+    // bool ParseScriptInfo(   const std::string& scriptInfo, 
+    //                         Data::ScriptInfo& outScriptInfo);
 }
 
 #endif

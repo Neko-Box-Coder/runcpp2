@@ -21,7 +21,7 @@ int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& long
         if(optionForCapturingValue != runcpp2::CmdOptions::NONE)
         {
             //If the current argument matches one of the options, error out
-            if( longOptionsMap.count(currentArg) || shortOptionsMap.count(currentArg))
+            if(longOptionsMap.count(currentArg) || shortOptionsMap.count(currentArg))
             {
                 //Find the string for the option to error out
                 for(auto it = longOptionsMap.begin(); it != longOptionsMap.end(); ++it)
@@ -82,7 +82,6 @@ int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& long
     return currentArgIndex;
 }
 
-//Usage: runcpp2 [--setup] input_file [args]
 int main(int argc, char* argv[])
 {
     //Parse command line options
@@ -165,30 +164,34 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    ssLOG_DEBUG("\nprofiles:");
-    for(int i = 0; i < profiles.size(); ++i)
-        ssLOG_DEBUG("\n" << profiles[i].ToString("    "));
-    
-    std::vector<std::string> scriptArgs;
-    if(currentArgIndex >= argc)
-    {
-        ssLOG_ERROR("An input file is required");
-        return 1;
-    }
-    
-    std::string script = argv[currentArgIndex++];
-    
-    for(; currentArgIndex < argc; ++currentArgIndex)
-    {
-        ssLOG_DEBUG("argv[" << currentArgIndex << "]: " << argv[currentArgIndex]);
-        scriptArgs.push_back(std::string(argv[currentArgIndex]));
-    }
-    
-    int result = runcpp2::RunScript(script, 
-                                    profiles, 
-                                    preferredProfile, 
-                                    currentOptions, 
-                                    scriptArgs);
-    
-    return result;
+    return 0;
+
+    #if 0
+        ssLOG_DEBUG("\nprofiles:");
+        for(int i = 0; i < profiles.size(); ++i)
+            ssLOG_DEBUG("\n" << profiles[i].ToString("    "));
+        
+        std::vector<std::string> scriptArgs;
+        if(currentArgIndex >= argc)
+        {
+            ssLOG_ERROR("An input file is required");
+            return 1;
+        }
+        
+        std::string script = argv[currentArgIndex++];
+        
+        for(; currentArgIndex < argc; ++currentArgIndex)
+        {
+            ssLOG_DEBUG("argv[" << currentArgIndex << "]: " << argv[currentArgIndex]);
+            scriptArgs.push_back(std::string(argv[currentArgIndex]));
+        }
+        
+        int result = runcpp2::RunScript(script, 
+                                        profiles, 
+                                        preferredProfile, 
+                                        currentOptions, 
+                                        scriptArgs);
+        
+        return result;
+    #endif
 }

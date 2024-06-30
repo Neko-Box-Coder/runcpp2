@@ -1,5 +1,6 @@
 #include "runcpp2/ConfigParsing.hpp"
 #include "runcpp2/ParseUtil.hpp"
+
 #include "ryml.hpp"
 #include "c4/std/string.hpp"
 #include "cfgpath.h"
@@ -19,22 +20,6 @@ namespace
                                 std::string& outPreferredProfile)
     {
         ssLOG_FUNC_DEBUG();
-        
-        //TODO: Use callback once ryml noexcept are dropped
-        #if 0
-            ryml::Callbacks cb;
-            auto errorCallback = [](const char* msg, 
-                                    size_t msg_len, 
-                                    ryml::Location location, 
-                                    void *user_data)
-            {
-                std::string msgStr(msg, msg_len);
-                throw std::runtime_error(msgStr);
-            };
-            
-            cb.m_error = errorCallback;
-            ryml::set_callbacks(cb);
-        #endif
         
         INTERNAL_RUNCPP2_SAFE_START();
         
@@ -60,18 +45,20 @@ namespace
             return false;
         }
         
-        for(int i = 0; i < profilesNode.num_children(); ++i)
-        {
-            ryml::ConstNodeRef currentProfileNode = profilesNode[i];
-            
-            outProfiles.push_back({});
-            if(!outProfiles.back().ParseYAML_Node(currentProfileNode))
+        #if 0
+            for(int i = 0; i < profilesNode.num_children(); ++i)
             {
-                outProfiles.erase(outProfiles.end() - 1);
-                ssLOG_ERROR("Failed to parse compiler profile at index " << i);
-                return false;
+                ryml::ConstNodeRef currentProfileNode = profilesNode[i];
+                
+                outProfiles.push_back({});
+                if(!outProfiles.back().ParseYAML_Node(currentProfileNode))
+                {
+                    outProfiles.erase(outProfiles.end() - 1);
+                    ssLOG_ERROR("Failed to parse compiler profile at index " << i);
+                    return false;
+                }
             }
-        }
+        #endif
         
         if( runcpp2::ExistAndHasChild(rootProfileNode, "PreferredProfile") && 
             rootProfileNode["PreferredProfile"].type().type & ryml::NodeType_e::KEYVAL)
@@ -227,6 +214,7 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles,
     return true;
 }
 
+#if 0
 bool runcpp2::ParseScriptInfo(  const std::string& scriptInfo, 
                                 Data::ScriptInfo& outScriptInfo)
 {
@@ -272,3 +260,5 @@ bool runcpp2::ParseScriptInfo(  const std::string& scriptInfo,
     
     INTERNAL_RUNCPP2_SAFE_CATCH_ACTION(ryml::reset_callbacks(); return false;);
 }
+#endif
+

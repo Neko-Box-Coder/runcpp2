@@ -1,6 +1,53 @@
-# yaml-language-server: $schema=./UserConfigSchema.json
+Templates:
+    FilesTypes: &CommonFilesTypes
+        ObjectLinkFile:
+            Prefix:
+                All: ""
+            Extension:
+                Windows: ".obj"
+                Unix: ".o"
+        
+        # The file properties for the files to be **linked** as shared libraries for each platform
+        SharedLinkFile:
+            Prefix:
+                Windows: ""
+                Linux: "lib"
+                MacOS: ""
+            Extension:
+                Windows: ".lib"
+                Linux: ".so"
+                MacOS: ".dylib"
+        
+        # The file properties for the files to be **copied** as shared libraries for each platform
+        SharedLibraryFile:
+            Prefix:
+                Windows: ""
+                Linux: "lib"
+                MacOS: ""
+            Extension:
+                Windows: ".dll"
+                Linux: ".so"
+                MacOS: ".dylib"
+        
+        # The file properties for the files to be linked as static libraries for each platform
+        StaticLinkFile:
+            Prefix:
+                Unix: "lib"
+                Windows: ""
+            Extension:
+                Windows: ".lib"
+                Unix: ".a"
 
----
+        # (Optional) The file properties for debug symbols to be copied alongside the binary 
+        #   for each platform
+        DebugSymbolFile:
+            Prefix:
+                Windows: ""
+                Unix: ""
+            Extension:
+                Windows: ""
+                Unix: ""
+
 # A profile to be used if not specified while running the build script
 PreferredProfile: "g++"
 
@@ -34,231 +81,164 @@ Profiles:
     # SetupSteps: 
     #     All: []
     
-    # TODO: Make this common
     # The file properties for the object files for each platform.
-    ObjectLinkFile:
-        Prefix:
-            All: ""
-        Extension:
-            Windows: ".obj"
-            Unix: ".o"
-    
-    # The file properties for the files to be **linked** as shared libraries for each platform
-    SharedLinkFile:
-        Prefix:
-            Windows: ""
-            Linux: "lib"
-            MacOS: ""
-        Extension:
-            Windows: ".lib"
-            Linux: ".so"
-            MacOS: ".dylib"
-    
-    # The file properties for the files to be **copied** as shared libraries for each platform
-    SharedLibraryFile:
-        Prefix:
-            Windows: ""
-            Linux: "lib"
-            MacOS: ""
-        Extension:
-            Windows: ".dll"
-            Linux: ".so"
-            MacOS: ".dylib"
-    
-    # The file properties for the files to be linked as static libraries for each platform
-    StaticLinkFile:
-        Prefix:
-            Unix: "lib"
-            Windows: ""
-        Extension:
-            Windows: ".lib"
-            Unix: ".a"
-    
-    # (Optional) The file properties for debug symbols to be copied alongside the binary 
-    #   for each platform
-    # DebugSymbolFile:
-    #     Prefix:
-    #         Windows: ""
-    #         Unix: ""
-    #     Extension:
-    #         Windows: ""
-    #         Unix: ""
+    FilesTypes: *CommonFilesTypes
     
     # Specify the compiler settings
     Compiler:
         # (Optional) The command to run together before running each compile command
         #   in **shell** for each platform
-        # EnvironmentSetup: 
+        # PreRun: 
         #     All: ""
         
-        # Executable to be called
-        Executable: "g++"
-        
         # Shell command to use for checking if the executable exists or not
-        CheckExistence: "g++ -v"
+        CheckExistence: 
+            All: "g++ -v"
         
-        # Default arguments to provide for compilation which can be overridden 
-        #   by the script for each platform
-        DefaultCompileFlags: 
-            All: "-std=c++17 -Wall -Werror"
-        
-        # Flags for compiling to an executable for each platform
-        ExecutableCompileFlags: 
-            All: ""
-        
-        # Flags for compiling to a static library for each platform
-        StaticLibCompileFlags: 
-            All: ""
-        
-        # Flags for compiling to a shared library for each platform
-        SharedLibCompileFlags: 
-            All: "-fpic"
-        
-        # The compile syntax in shell for a given file:
-        # {Executable} {CompilePart} [ {IncludePart}...(for each dependency) ] 
-        #   {InputPart} {OutputPart}
-        CompileArgs: 
-            # {CompileFlags} will be replaced by *CompileFlags set above depending on what 
-            #   we are compiling
-            CompilePart: "-c {CompileFlags}"
-            
-            # {IncludeDirectoryPath} will be replaced by the IncludePaths set by the dependencies
-            IncludePart: "-I{IncludeDirectoryPath}"
-            
-            # {InputFilePath} will be replaced by the path to the script we are trying to compile
-            InputPart: "{InputFilePath}"
-            
-            # {ObjectFilePath} will be replaced by the path to the output object file
-            OutputPart: "-o {ObjectFilePath}"
+        CompileTypes:
+            Executable:
+                All:
+                    Flags: "-std=c++17 -Wall -Werror"
+                    Executable: "g++"
+            Static:
+                All:
+                    Flags: "-std=c++17 -Wall -Werror"
+                    Executable: "g++"
+            Shared:
+                All:
+                    Flags: "-std=c++17 -Wall -Werror -fpic"
+                    Executable: "g++"
+        RunParts:
+            All:
+            -   Type: Once
+                CommandPart: "{Executable} -c {CompileFlags}"
+            -   Type: Repeats
+                CommandPart: " -I{IncludeDirectoryPath}"
+            -   Type: Once
+                CommandPart: " {InputFilePath} -o {OutputFilePath}"
 
     # Specify the linker settings
     Linker:
         # (Optional) The command to run together before running each link command 
         #   in **shell** for each platform
-        # EnvironmentSetup: 
+        # PreRun: 
         #     All: ""
         
-        # Executable to be called
-        Executable: "g++"
-        
         # Shell command to use for checking if the executable exists or not
-        CheckExistence: "g++ -v"
+        CheckExistence:
+            All: "g++ -v"
         
-        # Default arguments to provide for linking dependencies to the binary, 
-        #   which can be overridden by the script for each platform
-        DefaultLinkFlags: 
-            All: ""
+        LinkTypes:
+            Executable:
+                Unix:
+                    Flags: "-Wl,-rpath,\\$ORIGIN"
+                    Executable: "g++"
+                Windows:
+                    Flags: "-Wl,-rpath,$ORIGIN"
+                    Executable: "g++"
+            Static:
+                All:
+                    Flags: ""
+                    Executable: "g++"
+            Shared:
+                Unix:
+                    Flags: "-shared -Wl,-rpath,\\$ORIGIN"
+                    Executable: "g++"
+                Windows:
+                    Flags: "-shared -Wl,-rpath,$ORIGIN"
+                    Executable: "g++"
+        RunParts:
+            All:
+            -   Type: Once
+                CommandPart: "{Executable} {CompileFlags} -o {OutputFilePath}"
+            -   Type: Repeats
+                CommandPart: " {LinkFilePath}"
         
-        # Flags for linking as an executable for each platform
-        ExecutableLinkFlags: 
-            All: "-Wl,-rpath,\\$ORIGIN"
-        
-        # Flags for linking as a static library for each platform
-        StaticLibLinkFlags: 
-            All: ""
-        
-        # Flags for linking as a shared library for each platform
-        SharedLibLinkFlags: 
-            Unix: "-shared -Wl,-rpath,\\$ORIGIN"
-            Windows: "-shared -Wl,-rpath,$ORIGIN"
-        
-        # The link syntax in shell for a given file:
-        # {OutputPart} {LinkPart}...(for script object file and each dependencies if any)
-        LinkArgs:
-            # {LinkFlags} will be replaced by *LinkFlags set above depending on what 
-            #   we are linking to
-            #
-            # {OutputFilePath} will be replaced by the path to the output file
-            OutputPart: "{LinkFlags} -o {OutputFilePath}"
-            
-            # {LinkFilePath} will be replaced by the path to the object file 
-            #   we are linking against
-            LinkPart: "{LinkFilePath}"
 
 # https://learn.microsoft.com/en-us/cpp/overview/compiler-versions?view=msvc-170
--   &MSVC_2022
-    Name: "vs2022_v17+"
-    NameAliases: ["msvc1930+", "msvc"]
-    FileExtensions: [cpp, cc, cxx]
-    Languages: ["c++"]
-    
-    ObjectLinkFile:
-        Prefix:
-            Windows: ""
-        Extension:
-            Windows: ".obj"
-    
-    SharedLinkFile:
-        Prefix:
-            Windows: ""
-        Extension:
-            Windows: ".lib"
-    
-    SharedLibraryFile:
-        Prefix:
-            Windows: ""
-        Extension:
-            Windows: ".dll"
-    
-    StaticLinkFile:
-        Prefix:
-            Windows: ""
-        Extension:
-            Windows: ".lib"
-    
-    DebugSymbolFile:
-        Prefix:
-            Windows: ""
-        Extension:
-            Windows: ".pdb"
-    
-    Compiler:
-        EnvironmentSetup: 
-            Windows: "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat\" x64"
-    
-        Executable: "CL.exe"
-        
-        CheckExistence: "where.exe CL.exe"
-
-        DefaultCompileFlags: 
-            Windows: "/utf-8 /MD /EHa /TP"
-        
-        ExecutableCompileFlags: 
-            Windows: ""
-        
-        StaticLibCompileFlags: 
-            Windows: ""
-        
-        SharedLibCompileFlags: 
-            Windows: ""
-        
-        # Should be: CL.exe /c {CompileFlags} /I{IncludeDirectoryPath} /Fo"{ObjectFilePath}" {InputFilePath}
-        CompileArgs: 
-            CompilePart: "/c {CompileFlags}"
-            IncludePart: "/I{IncludeDirectoryPath}"
-            InputPart: "{InputFilePath}"
-            OutputPart: "/Fo\"{ObjectFilePath}\""
-    
-    Linker:
-        EnvironmentSetup: 
-            Windows: "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat\" x64"
-    
-        Executable: "link.exe"
-        
-        CheckExistence: "where.exe link.exe"
-        
-        DefaultLinkFlags: 
-            Windows: ""
-        
-        ExecutableLinkFlags: 
-            Windows: ""
-        
-        StaticLibLinkFlags: 
-            Windows: ""
-        
-        SharedLibLinkFlags: 
-            Windows: ""
-        
-        LinkArgs:
-            OutputPart: "{LinkFlags} -o {OutputFilePath}"
-            LinkPart: "{LinkFilePath}"
+# -   &MSVC_2022
+#     Name: "vs2022_v17+"
+#     NameAliases: ["msvc1930+", "msvc"]
+#     FileExtensions: [cpp, cc, cxx]
+#     Languages: ["c++"]
+#     
+#     ObjectLinkFile:
+#         Prefix:
+#             Windows: ""
+#         Extension:
+#             Windows: ".obj"
+#     
+#     SharedLinkFile:
+#         Prefix:
+#             Windows: ""
+#         Extension:
+#             Windows: ".lib"
+#     
+#     SharedLibraryFile:
+#         Prefix:
+#             Windows: ""
+#         Extension:
+#             Windows: ".dll"
+#     
+#     StaticLinkFile:
+#         Prefix:
+#             Windows: ""
+#         Extension:
+#             Windows: ".lib"
+#     
+#     DebugSymbolFile:
+#         Prefix:
+#             Windows: ""
+#         Extension:
+#             Windows: ".pdb"
+#     
+#     Compiler:
+#         EnvironmentSetup: 
+#             Windows: "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat\" x64"
+#     
+#         Executable: "CL.exe"
+#         
+#         CheckExistence: "where.exe CL.exe"
+# 
+#         DefaultCompileFlags: 
+#             Windows: "/utf-8 /MD /EHa /TP"
+#         
+#         ExecutableCompileFlags: 
+#             Windows: ""
+#         
+#         StaticLibCompileFlags: 
+#             Windows: ""
+#         
+#         SharedLibCompileFlags: 
+#             Windows: ""
+#         
+#         # Should be: CL.exe /c {CompileFlags} /I{IncludeDirectoryPath} /Fo"{ObjectFilePath}" {InputFilePath}
+#         CompileArgs: 
+#             CompilePart: "/c {CompileFlags}"
+#             IncludePart: "/I{IncludeDirectoryPath}"
+#             InputPart: "{InputFilePath}"
+#             OutputPart: "/Fo\"{ObjectFilePath}\""
+#     
+#     Linker:
+#         EnvironmentSetup: 
+#             Windows: "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat\" x64"
+#     
+#         Executable: "link.exe"
+#         
+#         CheckExistence: "where.exe link.exe"
+#         
+#         DefaultLinkFlags: 
+#             Windows: ""
+#         
+#         ExecutableLinkFlags: 
+#             Windows: ""
+#         
+#         StaticLibLinkFlags: 
+#             Windows: ""
+#         
+#         SharedLibLinkFlags: 
+#             Windows: ""
+#         
+#         LinkArgs:
+#             OutputPart: "{LinkFlags} -o {OutputFilePath}"
+#             LinkPart: "{LinkFilePath}"

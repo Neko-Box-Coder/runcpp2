@@ -4,7 +4,8 @@
 #include "runcpp2/Data/CompilerInfo.hpp"
 #include "runcpp2/Data/LinkerInfo.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
-#include "runcpp2/Data/FileProperties.hpp"
+#include "runcpp2/Data/FilesTypesInfo.hpp"
+#include "runcpp2/Data/StageInfo.hpp"
 
 #include "ryml.hpp"
 
@@ -25,17 +26,17 @@ namespace runcpp2
                 std::unordered_set<std::string> FileExtensions;
                 std::unordered_set<std::string> Languages;
                 std::unordered_map<PlatformName, std::vector<std::string>> SetupSteps;
-                FileProperties ObjectLinkFile;
-                FileProperties SharedLinkFile;
-                FileProperties SharedLibraryFile;
-                FileProperties StaticLinkFile;
-                FileProperties DebugSymbolFile;
+                FilesTypesInfo FilesTypes;
                 
-                CompilerInfo Compiler;
-                LinkerInfo Linker;
+                StageInfo Compiler;
+                StageInfo Linker;
                 
-                bool ParseYAML_Node(ryml::ConstNodeRef& profileNode);
-                std::string ToString(std::string indentation) const;
+                //CompilerInfo Compiler;
+                //LinkerInfo Linker;
+                
+                //TODO(NOW)
+                //bool ParseYAML_Node(ryml::ConstNodeRef& profileNode);
+                //std::string ToString(std::string indentation) const;
         };
     }
 }

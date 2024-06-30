@@ -3,6 +3,7 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
+#if 0
 bool runcpp2::Data::Profile::ParseYAML_Node(ryml::ConstNodeRef& profileNode)
 {
     INTERNAL_RUNCPP2_SAFE_START();
@@ -164,3 +165,5 @@ std::string runcpp2::Data::Profile::ToString(std::string indentation) const
     
     return out;
 }
+
+#endif
