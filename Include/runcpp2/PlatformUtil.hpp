@@ -2,6 +2,8 @@
 #define RUNCPP2_PLATFORM_UTIL_HPP
 
 #include "runcpp2/Data/ParseCommon.hpp"
+#include "System2.h"
+
 #include <cstdint>
 #include <string>
 #include <unordered_map>
@@ -13,12 +15,22 @@ namespace runcpp2
     
     std::vector<std::string> GetPlatformNames();
     
+    bool RunCommandAndGetOutput(const std::string& command, 
+                                std::string& outOutput,
+                                std::string runDirectory = "");
+    
+    bool RunCommandAndGetOutput(const std::string& command, 
+                                std::string& outOutput, 
+                                int& outReturnCode,
+                                std::string runDirectory = "");
+    
+    
     template <typename T>
     inline bool HasValueFromPlatformMap(const std::unordered_map<PlatformName, T>& map)
     {
         std::vector<std::string> platformNames = runcpp2::GetPlatformNames();
         
-        for(int i = platformNames.size() - 1; i >= 0; --i)
+        for(int i = 0; i < platformNames.size(); ++i)
         {
             if(map.find(platformNames.at(i)) != map.end())
                 return true;
@@ -32,7 +44,7 @@ namespace runcpp2
     {
         std::vector<std::string> platformNames = runcpp2::GetPlatformNames();
         
-        for(int i = platformNames.size() - 1; i >= 0; --i)
+        for(int i = 0; i < platformNames.size(); ++i)
         {
             if(map.find(platformNames.at(i)) != map.end())
                 return &map.at(platformNames[i]);

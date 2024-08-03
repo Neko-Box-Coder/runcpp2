@@ -2,7 +2,6 @@
 #include "ghc/filesystem.hpp"
 #include "runcpp2/PlatformUtil.hpp"
 #include "ssLogger/ssLog.hpp"
-#include "System2.h"
 
 namespace
 {
@@ -10,115 +9,56 @@ namespace
     {
         //Check compiler
         {
-            //Getting EnvironmentSetup command
+            //Getting PreRun command
             std::string command;
             {
-                command =   runcpp2::HasValueFromPlatformMap(profile.Compiler.EnvironmentSetup) ? 
-                            *runcpp2::GetValueFromPlatformMap(profile.Compiler.EnvironmentSetup) : "";
+                command =   runcpp2::HasValueFromPlatformMap(profile.Compiler.PreRun) ? 
+                            *runcpp2::GetValueFromPlatformMap(profile.Compiler.PreRun) : "";
                 
                 if(!command.empty())
                     command += " && ";
             }
             
-            command += profile.Compiler.CheckExistence;
-            
-            ssLOG_DEBUG("Running: " << command);
-            System2CommandInfo compilerCommandInfo = {};
-            compilerCommandInfo.RedirectOutput = true;
-            SYSTEM2_RESULT sys2Result = System2Run(command.c_str(), &compilerCommandInfo);
-            
-            if(sys2Result != SYSTEM2_RESULT_SUCCESS)
+            if(!runcpp2::HasValueFromPlatformMap(profile.Compiler.CheckExistence))
             {
-                ssLOG_ERROR("System2Run failed with result: " << sys2Result);
+                ssLOG_INFO( "Compiler for profile " << profile.Name << 
+                            " does not have CheckExistence for current platform");
                 return false;
             }
+            command += *runcpp2::GetValueFromPlatformMap(profile.Compiler.CheckExistence);
             
-            std::vector<char> output;
-            
-            do
+            std::string output;
+            if(!runcpp2::RunCommandAndGetOutput(command, output))
             {
-                uint32_t byteRead = 0;
-                output.resize(output.size() + 4096);
-                
-                sys2Result = System2ReadFromOutput( &compilerCommandInfo, 
-                                                    output.data() + output.size() - 4096, 
-                                                    4096 - 1, 
-                                                    &byteRead);
-    
-                output.resize(output.size() - 4096 + byteRead + 1);
-                output.back() = '\0';
-            }
-            while(sys2Result == SYSTEM2_RESULT_READ_NOT_FINISHED);
-            
-            int returnCode = 0;
-            sys2Result = System2GetCommandReturnValueSync(&compilerCommandInfo, &returnCode);
-            if(sys2Result != SYSTEM2_RESULT_SUCCESS)
-            {
-                ssLOG_ERROR("System2GetCommandReturnValueSync failed with result: " << sys2Result);
-                return false;
-            }
-            
-            if(returnCode != 0)
-            {
-                ssLOG_DEBUG("Failed on compiler check");
-                ssLOG_DEBUG("Output: " << output.data());
+                ssLOG_INFO("Failed to find compiler for profile " << profile.Name);
                 return false;
             }
         }
         
         //Check linker
         {
-            //Getting EnvironmentSetup command
+            //Getting PreRun command
             std::string command;
             {
-                command =   runcpp2::HasValueFromPlatformMap(profile.Linker.EnvironmentSetup) ? 
-                            *runcpp2::GetValueFromPlatformMap(profile.Linker.EnvironmentSetup) : "";
+                command =   runcpp2::HasValueFromPlatformMap(profile.Linker.PreRun) ? 
+                            *runcpp2::GetValueFromPlatformMap(profile.Linker.PreRun) : "";
                 
                 if(!command.empty())
                     command += " && ";
             }
             
-            command += profile.Linker.CheckExistence;
-            ssLOG_DEBUG("Running: " << command);
-            System2CommandInfo linkerCommandInfo = {};
-            linkerCommandInfo.RedirectOutput = true;
-            SYSTEM2_RESULT sys2Result = System2Run(command.c_str(), &linkerCommandInfo);
-            
-            if(sys2Result != SYSTEM2_RESULT_SUCCESS)
+            if(!runcpp2::HasValueFromPlatformMap(profile.Linker.CheckExistence))
             {
-                ssLOG_ERROR("System2Run failed with result: " << sys2Result);
+                ssLOG_INFO( "Linker for profile " << profile.Name << 
+                            " does not have CheckExistence for current platform");
                 return false;
             }
+            command += *runcpp2::GetValueFromPlatformMap(profile.Linker.CheckExistence);
             
-            std::vector<char> output;
-            
-            do
+            std::string output;
+            if(!runcpp2::RunCommandAndGetOutput(command, output))
             {
-                uint32_t byteRead = 0;
-                output.resize(output.size() + 4096);
-                
-                sys2Result = System2ReadFromOutput( &linkerCommandInfo, 
-                                                    output.data() + output.size() - 4096, 
-                                                    4096 - 1, 
-                                                    &byteRead);
-    
-                output.resize(output.size() - 4096 + byteRead + 1);
-                output.back() = '\0';
-            }
-            while(sys2Result == SYSTEM2_RESULT_READ_NOT_FINISHED);
-            
-            int returnCode = 0;
-            sys2Result = System2GetCommandReturnValueSync(&linkerCommandInfo, &returnCode);
-            if(sys2Result != SYSTEM2_RESULT_SUCCESS)
-            {
-                ssLOG_ERROR("System2GetCommandReturnValueSync failed with result: " << sys2Result);
-                return false;
-            }
-            
-            if(returnCode != 0)
-            {
-                ssLOG_DEBUG("Failed on linker check");
-                ssLOG_DEBUG("Output: " << output.data());
+                ssLOG_INFO("Failed to find linker for profile " << profile.Name);
                 return false;
             }
         }

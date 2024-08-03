@@ -29,7 +29,9 @@ namespace runcpp2
     bool ResolveYAML_Stream(ryml::Tree& rootTree, 
                             ryml::ConstNodeRef& outRootNode);
     
-    bool ExistAndHasChild(const ryml::ConstNodeRef& node, const std::string& childName);
+    bool ExistAndHasChild(  const ryml::ConstNodeRef& node, 
+                            const std::string& childName,
+                            bool nullable = false);
     
     std::string GetValue(ryml::ConstNodeRef node);
     std::string GetKey(ryml::ConstNodeRef node);

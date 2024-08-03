@@ -5,6 +5,8 @@
 
 bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
+    ssLOG_FUNC_DEBUG();
+    
     INTERNAL_RUNCPP2_SAFE_START();
     
     std::vector<NodeRequirement> requirements =
@@ -29,7 +31,8 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     {
         for(int i = 0; i < node["RequiredProfiles"].num_children(); ++i)
         {
-            if(!(node["RequiredProfiles"][i].type().type & ryml::NodeType_e::SEQ))
+            if(!INTERNAL_RUNCPP2_BIT_CONTANTS(  node["RequiredProfiles"][i].type().type,
+                                                ryml::NodeType_e::SEQ))
             {
                 ssLOG_ERROR("ScriptInfo: RequiredProfiles requires a sequence");
                 return false;
