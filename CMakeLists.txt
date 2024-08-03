@@ -63,17 +63,18 @@ endif()
 # runcpp2
 # =========================================================================
 
-add_executable(runcpp2  "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/CompilerInfo.cpp"
+add_executable(runcpp2  
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/Profile.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencyInfo.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencyLinkProperty.cpp"
-                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencySetup.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencyCommands.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencySource.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/FileProperties.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/FlagsOverrideInfo.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ProfilesFlagsOverride.cpp"
-                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/LinkerInfo.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ScriptInfo.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/FilesTypesInfo.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/StageInfo.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/ProfileHelper.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/CompilingLinking.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/ConfigParsing.cpp"

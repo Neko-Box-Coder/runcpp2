@@ -5,6 +5,8 @@
 
 bool runcpp2::Data::Profile::ParseYAML_Node(ryml::ConstNodeRef& profileNode)
 {
+    ssLOG_FUNC_DEBUG();
+    
     INTERNAL_RUNCPP2_SAFE_START();
 
     std::vector<NodeRequirement> requirements =
@@ -13,12 +15,9 @@ bool runcpp2::Data::Profile::ParseYAML_Node(ryml::ConstNodeRef& profileNode)
         NodeRequirement("NameAliases", ryml::NodeType_e::SEQ, false, true),
         NodeRequirement("FileExtensions", ryml::NodeType_e::SEQ, true, false),
         NodeRequirement("Languages", ryml::NodeType_e::SEQ, false, true),
-        NodeRequirement("SetupSteps", ryml::NodeType_e::MAP, false, true),
-        NodeRequirement("ObjectLinkFile", ryml::NodeType_e::MAP, true, false),
-        NodeRequirement("SharedLinkFile", ryml::NodeType_e::MAP, true, false),
-        NodeRequirement("SharedLibraryFile", ryml::NodeType_e::MAP, true, false),
-        NodeRequirement("StaticLinkFile", ryml::NodeType_e::MAP, true, false),
-        NodeRequirement("DebugSymbolFile", ryml::NodeType_e::MAP, false, false),
+        NodeRequirement("Setup", ryml::NodeType_e::MAP, false, true),
+        NodeRequirement("Cleanup", ryml::NodeType_e::MAP, false, true),
+        NodeRequirement("FilesTypes", ryml::NodeType_e::MAP, true, false),
         NodeRequirement("Compiler", ryml::NodeType_e::MAP, true, false),
         NodeRequirement("Linker", ryml::NodeType_e::MAP, true, false)
     };
@@ -46,11 +45,11 @@ bool runcpp2::Data::Profile::ParseYAML_Node(ryml::ConstNodeRef& profileNode)
             Languages.insert(GetValue(profileNode["Languages"][i]));
     }
     
-    if(ExistAndHasChild(profileNode, "SetupSteps"))
+    if(ExistAndHasChild(profileNode, "Setup"))
     {
-        for(int i = 0; i < profileNode["SetupSteps"].num_children(); ++i)
+        for(int i = 0; i < profileNode["Setup"].num_children(); ++i)
         {
-            ryml::ConstNodeRef currentPlatform = profileNode["SetupSteps"][i];
+            ryml::ConstNodeRef currentPlatform = profileNode["Setup"][i];
             
             std::string key = GetKey(currentPlatform);
             std::vector<std::string> extensions;
@@ -58,59 +57,46 @@ bool runcpp2::Data::Profile::ParseYAML_Node(ryml::ConstNodeRef& profileNode)
             for(int j = 0; j < currentPlatform.num_children(); ++j)
                 extensions.push_back(GetValue(currentPlatform[j]));
             
-            SetupSteps[key] = extensions;
+            Setup[key] = extensions;
         }
     }
     
-    ryml::ConstNodeRef objectLinkFileNode = profileNode["ObjectLinkFile"];
-    if(!ObjectLinkFile.ParseYAML_Node(objectLinkFileNode))
+    if(ExistAndHasChild(profileNode, "Cleanup"))
     {
-        ssLOG_ERROR("Compiler profile: ObjectLinkFile is invalid");
-        return false;
-    }
-    
-    ryml::ConstNodeRef sharedLinkFileNode = profileNode["SharedLinkFile"];
-    if(!SharedLinkFile.ParseYAML_Node(sharedLinkFileNode))
-    {
-        ssLOG_ERROR("Compiler profile: SharedLinkFile is invalid");
-        return false;
-    }
-    
-    ryml::ConstNodeRef sharedLibraryFileNode = profileNode["SharedLibraryFile"];
-    if(!SharedLibraryFile.ParseYAML_Node(sharedLibraryFileNode))
-    {
-        ssLOG_ERROR("Compiler profile: SharedLibraryFile is invalid");
-        return false;
-    }
-    
-    ryml::ConstNodeRef staticLinkFileNode = profileNode["StaticLinkFile"];
-    if(!StaticLinkFile.ParseYAML_Node(staticLinkFileNode))
-    {
-        ssLOG_ERROR("Compiler profile: StaticLinkFile is invalid");
-        return false;
-    }
-    
-    if(ExistAndHasChild(profileNode, "DebugSymbolFile"))
-    {
-        ryml::ConstNodeRef debugSymbolFileNode = profileNode["DebugSymbolFile"];
-        if(!DebugSymbolFile.ParseYAML_Node(debugSymbolFileNode))
+        for(int i = 0; i < profileNode["Cleanup"].num_children(); ++i)
         {
-            ssLOG_ERROR("Compiler profile: DebugSymbolFile is invalid");
-            return false;
+            ryml::ConstNodeRef currentPlatform = profileNode["Cleanup"][i];
+            
+            std::string key = GetKey(currentPlatform);
+            std::vector<std::string> extensions;
+            
+            for(int j = 0; j < currentPlatform.num_children(); ++j)
+                extensions.push_back(GetValue(currentPlatform[j]));
+            
+            Cleanup[key] = extensions;
         }
     }
     
-    ryml::ConstNodeRef compilerNode = profileNode["Compiler"];
-    if(!Compiler.ParseYAML_Node(compilerNode))
+    ryml::ConstNodeRef filesTypesNode = profileNode["FilesTypes"];
+    if(!FilesTypes.ParseYAML_Node(filesTypesNode))
     {
-        ssLOG_ERROR("Compiler profile: Compiler is invalid");
+        ssLOG_ERROR("Profile: FilesTypes is invalid");
         return false;
     }
     
-    ryml::ConstNodeRef linkerNode = profileNode["Linker"];
-    if(!Linker.ParseYAML_Node(linkerNode))
+    ssLOG_DEBUG("Parsing Compiler");
+    ryml::ConstNodeRef compilerNode = profileNode["Compiler"];
+    if(!Compiler.ParseYAML_Node(compilerNode, "CompileTypes"))
     {
-        ssLOG_ERROR("Compiler profile: Linker is invalid");
+        ssLOG_ERROR("Profile: Compiler is invalid");
+        return false;
+    }
+    
+    ssLOG_DEBUG("Parsing Linker");
+    ryml::ConstNodeRef linkerNode = profileNode["Linker"];
+    if(!Linker.ParseYAML_Node(linkerNode, "LinkTypes"))
+    {
+        ssLOG_ERROR("Profile: Linker is invalid");
         return false;
     }
     
@@ -136,30 +122,29 @@ std::string runcpp2::Data::Profile::ToString(std::string indentation) const
     for(auto it = Languages.begin(); it != Languages.end(); ++it)
         out += indentation + "-   " + *it + "\n";
     
-    out += indentation + "SetupSteps:\n";
-    for(auto it = SetupSteps.begin(); it != SetupSteps.end(); ++it)
+    out += indentation + "Setup:\n";
+    for(auto it = Setup.begin(); it != Setup.end(); ++it)
     {
         out += indentation + "    " + it->first + ":\n";
         for(int i = 0; i < it->second.size(); ++i)
             out += indentation + "    -   " + it->second[i] + "\n";
     }
     
-    out += indentation + "ObjectLinkFile:\n";
-    out += ObjectLinkFile.ToString(indentation + "    ");
+    out += indentation + "Cleanup:\n";
+    for(auto it = Cleanup.begin(); it != Cleanup.end(); ++it)
+    {
+        out += indentation + "    " + it->first + ":\n";
+        for(int i = 0; i < it->second.size(); ++i)
+            out += indentation + "    -   " + it->second[i] + "\n";
+    }
     
-    out += indentation + "SharedLinkFile:\n";
-    out += SharedLinkFile.ToString(indentation + "    ");
+    out += indentation + "FilesTypes:\n";
+    out += FilesTypes.ToString(indentation + "    ");
     
-    out += indentation + "SharedLibraryFile:\n";
-    out += SharedLibraryFile.ToString(indentation + "    ");
-    
-    out += indentation + "StaticLinkFile:\n";
-    out += StaticLinkFile.ToString(indentation + "    ");
-    
-    out += indentation + "DebugSymbolFile:\n";
-    out += DebugSymbolFile.ToString(indentation + "    ");
-    
+    out += indentation + "Compiler:\n";
     out += Compiler.ToString(indentation + "    ");
+    
+    out += indentation + "Linker:\n";
     out += Linker.ToString(indentation + "    ");
     
     return out;

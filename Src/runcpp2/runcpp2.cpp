@@ -156,7 +156,8 @@ namespace
         
         try
         {
-             sharedLib = std::unique_ptr<dylib>(new dylib(compiledSharedLibPath, dylib::no_filename_decorations));
+             sharedLib = std::unique_ptr<dylib>(new dylib(  compiledSharedLibPath, 
+                                                            dylib::no_filename_decorations));
         }
         catch(std::exception& e)
         {
@@ -248,8 +249,7 @@ namespace
                             const std::string& absoluteScriptPath,
                             const std::string& exeExt,
                             const std::vector<runcpp2::Data::Profile>& profiles,
-                            int profileIndex,
-                            std::vector<std::string>& outCopiedBinariesPaths)
+                            int profileIndex)
     {
         ssLOG_FUNC_DEBUG();
         
@@ -270,20 +270,6 @@ namespace
             std::string exeToCopy = scriptDirectory + "/.runcpp2/" + scriptName + exeExt;
             ssLOG_INFO("Trying to use cache: " << exeToCopy);
             
-            const std::string* sharedLibExtToCopy = 
-                runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .SharedLibraryFile
-                                                                        .Extension);
-
-            const std::string* debugExtToCopy = 
-                runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .DebugSymbolFile
-                                                                        .Extension);
-
-            if(sharedLibExtToCopy == nullptr)
-            {
-                ssLOG_ERROR("Shared library extension not found in compiler profile");
-                return false;
-            }
-
             //If the executable already exists, check if it's newer than the script
             if(ghc::filesystem::exists(exeToCopy, _) && ghc::filesystem::file_size(exeToCopy, _) > 0)
             {
@@ -291,34 +277,12 @@ namespace
                     ghc::filesystem::last_write_time(exeToCopy, _);
                 
                 if(lastExecutableWriteTime < lastScriptWriteTime)
-                    ssLOG_INFO("Compiled file is older than the source file");
-                else
                 {
-                    using namespace ghc::filesystem;
-                    
-                    //Copy the shared libraries as well
-                    for(auto it : directory_iterator(scriptDirectory + "/.runcpp2/", _))
-                    {
-                        if(it.is_directory())
-                            continue;
-                        
-                        std::string currentFileName = it.path().stem().string();
-                        std::string currentExtension = it.path().extension().string();
-                        
-                        ssLOG_DEBUG("currentFileName: " << currentFileName);
-                        ssLOG_DEBUG("currentExtension: " << currentExtension);
-                        
-                        if(currentExtension == *sharedLibExtToCopy)
-                            outCopiedBinariesPaths.push_back(it.path().string());
-                        else if(debugExtToCopy != nullptr && 
-                                currentExtension == *debugExtToCopy)
-                        {
-                            outCopiedBinariesPaths.push_back(it.path().string());
-                        }
-                    }
-                    
-                    return true;
+                    ssLOG_INFO("Compiled file is older than the source file");
+                    return false;
                 }
+                else
+                    return true;
             }
         }
         //If we are compiling to a shared library
@@ -326,12 +290,14 @@ namespace
         {
             //Check if there's any existing shared library build that is newer than the script
             const std::string* targetSharedLibExt = 
-                runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .SharedLibraryFile
-                                                                        .Extension);
+                runcpp2::GetValueFromPlatformMap(profiles.at(profileIndex)  .FilesTypes
+                                                                            .SharedLibraryFile
+                                                                            .Extension);
             
             const std::string* targetSharedLibPrefix =
-                runcpp2::GetValueFromPlatformMap(profiles[profileIndex] .SharedLibraryFile
-                                                                        .Prefix);
+                runcpp2::GetValueFromPlatformMap(profiles.at(profileIndex)  .FilesTypes
+                                                                            .SharedLibraryFile
+                                                                            .Prefix);
             
             if(targetSharedLibExt == nullptr || targetSharedLibPrefix == nullptr)
             {
@@ -370,6 +336,8 @@ int runcpp2::RunScript( const std::string& scriptPath,
                         const std::unordered_map<CmdOptions, std::string> currentOptions,
                         const std::vector<std::string>& runArgs)
 {
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     ssLOG_FUNC_DEBUG();
     
     if(profiles.empty())
@@ -384,7 +352,7 @@ int runcpp2::RunScript( const std::string& scriptPath,
         
         if(!ghc::filesystem::exists(scriptPath, _))
         {
-            ssLOG_ERROR("Failed to check if file exists: " << scriptPath);
+            ssLOG_ERROR("File does not exist: " << scriptPath);
             return -1;
         }
         
@@ -398,7 +366,6 @@ int runcpp2::RunScript( const std::string& scriptPath,
     std::string absoluteScriptPath = ghc::filesystem::absolute(scriptPath).string();
     std::string scriptDirectory = ghc::filesystem::path(absoluteScriptPath).parent_path().string();
     std::string scriptName = ghc::filesystem::path(absoluteScriptPath).stem().string();
-    std::vector<std::string> copiedBinariesPaths;
     int profileIndex = -1;
 
     ssLOG_DEBUG("scriptPath: " << scriptPath);
@@ -469,40 +436,42 @@ int runcpp2::RunScript( const std::string& scriptPath,
             return -1;
         }
         
+        std::vector<std::string> copiedBinariesPaths;
+        
+        //TODO: Split this into Setup, Build and Cleanup
+        std::vector<std::string> dependenciesLocalCopiesPaths;
+        std::vector<std::string> dependenciesSourcePaths;
+        if(!SetupScriptDependencies(profiles.at(profileIndex), 
+                                    absoluteScriptPath, 
+                                    scriptInfo, 
+                                    currentOptions.count(CmdOptions::RESET_CACHE) > 0,
+                                    dependenciesLocalCopiesPaths,
+                                    dependenciesSourcePaths))
+        {
+            ssLOG_ERROR("Failed to setup script dependencies");
+            return -1;
+        }
+
+        if(!CopyDependenciesBinaries(   absoluteScriptPath, 
+                                        scriptInfo,
+                                        dependenciesLocalCopiesPaths,
+                                        profiles.at(profileIndex),
+                                        copiedBinariesPaths))
+        {
+            ssLOG_ERROR("Failed to copy dependencies binaries");
+            return -1;
+        }
+        
         //Check if we have already compiled before.
         if(!HasCompiledCache(   currentOptions, 
                                 absoluteScriptPath, 
                                 exeExt, 
                                 profiles, 
-                                profileIndex, 
-                                copiedBinariesPaths))
+                                profileIndex))
         {
-            std::vector<std::string> dependenciesLocalCopiesPaths;
-            std::vector<std::string> dependenciesSourcePaths;
-            if(!SetupScriptDependencies(profiles[profileIndex], 
-                                        absoluteScriptPath, 
-                                        scriptInfo, 
-                                        currentOptions.count(CmdOptions::RESET_CACHE) > 0,
-                                        dependenciesLocalCopiesPaths,
-                                        dependenciesSourcePaths))
-            {
-                ssLOG_ERROR("Failed to setup script dependencies");
-                return -1;
-            }
-
-            if(!CopyDependenciesBinaries(   absoluteScriptPath, 
-                                            scriptInfo,
-                                            dependenciesLocalCopiesPaths,
-                                            profiles[profileIndex],
-                                            copiedBinariesPaths))
-            {
-                ssLOG_ERROR("Failed to copy dependencies binaries");
-                return -1;
-            }
-
             if(!CompileAndLinkScript(   absoluteScriptPath, 
                                         scriptInfo,
-                                        profiles[profileIndex],
+                                        profiles.at(profileIndex),
                                         copiedBinariesPaths,
                                         (currentOptions.count(CmdOptions::EXECUTABLE) > 0),
                                         exeExt))
@@ -521,10 +490,14 @@ int runcpp2::RunScript( const std::string& scriptPath,
         std::string target = scriptDirectory + "/.runcpp2/";
         
         const std::string* targetSharedLibExt = 
-            runcpp2::GetValueFromPlatformMap(profiles[profileIndex].SharedLibraryFile.Extension);
+            runcpp2::GetValueFromPlatformMap(profiles.at(profileIndex)  .FilesTypes
+                                                                        .SharedLibraryFile
+                                                                        .Extension);
         
         const std::string* targetSharedLibPrefix =
-            runcpp2::GetValueFromPlatformMap(profiles[profileIndex].SharedLibraryFile.Prefix);
+            runcpp2::GetValueFromPlatformMap(profiles.at(profileIndex)  .FilesTypes
+                                                                        .SharedLibraryFile
+                                                                        .Prefix);
         
         if(currentOptions.find(CmdOptions::EXECUTABLE) != currentOptions.end())
             target += scriptName + exeExt;
@@ -569,5 +542,7 @@ int runcpp2::RunScript( const std::string& scriptPath,
     }
 
     return -1;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(-1);
 }
 

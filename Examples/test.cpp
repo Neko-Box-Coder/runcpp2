@@ -1,26 +1,38 @@
 /* runcpp2
 
+RequiredProfiles:
+    Windows: ["msvc"]
+    Unix: ["g++"]
 Dependencies:
 -   Name: ssLogger
     Platforms: [Windows, Linux, MacOS]
     Source:
         Type: Git
         Value: "https://github.com/Neko-Box-Coder/ssLogger.git"
-    LibraryType: Header
-    IncludePaths:
-        - "Include"
-    
+    LibraryType: Shared
+    IncludePaths: ["Include"]
+    LinkProperties:
+        "All":
+            SearchLibraryNames: ["ssLogger"]
+            ExcludeLibraryNames: ["ssLogger_SRC"]
+            SearchDirectories: ["./build", "./build/Debug", "./build/Release"]
     Setup:
-        All:
+        Windows:
+            "msvc":
+            -   "if not exist build mkdir build"
+            -   "cd build && cmake .. -DssLOG_BUILD_TYPE=SHARED"
+            -   "cd build && cmake --build . --config Release -j 16"
+        Unix:
             "g++":
-            -   "git submodule update --init --recursive"
-            -   "mkdir build"
-            -   "cd build && cmake .."
-            -   "cd build && cmake --build . -j 16"
+            -   "mkdir -p build"
+            -   "cd build && cmake .. -DssLOG_BUILD_TYPE=SHARED"
+            -   "cd build && cmake --build . --config Release -j 16"
 */
+ 
 
+//#include "ssLogger/ssLogInit.hpp"
 
-#include "ssLogger/ssLogInit.hpp"
+#define ssLOG_DLL 1
 #include "ssLogger/ssLog.hpp"
 
 #include <iostream>

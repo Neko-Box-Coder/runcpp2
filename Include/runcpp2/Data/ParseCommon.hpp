@@ -30,4 +30,6 @@ catch(...)\
     action\
 }
 
+#define INTERNAL_RUNCPP2_BIT_CONTANTS(a, b) ((a & b) == b)
+
 #endif

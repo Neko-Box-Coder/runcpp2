@@ -13,7 +13,7 @@ bool runcpp2::Data::ProfilesFlagsOverride::ParseYAML_Node(ryml::ConstNodeRef& no
     
     for(int i = 0; i < node.num_children(); ++i)
     {
-        if(!(node[i].type().type & ryml::NodeType_e::MAP))
+        if(!INTERNAL_RUNCPP2_BIT_CONTANTS(node[i].type().type, ryml::NodeType_e::MAP))
         {
             ssLOG_ERROR("ProfilesFlagsOverrides: FlagsOverrideInfo type requires a map");
             return false;

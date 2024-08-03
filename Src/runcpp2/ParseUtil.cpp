@@ -19,10 +19,12 @@ runcpp2::NodeRequirement::NodeRequirement(  const std::string& name,
                                                                 Required(required), 
                                                                 Nullable(nullable)
 {}
-    
+
 bool runcpp2::CheckNodeRequirements(ryml::ConstNodeRef& node, 
                                     const std::vector<NodeRequirement>& requirements)
 {
+    ssLOG_FUNC_DEBUG();
+    
     INTERNAL_RUNCPP2_SAFE_START();
     
     if(node.invalid())
@@ -31,8 +33,8 @@ bool runcpp2::CheckNodeRequirements(ryml::ConstNodeRef& node,
         return false;
     }
     
-    if( !(node.type().type & ryml::NodeType_e::MAP) && 
-        !(node.type().type & ryml::NodeType_e::KEYVAL))
+    if( !INTERNAL_RUNCPP2_BIT_CONTANTS(node.type().type, ryml::NodeType_e::MAP) && 
+        !INTERNAL_RUNCPP2_BIT_CONTANTS(node.type().type, ryml::NodeType_e::KEYVAL))
     {
         ssLOG_ERROR("Node is not a map: " << node.type().type_str());
         return false;
@@ -42,14 +44,17 @@ bool runcpp2::CheckNodeRequirements(ryml::ConstNodeRef& node,
     {
         ssLOG_DEBUG("Checking: " << requirements[i].Name << " exists");
         
-        if(!ExistAndHasChild(node, requirements[i].Name))
+        if(!ExistAndHasChild(node, requirements[i].Name, requirements[i].Nullable))
         {
             if(requirements[i].Required)
             {
-                ssLOG_DEBUG("node.num_children(): " << node.num_children());
-                
-                for(int j = 0; j < node.num_children(); ++j)
-                    ssLOG_DEBUG(node[j].key());
+                if(0)
+                {
+                    ssLOG_DEBUG("node.num_children(): " << node.num_children());
+                    
+                    for(int j = 0; j < node.num_children(); ++j)
+                        ssLOG_DEBUG(node[j].key());
+                }
                 
                 ssLOG_ERROR("Required field not found: " << requirements[i].Name);
                 return false;
@@ -57,8 +62,7 @@ bool runcpp2::CheckNodeRequirements(ryml::ConstNodeRef& node,
             continue;
         }
         
-        ssLOG_DEBUG("Checking: " << requirements[i].Name << " type");
-        
+        //If type is nullable, we cannot verify it's type, so just continue
         if( requirements[i].Nullable && 
             node[requirements[i].Name.c_str()].is_keyval() &&
             node[requirements[i].Name.c_str()].val_is_null())
@@ -66,9 +70,27 @@ bool runcpp2::CheckNodeRequirements(ryml::ConstNodeRef& node,
             continue;
         }
         
-        if(!(node[requirements[i].Name.c_str()].type().type & requirements[i].NodeType.type))
+        //Debug prints
+        if(0)
         {
+            ssLOG_DEBUG("Checking: " << requirements[i].Name << " type");
+            ssLOG_DEBUG("node[" << requirements[i].Name << "].is_keyval(): " <<
+                        node[requirements[i].Name.c_str()].is_keyval());
             
+            if(node[requirements[i].Name.c_str()].is_keyval())
+            {
+                ssLOG_DEBUG("node[" << requirements[i].Name << "].val_is_null(): " <<
+                            node[requirements[i].Name.c_str()].val_is_null());
+            }
+            ssLOG_DEBUG("node[" << requirements[i].Name << "].type().type: " << 
+                        static_cast<int>(node[requirements[i].Name.c_str()].type().type));
+            ssLOG_DEBUG("requirements[" << i << "].NodeType.type: " << 
+                        static_cast<int>(requirements[i].NodeType.type));
+        }
+        
+        if(!INTERNAL_RUNCPP2_BIT_CONTANTS(  node[requirements[i].Name.c_str()].type().type, 
+                                            requirements[i].NodeType.type))
+        {
             ssLOG_ERROR("Field type is invalid: " << requirements[i].Name);
             ssLOG_ERROR("Expected: " << c4::yml::NodeType::type_str(requirements[i].NodeType));
             ssLOG_ERROR("Found: " << node[requirements[i].Name.c_str()].type_str());
@@ -284,11 +306,15 @@ bool runcpp2::ResolveYAML_Stream(   ryml::Tree& rootTree,
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
-bool runcpp2::ExistAndHasChild(const ryml::ConstNodeRef& node, const std::string& childName)
+bool runcpp2::ExistAndHasChild( const ryml::ConstNodeRef& node, 
+                                const std::string& childName,
+                                bool nullable)
 {
+    ssLOG_FUNC_DEBUG();
+
     if(node.num_children() > 0 && node.has_child(childName.c_str()))
     {
-        if(node[childName.c_str()].has_val())
+        if(!nullable && node[childName.c_str()].has_val())
         {
             if(node[childName.c_str()].val_is_null() || node[childName.c_str()].val().empty())
                 return false;

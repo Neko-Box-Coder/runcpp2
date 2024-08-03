@@ -1,5 +1,5 @@
-#ifndef RUNCPP2_DATA_DEPENDENCY_SETUP_HPP
-#define RUNCPP2_DATA_DEPENDENCY_SETUP_HPP
+#ifndef RUNCPP2_DATA_DEPENDENCY_COMMANDS_HPP
+#define RUNCPP2_DATA_DEPENDENCY_COMMANDS_HPP
 
 #include "runcpp2/Data/ParseCommon.hpp"
 
@@ -12,10 +12,11 @@ namespace runcpp2
 {
     namespace Data
     {
-        class DependencySetup
+        class DependencyCommands
         {
             public:
-                std::unordered_map<ProfileName, std::vector<std::string>> SetupSteps;
+                //TODO: Allow specifying command can fail
+                std::unordered_map<ProfileName, std::vector<std::string>> CommandSteps;
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;

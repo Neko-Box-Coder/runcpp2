@@ -63,6 +63,7 @@ Dependencies:
     # (Optional if LibraryType is Header) Link properties of the dependency
     LinkProperties:
         # Properties for searching the library binary for the profile
+        # You can also use "All" if all compilers use the same values
         "g++":
             # The library names to be searched for when linking against the script
             SearchLibraryNames: ["MyLibrary"]
@@ -77,12 +78,17 @@ Dependencies:
             AdditionalLinkOptions: 
                 All: []
 
+    # TODO: Cleanup?
+
+    # TODO: Build?
+
     
     # (Optional) List of setup commands for each platform
     Setup:
         All:
             # Setup shell commands for the specified profile. 
             # All commands are run in the dependency folder
+            # You can also use "All" if all the compilers run the same setup commands
             "g++":
             -   "mkdir build"
             -   "cd build && cmake .."

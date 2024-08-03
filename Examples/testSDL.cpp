@@ -1,7 +1,7 @@
 /* runcpp2
 
 OverrideLinkFlags:
-    All:
+    Unix:
         "g++":
             Remove: ""
             Append: "-lSDL2"

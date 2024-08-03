@@ -1,8 +1,8 @@
 - Add option to add Default Script Info to script
 - Add tests and examples (On Windows as well)
-- Make SearchLibraryNames and SearchDirectories optional
-- Add System Source Type
-- Change cache to be in the config folder
+- Make SearchLibraryNames and SearchDirectories optional (?)
+- Add System Source Type for dependencies
+- Allow cache to be in the config folder
 - Output compile_command.json
 - Allow script info as standalone yaml file
-- Allow Languages to override FileExtensions in compiler profile
+- Allow Languages to override FileExtensions in compiler profile (?)

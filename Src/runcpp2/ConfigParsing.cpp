@@ -1,5 +1,6 @@
 #include "runcpp2/ConfigParsing.hpp"
 #include "runcpp2/ParseUtil.hpp"
+
 #include "ryml.hpp"
 #include "c4/std/string.hpp"
 #include "cfgpath.h"
@@ -20,22 +21,6 @@ namespace
     {
         ssLOG_FUNC_DEBUG();
         
-        //TODO: Use callback once ryml noexcept are dropped
-        #if 0
-            ryml::Callbacks cb;
-            auto errorCallback = [](const char* msg, 
-                                    size_t msg_len, 
-                                    ryml::Location location, 
-                                    void *user_data)
-            {
-                std::string msgStr(msg, msg_len);
-                throw std::runtime_error(msgStr);
-            };
-            
-            cb.m_error = errorCallback;
-            ryml::set_callbacks(cb);
-        #endif
-        
         INTERNAL_RUNCPP2_SAFE_START();
         
         std::string temp = userConfigString;
@@ -46,7 +31,8 @@ namespace
             return false;
         
         if( !runcpp2::ExistAndHasChild(rootProfileNode, "Profiles") || 
-            !(rootProfileNode["Profiles"].type().type & ryml::NodeType_e::SEQ))
+            !INTERNAL_RUNCPP2_BIT_CONTANTS( rootProfileNode["Profiles"].type().type,
+                                            ryml::NodeType_e::SEQ))
         {
             ssLOG_ERROR("Profiles is invalid");
             return false;
@@ -60,8 +46,10 @@ namespace
             return false;
         }
         
+        ssLOG_INFO(profilesNode.num_children() << " profiles found in user config");
         for(int i = 0; i < profilesNode.num_children(); ++i)
         {
+            ssLOG_INFO("Parsing profile at index " << i);
             ryml::ConstNodeRef currentProfileNode = profilesNode[i];
             
             outProfiles.push_back({});
@@ -74,7 +62,8 @@ namespace
         }
         
         if( runcpp2::ExistAndHasChild(rootProfileNode, "PreferredProfile") && 
-            rootProfileNode["PreferredProfile"].type().type & ryml::NodeType_e::KEYVAL)
+            INTERNAL_RUNCPP2_BIT_CONTANTS(  rootProfileNode["PreferredProfile"].type().type,
+                                            ryml::NodeType_e::KEYVAL))
         {
             rootProfileNode["PreferredProfile"] >> outPreferredProfile;
             if(outPreferredProfile.empty())
@@ -84,13 +73,10 @@ namespace
             }
         }
         
-        ryml::reset_callbacks();
-        
         return true;
         
-        INTERNAL_RUNCPP2_SAFE_CATCH_ACTION(ryml::reset_callbacks(); return false;);
+        INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
     }
-    
 }
 
 std::string runcpp2::GetConfigFilePath()
@@ -134,7 +120,6 @@ bool runcpp2::WriteDefaultConfig(const std::string& userConfigPath)
     std::error_code _;
     if(ghc::filesystem::exists(userConfigPath, _))
     {
-        std::string backupPath = userConfigPath;
         int backupCount = 0;
         do
         {
@@ -143,6 +128,11 @@ bool runcpp2::WriteDefaultConfig(const std::string& userConfigPath)
                 ssLOG_ERROR("Failed to backup existing user config: " << userConfigPath);
                 return false;
             }
+            
+            std::string backupPath = userConfigPath;
+            
+            if(backupCount > 0)
+                backupPath += "." + std::to_string(backupCount);
             
             backupPath += ".bak";
             
@@ -230,31 +220,13 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles,
 bool runcpp2::ParseScriptInfo(  const std::string& scriptInfo, 
                                 Data::ScriptInfo& outScriptInfo)
 {
+    INTERNAL_RUNCPP2_SAFE_START();
+
     if(scriptInfo.empty())
         return true;
 
-    //TODO: Use callback once ryml noexcept are dropped
-    #if 0
-        ryml::Callbacks cb;
-        auto errorCallback = [](const char* msg, 
-                                size_t msg_len, 
-                                ryml::Location location, 
-                                void *user_data)
-        {
-            std::string msgStr(msg, msg_len);
-            throw std::runtime_error(msgStr);
-        };
-        
-        cb.m_error = errorCallback;
-        ryml::set_callbacks(cb);
-    #endif
-    
-    INTERNAL_RUNCPP2_SAFE_START();
-
     ryml::Tree scriptTree;
-    
     std::string temp = scriptInfo;
-    ssLOG_DEBUG("scriptInfo: " << "\n" << scriptInfo);
     scriptTree = ryml::parse_in_place(c4::to_substr(temp));
     
     ryml::ConstNodeRef rootScriptNode;
@@ -270,5 +242,6 @@ bool runcpp2::ParseScriptInfo(  const std::string& scriptInfo,
     else
         return false;
     
-    INTERNAL_RUNCPP2_SAFE_CATCH_ACTION(ryml::reset_callbacks(); return false;);
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
+

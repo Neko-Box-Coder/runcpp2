@@ -15,7 +15,9 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
         NodeRequirement("LibraryType", ryml::NodeType_e::KEYVAL, true, false),
         NodeRequirement("IncludePaths", ryml::NodeType_e::SEQ, false, true),
         NodeRequirement("LinkProperties", ryml::NodeType_e::MAP, false, false),
-        NodeRequirement("Setup", ryml::NodeType_e::MAP, false, true)
+        NodeRequirement("Setup", ryml::NodeType_e::MAP, false, true),
+        NodeRequirement("Cleanup", ryml::NodeType_e::MAP, false, true),
+        NodeRequirement("Build", ryml::NodeType_e::MAP, false, true)
     };
     
     if(!CheckNodeRequirements(node, requirements))
@@ -81,12 +83,18 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
             LinkProperties[profile] = property;
         }
     }
+    else if(LibraryType != DependencyLibraryType::HEADER)
+    {
+        ssLOG_ERROR("DependencyInfo: Missing LinkProperties with library type " << 
+                    Data::DependencyLibraryTypeToString(LibraryType));
+        return false;
+    }
     
     if(ExistAndHasChild(node, "Setup"))
     {
         for(int i = 0; i < node["Setup"].num_children(); ++i)
         {
-            DependencySetup currentSetup;
+            DependencyCommands currentSetup;
             ryml::ConstNodeRef currentSetupNode = node["Setup"][i];
             
             if(!currentSetup.ParseYAML_Node(currentSetupNode))
@@ -96,6 +104,40 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
             }
             
             Setup[GetKey(node["Setup"][i])] = currentSetup;
+        }
+    }
+    
+    if(ExistAndHasChild(node, "Cleanup"))
+    {
+        for(int i = 0; i < node["Cleanup"].num_children(); ++i)
+        {
+            DependencyCommands currentCleanup;
+            ryml::ConstNodeRef currentCleanupNode = node["Cleanup"][i];
+            
+            if(!currentCleanup.ParseYAML_Node(currentCleanupNode))
+            {
+                ssLOG_ERROR("DependencyInfo: Failed to parse Cleanup");
+                return false;
+            }
+            
+            Cleanup[GetKey(node["Cleanup"][i])] = currentCleanup;
+        }
+    }
+    
+    if(ExistAndHasChild(node, "Build"))
+    {
+        for(int i = 0; i < node["Build"].num_children(); ++i)
+        {
+            DependencyCommands currentBuild;
+            ryml::ConstNodeRef currentBuildNode = node["Build"][i];
+            
+            if(!currentBuild.ParseYAML_Node(currentBuildNode))
+            {
+                ssLOG_ERROR("DependencyInfo: Failed to parse Build");
+                return false;
+            }
+            
+            Build[GetKey(node["Build"][i])] = currentBuild;
         }
     }
     
@@ -139,6 +181,20 @@ std::string runcpp2::Data::DependencyInfo::ToString(std::string indentation) con
     
     out += indentation + "    Setup:\n";
     for(auto it = Setup.begin(); it != Setup.end(); ++it)
+    {
+        out += indentation + "        " + it->first + ":\n";
+        out += it->second.ToString(indentation + "            ");
+    }
+    
+    out += indentation + "    Cleanup:\n";
+    for(auto it = Cleanup.begin(); it != Cleanup.end(); ++it)
+    {
+        out += indentation + "        " + it->first + ":\n";
+        out += it->second.ToString(indentation + "            ");
+    }
+    
+    out += indentation + "    Build:\n";
+    for(auto it = Build.begin(); it != Build.end(); ++it)
     {
         out += indentation + "        " + it->first + ":\n";
         out += it->second.ToString(indentation + "            ");
