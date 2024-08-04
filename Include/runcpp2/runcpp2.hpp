@@ -16,6 +16,7 @@ namespace runcpp2
         RESET_USER_CONFIG,
         EXECUTABLE,
         HELP,
+        REMOVE_DEPENDENCIES,
         COUNT
     };
     

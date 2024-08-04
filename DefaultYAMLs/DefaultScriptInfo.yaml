@@ -19,6 +19,7 @@ RequiredProfiles:
 
 # (Optional) Override the default compile flags for each platform
 OverrideCompileFlags:
+    # Target Platform
     All:
         # Profile with the respective flags to override
         "g++":
@@ -31,6 +32,7 @@ OverrideCompileFlags:
         
 # (Optional) Override the default link flags for each platform
 OverrideLinkFlags:
+    # Target Platform
     All:
         # Profile with the respective flags to override
         "g++":
@@ -77,19 +79,29 @@ Dependencies:
             # (Optional) Additional link options for this dependency for each platform
             AdditionalLinkOptions: 
                 All: []
-
-    # TODO: Cleanup?
-
-    # TODO: Build?
-
     
-    # (Optional) List of setup commands for each platform
+    # (Optional) Setup commands are run once when the dependency is populated
     Setup:
+        # Target Platform
         All:
             # Setup shell commands for the specified profile. 
             # All commands are run in the dependency folder
             # You can also use "All" if all the compilers run the same setup commands
             "g++":
             -   "mkdir build"
+            
+    
+    # (Optional) Build commands are run every time before the script is being built
+    Build:
+        # Target Platform
+        All:
+            "g++":
             -   "cd build && cmake .."
             -   "cd build && cmake --build ."
+    
+    # (Optional) Cleanup commands are run when the reset option is present. Normally nothing needs
+    #            to be done since the dependency folder will be removed automatically.
+    # Cleanup:
+    #     Linux:
+    #         "g++":
+    #         -   "sudo apt purge MyLibrary"

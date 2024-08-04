@@ -3,7 +3,7 @@
 #include "runcpp2/ProfileHelper.hpp"
 #include "runcpp2/CompilingLinking.hpp"
 #include "runcpp2/ConfigParsing.hpp"
-#include "runcpp2/DependenciesSetupHelper.hpp"
+#include "runcpp2/DependenciesHelper.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/PlatformUtil.hpp"
 #include "System2.h"
@@ -438,28 +438,77 @@ int runcpp2::RunScript( const std::string& scriptPath,
         
         std::vector<std::string> copiedBinariesPaths;
         
-        //TODO: Split this into Setup, Build and Cleanup
-        std::vector<std::string> dependenciesLocalCopiesPaths;
-        std::vector<std::string> dependenciesSourcePaths;
-        if(!SetupScriptDependencies(profiles.at(profileIndex), 
+        //Process Dependencies
+        {
+            std::vector<Data::DependencyInfo*> availableDependencies;
+            for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+            {
+                if(IsDependencyAvailableForThisPlatform(scriptInfo.Dependencies.at(i)))
+                    availableDependencies.push_back(&scriptInfo.Dependencies.at(i));
+            }
+            
+            std::vector<std::string> dependenciesLocalCopiesPaths;
+            std::vector<std::string> dependenciesSourcePaths;
+            if(!GetDependenciesPaths(   availableDependencies,
+                                        dependenciesLocalCopiesPaths,
+                                        dependenciesSourcePaths,
+                                        absoluteScriptPath))
+            {
+                ssLOG_ERROR("Failed to get dependencies paths");
+                return -1;
+            }
+            
+            //If we are resetting cache, we need to clean up the dependencies first
+            if( currentOptions.count(CmdOptions::RESET_CACHE) > 0 ||
+                currentOptions.count(CmdOptions::REMOVE_DEPENDENCIES) > 0)
+            {
+                if(!CleanupDependencies(profiles.at(profileIndex),
+                                        absoluteScriptPath, 
+                                        scriptInfo,
+                                        availableDependencies,
+                                        dependenciesLocalCopiesPaths))
+                {
+                    ssLOG_ERROR("Failed to cleanup dependencies");
+                    return -1;
+                }
+            }
+            
+            if(currentOptions.count(CmdOptions::REMOVE_DEPENDENCIES) > 0)
+            {
+                ssLOG_LINE("Removed script dependencies");
+                return 0;
+            }
+            
+            if(!SetupDependencies(  profiles.at(profileIndex), 
                                     absoluteScriptPath, 
                                     scriptInfo, 
-                                    currentOptions.count(CmdOptions::RESET_CACHE) > 0,
+                                    availableDependencies,
                                     dependenciesLocalCopiesPaths,
                                     dependenciesSourcePaths))
-        {
-            ssLOG_ERROR("Failed to setup script dependencies");
-            return -1;
-        }
+            {
+                ssLOG_ERROR("Failed to setup script dependencies");
+                return -1;
+            }
+            
+            if(!BuildDependencies(  profiles.at(profileIndex),
+                                    absoluteScriptPath, 
+                                    scriptInfo,
+                                    availableDependencies, 
+                                    dependenciesLocalCopiesPaths))
+            {
+                ssLOG_ERROR("Failed to build script dependencies");
+                return -1;
+            }
 
-        if(!CopyDependenciesBinaries(   absoluteScriptPath, 
-                                        scriptInfo,
-                                        dependenciesLocalCopiesPaths,
-                                        profiles.at(profileIndex),
-                                        copiedBinariesPaths))
-        {
-            ssLOG_ERROR("Failed to copy dependencies binaries");
-            return -1;
+            if(!CopyDependenciesBinaries(   absoluteScriptPath, 
+                                            availableDependencies,
+                                            dependenciesLocalCopiesPaths,
+                                            profiles.at(profileIndex),
+                                            copiedBinariesPaths))
+            {
+                ssLOG_ERROR("Failed to copy dependencies binaries");
+                return -1;
+            }
         }
         
         //Check if we have already compiled before.

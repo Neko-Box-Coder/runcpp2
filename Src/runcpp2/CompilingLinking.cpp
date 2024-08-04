@@ -1,5 +1,5 @@
 #include "runcpp2/CompilingLinking.hpp"
-#include "runcpp2/DependenciesSetupHelper.hpp"
+#include "runcpp2/DependenciesHelper.hpp"
 #include "runcpp2/PlatformUtil.hpp"
 #include "runcpp2/StringUtil.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
@@ -387,12 +387,12 @@ namespace
         
             for(int i = 0; i < copiedDependenciesBinariesPaths.size(); ++i)
             {
-                size_t extensionFoundIndex = copiedDependenciesBinariesPaths[i].find_last_of(".");
+                size_t extensionFoundIndex = copiedDependenciesBinariesPaths.at(i).find_last_of(".");
                 
                 //Check if this is a file we can link
                 std::string extension;
                 if(extensionFoundIndex != std::string::npos)
-                    extension = copiedDependenciesBinariesPaths[i].substr(extensionFoundIndex);
+                    extension = copiedDependenciesBinariesPaths.at(i).substr(extensionFoundIndex);
                 
                 using namespace runcpp2;
                 Data::DependencyLibraryType currentLinkType = Data::DependencyLibraryType::COUNT;
@@ -409,6 +409,9 @@ namespace
                     goto processLinkFile;
                 }
                 
+                //TODO: Shared and static link file cannot be differentiated with just 
+                //      file extension because they are the same. We should pass the dependency in 
+                //      instead
                 if(!HasValueFromPlatformMap(profile.FilesTypes.SharedLinkFile.Extension))
                 {
                     ssLOG_WARNING(  "profile " << profile.Name << " missing extension for " <<

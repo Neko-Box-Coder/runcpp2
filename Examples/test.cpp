@@ -18,17 +18,18 @@ Dependencies:
             SearchDirectories: ["./build", "./build/Debug", "./build/Release"]
     Setup:
         Windows:
-            "msvc":
+            "All":
             -   "if not exist build mkdir build"
-            -   "cd build && cmake .. -DssLOG_BUILD_TYPE=SHARED"
-            -   "cd build && cmake --build . --config Release -j 16"
         Unix:
-            "g++":
+            "All":
             -   "mkdir -p build"
+    Build:
+        All:
+            "All":
             -   "cd build && cmake .. -DssLOG_BUILD_TYPE=SHARED"
             -   "cd build && cmake --build . --config Release -j 16"
 */
- 
+
 
 //#include "ssLogger/ssLogInit.hpp"
 

@@ -51,9 +51,6 @@ int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& long
             ssLOG_DEBUG("currentArgIndex: " << currentArgIndex);
             ssLOG_DEBUG("argv: " << argv[i]);
             
-            static_assert(  (int)runcpp2::CmdOptions::COUNT == 5, 
-                            "Add a case for the new runcpp2_CmdOptions");
-            
             const runcpp2::OptionInfo& currentInfo =    longOptionsMap.count(currentArg) ?
                                                         longOptionsMap.at(currentArg) :
                                                         shortOptionsMap.at(currentArg);
@@ -108,6 +105,10 @@ int main(int argc, char* argv[])
                 "--help", 
                 runcpp2::OptionInfo(runcpp2::CmdOptions::HELP, false)
             },
+            {
+                "--remove-dependencies", 
+                runcpp2::OptionInfo(runcpp2::CmdOptions::REMOVE_DEPENDENCIES, false)
+            }
         };
         
         std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
@@ -116,6 +117,7 @@ int main(int argc, char* argv[])
             {"-c", longOptionsMap.at("--reset-user-config")},
             {"-e", longOptionsMap.at("--executable")},
             {"-h", longOptionsMap.at("--help")},
+            {"-d", longOptionsMap.at("--remove-dependencies")},
         };
         
         currentArgIndex = ParseArgs(longOptionsMap, shortOptionsMap, currentOptions, argc, argv);
@@ -134,10 +136,11 @@ int main(int argc, char* argv[])
     {
         ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
         ssLOG_BASE("Options:");
-        ssLOG_BASE("    -r, --reset-cache           Deletes all cache and build everything from scratch");
-        ssLOG_BASE("    -c, --reset-user-config     Replace current user config with the default one");
-        ssLOG_BASE("    -e, --executable            Runs as executable instead of shared library");
-        ssLOG_BASE("    -h, --help                  Show this help message");
+        ssLOG_BASE("    -r, --[r]eset-cache                 Deletes all cache and build everything from scratch");
+        ssLOG_BASE("    -c, --reset-user-[c]onfig           Replace current user config with the default one");
+        ssLOG_BASE("    -e, --[e]xecutable                  Runs as executable instead of shared library");
+        ssLOG_BASE("    -h, --[h]elp                        Show this help message");
+        ssLOG_BASE("    -d, --remove-[d]ependencies         Remove dependencies listed in the script");
         
         return 0;
     }
