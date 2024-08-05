@@ -79,7 +79,7 @@ add_executable(runcpp2
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/CompilingLinking.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/ConfigParsing.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/DefaultYAMLs.c"
-                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/DependenciesSetupHelper.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/DependenciesHelper.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/main.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/ParseUtil.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/PlatformUtil.cpp"
