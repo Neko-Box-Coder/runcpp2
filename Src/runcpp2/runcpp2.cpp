@@ -374,9 +374,6 @@ int runcpp2::RunScript( const std::string& scriptPath,
     ssLOG_DEBUG("scriptName: " << scriptName);
     ssLOG_DEBUG("is_directory: " << ghc::filesystem::is_directory(scriptDirectory));
 
-    //Read from a c/cpp file
-    //TODO: Check is it c or cpp
-
     std::string exeExt = "";
     #ifdef _WIN32
         exeExt = ".exe";
@@ -384,26 +381,40 @@ int runcpp2::RunScript( const std::string& scriptPath,
 
     //Parsing the script, setting up dependencies, compiling and linking
     {
-        std::ifstream inputFile(absoluteScriptPath);
-        if (!inputFile)
-        {
-            ssLOG_ERROR("Failed to open file: " << absoluteScriptPath);
-            return -1;
-        }
-
-        std::stringstream buffer;
-        buffer << inputFile.rdbuf();
-        std::string source(buffer.str());
-
+        //Check if there's script info as yaml file instead
+        std::error_code e;
         std::string parsableInfo;
-        if(!GetParsableInfo(source, parsableInfo))
+        std::ifstream inputFile;
+        std::string dedicatedYamlLoc = ProcessPath(scriptDirectory + "/" + scriptName + ".yaml");
+        if(ghc::filesystem::exists(dedicatedYamlLoc, e))
         {
-            ssLOG_ERROR("An error has been encountered when parsing info: " << absoluteScriptPath);
-            return -1;
+            inputFile.open(dedicatedYamlLoc);
+            std::stringstream buffer;
+            buffer << inputFile.rdbuf();
+            parsableInfo = buffer.str();
+        }
+        else
+        {
+            inputFile.open(absoluteScriptPath);
+            
+            if (!inputFile)
+            {
+                ssLOG_ERROR("Failed to open file: " << absoluteScriptPath);
+                return -1;
+            }
+
+            std::stringstream buffer;
+            buffer << inputFile.rdbuf();
+            std::string source(buffer.str());
+            
+            if(!GetParsableInfo(source, parsableInfo))
+            {
+                ssLOG_ERROR("An error has been encountered when parsing info: " << 
+                            absoluteScriptPath);
+                return -1;
+            }
         }
         
-        //TODO: Check if there's script info as yaml file instead
-
         //Try to parse the runcpp2 info
         Data::ScriptInfo scriptInfo;
         if(!ParseScriptInfo(parsableInfo, scriptInfo))
