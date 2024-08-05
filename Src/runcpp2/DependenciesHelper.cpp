@@ -133,31 +133,23 @@ namespace
             *runcpp2::GetValueFromPlatformMap(steps);
         
         std::string profileNameToUse;
-        //Check profile name is available first
-        if(dependencySteps.CommandSteps.count(profile.Name) > 0)
-            profileNameToUse = profile.Name;
-        else
+        std::vector<std::string> currentProfileNames;
+        profile.GetNames(currentProfileNames);
+        
+        for(int i = 0; i < currentProfileNames.size(); ++i)
         {
-            //If not check for name alias
-            for(const auto& alias : profile.NameAliases)
+            if(dependencySteps.CommandSteps.count(currentProfileNames.at(i)) > 0)
             {
-                if(dependencySteps.CommandSteps.count(alias) > 0)
-                {
-                    profileNameToUse = alias;
-                    break;
-                }
+                profileNameToUse = currentProfileNames.at(i);
+                break;
             }
-            
-            //Otherwise check for "All"
-            if(dependencySteps.CommandSteps.count("All") > 0)
-                profileNameToUse = "All";
-            
-            if(profileNameToUse.empty())
-            {
-                ssLOG_ERROR("Failed to find steps for profile " << profile.Name << 
-                            " for current platform");
-                return false;
-            }
+        }
+        
+        if(profileNameToUse.empty())
+        {
+            ssLOG_ERROR("Failed to find steps for profile " << profile.Name << 
+                        " for current platform");
+            return false;
         }
         
         //Run the commands
@@ -551,21 +543,17 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
             availableDependencies.at(i)->LinkProperties;
         
         //See if we can find the link properties with the profile name
-        auto foundPropertyIt = linkProperties.find(profile.Name);
-        if(foundPropertyIt == linkProperties.end())
+        std::vector<std::string> currentProfileNames;
+        profile.GetNames(currentProfileNames);
+        
+        auto foundPropertyIt = linkProperties.end();
+        for(int j = 0; j < currentProfileNames.size(); ++j)
         {
-            //If not, try alias
-            for(const auto& alias : profile.NameAliases)
-            {
-                foundPropertyIt = linkProperties.find(alias);
-                if(foundPropertyIt != linkProperties.end())
-                    break;
-            }
-            
-            //If not, try All
-            if(foundPropertyIt == linkProperties.end())
-                foundPropertyIt = linkProperties.find("All");
+            foundPropertyIt = linkProperties.find(currentProfileNames.at(j));
+            if(foundPropertyIt != linkProperties.end())
+                break;
         }
+        
         if(foundPropertyIt == linkProperties.end())
         {
             ssLOG_ERROR("Search properties for dependency " << availableDependencies.at(i)->Name <<

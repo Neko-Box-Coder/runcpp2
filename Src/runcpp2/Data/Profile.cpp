@@ -3,6 +3,17 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
+void runcpp2::Data::Profile::GetNames(std::vector<std::string>& outNames) const
+{
+    outNames.clear();
+    outNames.push_back(Name);
+    for(const auto& alias : NameAliases)
+        outNames.push_back(alias);
+    
+    //Special name all that applies to all profile
+    outNames.push_back("All");
+}
+
 bool runcpp2::Data::Profile::ParseYAML_Node(ryml::ConstNodeRef& profileNode)
 {
     ssLOG_FUNC_DEBUG();

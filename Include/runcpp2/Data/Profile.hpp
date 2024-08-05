@@ -23,9 +23,6 @@ namespace runcpp2
             public:
                 std::string Name;
                 
-                //TODO: Add a function for getting value from map that uses profile name as key
-                //      Or maybe just a function that return all the names
-                
                 std::unordered_set<std::string> NameAliases;
                 std::unordered_set<std::string> FileExtensions;
                 std::unordered_set<std::string> Languages;
@@ -36,6 +33,7 @@ namespace runcpp2
                 StageInfo Compiler;
                 StageInfo Linker;
                 
+                void GetNames(std::vector<std::string>& outNames) const;
                 bool ParseYAML_Node(ryml::ConstNodeRef& profileNode);
                 std::string ToString(std::string indentation) const;
         };

@@ -450,8 +450,8 @@ int runcpp2::RunScript( const std::string& scriptPath,
         std::vector<std::string> copiedBinariesPaths;
         
         //Process Dependencies
+        std::vector<Data::DependencyInfo*> availableDependencies;
         {
-            std::vector<Data::DependencyInfo*> availableDependencies;
             for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
             {
                 if(IsDependencyAvailableForThisPlatform(scriptInfo.Dependencies.at(i)))
@@ -469,7 +469,6 @@ int runcpp2::RunScript( const std::string& scriptPath,
                 return -1;
             }
             
-            //If we are resetting cache, we need to clean up the dependencies first
             if( currentOptions.count(CmdOptions::RESET_CACHE) > 0 ||
                 currentOptions.count(CmdOptions::REMOVE_DEPENDENCIES) > 0)
             {
@@ -531,6 +530,7 @@ int runcpp2::RunScript( const std::string& scriptPath,
         {
             if(!CompileAndLinkScript(   absoluteScriptPath, 
                                         scriptInfo,
+                                        availableDependencies,
                                         profiles.at(profileIndex),
                                         copiedBinariesPaths,
                                         (currentOptions.count(CmdOptions::EXECUTABLE) > 0),

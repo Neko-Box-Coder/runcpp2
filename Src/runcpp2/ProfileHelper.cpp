@@ -74,12 +74,7 @@ namespace
         if(!scriptExtension.empty())
             scriptExtension.erase(0, 1);
         
-        if(profile.FileExtensions.find(scriptExtension) == profile.FileExtensions.end())
-        {
-            ssLOG_DEBUG("Failed to match file extension for " << scriptExtension);
-            return false;
-        }
-        
+        //If the language is explicitly stated, use it instead of file extension
         if(!scriptInfo.Language.empty())
         {
             if(profile.Languages.find(scriptInfo.Language) == profile.Languages.end())
@@ -87,6 +82,11 @@ namespace
                 ssLOG_DEBUG("Failed to match language for " << scriptInfo.Language);
                 return false;
             }
+        }
+        else if(profile.FileExtensions.find(scriptExtension) == profile.FileExtensions.end())
+        {
+            ssLOG_DEBUG("Failed to match file extension for " << scriptExtension);
+            return false;
         }
         
         if(!scriptInfo.RequiredProfiles.empty())

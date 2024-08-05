@@ -31,18 +31,15 @@ namespace
             *runcpp2::GetValueFromPlatformMap(overrideFlags);
         
         std::string foundProfileName;
+        std::vector<std::string> currentProfileNames;
+        profile.GetNames(currentProfileNames);
         
-        if(currentFlagsOverride.FlagsOverrides.count(profile.Name) > 0)
-            foundProfileName = profile.Name;
-        else
+        for(int i = 0; i < currentProfileNames.size(); ++i)
         {
-            for(auto it = profile.NameAliases.begin(); it != profile.NameAliases.end(); ++it)
+            if(currentFlagsOverride.FlagsOverrides.count(currentProfileNames.at(i)) > 0)
             {
-                if(currentFlagsOverride.FlagsOverrides.count(*it) > 0)
-                {
-                    foundProfileName = *it;
-                    break;
-                }
+                foundProfileName = currentProfileNames.at(i);
+                break;
             }
         }
         
@@ -83,6 +80,7 @@ namespace
     
     bool CompileScript( const std::string& scriptPath, 
                         const runcpp2::Data::ScriptInfo& scriptInfo,
+                        const std::vector<runcpp2::Data::DependencyInfo*>& availableDependencies,
                         const runcpp2::Data::Profile& profile,
                         bool compileAsExecutable,
                         std::string& outScriptObjectFilePath)
@@ -112,15 +110,13 @@ namespace
         
         //Include Directories
         {
-            for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+            //TODO(NOW): Use filtered dependencies instead
+            for(int i = 0; i < availableDependencies.size(); ++i)
             {
-                if(!runcpp2::IsDependencyAvailableForThisPlatform(scriptInfo.Dependencies.at(i)))
-                    continue;
-            
-                for(int j = 0; j < scriptInfo.Dependencies.at(i).AbsoluteIncludePaths.size(); ++j)
+                for(int j = 0; j < availableDependencies.at(i)->AbsoluteIncludePaths.size(); ++j)
                 {
                     const std::string& currentIncludePath = 
-                        scriptInfo.Dependencies.at(i).AbsoluteIncludePaths.at(j);
+                        availableDependencies.at(i)->AbsoluteIncludePaths.at(j);
                     
                     substitutionMap["{IncludeDirectoryPath}"].push_back(currentIncludePath);
                 }
@@ -262,6 +258,7 @@ namespace
 
     bool LinkScript(const std::string& scriptPath, 
                     const runcpp2::Data::ScriptInfo& scriptInfo,
+                    const std::vector<runcpp2::Data::DependencyInfo*>& availableDependencies,
                     const runcpp2::Data::Profile& profile,
                     const std::string& scriptObjectFilePath,
                     const std::vector<std::string>& copiedDependenciesBinariesPaths,
@@ -288,38 +285,19 @@ namespace
             AppendAndRemoveFlags(profile, scriptInfo.OverrideLinkFlags, linkFlags);
             
             //Add link flags for the dependencies
-            for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+            //TODO(NOW): Use the filtered dependencies
+            for(int i = 0; i < availableDependencies.size(); ++i)
             {
-                if(!runcpp2::IsDependencyAvailableForThisPlatform(scriptInfo.Dependencies.at(i)))
-                    continue;
-                
                 std::string targetProfileName;
+                std::vector<std::string> currentProfileNames;
+                profile.GetNames(currentProfileNames);
                 
-                //Check for profile name first
-                if( scriptInfo.Dependencies.at(i).LinkProperties.find(profile.Name) != 
-                    scriptInfo.Dependencies.at(i).LinkProperties.end())
+                for(int j = 0; j < currentProfileNames.size(); ++j)
                 {
-                    targetProfileName = profile.Name;
-                }
-                else
-                {
-                    //If not check for profile name aliases
-                    for(const auto& alias : profile.NameAliases)
+                    if( availableDependencies.at(i)->LinkProperties.find(currentProfileNames.at(j)) != 
+                        availableDependencies.at(i)->LinkProperties.end())
                     {
-                        if( scriptInfo.Dependencies.at(i).LinkProperties.find(alias) != 
-                            scriptInfo.Dependencies.at(i).LinkProperties.end())
-                        {
-                            targetProfileName = alias;
-                            break;
-                        }
-                    }
-                    
-                    //Final check for "All"
-                    if( targetProfileName.empty() &&  
-                        scriptInfo.Dependencies.at(i).LinkProperties.find("All") != 
-                        scriptInfo.Dependencies.at(i).LinkProperties.end())
-                    {
-                        targetProfileName = "All";
+                        targetProfileName = currentProfileNames.at(j);
                     }
                 }
                 
@@ -327,7 +305,7 @@ namespace
                     continue;
                 
                 const runcpp2::Data::DependencyLinkProperty& currentLinkProperty = 
-                    scriptInfo.Dependencies.at(i).LinkProperties.at(targetProfileName);
+                    availableDependencies.at(i)->LinkProperties.at(targetProfileName);
                 
                 if(runcpp2::HasValueFromPlatformMap(currentLinkProperty.AdditionalLinkOptions))
                 {
@@ -648,6 +626,7 @@ namespace
 
 bool runcpp2::CompileAndLinkScript( const std::string& scriptPath, 
                                     const Data::ScriptInfo& scriptInfo,
+                                    const std::vector<Data::DependencyInfo*>& availableDependencies,
                                     const Data::Profile& profile,
                                     const std::vector<std::string>& copiedDependenciesBinariesPaths,
                                     bool buildExecutable,
@@ -661,7 +640,12 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
     
     std::string scriptObjectFilePath;
 
-    if(!CompileScript(scriptPath, scriptInfo, profile, buildExecutable, scriptObjectFilePath))
+    if(!CompileScript(  scriptPath, 
+                        scriptInfo, 
+                        availableDependencies, 
+                        profile, 
+                        buildExecutable, 
+                        scriptObjectFilePath))
     {
         ssLOG_ERROR("CompileScript failed");
         return false;
@@ -669,6 +653,7 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
     
     if(!LinkScript( scriptPath, 
                     scriptInfo,
+                    availableDependencies,
                     profile,
                     scriptObjectFilePath,
                     copiedDependenciesBinariesPaths,
