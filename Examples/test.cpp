@@ -17,12 +17,9 @@ Dependencies:
             ExcludeLibraryNames: ["ssLogger_SRC"]
             SearchDirectories: ["./build", "./build/Debug", "./build/Release"]
     Setup:
-        Windows:
+        All:
             "All":
-            -   "if not exist build mkdir build"
-        Unix:
-            "All":
-            -   "mkdir -p build"
+            -   "mkdir build"
     Build:
         All:
             "All":
