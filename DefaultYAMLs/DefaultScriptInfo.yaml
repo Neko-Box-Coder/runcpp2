@@ -1,6 +1,3 @@
-# yaml-language-server: $schema=./ScriptInfoSchema.json
-
----
 # (Optional) Language of the script
 Language: "c++"
 
