@@ -563,7 +563,7 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
         }
         const Data::DependencyLinkProperty& searchProperty = foundPropertyIt->second;
         
-        //Copy the files with extensions that contains the search name
+        //Copy the files with extensions that contains the search name if needed
         for(int j = 0; j < searchProperty.SearchLibraryNames.size(); ++j)
         {
             for(int k = 0; k < searchProperty.SearchDirectories.size(); ++k)
@@ -580,15 +580,16 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                 ssLOG_DEBUG("currentSearchDirectory: " << currentSearchDirectory);
                 ssLOG_DEBUG("currentSearchLibraryName: " << currentSearchLibraryName);
             
-                std::error_code _;
-                if( !ghc::filesystem::exists(currentSearchDirectory, _) || 
-                    !ghc::filesystem::is_directory(currentSearchDirectory, _))
+                std::error_code e;
+                if( !ghc::filesystem::exists(currentSearchDirectory, e) || 
+                    !ghc::filesystem::is_directory(currentSearchDirectory, e))
                 {
                     ssLOG_INFO("Invalid search path: " << currentSearchDirectory);
                     continue;
                 }
             
-                for(auto it : ghc::filesystem::directory_iterator(currentSearchDirectory, _))
+                //Iterate each files in the directory we are searching
+                for(auto it : ghc::filesystem::directory_iterator(currentSearchDirectory, e))
                 {
                     if(it.is_directory())
                         continue;
@@ -633,6 +634,45 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                     if(!extensionMatched)
                         continue;
                     
+                    std::string copiedPath = runcpp2ScriptDir + "/" + it.path().filename().string();
+                    
+                    //Check if we have previously copied the dependencies to the folder
+                    if(ghc::filesystem::exists(copiedPath, e))
+                    {
+                        ghc::filesystem::file_time_type builtWriteTime = 
+                            ghc::filesystem::last_write_time(it.path(), e);
+                        
+                        if(e)
+                        {
+                            ssLOG_ERROR("Failed to get write time of " << it.path().string());
+                            ssLOG_ERROR("Error: " << e.message());
+                            return false;
+                        }
+                        
+                        ghc::filesystem::file_time_type copiedWriteTime = 
+                            ghc::filesystem::last_write_time(copiedPath, e);
+                        
+                        if(e)
+                        {
+                            ssLOG_ERROR("Failed to get write time of " << copiedPath);
+                            ssLOG_ERROR("Error: " << e.message());
+                            return false;
+                        }
+                        
+                        //If the copied write time is newer than the original one, that means 
+                        //  the copy is up to date
+                        if(builtWriteTime <= copiedWriteTime)
+                        {
+                            ssLOG_INFO(copiedPath << " is up to date");
+                            copiedPath = runcpp2::ProcessPath(copiedPath);
+                            outCopiedBinariesPaths.push_back(copiedPath);
+                            continue;
+                        }
+                        else
+                            ssLOG_INFO(copiedPath << " is outdated");
+                    }
+                    
+                    //Copy the dependency binary to our folder
                     std::error_code copyErrorCode;
                     ghc::filesystem::copy(  it.path(), 
                                             runcpp2ScriptDir, 
@@ -648,8 +688,11 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                         return false;
                     }
                     
-                    ssLOG_INFO("Copied " << it.path().string());
-                    outCopiedBinariesPaths.push_back(it.path().string());
+                    
+                    ssLOG_INFO("Copied from " << it.path().string());
+                    ssLOG_INFO("Copied to " << copiedPath);
+                    copiedPath = runcpp2::ProcessPath(copiedPath);
+                    outCopiedBinariesPaths.push_back(copiedPath);
                 }
             }
         }
