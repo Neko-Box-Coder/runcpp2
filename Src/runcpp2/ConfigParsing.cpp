@@ -15,9 +15,9 @@ extern "C" const size_t DefaultScriptDependencies_size;
 
 namespace 
 {
-    bool ParseUserConfig( const std::string& userConfigString, 
-                                std::vector<runcpp2::Data::Profile>& outProfiles,
-                                std::string& outPreferredProfile)
+    bool ParseUserConfig(   const std::string& userConfigString, 
+                            std::vector<runcpp2::Data::Profile>& outProfiles,
+                            std::string& outPreferredProfile)
     {
         ssLOG_FUNC_DEBUG();
         
@@ -181,6 +181,8 @@ bool runcpp2::WriteDefaultConfig(const std::string& userConfigPath)
 bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles, 
                                 std::string& outPreferredProfile)
 {
+    INTERNAL_RUNCPP2_SAFE_START();
+
     ssLOG_FUNC_DEBUG();
     
     std::string configPath = GetConfigFilePath();
@@ -215,6 +217,8 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles,
     }
 
     return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 bool runcpp2::ParseScriptInfo(  const std::string& scriptInfo, 

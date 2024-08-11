@@ -25,8 +25,8 @@ namespace
         
         if(!ghc::filesystem::exists(runcpp2Dir))
         {
-            std::error_code _;
-            if(!ghc::filesystem::create_directory(runcpp2Dir, _))
+            std::error_code e;
+            if(!ghc::filesystem::create_directory(runcpp2Dir, e))
             {
                 ssLOG_ERROR("Failed to create runcpp2 directory");
                 return false;
@@ -55,6 +55,7 @@ namespace
                 args.push_back(runArgs[i].c_str());
         }
         
+        //TODO: Don't redirect output
         System2CommandInfo runCommandInfo = {};
         runCommandInfo.RunDirectory = processedScriptDir.c_str();
         runCommandInfo.RedirectOutput = true;

@@ -110,7 +110,6 @@ namespace
         
         //Include Directories
         {
-            //TODO(NOW): Use filtered dependencies instead
             for(int i = 0; i < availableDependencies.size(); ++i)
             {
                 for(int j = 0; j < availableDependencies.at(i)->AbsoluteIncludePaths.size(); ++j)
@@ -285,7 +284,6 @@ namespace
             AppendAndRemoveFlags(profile, scriptInfo.OverrideLinkFlags, linkFlags);
             
             //Add link flags for the dependencies
-            //TODO(NOW): Use the filtered dependencies
             for(int i = 0; i < availableDependencies.size(); ++i)
             {
                 std::string targetProfileName;
