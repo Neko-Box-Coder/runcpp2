@@ -135,6 +135,17 @@ if(RUNCPP2_BUILD_TESTS)
     # set_target_properties(BuildsManagerTest PROPERTIES  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
     #                                                     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
     #                                                     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests")
+
+    if(WIN32)
+        execute_process(COMMAND ${CMAKE_COMMAND} -E copy    "${CMAKE_CURRENT_LIST_DIR}/CI/RunAllTests.bat" 
+                                                            "${CMAKE_CURRENT_BINARY_DIR}")
+    else()
+        file(   CHMOD "${CMAKE_CURRENT_LIST_DIR}/CI/RunAllTests.sh"
+                PERMISSIONS  OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_WRITE GROUP_EXECUTE WORLD_READ WORLD_WRITE WORLD_EXECUTE)
+        execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink  "${CMAKE_CURRENT_LIST_DIR}/CI/RunAllTests.sh" 
+                                                                    "${CMAKE_CURRENT_BINARY_DIR}/RunAllTests.sh")
+    endif()
+
 endif()
 
 

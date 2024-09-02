@@ -1,0 +1,71 @@
+format_version: 10
+pipelines:
+    runcpp2Artifacts:
+        group: runcpp2
+        label_template: ${COUNT}
+        lock_behavior: none
+        display_order: -1
+        materials:
+            runcpp2MainTrigger:
+                ignore_for_scheduling: false
+                pipeline: runcpp2MainTrigger
+                stage: TriggerStage
+            CppOverridePR_Trigger:
+                ignore_for_scheduling: false
+                pipeline: runcpp2PR_Trigger
+                stage: TriggerStage
+        stages:
+        -   CommonArtifactsStage:
+                fetch_materials: false
+                keep_artifacts: false
+                clean_workspace: true
+                approval:
+                    type: success
+                    allow_only_on_success: true
+                jobs:
+                    CommonArtifactsJob:
+                        timeout: 0
+                        resources:
+                        -   Ubuntu-22
+                        artifacts:
+                        -   build:
+                                source: runcpp2/*
+                                destination: runcpp2
+                        tasks:
+                        -   script: |-
+                                git clone https://github.com/Neko-Box-Coder/GoCD_CI_Scripts.git
+                                mv ./GoCD_CI_Scripts/*.sh ./
+                                mv ./GoCD_CI_Scripts/*.bat ./
+                        -   fetch:
+                                is_file: false
+                                source: runcpp2
+                                destination: runcpp2PR
+                                pipeline: runcpp2PR_Trigger
+                                stage: PopulateDetailsStage
+                                job: PopulateDetailsJob
+                                artifact_origin: gocd
+                        -   fetch:
+                                is_file: false
+                                source: runcpp2
+                                destination: runcpp2Main
+                                pipeline: runcpp2MainTrigger
+                                stage: PopulateDetailsStage
+                                job: PopulateDetailsJob
+                                artifact_origin: gocd
+                                run_if: any
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./ChooseLatestFolder.sh ./runcpp2PR/runcpp2
+                                    ./runcpp2Main/runcpp2 ./runcpp2
+                                command: sh
+                                run_if: any
+                        -   exec:
+                                arguments:
+                                -   -lah
+                                command: ls
+                        -   exec:
+                                arguments:
+                                -   -lah
+                                command: ls
+                                working_directory: runcpp2

@@ -1,0 +1,126 @@
+format_version: 10
+pipelines:
+    runcpp2PR_Trigger:
+        group: runcpp2
+        label_template: ${COUNT}
+        lock_behavior: none
+        display_order: -1
+        materials:
+            runcpp2_PR:
+                scm: 5099420a-fc10-4dd6-b46a-f67baf7dffd3
+        stages:
+        -   BootstrapStage:
+                fetch_materials: false
+                keep_artifacts: false
+                clean_workspace: false
+                approval:
+                    type: success
+                    allow_only_on_success: true
+                jobs:
+                    BootstrapJob:
+                        timeout: 0
+                        resources:
+                        -   Ubuntu-22
+                        tasks:
+                        -   exec:
+                                arguments:
+                                -   -lah
+                                command: ls
+        -   PopulateDetailsStage:
+                fetch_materials: true
+                keep_artifacts: false
+                clean_workspace: true
+                approval:
+                    type: manual
+                    allow_only_on_success: true
+                jobs:
+                    PopulateDetailsJob:
+                        timeout: 0
+                        resources:
+                        -   Ubuntu-22
+                        artifacts:
+                        -   build:
+                                source: "*"
+                                destination: runcpp2
+                        tasks:
+                        -   exec:
+                                command: ls
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   git submodule update --init --recursive
+                                command: sh
+                        -   script: |-
+                                git clone https://github.com/Neko-Box-Coder/GoCD_CI_Scripts.git
+                                mv ./GoCD_CI_Scripts/*.sh ./
+                                mv ./GoCD_CI_Scripts/*.bat ./
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   echo $GO_SCM_RUNCPP2_PR_PR_BRANCH > ./.github_pr_branch
+                                command: sh
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   echo $GO_SCM_RUNCPP2_PR_TARGET_BRANCH > ./.github_target_branch
+                                command: sh
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   echo $(git rev-parse --verify HEAD) > ./.githash
+                                command: sh
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   echo $(date +"%Y%m%d%H%M%S") > .pipeline_start_time
+                                command: sh
+                        -   script: |-
+                                IFS=":" read SPLIT_1 SPLIT_2 SPLIT_EXCESS <<< $(cat ./.github_pr_branch)
+                                echo $SPLIT_1 > ./.repo_owner
+                                echo runcpp2 > ./.repo_name
+                        -   exec:
+                                arguments:
+                                -   -lah
+                                command: ls
+        -   TriggerStage:
+                fetch_materials: false
+                keep_artifacts: false
+                clean_workspace: true
+                approval:
+                    type: success
+                    allow_only_on_success: true
+                jobs:
+                    TriggerJob:
+                        timeout: 0
+                        environment_variables:
+                            CI_GITHUB_PAT: "{{SECRET:[SECRET_CONFIG][CI_GITHUB_PAT]}}"
+                        resources:
+                        -   Ubuntu-22
+                        tasks:
+                        -   fetch:
+                                is_file: false
+                                source: runcpp2
+                                destination: ""
+                                pipeline: runcpp2PR_Trigger
+                                stage: PopulateDetailsStage
+                                job: PopulateDetailsJob
+                                artifact_origin: gocd
+                        -   exec:
+                                arguments:
+                                -   -lah
+                                command: ls
+                                working_directory: runcpp2
+                        -   exec:
+                                arguments:
+                                -   +x
+                                -   ./SendGithubStatus.sh
+                                command: chmod
+                                working_directory: runcpp2
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./SendGithubStatus.sh "$CI_GITHUB_PAT" "success"
+                                    "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
+                                    "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
+                                command: sh
+                                working_directory: runcpp2

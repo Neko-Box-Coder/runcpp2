@@ -1,0 +1,346 @@
+format_version: 10
+pipelines:
+    runcpp2Main:
+        group: runcpp2
+        label_template: ${COUNT}
+        lock_behavior: none
+        display_order: -1
+        environment_variables:
+            CI_GITHUB_PAT: "{{SECRET:[SECRET_CONFIG][CI_GITHUB_PAT]}}"
+        materials:
+            runcpp2Artifacts:
+                ignore_for_scheduling: false
+                pipeline: runcpp2Artifacts
+                stage: CommonArtifactsStage
+        stages:
+        -   BuildStage:
+                fetch_materials: false
+                keep_artifacts: false
+                clean_workspace: true
+                approval:
+                    type: success
+                    allow_only_on_success: false
+                jobs:
+                    LinuxBuildJob:
+                        timeout: 0
+                        resources:
+                        -   Ubuntu-22
+                        artifacts:
+                        -   build:
+                                source: runcpp2/*
+                                destination: runcpp2LinuxBuild
+                        tasks:
+                        -   fetch:
+                                is_file: false
+                                source: runcpp2
+                                destination: ""
+                                pipeline: runcpp2Artifacts
+                                stage: CommonArtifactsStage
+                                job: CommonArtifactsJob
+                                artifact_origin: gocd
+                        -   exec:
+                                arguments:
+                                -   -lah
+                                command: ls
+                        -   exec:
+                                arguments:
+                                -   -lah
+                                command: ls
+                                working_directory: runcpp2
+                        -   exec:
+                                arguments:
+                                -   +x
+                                -   ./SendGithubStatus.sh
+                                command: chmod
+                                working_directory: runcpp2
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./SendGithubStatus.sh "$CI_GITHUB_PAT" "pending"
+                                    "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
+                                    "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
+                                command: sh
+                                working_directory: runcpp2
+                        -   exec:
+                                arguments:
+                                -   -p
+                                -   ./Build
+                                command: mkdir
+                                working_directory: runcpp2
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   cmake .. -DRUNCPP2_BUILD_TESTS=ON 
+                                command: sh
+                                working_directory: runcpp2/Build
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   cmake --build . -j 16
+                                command: sh
+                                working_directory: runcpp2/Build
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./SendGithubStatus.sh "$CI_GITHUB_PAT" "success" 
+                                    "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
+                                    "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
+                                command: sh
+                                working_directory: runcpp2
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./SendGithubStatus.sh "$CI_GITHUB_PAT" "failure"
+                                    "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
+                                    "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
+                                command: sh
+                                working_directory: runcpp2
+                                run_if: failed
+                    WindowsBuildJob:
+                        timeout: 0
+                        resources:
+                        -   Windows-10
+                        artifacts:
+                        -   build:
+                                source: runcpp2/*
+                                destination: runcpp2WindowsBuild
+                        tasks:
+                        -   fetch:
+                                is_file: false
+                                source: runcpp2
+                                destination: ""
+                                pipeline: runcpp2Artifacts
+                                stage: CommonArtifactsStage
+                                job: CommonArtifactsJob
+                                artifact_origin: gocd
+                        -   exec:
+                                command: dir
+                                working_directory: runcpp2
+                        -   exec:
+                                command: dir
+                                working_directory: runcpp2/Tests
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   .\SendGithubStatus.bat "%CI_GITHUB_PAT%" "pending"
+                                    "%GO_PIPELINE_NAME%" "%GO_PIPELINE_COUNTER%" "%GO_STAGE_NAME%"
+                                    "%GO_STAGE_COUNTER%" "%GO_JOB_NAME%"
+                                command: cmd
+                                working_directory: runcpp2
+                        -   exec:
+                                arguments:
+                                -   Build
+                                command: mkdir
+                                working_directory: runcpp2
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   cmake .. -DRUNCPP2_BUILD_TESTS=ON
+                                command: cmd
+                                working_directory: runcpp2\Build
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   cmake --build . -j 16
+                                command: cmd
+                                working_directory: runcpp2\Build
+                        -   exec:
+                                command: dir
+                                working_directory: runcpp2\Build
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   .\SendGithubStatus.bat "%CI_GITHUB_PAT%" "success"
+                                    "%GO_PIPELINE_NAME%" "%GO_PIPELINE_COUNTER%" "%GO_STAGE_NAME%"
+                                    "%GO_STAGE_COUNTER%" "%GO_JOB_NAME%"
+                                command: cmd
+                                working_directory: runcpp2
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   .\SendGithubStatus "%CI_GITHUB_PAT%" "failure" "%GO_PIPELINE_NAME%"
+                                        "%GO_PIPELINE_COUNTER%" "%GO_STAGE_NAME%" "%GO_STAGE_COUNTER%" "%GO_JOB_NAME%"
+                                command: cmd
+                                working_directory: runcpp2
+                                run_if: failed
+        -   TestStage:
+                fetch_materials: false
+                keep_artifacts: false
+                clean_workspace: true
+                approval:
+                    type: success
+                    allow_only_on_success: true
+                jobs:
+                    LinuxTestJob:
+                        timeout: 0
+                        resources:
+                        -   Ubuntu-22
+                        tasks:
+                        -   fetch:
+                                is_file: false
+                                source: runcpp2LinuxBuild
+                                destination: ""
+                                pipeline: runcpp2Main
+                                stage: BuildStage
+                                job: LinuxBuildJob
+                                artifact_origin: gocd
+                        -   exec:
+                                arguments:
+                                -   +x
+                                -   ./SendGithubStatus.sh
+                                command: chmod
+                                working_directory: runcpp2LinuxBuild
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./SendGithubStatus.sh "$CI_GITHUB_PAT" "pending"
+                                    "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
+                                    "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
+                                command: sh
+                                working_directory: runcpp2LinuxBuild
+                        -   exec:
+                                arguments:
+                                -   +x
+                                -   ./RunAllTests.sh
+                                command: chmod
+                                working_directory: runcpp2LinuxBuild/Build
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./RunAllTests.sh
+                                command: sh
+                                working_directory: runcpp2LinuxBuild/Build
+                        # -   exec:
+                        #         arguments:
+                        #         -   +x
+                        #         -   ./runcpp2Example
+                        #         command: chmod
+                        #         working_directory: runcpp2LinuxBuild/Build
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./runcpp2Example
+                                command: sh
+                                working_directory: runcpp2LinuxBuild/Build
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./SendGithubStatus.sh "$CI_GITHUB_PAT" "success"
+                                    "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
+                                    "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
+                                command: sh
+                                working_directory: runcpp2LinuxBuild
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./SendGithubStatus.sh "$CI_GITHUB_PAT" "failure"
+                                    "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
+                                    "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
+                                command: sh
+                                working_directory: runcpp2LinuxBuild
+                                run_if: failed
+                    WindowsTestJob:
+                        timeout: 0
+                        resources:
+                        -   Windows-10
+                        tasks:
+                        -   fetch:
+                                is_file: false
+                                source: runcpp2WindowsBuild
+                                destination: ""
+                                pipeline: runcpp2Main
+                                stage: BuildStage
+                                job: WindowsBuildJob
+                                artifact_origin: gocd
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   .\SendGithubStatus.bat "%CI_GITHUB_PAT%" "pending"
+                                    "%GO_PIPELINE_NAME%" "%GO_PIPELINE_COUNTER%" "%GO_STAGE_NAME%"
+                                    "%GO_STAGE_COUNTER%" "%GO_JOB_NAME%"
+                                command: cmd
+                                working_directory: runcpp2WindowsBuild
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   .\RunAllTests.bat -d
+                                command: cmd
+                                working_directory: runcpp2WindowsBuild\Build
+                        # -   exec:
+                        #         arguments:
+                        #         -   /s
+                        #         -   /v
+                        #         -   /c
+                        #         -   .\runcpp2Example.exe
+                        #         command: cmd
+                        #         working_directory: runcpp2WindowsBuild\Build\Debug
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   .\SendGithubStatus.bat "%CI_GITHUB_PAT%" "success"
+                                    "%GO_PIPELINE_NAME%" "%GO_PIPELINE_COUNTER%" "%GO_STAGE_NAME%"
+                                    "%GO_STAGE_COUNTER%" "%GO_JOB_NAME%"
+                                command: cmd
+                                working_directory: runcpp2WindowsBuild
+                        -   exec:
+                                arguments:
+                                -   /s
+                                -   /v
+                                -   /c
+                                -   .\SendGithubStatus "%CI_GITHUB_PAT%" "failure"
+                                    "%GO_PIPELINE_NAME%" "%GO_PIPELINE_COUNTER%" "%GO_STAGE_NAME%"
+                                    "%GO_STAGE_COUNTER%" "%GO_JOB_NAME%"
+                                command: cmd
+                                working_directory: runcpp2WindowsBuild
+                                run_if: failed
+        -   FinishStage:
+                fetch_materials: false
+                keep_artifacts: false
+                clean_workspace: true
+                approval:
+                    type: success
+                    allow_only_on_success: true
+                jobs:
+                    FinishJob:
+                        timeout: 0
+                        resources:
+                        -   Ubuntu-22
+                        tasks:
+                        -   fetch:
+                                is_file: false
+                                source: runcpp2
+                                destination: ""
+                                pipeline: runcpp2Artifacts
+                                stage: CommonArtifactsStage
+                                job: CommonArtifactsJob
+                                artifact_origin: gocd
+                        -   exec:
+                                arguments:
+                                -   +x
+                                -   ./SendGithubStatus.sh
+                                command: chmod
+                                working_directory: runcpp2
+                        -   exec:
+                                arguments:
+                                -   -c
+                                -   ./SendGithubStatus.sh "$CI_GITHUB_PAT" "success"
+                                    "$GO_PIPELINE_NAME" "$GO_PIPELINE_COUNTER" "$GO_STAGE_NAME"
+                                    "$GO_STAGE_COUNTER" "$GO_JOB_NAME"
+                                command: sh
+                                working_directory: runcpp2
