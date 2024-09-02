@@ -3,11 +3,15 @@
 
 #include "runcpp2/Data/Profile.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
+
+#include "ghc/filesystem.hpp"
+
 #include <string>
 
 namespace runcpp2 
 {
-    bool CompileAndLinkScript(  const std::string& scriptPath, 
+    bool CompileAndLinkScript(  const ghc::filesystem::path& buildDir,
+                                const std::string& scriptPath, 
                                 const Data::ScriptInfo& scriptInfo,
                                 const std::vector<Data::DependencyInfo*>& availableDependencies,
                                 const Data::Profile& profile,

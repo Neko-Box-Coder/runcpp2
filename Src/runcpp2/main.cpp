@@ -4,6 +4,7 @@
 
 #include "ssLogger/ssLog.hpp"
 
+//TODO: Merge long and short options into a single structure
 int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& longOptionsMap,
                 const std::unordered_map<std::string, const runcpp2::OptionInfo&>& shortOptionsMap,
                 std::unordered_map<runcpp2::CmdOptions, std::string>& outOptions,
@@ -87,6 +88,7 @@ int main(int argc, char* argv[])
     //std::unordered_set<runcpp2::CmdOptions> currentOptions;
 
     {
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 7, "Update this");
         std::unordered_map<std::string, runcpp2::OptionInfo> longOptionsMap =
         {
             {
@@ -108,9 +110,14 @@ int main(int argc, char* argv[])
             {
                 "--remove-dependencies", 
                 runcpp2::OptionInfo(runcpp2::CmdOptions::REMOVE_DEPENDENCIES, false)
+            },
+            {
+                "--local",
+                runcpp2::OptionInfo(runcpp2::CmdOptions::LOCAL, false)
             }
         };
         
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 7, "Update this");
         std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
         {
             {"-r", longOptionsMap.at("--reset-cache")},
@@ -118,6 +125,7 @@ int main(int argc, char* argv[])
             {"-e", longOptionsMap.at("--executable")},
             {"-h", longOptionsMap.at("--help")},
             {"-d", longOptionsMap.at("--remove-dependencies")},
+            {"-l", longOptionsMap.at("--local")}
         };
         
         currentArgIndex = ParseArgs(longOptionsMap, shortOptionsMap, currentOptions, argc, argv);
@@ -134,6 +142,7 @@ int main(int argc, char* argv[])
     //Help message
     if(currentOptions.count(runcpp2::CmdOptions::HELP))
     {
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 7, "Update this");
         ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
         ssLOG_BASE("Options:");
         ssLOG_BASE("    -r, --[r]eset-cache                 Deletes all cache and build everything from scratch");
@@ -141,6 +150,7 @@ int main(int argc, char* argv[])
         ssLOG_BASE("    -e, --[e]xecutable                  Runs as executable instead of shared library");
         ssLOG_BASE("    -h, --[h]elp                        Show this help message");
         ssLOG_BASE("    -d, --remove-[d]ependencies         Remove dependencies listed in the script");
+        ssLOG_BASE("    -l, --[l]ocal                       Build the script and dependencies locally");
         
         return 0;
     }

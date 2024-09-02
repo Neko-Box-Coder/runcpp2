@@ -8,7 +8,7 @@ namespace
     bool PopulateLocalDependencies( const std::vector<runcpp2::Data::DependencyInfo*>& dependencies,
                                     const std::vector<std::string>& dependenciesCopiesPaths,
                                     const std::vector<std::string>& dependenciesSourcesPaths,
-                                    const std::string runcpp2ScriptDir,
+                                    const ghc::filesystem::path& buildDir,
                                     std::vector<bool>& outPrePopulated)
     {
         std::error_code _;
@@ -32,18 +32,18 @@ namespace
                 {
                     case runcpp2::Data::DependencySourceType::GIT:
                     {
-                        std::string processedRuncpp2ScriptDir = runcpp2::ProcessPath(runcpp2ScriptDir);
-                        std::string gitCloneCommand = "git clone " + dependencies.at(i)->Source.Value;
+                        std::string gitCloneCommand = 
+                            "git clone " + dependencies.at(i)->Source.Value;
                         
                         ssLOG_INFO( "Running git clone command: " << gitCloneCommand << " in " << 
-                                    processedRuncpp2ScriptDir);
+                                    buildDir.string());
                         
                         int returnCode = 0;
                         std::string output;
                         if(!runcpp2::RunCommandAndGetOutput(gitCloneCommand, 
                                                             output, 
                                                             returnCode,
-                                                            processedRuncpp2ScriptDir))
+                                                            buildDir.string()))
                         {
                             ssLOG_ERROR("Failed to run git clone with result: " << returnCode);
                             ssLOG_ERROR("Output: " << output);
@@ -258,12 +258,12 @@ namespace
 bool runcpp2::GetDependenciesPaths( const std::vector<Data::DependencyInfo*>& availableDependencies,
                                     std::vector<std::string>& outCopiesPaths,
                                     std::vector<std::string>& outSourcesPaths,
-                                    const std::string& scriptPath)
+                                    const ghc::filesystem::path& scriptPath,
+                                    const ghc::filesystem::path& buildDir)
 {
     ssLOG_FUNC_DEBUG();
 
-    std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
-    std::string runcpp2ScriptDir = scriptDirectory + "/.runcpp2";
+    ghc::filesystem::path scriptDirectory = scriptPath.parent_path();
     
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
@@ -296,7 +296,7 @@ bool runcpp2::GetDependenciesPaths( const std::vector<Data::DependencyInfo*>& av
                                                     (std::string(".git").size() - 1) -
                                                     lastSlashFoundIndex);
                     
-                    outCopiesPaths.push_back(runcpp2ScriptDir + "/" + gitRepoName);
+                    outCopiesPaths.push_back(buildDir / gitRepoName);
                     outSourcesPaths.push_back("");
                 }
                 break;
@@ -311,10 +311,10 @@ bool runcpp2::GetDependenciesPaths( const std::vector<Data::DependencyInfo*>& av
                     curPath.pop_back();
                 
                 localDepDirectoryName = ghc::filesystem::path(curPath).filename().string();
-                outCopiesPaths.push_back(runcpp2ScriptDir + "/" + localDepDirectoryName);
+                outCopiesPaths.push_back(buildDir / localDepDirectoryName);
                 
                 if(ghc::filesystem::path(curPath).is_relative())
-                    outSourcesPaths.push_back(scriptDirectory + "/" + currentSource.Value);
+                    outSourcesPaths.push_back(scriptDirectory / currentSource.Value);
                 else
                     outSourcesPaths.push_back(currentSource.Value);
                 
@@ -346,7 +346,6 @@ bool runcpp2::IsDependencyAvailableForThisPlatform(const Data::DependencyInfo& d
 }
 
 bool runcpp2::CleanupDependencies(  const runcpp2::Data::Profile& profile,
-                                    const std::string& scriptPath, 
                                     const Data::ScriptInfo& scriptInfo,
                                     const std::vector<Data::DependencyInfo*>& availableDependencies,
                                     const std::vector<std::string>& dependenciesLocalCopiesPaths)
@@ -357,10 +356,7 @@ bool runcpp2::CleanupDependencies(  const runcpp2::Data::Profile& profile,
     if(!scriptInfo.Populated)
         return true;
 
-    const std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
-    const std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
-    const std::string runcpp2ScriptDir = scriptDirectory + "/.runcpp2";
-    
+    assert(availableDependencies.size() == dependenciesLocalCopiesPaths.size());
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
         std::error_code e;
@@ -390,7 +386,7 @@ bool runcpp2::CleanupDependencies(  const runcpp2::Data::Profile& profile,
 }
 
 bool runcpp2::SetupDependencies(const runcpp2::Data::Profile& profile,
-                                const std::string& scriptPath, 
+                                const ghc::filesystem::path& buildDir,
                                 const Data::ScriptInfo& scriptInfo,
                                 std::vector<Data::DependencyInfo*>& availableDependencies,
                                 const std::vector<std::string>& dependenciesLocalCopiesPaths,
@@ -402,16 +398,13 @@ bool runcpp2::SetupDependencies(const runcpp2::Data::Profile& profile,
     if(!scriptInfo.Populated)
         return true;
 
-    const std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
-    const std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
-    const std::string runcpp2ScriptDir = scriptDirectory + "/.runcpp2";
     std::vector<bool> prePolulatedDependencies;
     
     //Clone/copy the dependencies if needed
     if(!PopulateLocalDependencies(  availableDependencies, 
                                     dependenciesLocalCopiesPaths, 
                                     dependenciesSourcePaths, 
-                                    runcpp2ScriptDir,
+                                    buildDir,
                                     prePolulatedDependencies))
     {
         return false;
@@ -447,7 +440,6 @@ bool runcpp2::SetupDependencies(const runcpp2::Data::Profile& profile,
 }
 
 bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
-                                const std::string& scriptPath, 
                                 const Data::ScriptInfo& scriptInfo,
                                 const std::vector<Data::DependencyInfo*>& availableDependencies,
                                 const std::vector<std::string>& dependenciesLocalCopiesPaths)
@@ -458,10 +450,6 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
     if(!scriptInfo.Populated)
         return true;
 
-    const std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
-    const std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
-    const std::string runcpp2ScriptDir = scriptDirectory + "/.runcpp2";
-    
     //Run build steps
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
@@ -480,31 +468,26 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
     return true;
 }
 
-bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath, 
-                                        const std::vector<Data::DependencyInfo*>& availableDependencies,
+bool runcpp2::CopyDependenciesBinaries( const ghc::filesystem::path& buildDir,
+                                        const std::vector<Data::DependencyInfo*>& 
+                                            availableDependencies,
                                         const std::vector<std::string>& dependenciesCopiesPaths,
                                         const Data::Profile& profile,
                                         std::vector<std::string>& outCopiedBinariesPaths)
 {
-    std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
-    std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
-    std::string runcpp2ScriptDir = scriptDirectory + "/.runcpp2";
     std::vector<std::string> platformNames = GetPlatformNames();
     
     int minimumDependenciesCopiesCount = 0;
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
         if(availableDependencies.at(i)->LibraryType != runcpp2::Data::DependencyLibraryType::HEADER)
-        {
             ++minimumDependenciesCopiesCount;
-        }
     }
 
     if(minimumDependenciesCopiesCount > dependenciesCopiesPaths.size())
     {
         ssLOG_ERROR("The amount of available dependencies do not match" <<
                     " the amount of dependencies copies paths");
-        
         return false;
     }
     
@@ -538,9 +521,8 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
             return true;
         
         //Get the Search path and search library name
-        const std::unordered_map<   ProfileName, 
-                                    Data::DependencyLinkProperty>& linkProperties = 
-            availableDependencies.at(i)->LinkProperties;
+        using PropertyMap = std::unordered_map<ProfileName, Data::DependencyLinkProperty>;
+        const PropertyMap& linkProperties = availableDependencies.at(i)->LinkProperties;
         
         //See if we can find the link properties with the profile name
         std::vector<std::string> currentProfileNames;
@@ -634,7 +616,7 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                     if(!extensionMatched)
                         continue;
                     
-                    std::string copiedPath = runcpp2ScriptDir + "/" + it.path().filename().string();
+                    ghc::filesystem::path copiedPath = buildDir / it.path().filename();
                     
                     //Check if we have previously copied the dependencies to the folder
                     if(ghc::filesystem::exists(copiedPath, e))
@@ -654,7 +636,7 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                         
                         if(e)
                         {
-                            ssLOG_ERROR("Failed to get write time of " << copiedPath);
+                            ssLOG_ERROR("Failed to get write time of " << copiedPath.string());
                             ssLOG_ERROR("Error: " << e.message());
                             return false;
                         }
@@ -663,26 +645,25 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                         //  the copy is up to date
                         if(builtWriteTime <= copiedWriteTime)
                         {
-                            ssLOG_INFO(copiedPath << " is up to date");
-                            copiedPath = runcpp2::ProcessPath(copiedPath);
-                            outCopiedBinariesPaths.push_back(copiedPath);
+                            ssLOG_INFO(copiedPath.string() << " is up to date");
+                            outCopiedBinariesPaths.push_back(runcpp2::ProcessPath(copiedPath));
                             continue;
                         }
                         else
-                            ssLOG_INFO(copiedPath << " is outdated");
+                            ssLOG_INFO(copiedPath.string() << " is outdated");
                     }
                     
                     //Copy the dependency binary to our folder
                     std::error_code copyErrorCode;
                     ghc::filesystem::copy(  it.path(), 
-                                            runcpp2ScriptDir, 
+                                            buildDir, 
                                             ghc::filesystem::copy_options::overwrite_existing,  
                                             copyErrorCode);
                     
                     if(copyErrorCode)
                     {
                         ssLOG_ERROR("Failed to copy file from " << it.path().string() << 
-                                    " to " << runcpp2ScriptDir);
+                                    " to " << buildDir.string());
 
                         ssLOG_ERROR("Error: " << copyErrorCode.message());
                         return false;
@@ -690,9 +671,8 @@ bool runcpp2::CopyDependenciesBinaries( const std::string& scriptPath,
                     
                     
                     ssLOG_INFO("Copied from " << it.path().string());
-                    ssLOG_INFO("Copied to " << copiedPath);
-                    copiedPath = runcpp2::ProcessPath(copiedPath);
-                    outCopiedBinariesPaths.push_back(copiedPath);
+                    ssLOG_INFO("Copied to " << copiedPath.string());
+                    outCopiedBinariesPaths.push_back(runcpp2::ProcessPath(copiedPath));
                 }
             }
         }
