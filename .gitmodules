@@ -19,3 +19,9 @@
 [submodule "dylib"]
 	path = External/dylib
 	url = https://github.com/martin-olivier/dylib.git
+[submodule "ssTest"]
+	path = External/ssTest
+	url = https://github.com/Neko-Box-Coder/ssTest.git
+[submodule "CppOverride"]
+	path = External/CppOverride
+	url = https://github.com/Neko-Box-Coder/CppOverride.git

@@ -8,6 +8,7 @@ project(runcpp2)
 set(CMAKE_CXX_STANDARD 11)
 
 option(RUNCPP2_UPDATE_DEFAULT_YAMLS "Update default yaml files" OFF)
+option(RUNCPP2_BUILD_TESTS "Build runcpp2 tests" OFF)
 
 # =========================================================================
 # External Dependencies
@@ -24,6 +25,13 @@ add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/dylib")
 # Copy cfgpath.h
 configure_file( "${CMAKE_CURRENT_LIST_DIR}/External/cfgpath/cfgpath.h" 
                 "${CMAKE_CURRENT_LIST_DIR}/Include/cfgpath.h" COPYONLY)
+
+
+
+if(RUNCPP2_BUILD_TESTS)
+    add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/ssTest")
+endif()
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/CppOverride")
 
 
 # =========================================================================
