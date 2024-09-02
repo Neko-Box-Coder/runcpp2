@@ -78,7 +78,8 @@ namespace
         runcpp2::TrimRight(inOutFlags);
     }
     
-    bool CompileScript( const std::string& scriptPath, 
+    bool CompileScript( const ghc::filesystem::path& buildDir,
+                        const std::string& scriptPath, 
                         const runcpp2::Data::ScriptInfo& scriptInfo,
                         const std::vector<runcpp2::Data::DependencyInfo*>& availableDependencies,
                         const runcpp2::Data::Profile& profile,
@@ -122,10 +123,10 @@ namespace
             }
         }
         
+        //TODO: Maybe do ProcessPath on all the .string()?
         std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
         std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
         std::string scriptExt = ghc::filesystem::path(scriptPath).extension().string();
-        std::string runcpp2ScriptDir = runcpp2::ProcessPath(scriptDirectory + "/.runcpp2");
         //Input File
         {
             substitutionMap["{InputFileName}"] = {scriptName};
@@ -142,11 +143,11 @@ namespace
                 ssLOG_WARNING("Object file extension is empty");
             
             const std::string outputFilePath = 
-                runcpp2::ProcessPath(runcpp2ScriptDir + "/" + scriptName + objectFileExt);
+                runcpp2::ProcessPath( (buildDir / scriptName).concat(objectFileExt).string() );
             
             substitutionMap["{OutputFileName}"] = {scriptName};
             substitutionMap["{OutputFileExtension}"] = {objectFileExt};
-            substitutionMap["{OutputFileDirectory}"] = {runcpp2ScriptDir};
+            substitutionMap["{OutputFileDirectory}"] = {runcpp2::ProcessPath(buildDir.string())};
             substitutionMap["{OutputFilePath}"] = {outputFilePath};
             outScriptObjectFilePath = outputFilePath;
         }
@@ -177,7 +178,7 @@ namespace
                 if( !runcpp2::RunCommandAndGetOutput(   setupStep, 
                                                         setupOutput, 
                                                         setupResult,
-                                                        runcpp2ScriptDir) || 
+                                                        buildDir.string()) || 
                     setupResult != 0)
                 {
                     ssLOG_ERROR("Setup command \"" << setupStep << "\" failed");
@@ -205,14 +206,14 @@ namespace
                     compileCommand = runPartSubstitutedCommand;
                 
                 ssLOG_INFO( "running compile command: " << compileCommand <<
-                             " in " << runcpp2ScriptDir);
+                             " in " << buildDir.string());
                 
                 std::string commandOutput;
                 int resultCode = 0;
                 if( !runcpp2::RunCommandAndGetOutput(   compileCommand, 
                                                         commandOutput, 
                                                         resultCode,
-                                                        runcpp2ScriptDir) || 
+                                                        buildDir.string()) || 
                     resultCode != 0)
                 {
                     ssLOG_ERROR("Compile command failed with result " << resultCode);
@@ -241,7 +242,7 @@ namespace
                 if( !runcpp2::RunCommandAndGetOutput(   cleanupStep, 
                                                         cleanupOutput, 
                                                         cleanupResult,
-                                                        runcpp2ScriptDir) || 
+                                                        buildDir.string()) || 
                     cleanupResult != 0)
                 {
                     ssLOG_ERROR("Cleanup command \"" << cleanupStep << "\" failed");
@@ -255,7 +256,8 @@ namespace
         return true;
     }
 
-    bool LinkScript(const std::string& scriptPath, 
+    bool LinkScript(const ghc::filesystem::path& buildDir,
+                    const std::string& scriptPath, 
                     const runcpp2::Data::ScriptInfo& scriptInfo,
                     const std::vector<runcpp2::Data::DependencyInfo*>& availableDependencies,
                     const runcpp2::Data::Profile& profile,
@@ -318,30 +320,32 @@ namespace
             substitutionMap["{LinkFlags}"] = {linkFlags};
         }
         
-        std::string runcpp2ScriptDir;
         //Output File
         {
             const std::string scriptName = ghc::filesystem::path(scriptPath).stem().string();
             const std::string sharedLibPrefix =
                 *runcpp2::GetValueFromPlatformMap(profile.FilesTypes.SharedLinkFile.Prefix);
             const std::string sharedLibExtension =
-                    *runcpp2::GetValueFromPlatformMap(profile.FilesTypes.SharedLibraryFile.Extension);
+                    *runcpp2::GetValueFromPlatformMap(profile   .FilesTypes
+                                                                .SharedLibraryFile
+                                                                .Extension);
+            
             const std::string scriptDirectory = 
                 ghc::filesystem::path(scriptPath).parent_path().string();
             
-            runcpp2ScriptDir = runcpp2::ProcessPath(scriptDirectory + "/.runcpp2");
+            
             std::string outputFile =    linkAsExecutable ?
                                         scriptName + exeExt :
                                         sharedLibPrefix + scriptName + sharedLibExtension;
             
-            outputFile = runcpp2::ProcessPath(runcpp2ScriptDir + "/" + outputFile);
+            outputFile = runcpp2::ProcessPath( (buildDir / outputFile).string() );
         
             substitutionMap["{OutputFileName}"] = {scriptName};
             substitutionMap["{OutputFileExtension}"] = 
             {
                 (linkAsExecutable ? exeExt : sharedLibExtension)
             };
-            substitutionMap["{OutputFileDirectory}"] = {runcpp2ScriptDir};
+            substitutionMap["{OutputFileDirectory}"] = {buildDir.string()};
             substitutionMap["{OutputFilePath}"] = {outputFile};
         }
         //Link Files
@@ -448,7 +452,8 @@ namespace
                         substitutionMap["{LinkStaticFileName}"].push_back(depLinkName);
                         substitutionMap["{LinkStaticFileExt}"].push_back(depLinkExt);
                         substitutionMap["{LinkStaticFileDirectory}"].push_back(depLinkDirectory);
-                        substitutionMap["{LinkStaticFilePath}"].push_back(copiedDependenciesBinariesPaths.at(i));
+                        substitutionMap ["{LinkStaticFilePath}"]
+                                        .push_back(copiedDependenciesBinariesPaths.at(i));
                         break;
                     }
                     case Data::DependencyLibraryType::SHARED:
@@ -456,7 +461,8 @@ namespace
                         substitutionMap["{LinkSharedFileName}"].push_back(depLinkName);
                         substitutionMap["{LinkSharedFileExt}"].push_back(depLinkExt);
                         substitutionMap["{LinkSharedFileDirectory}"].push_back(depLinkDirectory);
-                        substitutionMap["{LinkSharedFilePath}"].push_back(copiedDependenciesBinariesPaths.at(i));
+                        substitutionMap ["{LinkSharedFilePath}"]
+                                        .push_back(copiedDependenciesBinariesPaths.at(i));
                         break;
                     }
                     case Data::DependencyLibraryType::OBJECT:
@@ -464,7 +470,8 @@ namespace
                         substitutionMap["{LinkObjectFileName}"].push_back(depLinkName);
                         substitutionMap["{LinkObjectFileExt}"].push_back(depLinkExt);
                         substitutionMap["{LinkObjectFileDirectory}"].push_back(depLinkDirectory);
-                        substitutionMap["{LinkObjectFilePath}"].push_back(copiedDependenciesBinariesPaths.at(i));
+                        substitutionMap ["{LinkObjectFilePath}"]
+                                        .push_back(copiedDependenciesBinariesPaths.at(i));
                         break;
                     }
                     case Data::DependencyLibraryType::HEADER:
@@ -505,7 +512,7 @@ namespace
                 if( !runcpp2::RunCommandAndGetOutput(   setupStep, 
                                                         setupOutput, 
                                                         setupResult,
-                                                        runcpp2ScriptDir) || 
+                                                        buildDir.string()) || 
                     setupResult != 0)
                 {
                     ssLOG_ERROR("Setup command \"" << setupStep << "\" failed");
@@ -533,13 +540,13 @@ namespace
                 else
                     linkCommand = runPartSubstitutedCommand;
                 
-                ssLOG_INFO("running link command: " << linkCommand << " in " << runcpp2ScriptDir);
+                ssLOG_INFO("running link command: " << linkCommand << " in " << buildDir.string());
                 std::string linkOutput;
                 int resultCode = 0;
                 if( !runcpp2::RunCommandAndGetOutput(   linkCommand, 
                                                         linkOutput, 
                                                         resultCode, 
-                                                        runcpp2ScriptDir) ||
+                                                        buildDir.string()) ||
                     resultCode != 0)
                 {
                     ssLOG_ERROR("Link command failed with result " << resultCode);
@@ -568,7 +575,7 @@ namespace
                 if( !runcpp2::RunCommandAndGetOutput(   cleanupStep, 
                                                         cleanupOutput, 
                                                         cleanupResult,
-                                                        runcpp2ScriptDir) || 
+                                                        buildDir.string()) || 
                     cleanupResult != 0)
                 {
                     ssLOG_ERROR("Cleanup command \"" << cleanupStep << "\" failed");
@@ -582,7 +589,7 @@ namespace
         return true;
     }
     
-    bool RunGlobalSteps(const std::string& scriptPath,
+    bool RunGlobalSteps(const ghc::filesystem::path& buildDir,
                         const std::unordered_map<   PlatformName, 
                                                     std::vector<std::string>>& platformSteps)
     {
@@ -595,9 +602,6 @@ namespace
             return true;
         }
         
-        std::string scriptDirectory = ghc::filesystem::path(scriptPath) .parent_path()
-                                                                        .string();
-        std::string runcpp2ScriptDir = runcpp2::ProcessPath(scriptDirectory + "/.runcpp2");
         const std::vector<std::string>& steps = *runcpp2::GetValueFromPlatformMap(platformSteps);
         
         for(int i = 0; i < steps.size(); ++i)
@@ -608,7 +612,7 @@ namespace
             if( !runcpp2::RunCommandAndGetOutput(   steps.at(i), 
                                                     commandOutput,
                                                     commandResult,
-                                                    runcpp2ScriptDir) ||
+                                                    buildDir.string()) ||
                 commandResult != 0)
             {
                 ssLOG_ERROR("Command \"" << steps.at(i) << "\" failed");
@@ -622,7 +626,8 @@ namespace
     }
 }
 
-bool runcpp2::CompileAndLinkScript( const std::string& scriptPath, 
+bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
+                                    const std::string& scriptPath, 
                                     const Data::ScriptInfo& scriptInfo,
                                     const std::vector<Data::DependencyInfo*>& availableDependencies,
                                     const Data::Profile& profile,
@@ -630,7 +635,7 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
                                     bool buildExecutable,
                                     const std::string exeExt)
 {
-    if(!RunGlobalSteps(scriptPath, profile.Setup))
+    if(!RunGlobalSteps(buildDir, profile.Setup))
     {
         ssLOG_ERROR("Failed to run profile global setup steps");
         return false;
@@ -638,7 +643,8 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
     
     std::string scriptObjectFilePath;
 
-    if(!CompileScript(  scriptPath, 
+    if(!CompileScript(  buildDir,
+                        scriptPath, 
                         scriptInfo, 
                         availableDependencies, 
                         profile, 
@@ -649,7 +655,8 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
         return false;
     }
     
-    if(!LinkScript( scriptPath, 
+    if(!LinkScript( buildDir,
+                    scriptPath, 
                     scriptInfo,
                     availableDependencies,
                     profile,
@@ -662,7 +669,7 @@ bool runcpp2::CompileAndLinkScript( const std::string& scriptPath,
         return false;
     }
     
-    if(!RunGlobalSteps(scriptPath, profile.Cleanup))
+    if(!RunGlobalSteps(buildDir, profile.Cleanup))
     {
         ssLOG_ERROR("Failed to run profile global cleanup steps");
         return false;

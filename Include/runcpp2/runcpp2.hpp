@@ -17,6 +17,7 @@ namespace runcpp2
         EXECUTABLE,
         HELP,
         REMOVE_DEPENDENCIES,
+        LOCAL,
         COUNT
     };
     

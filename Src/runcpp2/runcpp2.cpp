@@ -6,6 +6,7 @@
 #include "runcpp2/DependenciesHelper.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/PlatformUtil.hpp"
+#include "runcpp2/BuildsManager.hpp"
 #include "System2.h"
 #include "ssLogger/ssLog.hpp"
 #include "ghc/filesystem.hpp"
@@ -16,7 +17,8 @@
 
 namespace
 {
-    bool CreateRuncpp2ScriptDirectory(const std::string& scriptPath)
+    bool CreateLocalBuildDirectory( const std::string& scriptPath, 
+                                    ghc::filesystem::path& outBuildPath)
     {
         std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
         
@@ -33,11 +35,34 @@ namespace
             }
         }
         
+        //Using builds manager in local builds directory instead
+        {
+            runcpp2::BuildsManager buildsManager(runcpp2Dir);
+            if(!buildsManager.Initialize())
+            {
+                ssLOG_FATAL("Failed to initialize builds manager");
+                return false;
+            }
+            
+            bool writeMapping = false;
+            if(!buildsManager.HasBuildMapping(scriptPath))
+                writeMapping = true;
+            
+            if(buildsManager.GetBuildMapping(scriptPath, outBuildPath))
+            {
+                if(writeMapping && !buildsManager.SaveBuildsMappings())
+                {
+                    ssLOG_FATAL("Failed to save builds mappings");
+                    ssLOG_FATAL("Failed to create local build directory for: " << 
+                                scriptPath);
+                    return false;
+                }
+            }
+        }
         return true;
     }
 
-    bool RunCompiledScript( const std::string& executable,
-                            const std::string& scriptDirectory,
+    bool RunCompiledScript( const ghc::filesystem::path& executable,
                             const std::string& scriptPath,
                             const std::vector<std::string>& runArgs)
     {
@@ -46,7 +71,6 @@ namespace
         
         std::error_code _;
         std::string interpretedRunPath = runcpp2::ProcessPath(scriptPath);
-        std::string processedScriptDir = runcpp2::ProcessPath(scriptDirectory);
         std::vector<const char*> args = { interpretedRunPath.c_str() };
         
         if(!runArgs.empty())
@@ -57,7 +81,6 @@ namespace
         
         //TODO: Don't redirect output
         System2CommandInfo runCommandInfo = {};
-        runCommandInfo.RunDirectory = processedScriptDir.c_str();
         runCommandInfo.RedirectOutput = true;
         
         SYSTEM2_RESULT result = System2RunSubprocess(   executable.c_str(),
@@ -65,8 +88,7 @@ namespace
                                                         args.size(),
                                                         &runCommandInfo);
         
-        ssLOG_INFO("Running: " << executable);
-        ssLOG_INFO("At: " << processedScriptDir);
+        ssLOG_INFO("Running: " << executable.string());
         for(int i = 0; i < runArgs.size(); ++i)
             ssLOG_INFO("-   " << runArgs[i]);
         
@@ -137,9 +159,8 @@ namespace
         INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
     }
     
-    int RunCompiledSharedLib(   const std::string& scriptDirectory,
-                                const std::string& scriptPath,
-                                const std::string& compiledSharedLibPath,
+    int RunCompiledSharedLib(   const std::string& scriptPath,
+                                const ghc::filesystem::path& compiledSharedLibPath,
                                 const std::vector<std::string>& runArgs)
     {
         INTERNAL_RUNCPP2_SAFE_START();
@@ -148,7 +169,7 @@ namespace
         std::error_code _;
         if(!ghc::filesystem::exists(compiledSharedLibPath, _))
         {
-            ssLOG_ERROR("Failed to find shared library: " << compiledSharedLibPath);
+            ssLOG_ERROR("Failed to find shared library: " << compiledSharedLibPath.string());
             return -1;
         }
         
@@ -157,12 +178,12 @@ namespace
         
         try
         {
-             sharedLib = std::unique_ptr<dylib>(new dylib(  compiledSharedLibPath, 
+             sharedLib = std::unique_ptr<dylib>(new dylib(  compiledSharedLibPath.string(), 
                                                             dylib::no_filename_decorations));
         }
         catch(std::exception& e)
         {
-            ssLOG_ERROR("Failed to load shared library " << compiledSharedLibPath << 
+            ssLOG_ERROR("Failed to load shared library " << compiledSharedLibPath.string() << 
                         " with exception: ");
             
             ssLOG_ERROR(e.what());
@@ -249,13 +270,11 @@ namespace
                                                         std::string>& currentOptions,
                             const std::string& absoluteScriptPath,
                             const std::string& exeExt,
+                            const ghc::filesystem::path& buildDir,
                             const std::vector<runcpp2::Data::Profile>& profiles,
                             int profileIndex)
     {
         ssLOG_FUNC_DEBUG();
-        
-        std::string scriptDirectory = ghc::filesystem::path(absoluteScriptPath) .parent_path()
-                                                                                .string();
         
         std::string scriptName = ghc::filesystem::path(absoluteScriptPath).stem().string();
         std::error_code _;
@@ -268,8 +287,10 @@ namespace
         //If we are compiling to an executable
         if(currentOptions.find(runcpp2::CmdOptions::EXECUTABLE) != currentOptions.end())
         {
-            std::string exeToCopy = scriptDirectory + "/.runcpp2/" + scriptName + exeExt;
-            ssLOG_INFO("Trying to use cache: " << exeToCopy);
+            ghc::filesystem::path exeToCopy = buildDir / ".runcpp2" / scriptName;
+            exeToCopy.concat(exeExt);
+            
+            ssLOG_INFO("Trying to use cache: " << exeToCopy.string());
             
             //If the executable already exists, check if it's newer than the script
             if(ghc::filesystem::exists(exeToCopy, _) && ghc::filesystem::file_size(exeToCopy, _) > 0)
@@ -306,13 +327,10 @@ namespace
                 return false;
             }
             
-            std::string sharedLibBuild =    scriptDirectory + 
-                                            "/.runcpp2/" + 
-                                            *targetSharedLibPrefix + 
-                                            scriptName + 
-                                            *targetSharedLibExt;
+            ghc::filesystem::path sharedLibBuild = buildDir / ".runcpp2" / *targetSharedLibPrefix;
+            sharedLibBuild.concat(scriptName).concat(*targetSharedLibExt);
             
-            ssLOG_INFO("Trying to use cache: " << sharedLibBuild);
+            ssLOG_INFO("Trying to use cache: " << sharedLibBuild.string());
             
             if( ghc::filesystem::exists(sharedLibBuild, _) && 
                 ghc::filesystem::file_size(sharedLibBuild, _) > 0)
@@ -364,9 +382,38 @@ int runcpp2::RunScript( const std::string& scriptPath,
         }
     }
     
+    //TODO: Use ghc::filesystem::path instead of string?
     std::string absoluteScriptPath = ghc::filesystem::absolute(scriptPath).string();
     std::string scriptDirectory = ghc::filesystem::path(absoluteScriptPath).parent_path().string();
     std::string scriptName = ghc::filesystem::path(absoluteScriptPath).stem().string();
+    ghc::filesystem::path configDir = GetConfigFilePath();
+    ghc::filesystem::path buildDir;
+    
+    //Parse and get the config directory
+    {
+        std::error_code e;
+        if(ghc::filesystem::is_directory(configDir, e))
+        {
+            ssLOG_FATAL("Unexpected path for config file: " << configDir.string());
+            return -1;
+        }
+        
+        configDir = configDir.parent_path();
+        if(!ghc::filesystem::is_directory(configDir, e))
+        {
+            ssLOG_FATAL("Unexpected path for config directory: " << configDir.string());
+            return -1;
+        }
+    }
+    
+    //Create a class that manages build folder
+    BuildsManager buildsManager(configDir);
+    if(!buildsManager.Initialize())
+    {
+        ssLOG_FATAL("Failed to initialize builds manager");
+        return -1;
+    }
+    
     int profileIndex = -1;
 
     ssLOG_DEBUG("scriptPath: " << scriptPath);
@@ -431,10 +478,35 @@ int runcpp2::RunScript( const std::string& scriptPath,
             ssLOG_INFO(scriptInfo.ToString(""));
         }
 
-        if(!CreateRuncpp2ScriptDirectory(absoluteScriptPath))
+        //Create build directory
         {
-            ssLOG_ERROR("Failed to create runcpp2 script directory: " << absoluteScriptPath);
-            return -1;
+            const bool localBuildDir = currentOptions.count(CmdOptions::LOCAL) > 0;
+            bool createdBuildDir = false;
+            if(localBuildDir)
+            {
+                if(CreateLocalBuildDirectory(absoluteScriptPath, buildDir))
+                    createdBuildDir = true;
+            }
+            else
+            {
+                bool writeMapping = false;
+                if(!buildsManager.HasBuildMapping(absoluteScriptPath))
+                    writeMapping = true;
+                
+                if(buildsManager.GetBuildMapping(absoluteScriptPath, buildDir))
+                {
+                    if(writeMapping && !buildsManager.SaveBuildsMappings())
+                        ssLOG_FATAL("Failed to save builds mappings");
+                    else
+                        createdBuildDir = true;
+                }
+            }
+            
+            if(!createdBuildDir)
+            {
+                ssLOG_FATAL("Failed to create local build directory for: " << absoluteScriptPath);
+                return -1;
+            }
         }
 
         profileIndex = GetPreferredProfileIndex(absoluteScriptPath, 
@@ -464,7 +536,8 @@ int runcpp2::RunScript( const std::string& scriptPath,
             if(!GetDependenciesPaths(   availableDependencies,
                                         dependenciesLocalCopiesPaths,
                                         dependenciesSourcePaths,
-                                        absoluteScriptPath))
+                                        absoluteScriptPath,
+                                        buildDir))
             {
                 ssLOG_ERROR("Failed to get dependencies paths");
                 return -1;
@@ -474,7 +547,6 @@ int runcpp2::RunScript( const std::string& scriptPath,
                 currentOptions.count(CmdOptions::REMOVE_DEPENDENCIES) > 0)
             {
                 if(!CleanupDependencies(profiles.at(profileIndex),
-                                        absoluteScriptPath, 
                                         scriptInfo,
                                         availableDependencies,
                                         dependenciesLocalCopiesPaths))
@@ -491,7 +563,7 @@ int runcpp2::RunScript( const std::string& scriptPath,
             }
             
             if(!SetupDependencies(  profiles.at(profileIndex), 
-                                    absoluteScriptPath, 
+                                    buildDir,
                                     scriptInfo, 
                                     availableDependencies,
                                     dependenciesLocalCopiesPaths,
@@ -502,7 +574,6 @@ int runcpp2::RunScript( const std::string& scriptPath,
             }
             
             if(!BuildDependencies(  profiles.at(profileIndex),
-                                    absoluteScriptPath, 
                                     scriptInfo,
                                     availableDependencies, 
                                     dependenciesLocalCopiesPaths))
@@ -511,7 +582,7 @@ int runcpp2::RunScript( const std::string& scriptPath,
                 return -1;
             }
 
-            if(!CopyDependenciesBinaries(   absoluteScriptPath, 
+            if(!CopyDependenciesBinaries(   buildDir, 
                                             availableDependencies,
                                             dependenciesLocalCopiesPaths,
                                             profiles.at(profileIndex),
@@ -526,10 +597,12 @@ int runcpp2::RunScript( const std::string& scriptPath,
         if(!HasCompiledCache(   currentOptions, 
                                 absoluteScriptPath, 
                                 exeExt, 
+                                buildDir,
                                 profiles, 
                                 profileIndex))
         {
-            if(!CompileAndLinkScript(   absoluteScriptPath, 
+            if(!CompileAndLinkScript(   buildDir,
+                                        absoluteScriptPath, 
                                         scriptInfo,
                                         availableDependencies,
                                         profiles.at(profileIndex),
@@ -548,7 +621,7 @@ int runcpp2::RunScript( const std::string& scriptPath,
         ssLOG_INFO("Running script...");
         
         std::error_code _;
-        std::string target = scriptDirectory + "/.runcpp2/";
+        ghc::filesystem::path target = buildDir;
         
         const std::string* targetSharedLibExt = 
             runcpp2::GetValueFromPlatformMap(profiles.at(profileIndex)  .FilesTypes
@@ -561,7 +634,7 @@ int runcpp2::RunScript( const std::string& scriptPath,
                                                                         .Prefix);
         
         if(currentOptions.find(CmdOptions::EXECUTABLE) != currentOptions.end())
-            target += scriptName + exeExt;
+            target = (target / scriptName).concat(exeExt);
         else
         {
             if(targetSharedLibExt == nullptr || targetSharedLibPrefix == nullptr)
@@ -570,19 +643,20 @@ int runcpp2::RunScript( const std::string& scriptPath,
                 return -1;
             }
 
-            target += *targetSharedLibPrefix + scriptName + *targetSharedLibExt;
+            target = (target / *targetSharedLibPrefix)  .concat(scriptName)
+                                                        .concat(*targetSharedLibExt);
         }
         
         if(!ghc::filesystem::exists(target, _))
         {
-            ssLOG_ERROR("Failed to find the compiled file: " << target);
+            ssLOG_ERROR("Failed to find the compiled file: " << target.string());
             return -1;
         }
         
         if(currentOptions.count(CmdOptions::EXECUTABLE) > 0)
         {
             //Running the script
-            if(!RunCompiledScript(target, scriptDirectory, absoluteScriptPath, runArgs))
+            if(!RunCompiledScript(target, absoluteScriptPath, runArgs))
             {
                 ssLOG_ERROR("Failed to run script");
                 return false;
@@ -593,8 +667,7 @@ int runcpp2::RunScript( const std::string& scriptPath,
         //Load the shared library and run it
         else
         {
-            int result = RunCompiledSharedLib(  scriptDirectory, 
-                                                absoluteScriptPath, 
+            int result = RunCompiledSharedLib(  absoluteScriptPath, 
                                                 target, 
                                                 runArgs);
         
