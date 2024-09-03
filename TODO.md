@@ -1,6 +1,4 @@
 TODO:
-- Also add option to show config folder path
-
 - Add option to watch new changes
 - Add option to add Default Script Info to script
 - Add wildcard support for filenames and extensions

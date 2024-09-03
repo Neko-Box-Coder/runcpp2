@@ -18,6 +18,7 @@ namespace runcpp2
         HELP,
         REMOVE_DEPENDENCIES,
         LOCAL,
+        SHOW_USER_CONFIG,
         COUNT
     };
     

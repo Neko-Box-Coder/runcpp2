@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
     //std::unordered_set<runcpp2::CmdOptions> currentOptions;
 
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 7, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 8, "Update this");
         std::unordered_map<std::string, runcpp2::OptionInfo> longOptionsMap =
         {
             {
@@ -114,10 +114,14 @@ int main(int argc, char* argv[])
             {
                 "--local",
                 runcpp2::OptionInfo(runcpp2::CmdOptions::LOCAL, false)
+            },
+            {
+                "--show-config-path",
+                runcpp2::OptionInfo(runcpp2::CmdOptions::SHOW_USER_CONFIG, false)
             }
         };
         
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 7, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 8, "Update this");
         std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
         {
             {"-r", longOptionsMap.at("--reset-cache")},
@@ -125,7 +129,8 @@ int main(int argc, char* argv[])
             {"-e", longOptionsMap.at("--executable")},
             {"-h", longOptionsMap.at("--help")},
             {"-d", longOptionsMap.at("--remove-dependencies")},
-            {"-l", longOptionsMap.at("--local")}
+            {"-l", longOptionsMap.at("--local")},
+            {"-s", longOptionsMap.at("--show-config-path")}
         };
         
         currentArgIndex = ParseArgs(longOptionsMap, shortOptionsMap, currentOptions, argc, argv);
@@ -142,7 +147,7 @@ int main(int argc, char* argv[])
     //Help message
     if(currentOptions.count(runcpp2::CmdOptions::HELP))
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 7, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 8, "Update this");
         ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
         ssLOG_BASE("Options:");
         ssLOG_BASE("    -r, --[r]eset-cache                 Deletes all cache and build everything from scratch");
@@ -151,7 +156,14 @@ int main(int argc, char* argv[])
         ssLOG_BASE("    -h, --[h]elp                        Show this help message");
         ssLOG_BASE("    -d, --remove-[d]ependencies         Remove dependencies listed in the script");
         ssLOG_BASE("    -l, --[l]ocal                       Build the script and dependencies locally");
+        ssLOG_BASE("    -s, --[s]how-config-path            Show where runcpp2 is reading the config from");
         
+        return 0;
+    }
+    
+    if(currentOptions.count(runcpp2::CmdOptions::SHOW_USER_CONFIG))
+    {
+        ssLOG_BASE(runcpp2::GetConfigFilePath());
         return 0;
     }
     
