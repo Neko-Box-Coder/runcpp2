@@ -19,6 +19,7 @@ namespace runcpp2
         REMOVE_DEPENDENCIES,
         LOCAL,
         SHOW_USER_CONFIG,
+        SCRIPT_TEMPLATE,
         COUNT
     };
     
@@ -32,9 +33,8 @@ namespace runcpp2
             : Option(option), HasValue(hasValue), Value(value) {}
     };
 
-    //--------------------------------------------
-    //Running
-    //--------------------------------------------
+    void GetDefaultScriptInfo(std::string& scriptInfo);
+
     int RunScript(  const std::string& scriptPath, 
                     const std::vector<Data::Profile>& profiles,
                     const std::string& configPreferredProfile,

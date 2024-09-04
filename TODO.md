@@ -1,6 +1,5 @@
 TODO:
 - Add option to watch new changes
-- Add option to add Default Script Info to script
 - Add wildcard support for filenames and extensions
 
 - Add tests and examples (On Windows as well)
@@ -9,3 +8,5 @@ TODO:
 - Output compile_command.json
 - Allow Languages to override FileExtensions in compiler profile (?)
 - Add ability to add defines for cross-compiler
+- Ability to compile runcpp2 as single cpp
+- Ability to add multiple cpp files

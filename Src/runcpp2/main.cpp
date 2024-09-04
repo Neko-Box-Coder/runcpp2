@@ -4,6 +4,9 @@
 
 #include "ssLogger/ssLog.hpp"
 
+#include "ghc/filesystem.hpp"
+
+
 //TODO: Merge long and short options into a single structure
 int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& longOptionsMap,
                 const std::unordered_map<std::string, const runcpp2::OptionInfo&>& shortOptionsMap,
@@ -88,7 +91,7 @@ int main(int argc, char* argv[])
     //std::unordered_set<runcpp2::CmdOptions> currentOptions;
 
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 8, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 9, "Update this");
         std::unordered_map<std::string, runcpp2::OptionInfo> longOptionsMap =
         {
             {
@@ -118,10 +121,14 @@ int main(int argc, char* argv[])
             {
                 "--show-config-path",
                 runcpp2::OptionInfo(runcpp2::CmdOptions::SHOW_USER_CONFIG, false)
+            },
+            {
+                "--create-script-template",
+                runcpp2::OptionInfo(runcpp2::CmdOptions::SCRIPT_TEMPLATE, true)
             }
         };
         
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 8, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 9, "Update this");
         std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
         {
             {"-r", longOptionsMap.at("--reset-cache")},
@@ -130,7 +137,9 @@ int main(int argc, char* argv[])
             {"-h", longOptionsMap.at("--help")},
             {"-d", longOptionsMap.at("--remove-dependencies")},
             {"-l", longOptionsMap.at("--local")},
-            {"-s", longOptionsMap.at("--show-config-path")}
+            {"-s", longOptionsMap.at("--show-config-path")},
+            {"-t", longOptionsMap.at("--create-script-template")}
+
         };
         
         currentArgIndex = ParseArgs(longOptionsMap, shortOptionsMap, currentOptions, argc, argv);
@@ -147,20 +156,22 @@ int main(int argc, char* argv[])
     //Help message
     if(currentOptions.count(runcpp2::CmdOptions::HELP))
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 8, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 9, "Update this");
         ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
         ssLOG_BASE("Options:");
-        ssLOG_BASE("    -r, --[r]eset-cache                 Deletes all cache and build everything from scratch");
-        ssLOG_BASE("    -c, --reset-user-[c]onfig           Replace current user config with the default one");
-        ssLOG_BASE("    -e, --[e]xecutable                  Runs as executable instead of shared library");
-        ssLOG_BASE("    -h, --[h]elp                        Show this help message");
-        ssLOG_BASE("    -d, --remove-[d]ependencies         Remove dependencies listed in the script");
-        ssLOG_BASE("    -l, --[l]ocal                       Build the script and dependencies locally");
-        ssLOG_BASE("    -s, --[s]how-config-path            Show where runcpp2 is reading the config from");
+        ssLOG_BASE("    -r, --[r]eset-cache                     Deletes all cache and build everything from scratch");
+        ssLOG_BASE("    -c, --reset-user-[c]onfig               Replace current user config with the default one");
+        ssLOG_BASE("    -e, --[e]xecutable                      Runs as executable instead of shared library");
+        ssLOG_BASE("    -h, --[h]elp                            Show this help message");
+        ssLOG_BASE("    -d, --remove-[d]ependencies             Remove dependencies listed in the script");
+        ssLOG_BASE("    -l, --[l]ocal                           Build the script and dependencies locally");
+        ssLOG_BASE("    -s, --[s]how-config-path                Show where runcpp2 is reading the config from");
+        ssLOG_BASE("    -t, --create-script-[t]emplate <file>   Creates/prepend runcpp2 script info template");
         
         return 0;
     }
     
+    //Show user config path
     if(currentOptions.count(runcpp2::CmdOptions::SHOW_USER_CONFIG))
     {
         ssLOG_BASE(runcpp2::GetConfigFilePath());
@@ -179,6 +190,92 @@ int main(int argc, char* argv[])
         
         return 0;
     }
+    
+    //Generate script info template
+    if(currentOptions.count(runcpp2::CmdOptions::SCRIPT_TEMPLATE))
+    {
+        std::string& outputFilePathStr = currentOptions.at(runcpp2::CmdOptions::SCRIPT_TEMPLATE);
+        if(outputFilePathStr.empty())
+        {
+            ssLOG_ERROR("Missing output file path for -t/--create-script-template option");
+            return -1;
+        }
+        
+        std::string defaultScriptInfo;
+        runcpp2::GetDefaultScriptInfo(defaultScriptInfo);
+        
+        //Check if output filepath exists, if so check if it is a directory
+        std::error_code e;
+        if(ghc::filesystem::exists(outputFilePathStr, e))
+        {
+            if(ghc::filesystem::is_directory(outputFilePathStr, e))
+            {
+                ssLOG_ERROR(outputFilePathStr << " is a directory. " << 
+                            "Cannot output script template to a directory");
+                return -1;
+            }
+            
+            //If exists, check if it is a cpp/cc file.
+            ghc::filesystem::path outputFilePath = outputFilePathStr;
+            std::ifstream readOutputFile(outputFilePath);
+            std::stringstream buffer;
+            
+            if(!readOutputFile)
+            {
+                ssLOG_ERROR("Failed to open file: " << outputFilePathStr);
+                return false;
+            }
+            
+            if(outputFilePath.extension() == ".cpp" || outputFilePath.extension() == ".cc")
+            {
+                //If so, prepend the script info template but wrapped in block comment
+                buffer << "/* runcpp2" << std::endl << std::endl;
+                buffer << defaultScriptInfo << std::endl;
+                buffer << "*/" << std::endl << std::endl;
+                buffer << readOutputFile.rdbuf();
+            }
+            //If not, check if it is yaml/yml. 
+            else if(outputFilePath.extension() == ".yaml" || outputFilePath.extension() == ".yml")
+            {
+                //If so just prepend it normally
+                buffer << defaultScriptInfo << std::endl << std::endl;
+                buffer << readOutputFile.rdbuf();
+            }
+            //If not prepend it still but output a warning
+            else
+            {
+                ssLOG_WARNING("Outputing script info template to non yaml file, is the intended?");
+                buffer << defaultScriptInfo << std::endl << std::endl;
+                buffer << readOutputFile.rdbuf();
+            }
+            
+            readOutputFile.close();
+            
+            std::ofstream writeOutputFile(outputFilePath);
+            if(!writeOutputFile)
+            {
+                ssLOG_ERROR("Failed to open file: " << outputFilePathStr);
+                return false;
+            }
+
+            writeOutputFile << buffer.rdbuf();
+        }
+        //Otherwise write it to the file
+        else
+        {
+            std::ofstream writeOutputFile(outputFilePathStr);
+            if(!writeOutputFile)
+            {
+                ssLOG_ERROR("Failed to open file: " << outputFilePathStr);
+                return false;
+            }
+            
+            writeOutputFile << defaultScriptInfo;
+        }
+        
+        return 0;
+    }
+    
     
     std::vector<runcpp2::Data::Profile> profiles;
     std::string preferredProfile;

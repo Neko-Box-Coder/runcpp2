@@ -10,8 +10,6 @@
 
 extern "C" const uint8_t DefaultUserConfig[];
 extern "C" const size_t DefaultUserConfig_size;
-extern "C" const uint8_t DefaultScriptDependencies[];
-extern "C" const size_t DefaultScriptDependencies_size;
 
 namespace 
 {

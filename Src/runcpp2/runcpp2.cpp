@@ -15,6 +15,9 @@
 #include <fstream>
 #include <chrono>
 
+extern const uint8_t DefaultScriptInfo[];
+extern const size_t DefaultScriptInfo_size;
+
 namespace
 {
     bool CreateLocalBuildDirectory( const std::string& scriptPath, 
@@ -25,9 +28,9 @@ namespace
         //Create the runcpp2 directory
         std::string runcpp2Dir = scriptDirectory + "/.runcpp2";
         
-        if(!ghc::filesystem::exists(runcpp2Dir))
+        std::error_code e;
+        if(!ghc::filesystem::exists(runcpp2Dir, e))
         {
-            std::error_code e;
             if(!ghc::filesystem::create_directory(runcpp2Dir, e))
             {
                 ssLOG_ERROR("Failed to create runcpp2 directory");
@@ -347,6 +350,11 @@ namespace
         
         return false;
     }
+}
+
+void runcpp2::GetDefaultScriptInfo(std::string& scriptInfo)
+{
+    scriptInfo = std::string(reinterpret_cast<const char*>(DefaultScriptInfo), DefaultScriptInfo_size);
 }
 
 int runcpp2::RunScript( const std::string& scriptPath, 
