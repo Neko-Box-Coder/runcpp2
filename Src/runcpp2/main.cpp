@@ -83,15 +83,98 @@ int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& long
     return currentArgIndex;
 }
 
+bool GenerateScriptTemplate(const std::string& outputFilePathStr)
+{
+    if(outputFilePathStr.empty())
+    {
+        ssLOG_ERROR("Missing output file path for -t/--create-script-template option");
+        return false;
+    }
+    
+    std::string defaultScriptInfo;
+    runcpp2::GetDefaultScriptInfo(defaultScriptInfo);
+    
+    //Check if output filepath exists, if so check if it is a directory
+    std::error_code e;
+    if(ghc::filesystem::exists(outputFilePathStr, e))
+    {
+        if(ghc::filesystem::is_directory(outputFilePathStr, e))
+        {
+            ssLOG_ERROR(outputFilePathStr << " is a directory. " << 
+                        "Cannot output script template to a directory");
+            return false;
+        }
+        
+        //If exists, check if it is a cpp/cc file.
+        ghc::filesystem::path outputFilePath = outputFilePathStr;
+        std::ifstream readOutputFile(outputFilePath);
+        std::stringstream buffer;
+        
+        if(!readOutputFile)
+        {
+            ssLOG_ERROR("Failed to open file: " << outputFilePathStr);
+            return false;
+        }
+        
+        if(outputFilePath.extension() == ".cpp" || outputFilePath.extension() == ".cc")
+        {
+            //If so, prepend the script info template but wrapped in block comment
+            buffer << "/* runcpp2" << std::endl << std::endl;
+            buffer << defaultScriptInfo << std::endl;
+            buffer << "*/" << std::endl << std::endl;
+            buffer << readOutputFile.rdbuf();
+        }
+        //If not, check if it is yaml/yml. 
+        else if(outputFilePath.extension() == ".yaml" || outputFilePath.extension() == ".yml")
+        {
+            //If so just prepend it normally
+            buffer << defaultScriptInfo << std::endl << std::endl;
+            buffer << readOutputFile.rdbuf();
+        }
+        //If not prepend it still but output a warning
+        else
+        {
+            ssLOG_WARNING("Outputing script info template to non yaml file, is the intended?");
+            buffer << defaultScriptInfo << std::endl << std::endl;
+            buffer << readOutputFile.rdbuf();
+        }
+        
+        readOutputFile.close();
+        
+        std::ofstream writeOutputFile(outputFilePath);
+        if(!writeOutputFile)
+        {
+            ssLOG_ERROR("Failed to open file: " << outputFilePathStr);
+            return false;
+        }
+
+        writeOutputFile << buffer.rdbuf();
+    }
+    //Otherwise write it to the file
+    else
+    {
+        std::ofstream writeOutputFile(outputFilePathStr);
+        if(!writeOutputFile)
+        {
+            ssLOG_ERROR("Failed to open file: " << outputFilePathStr);
+            return false;
+        }
+        
+        writeOutputFile << defaultScriptInfo;
+    }
+    
+    return true;
+}
+
+
 int main(int argc, char* argv[])
 {
     //Parse command line options
     int currentArgIndex = 0;
     std::unordered_map<runcpp2::CmdOptions, std::string> currentOptions;
-    //std::unordered_set<runcpp2::CmdOptions> currentOptions;
 
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 9, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 10, "Update this");
         std::unordered_map<std::string, runcpp2::OptionInfo> longOptionsMap =
         {
             {
@@ -125,10 +208,14 @@ int main(int argc, char* argv[])
             {
                 "--create-script-template",
                 runcpp2::OptionInfo(runcpp2::CmdOptions::SCRIPT_TEMPLATE, true)
+            },
+            {
+                "--watch",
+                runcpp2::OptionInfo(runcpp2::CmdOptions::WATCH, false)
             }
         };
         
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 9, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 10, "Update this");
         std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
         {
             {"-r", longOptionsMap.at("--reset-cache")},
@@ -138,8 +225,8 @@ int main(int argc, char* argv[])
             {"-d", longOptionsMap.at("--remove-dependencies")},
             {"-l", longOptionsMap.at("--local")},
             {"-s", longOptionsMap.at("--show-config-path")},
-            {"-t", longOptionsMap.at("--create-script-template")}
-
+            {"-t", longOptionsMap.at("--create-script-template")},
+            {"-w", longOptionsMap.at("--watch")}
         };
         
         currentArgIndex = ParseArgs(longOptionsMap, shortOptionsMap, currentOptions, argc, argv);
@@ -156,7 +243,7 @@ int main(int argc, char* argv[])
     //Help message
     if(currentOptions.count(runcpp2::CmdOptions::HELP))
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 9, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 10, "Update this");
         ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
         ssLOG_BASE("Options:");
         ssLOG_BASE("    -r, --[r]eset-cache                     Deletes all cache and build everything from scratch");
@@ -167,6 +254,7 @@ int main(int argc, char* argv[])
         ssLOG_BASE("    -l, --[l]ocal                           Build the script and dependencies locally");
         ssLOG_BASE("    -s, --[s]how-config-path                Show where runcpp2 is reading the config from");
         ssLOG_BASE("    -t, --create-script-[t]emplate <file>   Creates/prepend runcpp2 script info template");
+        ssLOG_BASE("    -w, --[w]atch                           Watch script changes and output any compiling errors");
         
         return 0;
     }
@@ -194,88 +282,11 @@ int main(int argc, char* argv[])
     //Generate script info template
     if(currentOptions.count(runcpp2::CmdOptions::SCRIPT_TEMPLATE))
     {
-        std::string& outputFilePathStr = currentOptions.at(runcpp2::CmdOptions::SCRIPT_TEMPLATE);
-        if(outputFilePathStr.empty())
-        {
-            ssLOG_ERROR("Missing output file path for -t/--create-script-template option");
+        if(!GenerateScriptTemplate(currentOptions.at(runcpp2::CmdOptions::SCRIPT_TEMPLATE)))
             return -1;
-        }
-        
-        std::string defaultScriptInfo;
-        runcpp2::GetDefaultScriptInfo(defaultScriptInfo);
-        
-        //Check if output filepath exists, if so check if it is a directory
-        std::error_code e;
-        if(ghc::filesystem::exists(outputFilePathStr, e))
-        {
-            if(ghc::filesystem::is_directory(outputFilePathStr, e))
-            {
-                ssLOG_ERROR(outputFilePathStr << " is a directory. " << 
-                            "Cannot output script template to a directory");
-                return -1;
-            }
-            
-            //If exists, check if it is a cpp/cc file.
-            ghc::filesystem::path outputFilePath = outputFilePathStr;
-            std::ifstream readOutputFile(outputFilePath);
-            std::stringstream buffer;
-            
-            if(!readOutputFile)
-            {
-                ssLOG_ERROR("Failed to open file: " << outputFilePathStr);
-                return false;
-            }
-            
-            if(outputFilePath.extension() == ".cpp" || outputFilePath.extension() == ".cc")
-            {
-                //If so, prepend the script info template but wrapped in block comment
-                buffer << "/* runcpp2" << std::endl << std::endl;
-                buffer << defaultScriptInfo << std::endl;
-                buffer << "*/" << std::endl << std::endl;
-                buffer << readOutputFile.rdbuf();
-            }
-            //If not, check if it is yaml/yml. 
-            else if(outputFilePath.extension() == ".yaml" || outputFilePath.extension() == ".yml")
-            {
-                //If so just prepend it normally
-                buffer << defaultScriptInfo << std::endl << std::endl;
-                buffer << readOutputFile.rdbuf();
-            }
-            //If not prepend it still but output a warning
-            else
-            {
-                ssLOG_WARNING("Outputing script info template to non yaml file, is the intended?");
-                buffer << defaultScriptInfo << std::endl << std::endl;
-                buffer << readOutputFile.rdbuf();
-            }
-            
-            readOutputFile.close();
-            
-            std::ofstream writeOutputFile(outputFilePath);
-            if(!writeOutputFile)
-            {
-                ssLOG_ERROR("Failed to open file: " << outputFilePathStr);
-                return false;
-            }
-
-            writeOutputFile << buffer.rdbuf();
-        }
-        //Otherwise write it to the file
         else
-        {
-            std::ofstream writeOutputFile(outputFilePathStr);
-            if(!writeOutputFile)
-            {
-                ssLOG_ERROR("Failed to open file: " << outputFilePathStr);
-                return false;
-            }
-            
-            writeOutputFile << defaultScriptInfo;
-        }
-        
-        return 0;
+            return 0;
     }
-    
     
     std::vector<runcpp2::Data::Profile> profiles;
     std::string preferredProfile;
@@ -299,17 +310,81 @@ int main(int argc, char* argv[])
     
     std::string script = argv[currentArgIndex++];
     
-    for(; currentArgIndex < argc; ++currentArgIndex)
+    if(currentOptions.count(runcpp2::CmdOptions::WATCH) && currentArgIndex < argc)
+        ssLOG_WARNING("-w/--watch doesn't run the script and doesn't except any run arguments");
+    else
     {
-        ssLOG_DEBUG("argv[" << currentArgIndex << "]: " << argv[currentArgIndex]);
-        scriptArgs.push_back(std::string(argv[currentArgIndex]));
+        for(; currentArgIndex < argc; ++currentArgIndex)
+        {
+            ssLOG_DEBUG("argv[" << currentArgIndex << "]: " << argv[currentArgIndex]);
+            scriptArgs.push_back(std::string(argv[currentArgIndex]));
+        }
     }
     
-    int result = runcpp2::RunScript(script, 
-                                    profiles, 
-                                    preferredProfile, 
-                                    currentOptions, 
-                                    scriptArgs);
+    if(currentOptions.count(runcpp2::CmdOptions::WATCH))
+    {
+        std::error_code e;
+        if(!ghc::filesystem::exists(script, e))
+        {
+            ssLOG_ERROR("Script path " << script << " doesn't exist");
+            return -1;
+        }
+        
+        ghc::filesystem::file_time_type lastScriptWriteTime {};
+        
+        while(true)
+        {
+            if(ghc::filesystem::last_write_time(script, e) > lastScriptWriteTime)
+            {
+                int result = 0;
+    
+                runcpp2::PipelineResult pipelineResult = 
+                    runcpp2::StartPipeline( script, 
+                                            profiles, 
+                                            preferredProfile, 
+                                            currentOptions, 
+                                            scriptArgs,
+                                            result);
+            
+                static_assert(static_cast<int>(runcpp2::PipelineResult::COUNT) == 12, "Update this");
+                switch(pipelineResult)
+                {
+                    case runcpp2::PipelineResult::INVALID_SCRIPT_PATH:
+                    case runcpp2::PipelineResult::INVALID_CONFIG_PATH:
+                    case runcpp2::PipelineResult::EMPTY_PROFILES:
+                        ssLOG_ERROR("Watch failed");
+                        return -1;
+                    
+                    case runcpp2::PipelineResult::UNEXPECTED_FAILURE:
+                    case runcpp2::PipelineResult::SUCCESS:
+                    case runcpp2::PipelineResult::INVALID_BUILD_DIR:
+                    case runcpp2::PipelineResult::INVALID_SCRIPT_INFO:
+                    case runcpp2::PipelineResult::NO_AVAILABLE_PROFILE:
+                    case runcpp2::PipelineResult::DEPENDENCIES_FAILED:
+                    case runcpp2::PipelineResult::COMPILE_LINK_FAILED:
+                    case runcpp2::PipelineResult::INVALID_PROFILE:
+                    case runcpp2::PipelineResult::RUN_SCRIPT_FAILED:
+                        break;
+                }
+                ssLOG_BASE("Watching...");
+            }
+            
+            lastScriptWriteTime = ghc::filesystem::last_write_time(script, e);
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+        }
+    }
+    
+    int result = 0;
+    
+    if(runcpp2::StartPipeline(  script, 
+                                profiles, 
+                                preferredProfile, 
+                                currentOptions, 
+                                scriptArgs,
+                                result) != runcpp2::PipelineResult::SUCCESS)
+    {
+        return -1;
+    }
     
     return result;
 }

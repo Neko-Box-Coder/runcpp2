@@ -10,6 +10,13 @@
 
 namespace runcpp2 
 {
+    bool CompileScriptOnly( const ghc::filesystem::path& buildDir,
+                            const std::string& scriptPath, 
+                            const Data::ScriptInfo& scriptInfo,
+                            const std::vector<Data::DependencyInfo*>& availableDependencies,
+                            const Data::Profile& profile,
+                            bool buildExecutable);
+    
     bool CompileAndLinkScript(  const ghc::filesystem::path& buildDir,
                                 const std::string& scriptPath, 
                                 const Data::ScriptInfo& scriptInfo,
