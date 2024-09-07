@@ -23,12 +23,12 @@ namespace runcpp2
                                 const std::vector<Data::DependencyInfo*>& availableDependencies,
                                 const std::vector<std::string>& dependenciesLocalCopiesPaths);
     
-    bool SetupDependencies( const runcpp2::Data::Profile& profile,
-                            const ghc::filesystem::path& buildDir,
-                            const Data::ScriptInfo& scriptInfo,
-                            std::vector<Data::DependencyInfo*>& availableDependencies,
-                            const std::vector<std::string>& dependenciesLocalCopiesPaths,
-                            const std::vector<std::string>& dependenciesSourcePaths);
+    bool SetupDependenciesIfNeeded( const runcpp2::Data::Profile& profile,
+                                    const ghc::filesystem::path& buildDir,
+                                    const Data::ScriptInfo& scriptInfo,
+                                    std::vector<Data::DependencyInfo*>& availableDependencies,
+                                    const std::vector<std::string>& dependenciesLocalCopiesPaths,
+                                    const std::vector<std::string>& dependenciesSourcePaths);
 
     bool BuildDependencies( const runcpp2::Data::Profile& profile,
                             const Data::ScriptInfo& scriptInfo,

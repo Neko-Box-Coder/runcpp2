@@ -122,7 +122,7 @@ bool runcpp2::RunCommandAndGetOutput(   const std::string& command,
     if(outReturnCode != 0)
     {
         ssLOG_DEBUG("Failed when running command");
-        ssLOG_DEBUG("outOutput: " << outOutput.c_str());
+        ssLOG_DEBUG("outOutput: \n" << outOutput.c_str());
         return false;
     }
     

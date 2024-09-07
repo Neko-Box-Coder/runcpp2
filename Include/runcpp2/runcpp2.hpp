@@ -20,6 +20,24 @@ namespace runcpp2
         LOCAL,
         SHOW_USER_CONFIG,
         SCRIPT_TEMPLATE,
+        WATCH,
+        COUNT
+    };
+    
+    enum class PipelineResult
+    {
+        UNEXPECTED_FAILURE,
+        SUCCESS,
+        EMPTY_PROFILES,
+        INVALID_SCRIPT_PATH,
+        INVALID_CONFIG_PATH,
+        INVALID_BUILD_DIR,
+        INVALID_SCRIPT_INFO,
+        NO_AVAILABLE_PROFILE,
+        DEPENDENCIES_FAILED,
+        COMPILE_LINK_FAILED,
+        INVALID_PROFILE,
+        RUN_SCRIPT_FAILED,
         COUNT
     };
     
@@ -35,11 +53,12 @@ namespace runcpp2
 
     void GetDefaultScriptInfo(std::string& scriptInfo);
 
-    int RunScript(  const std::string& scriptPath, 
-                    const std::vector<Data::Profile>& profiles,
-                    const std::string& configPreferredProfile,
-                    const std::unordered_map<CmdOptions, std::string> currentOptions,
-                    const std::vector<std::string>& runArgs);
+    PipelineResult StartPipeline(   const std::string& scriptPath, 
+                                    const std::vector<Data::Profile>& profiles,
+                                    const std::string& configPreferredProfile,
+                                    const std::unordered_map<CmdOptions, std::string> currentOptions,
+                                    const std::vector<std::string>& runArgs,
+                                    int& returnStatus);
 }
 
 #endif

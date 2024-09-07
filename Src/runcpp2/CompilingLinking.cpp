@@ -183,7 +183,7 @@ namespace
                 {
                     ssLOG_ERROR("Setup command \"" << setupStep << "\" failed");
                     ssLOG_ERROR("Failed with result " << setupResult);
-                    ssLOG_ERROR("Failed with output: " << setupOutput);
+                    ssLOG_ERROR("Failed with output: \n" << setupOutput);
                     return false;
                 }
             }
@@ -217,7 +217,7 @@ namespace
                     resultCode != 0)
                 {
                     ssLOG_ERROR("Compile command failed with result " << resultCode);
-                    ssLOG_ERROR("Compile output: " << commandOutput);
+                    ssLOG_ERROR("Compile output: \n" << commandOutput);
                     return false;
                 }
             }
@@ -247,7 +247,7 @@ namespace
                 {
                     ssLOG_ERROR("Cleanup command \"" << cleanupStep << "\" failed");
                     ssLOG_ERROR("Failed with result " << cleanupResult);
-                    ssLOG_ERROR("Failed with output: " << cleanupOutput);
+                    ssLOG_ERROR("Failed with output: \n" << cleanupOutput);
                     return false;
                 }
             }
@@ -517,7 +517,7 @@ namespace
                 {
                     ssLOG_ERROR("Setup command \"" << setupStep << "\" failed");
                     ssLOG_ERROR("Failed with result " << setupResult);
-                    ssLOG_ERROR("Failed with output: " << setupOutput);
+                    ssLOG_ERROR("Failed with output: \n" << setupOutput);
                     return false;
                 }
             }
@@ -550,7 +550,7 @@ namespace
                     resultCode != 0)
                 {
                     ssLOG_ERROR("Link command failed with result " << resultCode);
-                    ssLOG_ERROR("Link output: " << linkOutput);
+                    ssLOG_ERROR("Link output: \n" << linkOutput);
                     return false;
                 }
             }
@@ -580,7 +580,7 @@ namespace
                 {
                     ssLOG_ERROR("Cleanup command \"" << cleanupStep << "\" failed");
                     ssLOG_ERROR("Failed with result " << cleanupResult);
-                    ssLOG_ERROR("Failed with output: " << cleanupOutput);
+                    ssLOG_ERROR("Failed with output: \n" << cleanupOutput);
                     return false;
                 }
             }
@@ -617,13 +617,43 @@ namespace
             {
                 ssLOG_ERROR("Command \"" << steps.at(i) << "\" failed");
                 ssLOG_ERROR("Failed with result " << commandResult);
-                ssLOG_ERROR("Failed with output: " << commandOutput);
+                ssLOG_ERROR("Failed with output: \n" << commandOutput);
                 return false;
             }
         }
         
         return true;
     }
+}
+
+bool runcpp2::CompileScriptOnly(const ghc::filesystem::path& buildDir,
+                                const std::string& scriptPath, 
+                                const Data::ScriptInfo& scriptInfo,
+                                const std::vector<Data::DependencyInfo*>& availableDependencies,
+                                const Data::Profile& profile,
+                                bool buildExecutable)
+{
+    if(!RunGlobalSteps(buildDir, profile.Setup))
+    {
+        ssLOG_ERROR("Failed to run profile global setup steps");
+        return false;
+    }
+    
+    std::string scriptObjectFilePath;
+
+    if(!CompileScript(  buildDir,
+                        scriptPath, 
+                        scriptInfo, 
+                        availableDependencies, 
+                        profile, 
+                        buildExecutable, 
+                        scriptObjectFilePath))
+    {
+        ssLOG_ERROR("CompileScript failed");
+        return false;
+    }
+    
+    return true;
 }
 
 bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,

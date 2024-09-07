@@ -46,11 +46,11 @@ namespace
                                                             buildDir.string()))
                         {
                             ssLOG_ERROR("Failed to run git clone with result: " << returnCode);
-                            ssLOG_ERROR("Output: " << output);
+                            ssLOG_ERROR("Output: \n" << output);
                             return false;
                         }
                         else
-                            ssLOG_INFO("Output: " << output);
+                            ssLOG_INFO("Output: \n" << output);
                         
                         break;
                     }
@@ -170,11 +170,11 @@ namespace
                                                 processedDependencyPath))
             {
                 ssLOG_ERROR("Failed to run command with result: " << returnCode);
-                ssLOG_ERROR("Output: " << output);
+                ssLOG_ERROR("Output: \n" << output);
                 return false;
             }
             else
-                ssLOG_INFO("Output: " << output);
+                ssLOG_INFO("Output: \n" << output);
         }
         
         return true;
@@ -385,12 +385,12 @@ bool runcpp2::CleanupDependencies(  const runcpp2::Data::Profile& profile,
     return true;
 }
 
-bool runcpp2::SetupDependencies(const runcpp2::Data::Profile& profile,
-                                const ghc::filesystem::path& buildDir,
-                                const Data::ScriptInfo& scriptInfo,
-                                std::vector<Data::DependencyInfo*>& availableDependencies,
-                                const std::vector<std::string>& dependenciesLocalCopiesPaths,
-                                const std::vector<std::string>& dependenciesSourcePaths)
+bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
+                                        const ghc::filesystem::path& buildDir,
+                                        const Data::ScriptInfo& scriptInfo,
+                                        std::vector<Data::DependencyInfo*>& availableDependencies,
+                                        const std::vector<std::string>& dependenciesLocalCopiesPaths,
+                                        const std::vector<std::string>& dependenciesSourcePaths)
 {
     ssLOG_FUNC_DEBUG();
 
