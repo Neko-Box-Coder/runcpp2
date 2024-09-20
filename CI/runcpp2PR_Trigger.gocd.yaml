@@ -8,6 +8,7 @@ pipelines:
         materials:
             runcpp2_PR:
                 scm: 5099420a-fc10-4dd6-b46a-f67baf7dffd3
+                shallow_clone: true
         stages:
         -   BootstrapStage:
                 fetch_materials: false
