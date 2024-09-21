@@ -83,10 +83,7 @@ namespace
                 args.push_back(runArgs[i].c_str());
         }
         
-        //TODO: Don't redirect output
         System2CommandInfo runCommandInfo = {};
-        runCommandInfo.RedirectOutput = true;
-        
         SYSTEM2_RESULT result = System2RunSubprocess(   executable.c_str(),
                                                         args.data(),
                                                         args.size(),
@@ -102,53 +99,10 @@ namespace
             return false;
         }
         
-        do
-        {
-            uint32_t byteRead = 0;
-            const int bufferSize = 32;
-            char output[bufferSize] = {0};
-            
-            result = System2ReadFromOutput( &runCommandInfo, 
-                                            output, 
-                                            bufferSize - 1, 
-                                            &byteRead);
-
-            output[byteRead] = '\0';
-            
-            //Log the output and continue fetching output
-            if(result == SYSTEM2_RESULT_READ_NOT_FINISHED)
-            {
-                std::cout << output << std::flush;
-                continue;
-            }
-            
-            //If we have finished reading the output, check if the command has finished
-            if(result == SYSTEM2_RESULT_SUCCESS)
-            {
-                std::cout << output << std::flush;
-                
-                result = System2GetCommandReturnValueAsync(&runCommandInfo, &returnStatus);
-                
-                //If the command is not finished, continue reading output
-                if(result == SYSTEM2_RESULT_COMMAND_NOT_FINISHED)
-                {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                    continue;
-                }
-                else
-                    break;
-            }
-            else
-            {
-                ssLOG_ERROR("Failed to read from output with result: " << result);
-                return false;
-            }
-        }
-        while(true);
-        
+        result = System2GetCommandReturnValueSync(&runCommandInfo, &returnStatus);
         if(result != SYSTEM2_RESULT_SUCCESS)
         {
-            ssLOG_ERROR("System2GetCommandReturnValueASync failed with result: " << result);
+            ssLOG_ERROR("System2GetCommandReturnValueSync failed with result: " << result);
             return false;
         }
         
@@ -268,60 +222,201 @@ namespace
         INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
     }
     
-    bool HasCompiledCache(  const std::unordered_map<   runcpp2::CmdOptions, 
-                                                        std::string>& currentOptions,
-                            const std::string& absoluteScriptPath,
-                            const std::string& exeExt,
+    bool GatherSourceFiles( ghc::filesystem::path absoluteScriptPath, 
+                            const runcpp2::Data::ScriptInfo& scriptInfo,
+                            const runcpp2::Data::Profile& currentProfile,
+                            std::vector<ghc::filesystem::path>& outSourcePaths)
+    {
+        if(!currentProfile.FileExtensions.count(absoluteScriptPath.extension()))
+        {
+            ssLOG_ERROR("File extension of script doesn't match profile");
+            return false;
+        }
+        
+        outSourcePaths.clear();
+        outSourcePaths.push_back(absoluteScriptPath);
+        
+        const runcpp2::Data::ProfilesCompilesFiles* compileFiles = 
+            runcpp2::GetValueFromPlatformMap(scriptInfo.OtherFilesToBeCompiled);
+        
+        if(compileFiles == nullptr)
+        {
+            ssLOG_ERROR("Failed to get compile files for current platform");
+            return false;
+        }
+        
+        std::string foundProfileName;
+        std::vector<std::string> currentProfileNames;
+        
+        //TODO: Make getting values with GetNames a common function 
+        currentProfile.GetNames(currentProfileNames);
+        for(int i = 0; i < currentProfileNames.size(); ++i)
+        {
+            if(compileFiles->CompilesFiles.count(currentProfileNames.at(i)) > 0)
+            {
+                foundProfileName = currentProfileNames.at(i);
+                break;
+            }
+        }
+        
+        const std::vector<ghc::filesystem::path>& currentCompilesFiles = 
+            compileFiles->CompilesFiles.at(foundProfileName);
+        
+        //TODO: Allow filepaths to contain wildcards as follows
+        //* as directory or filename wildcard
+        //i.e. "./*/test/*.cpp" will match "./moduleA/test/a.cpp" and "./moduleB/test/b.cpp"
+        
+        //** as recursive directory wildcard
+        //i.e. "./**/*.cpp" will match any .cpp files
+        //i.e. "./**/test.cpp" will match any files named "test.cpp"
+        
+        //For the time being, each entry will represent a path
+        {
+            const ghc::filesystem::path scriptDirectory = 
+                ghc::filesystem::path(absoluteScriptPath).parent_path();
+            
+            for(int i = 0; i < currentCompilesFiles.size(); ++i)
+            {
+                ghc::filesystem::path currentPath = currentCompilesFiles.at(i);
+                if(currentPath.is_relative())
+                    currentPath = scriptDirectory / currentPath;
+                
+                if(currentPath.is_relative())
+                {
+                    ssLOG_ERROR("Failed to process compile path: " << currentCompilesFiles.at(i));
+                    ssLOG_ERROR("Try to append path to script directory but failed");
+                    ssLOG_ERROR("Final appended path: " << currentPath);
+                    return false;
+                }
+                
+                std::error_code e;
+                if(ghc::filesystem::is_directory(currentPath, e))
+                {
+                    ssLOG_ERROR("Directory is found instead of file: " << 
+                                currentCompilesFiles.at(i));
+                    return false;
+                }
+                
+                if(!ghc::filesystem::exists(currentPath, e))
+                {
+                    ssLOG_ERROR("File doesn't exist: " << currentCompilesFiles.at(i));
+                    return false;
+                }
+                
+                outSourcePaths.push_back(currentPath);
+            }
+        }
+        
+        return true;
+    }
+    
+    bool HasCompiledCache(  const std::vector<ghc::filesystem::path>& sourceFiles,
                             const ghc::filesystem::path& buildDir,
-                            const std::vector<runcpp2::Data::Profile>& profiles,
-                            int profileIndex)
+                            const runcpp2::Data::Profile& currentProfile,
+                            std::vector<bool>& outHasCache,
+                            std::vector<ghc::filesystem::path>& outCachedObjectsFiles,
+                            ghc::filesystem::file_time_type& outFinalObjectWriteTime)
     {
         ssLOG_FUNC_DEBUG();
         
-        std::string scriptName = ghc::filesystem::path(absoluteScriptPath).stem().string();
-        std::error_code _;
-        ghc::filesystem::file_time_type lastScriptWriteTime = 
-            ghc::filesystem::last_write_time(absoluteScriptPath, _);
+        outHasCache.clear();
+        outHasCache = std::vector<bool>(sourceFiles.size(), false);
         
-        if(currentOptions.find(runcpp2::CmdOptions::RESET_CACHE) != currentOptions.end())
+        //TODO: Check compile flags
+        
+        const std::string* rawObjectExt = 
+            runcpp2::GetValueFromPlatformMap(currentProfile.FilesTypes.ObjectLinkFile.Extension);
+        
+        if(rawObjectExt == nullptr)
             return false;
         
-        //If we are compiling to an executable
-        if(currentOptions.find(runcpp2::CmdOptions::EXECUTABLE) != currentOptions.end())
+        const std::string& objectExt = *rawObjectExt;
+        
+        outFinalObjectWriteTime = ghc::filesystem::file_time_type();
+        
+        for(int i = 0; i < sourceFiles.size(); ++i)
         {
-            ghc::filesystem::path exeToCopy = buildDir / ".runcpp2" / scriptName;
-            exeToCopy.concat(exeExt);
+            ghc::filesystem::path currentObjectFilePath = buildDir / sourceFiles.at(i).stem(); 
+            currentObjectFilePath.concat(objectExt);
             
-            ssLOG_INFO("Trying to use cache: " << exeToCopy.string());
-            
-            //If the executable already exists, check if it's newer than the script
-            if(ghc::filesystem::exists(exeToCopy, _) && ghc::filesystem::file_size(exeToCopy, _) > 0)
+            ssLOG_DEBUG("Trying to use cache: " << sourceFiles.at(i).string());
+            std::error_code e;
+            if(ghc::filesystem::exists(currentObjectFilePath, e))
             {
-                ghc::filesystem::file_time_type lastExecutableWriteTime = 
-                    ghc::filesystem::last_write_time(exeToCopy, _);
+                ghc::filesystem::file_time_type lastSourceWriteTime = 
+                    ghc::filesystem::last_write_time(sourceFiles.at(i), e);
                 
-                if(lastExecutableWriteTime < lastScriptWriteTime)
+                ghc::filesystem::file_time_type lastObjectWriteTime = 
+                    ghc::filesystem::last_write_time(currentObjectFilePath, e);
+            
+                if(lastObjectWriteTime > lastSourceWriteTime)
                 {
-                    ssLOG_INFO("Compiled file is older than the source file");
-                    return false;
+                    ssLOG_DEBUG("Using cache for " << sourceFiles.at(i).string());
+                    outHasCache.at(i) = true;
+                    outCachedObjectsFiles.push_back(currentObjectFilePath);
                 }
-                else
-                    return true;
+                
+                if(lastObjectWriteTime > outFinalObjectWriteTime)
+                    outFinalObjectWriteTime = lastObjectWriteTime;
             }
         }
-        //If we are compiling to a shared library
+        
+        return true;
+    }
+    
+    bool HasOutputCache(    const std::vector<bool>& sourceHasCache,
+                            const ghc::filesystem::path& buildDir,
+                            const runcpp2::Data::Profile& currentProfile,
+                            bool buildExecutable,
+                            const std::string& scriptName,
+                            const std::string& exeExt,
+                            ghc::filesystem::file_time_type& finalObjectWriteTime)
+    {
+        for(int i = 0; i < sourceHasCache.size(); ++i)
+        {
+            if(!sourceHasCache.at(i))
+                return false;
+        }
+        
+        //TODO: Check dependencies objects timestamps
+        
+        std::error_code e;
+        
+        //Check if output is cached
+        if(buildExecutable)
+        {
+            ghc::filesystem::path exeToCopy = buildDir / scriptName;
+            exeToCopy.concat(exeExt);
+            
+            ssLOG_INFO("Trying to use output cache: " << exeToCopy.string());
+            
+            //If the executable already exists, check if it's newer than the script
+            if( ghc::filesystem::exists(exeToCopy, e) && 
+                ghc::filesystem::file_size(exeToCopy, e) > 0)
+            {
+                ghc::filesystem::file_time_type lastExecutableWriteTime = 
+                    ghc::filesystem::last_write_time(exeToCopy, e);
+                
+                if(lastExecutableWriteTime > finalObjectWriteTime)
+                {
+                    ssLOG_INFO("Using output cache");
+                    return true;
+                }
+            }
+            return false;
+        }
         else
         {
             //Check if there's any existing shared library build that is newer than the script
             const std::string* targetSharedLibExt = 
-                runcpp2::GetValueFromPlatformMap(profiles.at(profileIndex)  .FilesTypes
-                                                                            .SharedLibraryFile
-                                                                            .Extension);
+                runcpp2::GetValueFromPlatformMap(currentProfile .FilesTypes
+                                                                .SharedLibraryFile
+                                                                .Extension);
             
             const std::string* targetSharedLibPrefix =
-                runcpp2::GetValueFromPlatformMap(profiles.at(profileIndex)  .FilesTypes
-                                                                            .SharedLibraryFile
-                                                                            .Prefix);
+                runcpp2::GetValueFromPlatformMap(currentProfile .FilesTypes
+                                                                .SharedLibraryFile
+                                                                .Prefix);
             
             if(targetSharedLibExt == nullptr || targetSharedLibPrefix == nullptr)
             {
@@ -329,31 +424,32 @@ namespace
                 return false;
             }
             
-            ghc::filesystem::path sharedLibBuild = buildDir / ".runcpp2" / *targetSharedLibPrefix;
+            ghc::filesystem::path sharedLibBuild = buildDir / *targetSharedLibPrefix;
             sharedLibBuild.concat(scriptName).concat(*targetSharedLibExt);
             
-            ssLOG_INFO("Trying to use cache: " << sharedLibBuild.string());
+            ssLOG_INFO("Trying to use output cache: " << sharedLibBuild.string());
             
-            if( ghc::filesystem::exists(sharedLibBuild, _) && 
-                ghc::filesystem::file_size(sharedLibBuild, _) > 0)
+            if( ghc::filesystem::exists(sharedLibBuild, e) && 
+                ghc::filesystem::file_size(sharedLibBuild, e) > 0)
             {
                 ghc::filesystem::file_time_type lastSharedLibWriteTime = 
-                    ghc::filesystem::last_write_time(sharedLibBuild, _);
+                    ghc::filesystem::last_write_time(sharedLibBuild, e);
                 
-                if(lastSharedLibWriteTime < lastScriptWriteTime)
-                    ssLOG_INFO("Compiled file is older than the source file");
-                else
+                if(lastSharedLibWriteTime > finalObjectWriteTime)
+                {
+                    ssLOG_INFO("Using output cache");
                     return true;
+                }
             }
+            return false;
         }
-        
-        return false;
     }
 }
 
 void runcpp2::GetDefaultScriptInfo(std::string& scriptInfo)
 {
-    scriptInfo = std::string(reinterpret_cast<const char*>(DefaultScriptInfo), DefaultScriptInfo_size);
+    scriptInfo = std::string(   reinterpret_cast<const char*>(DefaultScriptInfo), 
+                                DefaultScriptInfo_size);
 }
 
 
@@ -368,6 +464,9 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                         int& returnStatus)
 {
     INTERNAL_RUNCPP2_SAFE_START();
+    
+    //Do lexically_normal on all the paths
+    //lexically_normal
     
     ssLOG_FUNC_DEBUG();
     
@@ -489,7 +588,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             ssLOG_INFO("Parsed script info YAML:");
             ssLOG_INFO(scriptInfo.ToString(""));
         }
-
+        
         //Create build directory
         {
             const bool localBuildDir = currentOptions.count(CmdOptions::LOCAL) > 0;
@@ -612,39 +711,79 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         }
         while(0);
         
-        //Check if we have already compiled before.
-        if(!HasCompiledCache(   currentOptions, 
-                                absoluteScriptPath, 
-                                exeExt, 
-                                buildDir,
-                                profiles, 
-                                profileIndex))
+        //Get all the files we are trying to compile
+        std::vector<ghc::filesystem::path> sourceFiles;
+        if(!GatherSourceFiles(  absoluteScriptPath, 
+                                scriptInfo, 
+                                profiles.at(profileIndex), 
+                                sourceFiles))
         {
+            return PipelineResult::INVALID_SCRIPT_INFO;
+        }
+        
+        //Check if we have already compiled before.
+        std::vector<bool> sourceHasCache;
+        std::vector<ghc::filesystem::path> cachedObjectsFiles;
+        ghc::filesystem::file_time_type finalObjectWriteTime;
+        
+        if(currentOptions.count(runcpp2::CmdOptions::RESET_CACHE) > 0)
+            sourceHasCache = std::vector<bool>(sourceFiles.size(), false);
+        else if(!HasCompiledCache(  sourceFiles, 
+                                    buildDir, 
+                                    profiles.at(profileIndex), 
+                                    sourceHasCache,
+                                    cachedObjectsFiles,
+                                    finalObjectWriteTime))
+        {
+            //TODO: Maybee add a pipeline result for this?
+            return PipelineResult::UNEXPECTED_FAILURE;
+        }
+        
+        
+        //TODO: Use this once we implement checking dependencies objects timestamps
+        (void)HasOutputCache;
+        //if(HasOutputCache(  sourceHasCache, 
+        //                    buildDir, 
+        //                    profiles.at(profileIndex), 
+        //                    currentOptions.count(CmdOptions::EXECUTABLE) > 0,
+        //                    scriptName,
+        //                    exeExt,
+        //                    finalObjectWriteTime))
+        //Compiling/Linking
+        {
+            for(int i = 0; i < cachedObjectsFiles.size(); ++i)
+                copiedBinariesPaths.push_back(cachedObjectsFiles.at(i));
+            
             if(currentOptions.count(CmdOptions::WATCH) > 0)
             {
                 if(!CompileScriptOnly(  buildDir,
-                                        absoluteScriptPath, 
+                                        sourceFiles,
+                                        sourceHasCache,
                                         scriptInfo,
                                         availableDependencies,
                                         profiles.at(profileIndex),
-                                        (currentOptions.count(CmdOptions::EXECUTABLE) > 0)))
+                                        currentOptions.count(CmdOptions::EXECUTABLE) > 0))
                 {
                     return PipelineResult::COMPILE_LINK_FAILED;
                 }
             }
             else if(!CompileAndLinkScript(  buildDir,
-                                            absoluteScriptPath, 
+                                            ghc::filesystem::path(absoluteScriptPath).stem(), 
+                                            sourceFiles,
+                                            sourceHasCache,
                                             scriptInfo,
                                             availableDependencies,
                                             profiles.at(profileIndex),
                                             copiedBinariesPaths,
-                                            (currentOptions.count(CmdOptions::EXECUTABLE) > 0),
+                                            currentOptions.count(CmdOptions::EXECUTABLE) > 0,
                                             exeExt))
             {
                 ssLOG_ERROR("Failed to compile or link script");
                 return PipelineResult::COMPILE_LINK_FAILED;
             }
         }
+        
+        //TODO: Write last compiled configuration to build directory for cache
     }
 
     //We are only compiling when watching changes

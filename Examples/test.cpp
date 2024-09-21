@@ -3,6 +3,17 @@
 RequiredProfiles:
     Windows: ["msvc"]
     Unix: ["g++"]
+
+OtherFilesToBeCompiled:
+    # Target Platform
+    All:
+        # Target Profile
+        "g++":
+        -   "./AnotherSourceFileGcc.cpp"
+        All:
+        -   "./AnotherSourceFile.cpp"
+        -   "./AnotherSourceFile2.cpp"
+
 Dependencies:
 -   Name: ssLogger
     Platforms: [Windows, Linux, MacOS]
@@ -33,6 +44,8 @@ Dependencies:
 #define ssLOG_DLL 1
 #include "ssLogger/ssLog.hpp"
 
+#include "./AnotherSourceFileGcc.hpp"
+
 #include <iostream>
 #include <chrono>
 
@@ -48,6 +61,8 @@ int main(int argc, char* argv[])
     #else
         ssLOG_LINE("Header only dependency is working!!!");
     #endif
+
+    ssLOG_LINE("Multi source file is working: " << TestFunc());
 
     int CheckCounter = 5;
     ssLOG_FATAL("Test fatal: " << CheckCounter);
