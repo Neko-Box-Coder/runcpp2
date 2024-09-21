@@ -1,121 +1,97 @@
-## 🏃‍♂️ runcpp2
-A cross-platform tool that can let you run any c++ file as a script, just like python!
+# runcpp2
+
+![runcpp2 logo](./Runcpp2Logo.png)
+
+A cross-platform tool that can let you run any c++ files as a script, just like python!
 
 Run c++ files anytime, anywhere.
 
-### Prerequisites
-- A C++ compiler, currently only tested with g++
+### 🛠️ Prerequisites
+- Any C++ compiler. The default user config only has g++ and msvc profiles. But feel free to
+add other compilers.
 
-TODO: Support for other compilers
+### 📥️ Installation
+You can either build from source or use the binary release
 
-### Installation
+To build from source:
 1. Clone the repository with `git clone --recursive https://github.com/Neko-Box-Coder/runcpp2.git`
 2. Run `Build.sh` or `Build.bat` to build
 
 TODO: Ability to use pre-built binary
 
-### How to use
+Finally, you just need to add runcpp2 binary location to the `PATH` environment variable and 
+you can run c++ files anywhere you want.
 
-#### Single C/C++ File
-Just run `runcpp2 <filename>.cpp <arguments...>` and it will execute the file just like any other script.
+### ⚡️ Getting Started
 
-#### C/C++ File with External Libraries
+#### 1. Running directly
+Suppose you have a c++ file called `script.cpp`, you can run it immediately by doing 
 
-TODO: Detail documentations
-
-<details>
-<summary>Sample C++ file</summary>
-
-```c++
-
-/* runcpp2
-
-OverrideCompileFlags:
-    # Profile with the respective flags to override
-    "g++":
-        # Flags to be removed from the default compile flags, separated by space
-        # Remove: "-Werror"
-
-Dependencies:
--   Name: ssLogger
-    Platforms: [Windows, Linux, MacOS]
-    Source:
-        Type: Git
-        Value: "https://github.com/Neko-Box-Coder/ssLogger.git"
-    LibraryType: Static
-    # LibraryType: Header
-    IncludePaths:
-        - "Include"
-    
-    # (Optional if LibraryType is Header) Link properties of the dependency
-    LinkProperties:
-        # Properties for searching the library binary for the profile
-        "g++":
-            # The library names to be searched for when linking against the script
-            SearchLibraryNames: ["ssLogger"]
-            
-            # (Optional) The library names to be excluded from being searched
-            ExcludeLibraryNames: ["ssLogger_SRC"]
-            
-            # The path (relative to the dependency folder) to be searched for the dependency binaries
-            SearchDirectories: ["./build"]
-            
-            # (Optional) Additional link options for this dependency
-            AdditionalLinkOptions: 
-                All: []
-
-    
-    # (Optional) List of setup commands for the supported platforms
-    Setup:
-        # Setup commands for the specified platform
-        All:
-            # Setup commands for the specified profile. 
-            # All commands are run in the dependency folder
-            "g++":
-            -   "git submodule update --init --recursive"
-            -   "mkdir build"
-            -   "cd build && cmake .."
-            -   "cd build && cmake --build . -j 16"
-*/
-
-
-
-#include "ssLogger/ssLogSwitches.hpp"
-
-#define ssLOG_USE_SOURCE 1
-#if !ssLOG_USE_SOURCE
-    #include "ssLogger/ssLogInit.hpp"
-#endif
- 
-#include "ssLogger/ssLog.hpp"
-
-#include <iostream>
-
-int main(int argc, char* argv[])
-{
-    std::cout << "Hello World" << std::endl;
-    
-    for(int i = 0; i < argc; ++i)
-        std::cout << "Arg" << i << ": " << argv[i] << std::endl;
-    
-    #if ssLOG_USE_SOURCE
-        ssLOG_LINE("Source dependency is working!!!");
-    #else
-        ssLOG_LINE("Header only dependency is working!!!");
-    #endif
-
-    int CheckCounter = 5;
-    ssLOG_FATAL("Test fatal: " << CheckCounter);
-    ssLOG_ERROR("Test error: " << CheckCounter);
-    ssLOG_WARNING("Test warning: " << CheckCounter);
-    ssLOG_INFO("Test info: " << CheckCounter);
-    ssLOG_DEBUG("Test debug: " << CheckCounter);
-    
-    return 0;
-}
-
+```shell
+runcpp2 ./script.cpp <any arguments>
 ```
 
+> [!NOTE]
+> When invoking a c++ file with runcpp2, the first argument (`argv[0]`) to `main()` is the path
+> to the script, not the path to an executable.
 
-</details>
+#### 2. Watch and give compile errors
+If you want to edit the script but want to have feedback for any error, you can use "watch" mode.
 
+```shell
+runcpp2 --watch ./script.cpp
+```
+
+#### 3. Adding script build settings
+If you want to add custom build settings such as compile/link flags, specify profile, etc. 
+You will need to provide such settings to runcpp2 in the format of YAML.
+
+This build settings can either be embedded as comment in the script itself, or provided as 
+a YAML file.
+
+To generate a script build settings template, do 
+
+```shell
+# Embeds the build settings template as comment
+runcpp2 --create-script-template ./script.cpp
+
+# Creates the build settings template as dedicated yaml file
+runcpp2 --create-script-template ./script.yaml
+
+# Short form
+runcpp2 -t ./script.cpp
+```
+
+This will generate the script build settings template for you. 
+Everything is documented as comment in the template but here's a quick summary.
+
+- `RequiredProfiles`: To specify a specific profile for building for different platforms
+- `OverrideCompileFlags`: Compile flags to be added or removed from the current profile
+- `OverrideLinkFlags`: Same as `OverrideCompileFlags` but for linking
+- `OtherFilesToBeCompiled`: Other source files you wish to be compiled.
+- `Dependencies`: Any external libraries you wish to use. See next section.
+
+#### 4. Using External Libraries
+
+To use any external libraries, you need to specify them in the Dependencies section.
+Here's a quick run down on the important fields
+
+- `Source`: This specifies the source of the external dependency. 
+It can either be type `Git` or `Local` where it will clone the repository if it is `Git` or 
+copy the library folder in the filesystem if it is `Local`
+- `LibraryType`: This specifies the dependency type to be either `Static`, `Object`, `Shared` 
+or `Header`
+- `IncludePaths`: The include paths relative to the root of the dependency folder
+- `LinkProperties`: Settings for linking
+- `Setup`, `Build` and `Cleanup`: List of shell commands for one time setup, building and 
+cleaning up
+
+To access the source files of the dependencies, you can specify runcpp2 to build locally at 
+where it is invoked from by passing the `--local` flag. This is useful when you want to
+look at the headers of the dependencies.
+
+```shell
+runcpp2 --local ./script.cpp
+```
+
+This will create a `.runcpp2` folder and all the builds and dependencies will be inside it.
