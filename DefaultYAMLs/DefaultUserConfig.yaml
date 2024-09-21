@@ -103,7 +103,7 @@ Profiles:
     NameAliases: ["mingw"]
     
     # The file extensions associated with the profile
-    FileExtensions: [cpp, cc, cxx]
+    FileExtensions: [.cpp, .cc, .cxx]
     
     # The languages supported by the profile
     Languages: ["c++"]
@@ -251,7 +251,7 @@ Profiles:
 -   Name: "vs2022_v17+"
     NameAliases: ["msvc1930+", "msvc"]
     Languages: ["c++"]
-    FileExtensions: [cpp, cc, cxx]
+    FileExtensions: [.cpp, .cc, .cxx]
     FilesTypes: *CommonFilesTypes
     Compiler:
         PreRun: 

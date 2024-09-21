@@ -1,4 +1,5 @@
 #include "runcpp2/Data/ProfilesFlagsOverride.hpp"
+#include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
 bool runcpp2::Data::ProfilesFlagsOverride::ParseYAML_Node(ryml::ConstNodeRef& node)
@@ -19,7 +20,7 @@ bool runcpp2::Data::ProfilesFlagsOverride::ParseYAML_Node(ryml::ConstNodeRef& no
             return false;
         }
         
-        ProfileName profile(node[i].key().data(), node[i].key().len);
+        ProfileName profile = GetKey(node[i]);
         FlagsOverrideInfo flags;
         
         ryml::ConstNodeRef flagsOverrideNode = node[i];

@@ -15,6 +15,7 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
         NodeRequirement("RequiredProfiles", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("OverrideCompileFlags", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("OverrideLinkFlags", ryml::NodeType_e::MAP, false, true),
+        NodeRequirement("OtherFilesToBeCompiled", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("Dependencies", ryml::NodeType_e::SEQ, false, true),
     };
     
@@ -85,6 +86,23 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
         }
     }
     
+    if(ExistAndHasChild(node, "OtherFilesToBeCompiled"))
+    {
+        for(int i = 0; i < node["OtherFilesToBeCompiled"].num_children(); ++i)
+        {
+            ProfilesCompilesFiles compilesFiles;
+            ryml::ConstNodeRef currentProfileMapNode = node["OtherFilesToBeCompiled"][i];
+            PlatformName platform = GetKey(currentProfileMapNode);
+            
+            if(!compilesFiles.ParseYAML_Node(currentProfileMapNode))
+            {
+                ssLOG_ERROR("ScriptInfo: Failed to parse OtherFilesToBeCompiled.");
+                return false;
+            }
+            OtherFilesToBeCompiled[platform] = compilesFiles;
+        }
+    }
+    
     if(ExistAndHasChild(node, "Dependencies"))
     {
         for(int i = 0; i < node["Dependencies"].num_children(); ++i)
@@ -132,6 +150,13 @@ std::string runcpp2::Data::ScriptInfo::ToString(std::string indentation) const
     
     out += indentation + "    OverrideLinkFlags:\n";
     for(auto it = OverrideLinkFlags.begin(); it != OverrideLinkFlags.end(); ++it)
+    {
+        out += indentation + "        " + it->first + ":\n";
+        out += it->second.ToString(indentation + "            ");
+    }
+    
+    out += indentation + "    OtherFilesToBeCompiled:\n";
+    for(auto it = OtherFilesToBeCompiled.begin(); it != OtherFilesToBeCompiled.end(); ++it)
     {
         out += indentation + "        " + it->first + ":\n";
         out += it->second.ToString(indentation + "            ");

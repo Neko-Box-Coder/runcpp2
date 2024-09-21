@@ -71,8 +71,6 @@ namespace
                                     const std::string& scriptPath)
     {
         std::string scriptExtension = ghc::filesystem::path(scriptPath).extension().string();
-        if(!scriptExtension.empty())
-            scriptExtension.erase(0, 1);
         
         //If the language is explicitly stated, use it instead of file extension
         if(!scriptInfo.Language.empty())
@@ -83,7 +81,8 @@ namespace
                 return false;
             }
         }
-        else if(profile.FileExtensions.find(scriptExtension) == profile.FileExtensions.end())
+        else if(scriptExtension.empty() ||
+                profile.FileExtensions.find(scriptExtension) == profile.FileExtensions.end())
         {
             ssLOG_DEBUG("Failed to match file extension for " << scriptExtension);
             return false;
