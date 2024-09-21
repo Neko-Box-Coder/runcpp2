@@ -31,8 +31,6 @@
 *.out
 *.app
 
-# Exclude psd files
-*.psd
 
 # Editor files
 .vscode/
