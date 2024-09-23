@@ -81,16 +81,18 @@
 #         # Properties for searching the library binary for the profile
 #         # You can also use "All" if all compilers use the same values
 #         "g++":
-#             # The library names to be searched for when linking against the script
+#             # The library names to be searched for when linking against the script. 
+#             # Binaries with linkable extension that contains one of the names will be linked
 #             SearchLibraryNames: ["MyLibrary"]
 #             
-#             # (Optional) The library names to be excluded from being searched
+#             # (Optional) The library names to be excluded from being searched.
+#             # Works the same as SearchLibraryNames but will NOT be linked instead
 #             ExcludeLibraryNames: []
 #             
 #             # The path (relative to the dependency folder) to be searched for the dependency binaries
 #             SearchDirectories: ["./build"]
 #             
-#             # (Optional) Additional link options for this dependency for each platform
+#             # (Optional) Additional link flags for this dependency for each platform
 #             AdditionalLinkOptions: 
 #                 All: []
 #     

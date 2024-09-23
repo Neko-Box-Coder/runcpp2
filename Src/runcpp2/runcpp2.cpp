@@ -461,6 +461,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                         const std::string& configPreferredProfile,
                         const std::unordered_map<CmdOptions, std::string> currentOptions,
                         const std::vector<std::string>& runArgs,
+                        const Data::ScriptInfo* lastScriptInfo,
+                        Data::ScriptInfo& outScriptInfo,
                         int& returnStatus)
 {
     INTERNAL_RUNCPP2_SAFE_START();
@@ -619,6 +621,42 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 return PipelineResult::INVALID_BUILD_DIR;
             }
         }
+        
+        //Check if script info has changed if provided
+        bool scriptInfoChanged = true;
+        {
+            ghc::filesystem::path lastScriptInfoFilePath = buildDir / "LastScriptInfo.yaml";
+            
+            //Compare script info in memory
+            if(lastScriptInfo != nullptr)
+                scriptInfoChanged = lastScriptInfo->ToString("") != scriptInfo.ToString("");
+            //Compare script info in disk
+            else
+            {
+                if(ghc::filesystem::exists(lastScriptInfoFilePath, e))
+                {
+                    ssLOG_DEBUG("Last script info file exists: " << lastScriptInfoFilePath);
+                    std::ifstream lastScriptInfoFile;
+                    lastScriptInfoFile.open(lastScriptInfoFilePath);
+                    std::stringstream lastScriptInfoBuffer;
+                    lastScriptInfoBuffer << lastScriptInfoFile.rdbuf();
+                    scriptInfoChanged = lastScriptInfoBuffer.str() != scriptInfo.ToString("");
+                }
+            }
+            
+            std::ofstream writeOutputFile(lastScriptInfoFilePath);
+            if(!writeOutputFile)
+            {
+                ssLOG_ERROR("Failed to open file: " << lastScriptInfoFilePath);
+                //TODO: Maybee add a pipeline result for this?
+                return PipelineResult::INVALID_BUILD_DIR;
+            }
+
+            writeOutputFile << scriptInfo.ToString("");
+            
+            //Pass the current script info out
+            outScriptInfo = scriptInfo;
+        }
 
         profileIndex = GetPreferredProfileIndex(absoluteScriptPath, 
                                                 scriptInfo, 
@@ -656,7 +694,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             }
             
             if( currentOptions.count(CmdOptions::RESET_CACHE) > 0 ||
-                currentOptions.count(CmdOptions::REMOVE_DEPENDENCIES) > 0)
+                currentOptions.count(CmdOptions::REMOVE_DEPENDENCIES) > 0 ||
+                scriptInfoChanged)
             {
                 if(!CleanupDependencies(profiles.at(profileIndex),
                                         scriptInfo,
@@ -726,7 +765,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         std::vector<ghc::filesystem::path> cachedObjectsFiles;
         ghc::filesystem::file_time_type finalObjectWriteTime;
         
-        if(currentOptions.count(runcpp2::CmdOptions::RESET_CACHE) > 0)
+        if(currentOptions.count(runcpp2::CmdOptions::RESET_CACHE) > 0 || scriptInfoChanged)
             sourceHasCache = std::vector<bool>(sourceFiles.size(), false);
         else if(!HasCompiledCache(  sourceFiles, 
                                     buildDir, 
@@ -782,8 +821,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 return PipelineResult::COMPILE_LINK_FAILED;
             }
         }
-        
-        //TODO: Write last compiled configuration to build directory for cache
     }
 
     //We are only compiling when watching changes
