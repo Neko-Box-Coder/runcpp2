@@ -58,6 +58,8 @@ namespace runcpp2
                                     const std::string& configPreferredProfile,
                                     const std::unordered_map<CmdOptions, std::string> currentOptions,
                                     const std::vector<std::string>& runArgs,
+                                    const Data::ScriptInfo* lastScriptInfo,
+                                    Data::ScriptInfo& outScriptInfo,
                                     int& returnStatus);
 }
 

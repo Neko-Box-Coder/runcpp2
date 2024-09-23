@@ -1,7 +1,5 @@
 TODO:
-- Ability to add multiple cpp files
 - Group object files in folders to avoid name collision
-
 
 - Add ability to add defines for cross-compiler
 - Ability to compile runcpp2 as single cpp

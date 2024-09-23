@@ -321,6 +321,8 @@ int main(int argc, char* argv[])
         }
     }
     
+    runcpp2::Data::ScriptInfo parsedScriptInfo;
+    
     if(currentOptions.count(runcpp2::CmdOptions::WATCH))
     {
         std::error_code e;
@@ -331,12 +333,15 @@ int main(int argc, char* argv[])
         }
         
         ghc::filesystem::file_time_type lastScriptWriteTime {};
-        
         while(true)
         {
+            runcpp2::Data::ScriptInfo* lastParsedScriptInfo = nullptr;
+            
             if(ghc::filesystem::last_write_time(script, e) > lastScriptWriteTime)
             {
                 int result = 0;
+    
+                
     
                 runcpp2::PipelineResult pipelineResult = 
                     runcpp2::StartPipeline( script, 
@@ -344,6 +349,8 @@ int main(int argc, char* argv[])
                                             preferredProfile, 
                                             currentOptions, 
                                             scriptArgs,
+                                            lastParsedScriptInfo,
+                                            parsedScriptInfo,
                                             result);
             
                 static_assert(static_cast<int>(runcpp2::PipelineResult::COUNT) == 12, "Update this");
@@ -366,10 +373,11 @@ int main(int argc, char* argv[])
                     case runcpp2::PipelineResult::RUN_SCRIPT_FAILED:
                         break;
                 }
-                ssLOG_BASE("Watching...");
+                ssLOG_BASE("No error. Watching...");
             }
             
             lastScriptWriteTime = ghc::filesystem::last_write_time(script, e);
+            lastParsedScriptInfo = &parsedScriptInfo;
             std::this_thread::sleep_for(std::chrono::seconds(5));
         }
     }
@@ -381,6 +389,8 @@ int main(int argc, char* argv[])
                                 preferredProfile, 
                                 currentOptions, 
                                 scriptArgs,
+                                nullptr,
+                                parsedScriptInfo,
                                 result) != runcpp2::PipelineResult::SUCCESS)
     {
         return -1;
