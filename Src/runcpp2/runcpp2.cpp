@@ -370,7 +370,8 @@ namespace
                             bool buildExecutable,
                             const std::string& scriptName,
                             const std::string& exeExt,
-                            ghc::filesystem::file_time_type& finalObjectWriteTime)
+                            const std::vector<std::string>& copiedBinariesPaths,
+                            const ghc::filesystem::file_time_type& finalObjectWriteTime)
     {
         for(int i = 0; i < sourceHasCache.size(); ++i)
         {
@@ -378,9 +379,26 @@ namespace
                 return false;
         }
         
-        //TODO: Check dependencies objects timestamps
-        
+        ghc::filesystem::file_time_type currentFinalObjectWriteTime = finalObjectWriteTime;
         std::error_code e;
+        
+        for(int i = 0; i < copiedBinariesPaths.size(); ++i)
+        {
+            if(ghc::filesystem::exists(copiedBinariesPaths.at(i), e))
+            {
+                ghc::filesystem::file_time_type lastObjectWriteTime = 
+                    ghc::filesystem::last_write_time(copiedBinariesPaths.at(i), e);
+            
+                if(lastObjectWriteTime > currentFinalObjectWriteTime)
+                    currentFinalObjectWriteTime = lastObjectWriteTime;
+            }
+            else
+            {
+                ssLOG_ERROR("Somehow copied binary path " << copiedBinariesPaths.at(i) << 
+                            " doesn't exist");
+                return false;
+            }
+        }
         
         //Check if output is cached
         if(buildExecutable)
@@ -397,7 +415,7 @@ namespace
                 ghc::filesystem::file_time_type lastExecutableWriteTime = 
                     ghc::filesystem::last_write_time(exeToCopy, e);
                 
-                if(lastExecutableWriteTime > finalObjectWriteTime)
+                if(lastExecutableWriteTime > currentFinalObjectWriteTime)
                 {
                     ssLOG_INFO("Using output cache");
                     return true;
@@ -435,7 +453,7 @@ namespace
                 ghc::filesystem::file_time_type lastSharedLibWriteTime = 
                     ghc::filesystem::last_write_time(sharedLibBuild, e);
                 
-                if(lastSharedLibWriteTime > finalObjectWriteTime)
+                if(lastSharedLibWriteTime > currentFinalObjectWriteTime)
                 {
                     ssLOG_INFO("Using output cache");
                     return true;
@@ -778,17 +796,31 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             return PipelineResult::UNEXPECTED_FAILURE;
         }
         
+        //Update finalObjectWriteTime
+        for(int i = 0; i < copiedBinariesPaths.size(); ++i)
+        {
+            if(!ghc::filesystem::exists(copiedBinariesPaths.at(i), e))
+            {
+                ssLOG_ERROR(copiedBinariesPaths.at(i) << " reported as cached but doesn't exist");
+                return PipelineResult::UNEXPECTED_FAILURE;
+            }
+            
+            ghc::filesystem::file_time_type lastWriteTime = 
+                ghc::filesystem::last_write_time(copiedBinariesPaths.at(i), e);
         
-        //TODO: Use this once we implement checking dependencies objects timestamps
-        (void)HasOutputCache;
-        //if(HasOutputCache(  sourceHasCache, 
-        //                    buildDir, 
-        //                    profiles.at(profileIndex), 
-        //                    currentOptions.count(CmdOptions::EXECUTABLE) > 0,
-        //                    scriptName,
-        //                    exeExt,
-        //                    finalObjectWriteTime))
+            if(lastWriteTime > finalObjectWriteTime)
+                finalObjectWriteTime = lastWriteTime;
+        }
+        
         //Compiling/Linking
+        if(!HasOutputCache( sourceHasCache, 
+                            buildDir, 
+                            profiles.at(profileIndex), 
+                            currentOptions.count(CmdOptions::EXECUTABLE) > 0,
+                            scriptName,
+                            exeExt,
+                            copiedBinariesPaths,
+                            finalObjectWriteTime))
         {
             for(int i = 0; i < cachedObjectsFiles.size(); ++i)
                 copiedBinariesPaths.push_back(cachedObjectsFiles.at(i));
