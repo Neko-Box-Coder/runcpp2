@@ -482,7 +482,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                         const std::vector<std::string>& runArgs,
                         const Data::ScriptInfo* lastScriptInfo,
                         Data::ScriptInfo& outScriptInfo,
-                        const std::string& outputDir,
+                        const std::string& buildOutputDir,
                         int& returnStatus)
 {
     INTERNAL_RUNCPP2_SAFE_START();
@@ -977,15 +977,20 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         }
         else
         {
+            std::error_code e;
+            
             // Copy the output file
-            ghc::filesystem::path destFile = ghc::filesystem::path(outputDir) / target.filename();
-            std::error_code ec;
-            ghc::filesystem::copy(  target, destFile, 
-                                    ghc::filesystem::copy_options::overwrite_existing, ec);
-            if(ec)
             {
-                ssLOG_ERROR("Failed to copy output file: " << ec.message());
-                return PipelineResult::UNEXPECTED_FAILURE;
+                ghc::filesystem::path destFile = 
+                    ghc::filesystem::path(buildOutputDir) / target.filename();
+                
+                ghc::filesystem::copy(  target, destFile, 
+                                        ghc::filesystem::copy_options::overwrite_existing, e);
+                if(e)
+                {
+                    ssLOG_ERROR("Failed to copy output file: " << e.message());
+                    return PipelineResult::UNEXPECTED_FAILURE;
+                }
             }
 
             // Copy the files that need to be copied
@@ -993,17 +998,18 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             {
                 ghc::filesystem::path srcFile(filesToCopyPaths.at(i));
                 ghc::filesystem::path destFile = 
-                    ghc::filesystem::path(outputDir) / srcFile.filename();
+                    ghc::filesystem::path(buildOutputDir) / srcFile.filename();
                 ghc::filesystem::copy(  srcFile, destFile, 
-                                        ghc::filesystem::copy_options::overwrite_existing, ec);
-                if(ec)
+                                        ghc::filesystem::copy_options::overwrite_existing, e);
+                if(e)
                 {
-                    ssLOG_ERROR("Failed to copy file " << filesToCopyPaths.at(i) << ": " << ec.message());
+                    ssLOG_ERROR("Failed to copy file " << filesToCopyPaths.at(i) << ": " << 
+                                e.message());
                     return PipelineResult::UNEXPECTED_FAILURE;
                 }
             }
 
-            ssLOG_INFO("Build completed. Files copied to " << outputDir);
+            ssLOG_INFO("Build completed. Files copied to " << buildOutputDir);
             return PipelineResult::SUCCESS;
         }
     }

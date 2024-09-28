@@ -260,7 +260,7 @@ int main(int argc, char* argv[])
         ssLOG_BASE("    -s, --[s]how-config-path                Show where runcpp2 is reading the config from");
         ssLOG_BASE("    -t, --create-script-[t]emplate <file>   Creates/prepend runcpp2 script info template");
         ssLOG_BASE("    -w, --[w]atch                           Watch script changes and output any compiling errors");
-        ssLOG_BASE("    -b, --[b]uild                           Build the script and copy output files to the script's directory");
+        ssLOG_BASE("    -b, --[b]uild                           Build the script and copy output files to the working directory");
         
         return 0;
     }

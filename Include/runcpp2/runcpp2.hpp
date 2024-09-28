@@ -61,7 +61,7 @@ namespace runcpp2
                                     const std::vector<std::string>& runArgs,
                                     const Data::ScriptInfo* lastScriptInfo,
                                     Data::ScriptInfo& outScriptInfo,
-                                    const std::string& outputDir,
+                                    const std::string& buildOutputDir,
                                     int& returnStatus);
 }
 
