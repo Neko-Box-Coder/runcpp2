@@ -23,17 +23,18 @@ namespace
     bool CreateLocalBuildDirectory( const std::string& scriptPath, 
                                     ghc::filesystem::path& outBuildPath)
     {
-        std::string scriptDirectory = ghc::filesystem::path(scriptPath).parent_path().string();
+        // Get the current working directory
+        std::string currentWorkingDir = ghc::filesystem::current_path().string();
         
-        //Create the runcpp2 directory
-        std::string runcpp2Dir = scriptDirectory + "/.runcpp2";
+        // Create the .runcpp2 directory in the current working directory
+        std::string runcpp2Dir = currentWorkingDir + "/.runcpp2";
         
         std::error_code e;
         if(!ghc::filesystem::exists(runcpp2Dir, e))
         {
             if(!ghc::filesystem::create_directory(runcpp2Dir, e))
             {
-                ssLOG_ERROR("Failed to create runcpp2 directory");
+                ssLOG_ERROR("Failed to create .runcpp2 directory in the current working directory");
                 return false;
             }
         }
@@ -613,9 +614,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         
         //Create build directory
         {
-            const bool localBuildDir = currentOptions.count(CmdOptions::LOCAL) > 0;
             bool createdBuildDir = false;
-            if(localBuildDir)
+            if(currentOptions.count(CmdOptions::LOCAL) > 0)
             {
                 if(CreateLocalBuildDirectory(absoluteScriptPath, buildDir))
                     createdBuildDir = true;

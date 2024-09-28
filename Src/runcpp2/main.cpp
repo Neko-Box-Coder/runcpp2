@@ -256,7 +256,7 @@ int main(int argc, char* argv[])
         ssLOG_BASE("    -e, --[e]xecutable                      Runs as executable instead of shared library");
         ssLOG_BASE("    -h, --[h]elp                            Show this help message");
         ssLOG_BASE("    -d, --remove-[d]ependencies             Remove dependencies listed in the script");
-        ssLOG_BASE("    -l, --[l]ocal                           Build the script and dependencies locally");
+        ssLOG_BASE("    -l, --[l]ocal                           Build in the current working directory under .runcpp2 directory");
         ssLOG_BASE("    -s, --[s]how-config-path                Show where runcpp2 is reading the config from");
         ssLOG_BASE("    -t, --create-script-[t]emplate <file>   Creates/prepend runcpp2 script info template");
         ssLOG_BASE("    -w, --[w]atch                           Watch script changes and output any compiling errors");
