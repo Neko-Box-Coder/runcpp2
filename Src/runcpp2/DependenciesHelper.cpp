@@ -616,6 +616,7 @@ bool runcpp2::CopyDependenciesBinaries( const ghc::filesystem::path& buildDir,
                     if(!extensionMatched)
                         continue;
                     
+                    //TODO: Group object files in folders to avoid name collision
                     ghc::filesystem::path copiedPath = buildDir / it.path().filename();
                     
                     //Check if we have previously copied the dependencies to the folder

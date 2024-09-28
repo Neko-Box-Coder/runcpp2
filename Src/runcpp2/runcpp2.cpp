@@ -481,6 +481,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                         const std::vector<std::string>& runArgs,
                         const Data::ScriptInfo* lastScriptInfo,
                         Data::ScriptInfo& outScriptInfo,
+                        const std::string& outputDir,
                         int& returnStatus)
 {
     INTERNAL_RUNCPP2_SAFE_START();
@@ -559,6 +560,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
     #endif
 
     //Parsing the script, setting up dependencies, compiling and linking
+    std::vector<std::string> filesToCopyPaths;
     {
         //Check if there's script info as yaml file instead
         std::error_code e;
@@ -796,18 +798,70 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             return PipelineResult::UNEXPECTED_FAILURE;
         }
         
-        //Update finalObjectWriteTime
+        std::vector<std::string> linkFilesPaths;
+        std::unordered_set<std::string> linkExtensions;
+        const Data::FilesTypesInfo& currentFileTypes = profiles.at(profileIndex).FilesTypes;
+
+        //Populate the set of link extensions
+        if(runcpp2::HasValueFromPlatformMap(currentFileTypes.StaticLinkFile.Extension))
+        {
+            linkExtensions.insert(*runcpp2::GetValueFromPlatformMap(currentFileTypes.StaticLinkFile
+                                                                                    .Extension));
+        }
+        if(runcpp2::HasValueFromPlatformMap(currentFileTypes.SharedLinkFile.Extension))
+        {
+            linkExtensions.insert(*runcpp2::GetValueFromPlatformMap(currentFileTypes.SharedLinkFile
+                                                                                    .Extension));
+        }
+        if(runcpp2::HasValueFromPlatformMap(currentFileTypes.ObjectLinkFile.Extension))
+        {
+            linkExtensions.insert(*runcpp2::GetValueFromPlatformMap(currentFileTypes.ObjectLinkFile
+                                                                                    .Extension));
+        }
+
+        //Separate the copied files from dependencies into files to link and files to copy
         for(int i = 0; i < copiedBinariesPaths.size(); ++i)
         {
-            if(!ghc::filesystem::exists(copiedBinariesPaths.at(i), e))
+            ghc::filesystem::path filePath(copiedBinariesPaths.at(i));
+            std::string extension = filePath.extension().string();
+
+            //Check if the file is a link file based on its extension
+            if(linkExtensions.find(extension) != linkExtensions.end())
             {
-                ssLOG_ERROR(copiedBinariesPaths.at(i) << " reported as cached but doesn't exist");
+                linkFilesPaths.push_back(copiedBinariesPaths.at(i));
+                
+                //Special case when SharedLinkFile and SharedLibraryFile share the same extension
+                if( runcpp2::HasValueFromPlatformMap(currentFileTypes.SharedLibraryFile.Extension) && 
+                    *runcpp2::GetValueFromPlatformMap(currentFileTypes  .SharedLibraryFile
+                                                                        .Extension) == extension)
+                {
+                    filesToCopyPaths.push_back(copiedBinariesPaths.at(i));
+                }
+            }
+            else
+                filesToCopyPaths.push_back(copiedBinariesPaths.at(i));
+        }
+
+        ssLOG_DEBUG("Files to link:");
+        for(int i = 0; i < linkFilesPaths.size(); ++i)
+            ssLOG_DEBUG("  " << linkFilesPaths[i]);
+
+        ssLOG_INFO("Files to copy:");
+        for(int i = 0; i < filesToCopyPaths.size(); ++i)
+            ssLOG_INFO("  " << filesToCopyPaths[i]);
+        
+        // Update finalObjectWriteTime
+        for(int i = 0; i < linkFilesPaths.size(); ++i)
+        {
+            if(!ghc::filesystem::exists(linkFilesPaths.at(i), e))
+            {
+                ssLOG_ERROR(linkFilesPaths.at(i) << " reported as cached but doesn't exist");
                 return PipelineResult::UNEXPECTED_FAILURE;
             }
             
             ghc::filesystem::file_time_type lastWriteTime = 
-                ghc::filesystem::last_write_time(copiedBinariesPaths.at(i), e);
-        
+                ghc::filesystem::last_write_time(linkFilesPaths.at(i), e);
+
             if(lastWriteTime > finalObjectWriteTime)
                 finalObjectWriteTime = lastWriteTime;
         }
@@ -819,11 +873,11 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                             currentOptions.count(CmdOptions::EXECUTABLE) > 0,
                             scriptName,
                             exeExt,
-                            copiedBinariesPaths,
+                            linkFilesPaths,
                             finalObjectWriteTime))
         {
             for(int i = 0; i < cachedObjectsFiles.size(); ++i)
-                copiedBinariesPaths.push_back(cachedObjectsFiles.at(i));
+                linkFilesPaths.push_back(cachedObjectsFiles.at(i));
             
             if(currentOptions.count(CmdOptions::WATCH) > 0)
             {
@@ -845,7 +899,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                             scriptInfo,
                                             availableDependencies,
                                             profiles.at(profileIndex),
-                                            copiedBinariesPaths,
+                                            linkFilesPaths,
                                             currentOptions.count(CmdOptions::EXECUTABLE) > 0,
                                             exeExt))
             {
@@ -896,26 +950,60 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             return PipelineResult::COMPILE_LINK_FAILED;
         }
         
-        if(currentOptions.count(CmdOptions::EXECUTABLE) > 0)
+        if(currentOptions.count(CmdOptions::BUILD) == 0)
         {
-            //Running the script
-            if(!RunCompiledScript(target, absoluteScriptPath, runArgs, returnStatus))
+            if(currentOptions.count(CmdOptions::EXECUTABLE) > 0)
             {
-                ssLOG_ERROR("Failed to run script");
-                return PipelineResult::RUN_SCRIPT_FAILED;
+                //Running the script
+                if(!RunCompiledScript(target, absoluteScriptPath, runArgs, returnStatus))
+                {
+                    ssLOG_ERROR("Failed to run script");
+                    return PipelineResult::RUN_SCRIPT_FAILED;
+                }
+                
+                return PipelineResult::SUCCESS;
             }
-            
-            return PipelineResult::SUCCESS;
+            //Load the shared library and run it
+            else
+            {
+                if(!RunCompiledSharedLib(absoluteScriptPath, target, runArgs, returnStatus))
+                {
+                    ssLOG_ERROR("Failed to run script");
+                    return PipelineResult::RUN_SCRIPT_FAILED;
+                }
+                
+                return PipelineResult::SUCCESS;
+            }
         }
-        //Load the shared library and run it
         else
         {
-            if(!RunCompiledSharedLib(absoluteScriptPath, target, runArgs, returnStatus))
+            // Copy the output file
+            ghc::filesystem::path destFile = ghc::filesystem::path(outputDir) / target.filename();
+            std::error_code ec;
+            ghc::filesystem::copy(  target, destFile, 
+                                    ghc::filesystem::copy_options::overwrite_existing, ec);
+            if(ec)
             {
-                ssLOG_ERROR("Failed to run script");
-                return PipelineResult::RUN_SCRIPT_FAILED;
+                ssLOG_ERROR("Failed to copy output file: " << ec.message());
+                return PipelineResult::UNEXPECTED_FAILURE;
             }
-            
+
+            // Copy the files that need to be copied
+            for(int i = 0; i < filesToCopyPaths.size(); ++i)
+            {
+                ghc::filesystem::path srcFile(filesToCopyPaths.at(i));
+                ghc::filesystem::path destFile = 
+                    ghc::filesystem::path(outputDir) / srcFile.filename();
+                ghc::filesystem::copy(  srcFile, destFile, 
+                                        ghc::filesystem::copy_options::overwrite_existing, ec);
+                if(ec)
+                {
+                    ssLOG_ERROR("Failed to copy file " << filesToCopyPaths.at(i) << ": " << ec.message());
+                    return PipelineResult::UNEXPECTED_FAILURE;
+                }
+            }
+
+            ssLOG_INFO("Build completed. Files copied to " << outputDir);
             return PipelineResult::SUCCESS;
         }
     }
