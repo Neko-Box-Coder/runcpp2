@@ -75,7 +75,7 @@ namespace runcpp2
     BuildsManager::BuildsManager(const ghc::filesystem::path& configDirectory) : 
         ConfigDirectory(configDirectory),
         Mappings(),
-        BuildDirectory(configDirectory / "Builds"),
+        BuildDirectory(configDirectory / "CachedBuilds"),
         MappingsFile(BuildDirectory / "Mappings.csv"),
         Initialized(false)
     {}
