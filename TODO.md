@@ -1,6 +1,7 @@
 TODO:
 - Group object files in folders to avoid name collision
-
+- Option for build only
+- Allow runcpp2 to be library
 - Add ability to add defines for cross-compiler
 - Ability to compile runcpp2 as single cpp
 

@@ -87,7 +87,7 @@ or `Header`
 cleaning up
 
 To access the source files of the dependencies, you can specify runcpp2 to build locally at 
-where it is invoked from by passing the `--local` flag. This is useful when you want to
+where it script is by passing the `--local` flag. This is useful when you want to
 look at the headers of the dependencies.
 
 ```shell
