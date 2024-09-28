@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
     std::unordered_map<runcpp2::CmdOptions, std::string> currentOptions;
 
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 10, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 11, "Update this");
         std::unordered_map<std::string, runcpp2::OptionInfo> longOptionsMap =
         {
             {
@@ -212,10 +212,14 @@ int main(int argc, char* argv[])
             {
                 "--watch",
                 runcpp2::OptionInfo(runcpp2::CmdOptions::WATCH, false)
+            },
+            {
+                "--build",
+                runcpp2::OptionInfo(runcpp2::CmdOptions::BUILD, false)
             }
         };
         
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 10, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 11, "Update this");
         std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
         {
             {"-r", longOptionsMap.at("--reset-cache")},
@@ -226,7 +230,8 @@ int main(int argc, char* argv[])
             {"-l", longOptionsMap.at("--local")},
             {"-s", longOptionsMap.at("--show-config-path")},
             {"-t", longOptionsMap.at("--create-script-template")},
-            {"-w", longOptionsMap.at("--watch")}
+            {"-w", longOptionsMap.at("--watch")},
+            {"-b", longOptionsMap.at("--build")}
         };
         
         currentArgIndex = ParseArgs(longOptionsMap, shortOptionsMap, currentOptions, argc, argv);
@@ -243,7 +248,7 @@ int main(int argc, char* argv[])
     //Help message
     if(currentOptions.count(runcpp2::CmdOptions::HELP))
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 10, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 11, "Update this");
         ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
         ssLOG_BASE("Options:");
         ssLOG_BASE("    -r, --[r]eset-cache                     Deletes all cache and build everything from scratch");
@@ -251,10 +256,11 @@ int main(int argc, char* argv[])
         ssLOG_BASE("    -e, --[e]xecutable                      Runs as executable instead of shared library");
         ssLOG_BASE("    -h, --[h]elp                            Show this help message");
         ssLOG_BASE("    -d, --remove-[d]ependencies             Remove dependencies listed in the script");
-        ssLOG_BASE("    -l, --[l]ocal                           Build the script and dependencies locally");
+        ssLOG_BASE("    -l, --[l]ocal                           Build in the current working directory under .runcpp2 directory");
         ssLOG_BASE("    -s, --[s]how-config-path                Show where runcpp2 is reading the config from");
         ssLOG_BASE("    -t, --create-script-[t]emplate <file>   Creates/prepend runcpp2 script info template");
         ssLOG_BASE("    -w, --[w]atch                           Watch script changes and output any compiling errors");
+        ssLOG_BASE("    -b, --[b]uild                           Build the script and copy output files to the working directory");
         
         return 0;
     }
@@ -321,6 +327,13 @@ int main(int argc, char* argv[])
         }
     }
     
+    if( currentOptions.count(runcpp2::CmdOptions::BUILD) > 0 &&
+        currentOptions.count(runcpp2::CmdOptions::WATCH) > 0)
+    {
+        ssLOG_ERROR("--build option is not compatible with --watch option");
+        return -1;
+    }
+    
     runcpp2::Data::ScriptInfo parsedScriptInfo;
     
     if(currentOptions.count(runcpp2::CmdOptions::WATCH))
@@ -341,8 +354,6 @@ int main(int argc, char* argv[])
             {
                 int result = 0;
     
-                
-    
                 runcpp2::PipelineResult pipelineResult = 
                     runcpp2::StartPipeline( script, 
                                             profiles, 
@@ -351,6 +362,7 @@ int main(int argc, char* argv[])
                                             scriptArgs,
                                             lastParsedScriptInfo,
                                             parsedScriptInfo,
+                                            "",
                                             result);
             
                 static_assert(static_cast<int>(runcpp2::PipelineResult::COUNT) == 12, "Update this");
@@ -384,6 +396,10 @@ int main(int argc, char* argv[])
     
     int result = 0;
     
+    std::string outputDir;
+    if(currentOptions.count(runcpp2::CmdOptions::BUILD) > 0)
+        outputDir = ghc::filesystem::path(script).parent_path().string();
+    
     if(runcpp2::StartPipeline(  script, 
                                 profiles, 
                                 preferredProfile, 
@@ -391,6 +407,7 @@ int main(int argc, char* argv[])
                                 scriptArgs,
                                 nullptr,
                                 parsedScriptInfo,
+                                outputDir,
                                 result) != runcpp2::PipelineResult::SUCCESS)
     {
         return -1;

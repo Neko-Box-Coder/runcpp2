@@ -21,6 +21,7 @@ namespace runcpp2
         SHOW_USER_CONFIG,
         SCRIPT_TEMPLATE,
         WATCH,
+        BUILD,
         COUNT
     };
     
@@ -60,6 +61,7 @@ namespace runcpp2
                                     const std::vector<std::string>& runArgs,
                                     const Data::ScriptInfo* lastScriptInfo,
                                     Data::ScriptInfo& outScriptInfo,
+                                    const std::string& buildOutputDir,
                                     int& returnStatus);
 }
 

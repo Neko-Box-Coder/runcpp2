@@ -86,12 +86,12 @@ or `Header`
 - `Setup`, `Build` and `Cleanup`: List of shell commands for one time setup, building and 
 cleaning up
 
-To access the source files of the dependencies, you can specify runcpp2 to build locally at 
-where it script is by passing the `--local` flag. This is useful when you want to
+To access the source files of the dependencies, you can specify runcpp2 to build locally in 
+the current working directory by passing the `--local` flag. This is useful when you want to
 look at the headers of the dependencies.
 
 ```shell
 runcpp2 --local ./script.cpp
 ```
 
-This will create a `.runcpp2` folder and all the builds and dependencies will be inside it.
+This will create a `.runcpp2` folder in the current working directory, and all the builds and dependencies will be inside it.
