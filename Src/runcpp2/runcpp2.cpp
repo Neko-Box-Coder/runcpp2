@@ -1026,7 +1026,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 }
             }
 
-            ssLOG_INFO("Build completed. Files copied to " << buildOutputDir);
+            ssLOG_BASE("Build completed. Files copied to " << buildOutputDir);
             return PipelineResult::SUCCESS;
         }
     }

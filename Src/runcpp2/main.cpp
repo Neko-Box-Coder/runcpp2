@@ -398,7 +398,7 @@ int main(int argc, char* argv[])
     
     std::string outputDir;
     if(currentOptions.count(runcpp2::CmdOptions::BUILD) > 0)
-        outputDir = ghc::filesystem::path(script).parent_path().string();
+        outputDir = ghc::filesystem::current_path().string();
     
     if(runcpp2::StartPipeline(  script, 
                                 profiles, 
