@@ -8,11 +8,10 @@
 # Language: "c++"
 
 # # (Optional) Preferred profiles for the script for each platform.
-# #            A special profile name "All" can be used to allow any profile.
-# #            Default profiles are listed in user config file,
+# #            Profiles are listed in user config file,
 # #            which can be retreived by running `runcpp2 --show-config-path`
 # #            Each of the platform dependent settings can be listed under
-# #            - All
+# #            - Default
 # #            - Windows
 # #            - Linux
 # #            - MacOS
@@ -25,8 +24,8 @@
 # # (Optional) Override the default compile flags for each platform.
 # OverrideCompileFlags:
 #     # Target Platform
-#     All:
-#         # Profile with the respective flags to override. ("All" for any profile)
+#     Default:
+#         # Profile with the respective flags to override. ("Default" for any profile)
 #         "g++":
 #             # (Optional) Flags to be removed from the default compile flags, separated by space
 #             Remove: ""
@@ -37,8 +36,8 @@
 # # (Optional) Override the default link flags for each platform.
 # OverrideLinkFlags:
 #     # Target Platform
-#     All:
-#         # Profile with the respective flags to override ("All" for any profile)
+#     Default:
+#         # Profile with the respective flags to override ("Default" for any profile)
 #         "g++":
 #             # (Optional) Flags to be removed from the default link flags, separated by space
 #             Remove: ""
@@ -50,18 +49,18 @@
 # # (Optional) Other source files (relative to script file path) to be compiled.
 # OtherFilesToBeCompiled:
 #     # Target Platform
-#     All:
+#     Default:
 #         # Target Profile
-#         All:
+#         Default:
 #             - "./AnotherSourceFile.cpp"
 
 # # (Optional) Define cross-compiler defines for each platform and profile.
 # # Defines can be specified as just a name or as a name-value pair.
 # Defines:
-#     # Target Platform (All, Windows, Linux, MacOS, or Unix)
-#     All:
-#         # Profile name (e.g., "g++", "clang++", "msvc", or "All" for any profile)
-#         "All":
+#     # Target Platform (Default, Windows, Linux, MacOS, or Unix)
+#     Default:
+#         # Profile name (e.g., "g++", "clang++", "msvc", or "Default" for any profile)
+#         "Default":
 #             - "EXAMPLE_DEFINE"              # Define without a value
 #             - "VERSION_MAJOR=1"             # Define with a value
 
@@ -92,7 +91,7 @@
 #     # (Optional if LibraryType is Header) Link properties of the dependency
 #     LinkProperties:
 #         # Properties for searching the library binary for the profile
-#         # You can also use "All" if all compilers use the same values
+#         # You can also use "Default" if all compilers use the same values
 #         "g++":
 #             # The library names to be searched for when linking against the script. 
 #             # Binaries with linkable extension that contains one of the names will be linked
@@ -107,15 +106,15 @@
 #             
 #             # (Optional) Additional link flags for this dependency for each platform
 #             AdditionalLinkOptions: 
-#                 All: []
+#                 Default: []
 #     
 #     # (Optional) Setup commands are run once when the dependency is populated
 #     Setup:
 #         # Target Platform
-#         All:
+#         Default:
 #             # Setup shell commands for the specified profile. 
-#             # All commands are run in the dependency folder
-#             # You can also use "All" if all the compilers run the same setup commands
+#             # Default commands are run in the dependency folder
+#             # You can also use "Default" if all the compilers run the same setup commands
 #             "g++":
 #             -   "mkdir build"
 #             
@@ -123,8 +122,8 @@
 #     # (Optional) Build commands are run every time before the script is being built
 #     Build:
 #         # Target Platform
-#         All:
-#             # Target Profile ("All" for any profile)
+#         Default:
+#             # Target Profile ("Default" for any profile)
 #             "g++":
 #             -   "cd build && cmake .."
 #             -   "cd build && cmake --build ."
