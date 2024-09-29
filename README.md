@@ -71,6 +71,9 @@ Everything is documented as comment in the template but here's a quick summary.
 - `OtherFilesToBeCompiled`: Other source files you wish to be compiled.
 - `Dependencies`: Any external libraries you wish to use. See next section.
 
+> [!NOTE]
+> Settings in the script info are passed directly to the shell. Be cautious when using user-provided input in your build commands.
+
 #### 4. Using External Libraries
 
 To use any external libraries, you need to specify them in the Dependencies section.

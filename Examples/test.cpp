@@ -14,6 +14,11 @@ OtherFilesToBeCompiled:
         -   "./AnotherSourceFile.cpp"
         -   "./AnotherSourceFile2.cpp"
 
+Defines:
+    All:
+        # Turns into `TEST_DEF=\"Test Define Working\"` in shell
+        "All": ["TEST_DEF=\\\"Test Define Working\\\""]
+
 Dependencies:
 -   Name: ssLogger
     Platforms: [Windows, Linux, MacOS]
@@ -52,6 +57,7 @@ Dependencies:
 int main(int argc, char* argv[])
 {
     std::cout << "Hello World" << std::endl;
+    std::cout << TEST_DEF << std::endl;
     
     for(int i = 0; i < argc; ++i)
         std::cout << "Arg" << i << ": " << argv[i] << std::endl;

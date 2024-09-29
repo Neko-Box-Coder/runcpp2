@@ -17,6 +17,7 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
         NodeRequirement("OverrideLinkFlags", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("OtherFilesToBeCompiled", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("Dependencies", ryml::NodeType_e::SEQ, false, true),
+        NodeRequirement("Defines", ryml::NodeType_e::MAP, false, true)
     };
     
     if(!CheckNodeRequirements(node, requirements))
@@ -120,6 +121,25 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
         }
     }
     
+    if(ExistAndHasChild(node, "Defines"))
+    {
+        ryml::ConstNodeRef definesNode = node["Defines"];
+        
+        for(int i = 0; i < definesNode.num_children(); ++i)
+        {
+            PlatformName platform = GetKey(definesNode[i]);
+            ProfilesDefines profilesDefines;
+            ryml::ConstNodeRef currentDefinesNode = definesNode[i];
+            
+            if(!profilesDefines.ParseYAML_Node(currentDefinesNode))
+            {
+                ssLOG_ERROR("ScriptInfo: Failed to parse Defines.");
+                return false;
+            }
+            Defines[platform] = profilesDefines;
+        }
+    }
+    
     return true;
     
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
@@ -165,6 +185,13 @@ std::string runcpp2::Data::ScriptInfo::ToString(std::string indentation) const
     out += indentation + "    Dependencies:\n";
     for(int i = 0; i < Dependencies.size(); ++i)
         out += Dependencies[i].ToString(indentation + "    ");
+    
+    out += indentation + "    Defines:\n";
+    for(auto it = Defines.begin(); it != Defines.end(); ++it)
+    {
+        out += indentation + "        " + it->first + ":\n";
+        out += it->second.ToString(indentation + "            ");
+    }
     
     return out;
 }

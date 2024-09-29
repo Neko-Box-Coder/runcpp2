@@ -1,3 +1,6 @@
+# NOTE: All command substitutions are passed directly to the shell. 
+#       Be cautious when using user-provided input in your build commands to avoid potential security risks.
+
 # NOTE: All the options here are defaulted to empty. 
 #       You can uncomment different sections to set what you want.
 
@@ -51,6 +54,16 @@
 #         # Target Profile
 #         All:
 #             - "./AnotherSourceFile.cpp"
+
+# # (Optional) Define cross-compiler defines for each platform and profile.
+# # Defines can be specified as just a name or as a name-value pair.
+# Defines:
+#     # Target Platform (All, Windows, Linux, MacOS, or Unix)
+#     All:
+#         # Profile name (e.g., "g++", "clang++", "msvc", or "All" for any profile)
+#         "All":
+#             - "EXAMPLE_DEFINE"              # Define without a value
+#             - "VERSION_MAJOR=1"             # Define with a value
 
 # # (Optional) The list of dependencies needed by the script
 # Dependencies:

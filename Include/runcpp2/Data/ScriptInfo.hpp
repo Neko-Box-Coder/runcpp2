@@ -5,6 +5,7 @@
 #include "runcpp2/Data/ProfilesFlagsOverride.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/Data/ProfilesCompilesFiles.hpp"
+#include "runcpp2/Data/ProfilesDefines.hpp"
 
 #include <string>
 #include <vector>
@@ -27,6 +28,7 @@ namespace runcpp2
                 
                 std::vector<DependencyInfo> Dependencies;
                 
+                std::unordered_map<PlatformName, ProfilesDefines> Defines;
                 
                 bool Populated = false;
                 
