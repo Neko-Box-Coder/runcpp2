@@ -311,7 +311,8 @@ namespace
         return true;
     }
     
-    bool HasCompiledCache(  const std::vector<ghc::filesystem::path>& sourceFiles,
+    bool HasCompiledCache(  const ghc::filesystem::path& scriptPath,
+                            const std::vector<ghc::filesystem::path>& sourceFiles,
                             const ghc::filesystem::path& buildDir,
                             const runcpp2::Data::Profile& currentProfile,
                             std::vector<bool>& outHasCache,
@@ -335,9 +336,22 @@ namespace
         
         outFinalObjectWriteTime = ghc::filesystem::file_time_type();
         
+        std::error_code e;
         for(int i = 0; i < sourceFiles.size(); ++i)
         {
-            ghc::filesystem::path currentObjectFilePath = buildDir / sourceFiles.at(i).stem(); 
+            ghc::filesystem::path relativeSourcePath = 
+                ghc::filesystem::relative(sourceFiles.at(i), scriptPath.parent_path(), e);
+            
+            if(e)
+            {
+                ssLOG_ERROR("Failed to get relative path for " << sourceFiles.at(i).string());
+                ssLOG_ERROR("Failed with error: " << e.message());
+                return false;
+            }
+            
+            ghc::filesystem::path currentObjectFilePath = buildDir / 
+                                                          relativeSourcePath.parent_path() / 
+                                                          relativeSourcePath.stem();
             currentObjectFilePath.concat(objectExt);
             
             ssLOG_DEBUG("Trying to use cache: " << sourceFiles.at(i).string());
@@ -787,7 +801,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         
         if(currentOptions.count(runcpp2::CmdOptions::RESET_CACHE) > 0 || scriptInfoChanged)
             sourceHasCache = std::vector<bool>(sourceFiles.size(), false);
-        else if(!HasCompiledCache(  sourceFiles, 
+        else if(!HasCompiledCache(  absoluteScriptPath,
+                                    sourceFiles, 
                                     buildDir, 
                                     profiles.at(profileIndex), 
                                     sourceHasCache,
@@ -882,6 +897,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             if(currentOptions.count(CmdOptions::WATCH) > 0)
             {
                 if(!CompileScriptOnly(  buildDir,
+                                        absoluteScriptPath,
                                         sourceFiles,
                                         sourceHasCache,
                                         scriptInfo,
@@ -893,6 +909,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 }
             }
             else if(!CompileAndLinkScript(  buildDir,
+                                            absoluteScriptPath,
                                             ghc::filesystem::path(absoluteScriptPath).stem(), 
                                             sourceFiles,
                                             sourceHasCache,

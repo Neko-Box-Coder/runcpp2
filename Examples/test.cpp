@@ -9,7 +9,7 @@ OtherFilesToBeCompiled:
     All:
         # Target Profile
         "g++":
-        -   "./AnotherSourceFileGcc.cpp"
+        -   "./OtherSources/AnotherSourceFileGcc.cpp"
         All:
         -   "./AnotherSourceFile.cpp"
         -   "./AnotherSourceFile2.cpp"
@@ -44,7 +44,7 @@ Dependencies:
 #define ssLOG_DLL 1
 #include "ssLogger/ssLog.hpp"
 
-#include "./AnotherSourceFileGcc.hpp"
+#include "./OtherSources/AnotherSourceFileGcc.hpp"
 
 #include <iostream>
 #include <chrono>

@@ -79,6 +79,7 @@ namespace
     }
     
     bool CompileScript( const ghc::filesystem::path& buildDir,
+                        const ghc::filesystem::path& scriptPath,
                         const std::vector<ghc::filesystem::path>& sourceFiles,
                         const runcpp2::Data::ScriptInfo& scriptInfo,
                         const std::vector<runcpp2::Data::DependencyInfo*>& availableDependencies,
@@ -130,17 +131,27 @@ namespace
         
         for(int i = 0; i < sourceFiles.size(); ++i)
         {
+            std::error_code e;
             ghc::filesystem::path currentSource = sourceFiles.at(i);
+            ghc::filesystem::path relativeSourcePath = 
+                ghc::filesystem::relative(currentSource, scriptPath.parent_path(), e);
+            
+            if(e)
+            {
+                ssLOG_ERROR("Failed to get relative path for " << currentSource);
+                ssLOG_ERROR("Failed with error: " << e.message());
+                return false;
+            }
             
             //TODO: Maybe do ProcessPath on all the .string()?
-            std::string souceDirectory = currentSource.parent_path().string();
+            std::string sourceDirectory = currentSource.parent_path().string();
             std::string sourceName = currentSource.stem().string();
             std::string sourceExt = currentSource.extension().string();
             //Input File
             {
                 substitutionMap["{InputFileName}"] = {sourceName};
                 substitutionMap["{InputFileExtension}"] = {sourceExt};
-                substitutionMap["{InputFileDirectory}"] = {souceDirectory};
+                substitutionMap["{InputFileDirectory}"] = {sourceDirectory};
                 substitutionMap["{InputFilePath}"] = {currentSource.string()};
             }
             //Output File
@@ -151,12 +162,24 @@ namespace
                 if(objectFileExt.empty())
                     ssLOG_WARNING("Object file extension is empty");
                 
-                const ghc::filesystem::path outputFilePath = 
-                    (buildDir / sourceName).concat(objectFileExt);
+                ghc::filesystem::path outputFilePath =  buildDir / 
+                                                        relativeSourcePath.parent_path() / 
+                                                        sourceName;
+                outputFilePath.concat(objectFileExt);
+                
+                // Create the directory structure if it doesn't exist
+                ghc::filesystem::create_directories(outputFilePath.parent_path(), e);
+                if(e)
+                {
+                    ssLOG_ERROR("Failed to create directory structure for " << outputFilePath);
+                    ssLOG_ERROR("Failed with error: " << e.message());
+                    return false;
+                }
                 
                 substitutionMap["{OutputFileName}"] = {sourceName};
                 substitutionMap["{OutputFileExtension}"] = {objectFileExt};
-                substitutionMap["{OutputFileDirectory}"] = {runcpp2::ProcessPath(buildDir.string())};
+                substitutionMap["{OutputFileDirectory}"] = 
+                    {runcpp2::ProcessPath(outputFilePath.parent_path().string())};
                 substitutionMap["{OutputFilePath}"] = 
                     {runcpp2::ProcessPath(outputFilePath.string())};
                 outObjectsFilesPaths.push_back(outputFilePath);
@@ -594,6 +617,7 @@ namespace
 }
 
 bool runcpp2::CompileScriptOnly(const ghc::filesystem::path& buildDir,
+                                const ghc::filesystem::path& scriptPath,
                                 const std::vector<ghc::filesystem::path>& sourceFiles,
                                 const std::vector<bool>& sourceHasCache,
                                 const Data::ScriptInfo& scriptInfo,
@@ -618,6 +642,7 @@ bool runcpp2::CompileScriptOnly(const ghc::filesystem::path& buildDir,
     std::vector<ghc::filesystem::path> objectsFilesPaths;
 
     if(!CompileScript(  buildDir,
+                        scriptPath,
                         sourceFilesNeededToCompile, 
                         scriptInfo, 
                         availableDependencies, 
@@ -633,6 +658,7 @@ bool runcpp2::CompileScriptOnly(const ghc::filesystem::path& buildDir,
 }
 
 bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
+                                    const ghc::filesystem::path& scriptPath,
                                     const std::string& outputName,
                                     const std::vector<ghc::filesystem::path>& sourceFiles,
                                     const std::vector<bool>& sourceHasCache,
@@ -660,6 +686,7 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
 
     //Compile source files that don't have cache
     if(!CompileScript(  buildDir,
+                        scriptPath,
                         sourceFilesNeededToCompile, 
                         scriptInfo, 
                         availableDependencies, 
@@ -732,3 +759,4 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
     
     return true;
 }
+
