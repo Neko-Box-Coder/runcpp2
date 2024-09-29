@@ -1,8 +1,8 @@
 TODO:
-- Group object files in folders to avoid name collision
+- Add ability to add defines for cross-compiler
+- Track include dependencies for source files
 - Allow to specify files to copy for dependencies
 - Allow runcpp2 to be library
-- Add ability to add defines for cross-compiler
 - Ability to compile runcpp2 as single cpp
 
 - Add wildcard support for filenames and extensions

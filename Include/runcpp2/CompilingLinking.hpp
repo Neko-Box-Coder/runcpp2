@@ -11,6 +11,7 @@
 namespace runcpp2 
 {
     bool CompileScriptOnly( const ghc::filesystem::path& buildDir,
+                            const ghc::filesystem::path& scriptPath,
                             const std::vector<ghc::filesystem::path>& sourceFiles,
                             const std::vector<bool>& sourceHasCache,
                             const Data::ScriptInfo& scriptInfo,
@@ -20,6 +21,7 @@ namespace runcpp2
     
     //TODO: Convert string paths to filesystem paths
     bool CompileAndLinkScript(  const ghc::filesystem::path& buildDir,
+                                const ghc::filesystem::path& scriptPath,
                                 const std::string& outputName,
                                 const std::vector<ghc::filesystem::path>& sourceFiles,
                                 const std::vector<bool>& sourceHasCache,
