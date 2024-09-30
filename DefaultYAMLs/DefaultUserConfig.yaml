@@ -7,6 +7,10 @@ Templates:
     -   Type: Once
         CommandPart: "{Executable} -c {CompileFlags}"
     -   Type: Repeats
+        CommandPart: " -D{DefineNameOnly}="
+    -   Type: Repeats
+        CommandPart: " \"-D{DefineName}={DefineValue}\""
+    -   Type: Repeats
         CommandPart: " -I\"{IncludeDirectoryPath}\""
     -   Type: Once
         CommandPart: " \"{InputFilePath}\" -o \"{OutputFilePath}\""
@@ -20,6 +24,10 @@ Templates:
     "vs2022_v17+_CompileRunParts": &vs2022_v17+_CompileRunParts
     -   Type: Once
         CommandPart: "{Executable} /c {CompileFlags}"
+    -   Type: Repeats
+        CommandPart: " /D{DefineNameOnly}="
+    -   Type: Repeats
+        CommandPart: " \"/D{DefineName}={DefineValue}\""
     -   Type: Repeats
         CommandPart: " /I\"{IncludeDirectoryPath}\""
     -   Type: Once
@@ -37,7 +45,7 @@ Templates:
     
     # TODO: Add support for custom platform
     # Each of the platform dependent settings can be listed under
-    # - All
+    # - Default
     # - Windows
     # - Linux
     # - MacOS
@@ -45,7 +53,7 @@ Templates:
     FilesTypes: &CommonFilesTypes
         ObjectLinkFile:
             Prefix:
-                All: ""
+                Default: ""
             Extension:
                 Windows: ".obj"
                 Unix: ".o"
@@ -91,6 +99,10 @@ Templates:
                 Windows: ""
                 Unix: ""
 
+# WARNING: All command substitutions in this file are passed directly to the shell.
+#          Exercise caution when using variables or user-provided input in your build commands
+#          to prevent potential security vulnerabilities.
+
 # A profile to be used if not specified while running the build script
 PreferredProfile: "g++"
 
@@ -111,12 +123,12 @@ Profiles:
     # (Optional) The commands to run in **shell** before calling the compiler/linker for each platform.
     #            This is run inside the .runcpp2 directory where the build happens.
     # Setup: 
-    #     All: []
+    #     Default: []
     
     # (Optional) The commands to run in **shell** after calling the compiler/linker for each platform.
     #            This is run inside the .runcpp2 directory where the build happens.
     # Cleanup: 
-    #     All: []
+    #     Default: []
     
     # The file properties for the object files for each platform.
     FilesTypes: *CommonFilesTypes
@@ -126,16 +138,19 @@ Profiles:
         # (Optional) The command to run together before running each compile command
         #               in **shell** for each platform
         # PreRun: 
-        #     All: ""
+        #     Default: ""
         
         # Shell command to use for checking if the executable exists or not
         CheckExistence: 
-            All: "g++ -v"
+            Default: "g++ -v"
         
         # Here are a list of substitution strings for RunParts, Setup and Cleanup
         # {Executable}:             Compiler executable
         # {CompileFlags}:           Compile flags from config and override
         # {IncludeDirectoryPath}:   Path to include directories for both the script and dependencies
+        # {DefineNameOnly}:         Name of a macro to be defined without a value (equivalent to #define X)
+        # {DefineName}:             Name of a macro to be defined with a value
+        # {DefineValue}:            Value of a macro to be defined (used with {DefineName})
         
         # {InputFileName}:          Name of the input file (without directory path and extension)
         # {InputFileExtension}:     Extension of the input file
@@ -148,7 +163,7 @@ Profiles:
         # {OutputFilePath}:         (Similar to previous)
         CompileTypes:
             Executable:
-                All:
+                Default:
                     Flags: "-std=c++17 -Wall -Werror"
                     Executable: "g++"
                     RunParts: *g++_CompileRunParts
@@ -159,14 +174,14 @@ Profiles:
                     #            This is run inside the .runcpp2 directory where the build happens.
                     # Cleanup: []
             Static:
-                All:
+                Default:
                     Flags: "-std=c++17 -Wall -Werror"
                     Executable: "g++"
                     RunParts: *g++_CompileRunParts
                     # Setup: []
                     # Cleanup: []
             Shared:
-                All:
+                Default:
                     Flags: "-std=c++17 -Wall -Werror -fpic"
                     Executable: "g++"
                     RunParts: *g++_CompileRunParts
@@ -178,11 +193,11 @@ Profiles:
         # (Optional) The command to run together before running each link command 
         #               in **shell** for each platform
         # PreRun: 
-        #     All: ""
+        #     Default: ""
         
         # Shell command to use for checking if the executable exists or not
         CheckExistence:
-            All: "g++ -v"
+            Default: "g++ -v"
         
         # Here are a list of substitution strings for RunParts, Setup and Cleanup
         # {Executable}:                 Linker executable
@@ -227,7 +242,7 @@ Profiles:
                     # Setup: []
                     # Cleanup: []
             Static:
-                All:
+                Default:
                     Flags: ""
                     Executable: "g++"
                     RunParts: *g++_LinkRunParts

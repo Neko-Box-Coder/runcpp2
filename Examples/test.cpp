@@ -6,13 +6,18 @@ RequiredProfiles:
 
 OtherFilesToBeCompiled:
     # Target Platform
-    All:
+    Default:
         # Target Profile
         "g++":
         -   "./OtherSources/AnotherSourceFileGcc.cpp"
-        All:
+        Default:
         -   "./AnotherSourceFile.cpp"
         -   "./AnotherSourceFile2.cpp"
+
+Defines:
+    Default:
+        # Turns into `TEST_DEF=\"Test Define Working\"` in shell
+        "Default": ["TEST_DEF=\\\"Test Define Working\\\""]
 
 Dependencies:
 -   Name: ssLogger
@@ -23,17 +28,17 @@ Dependencies:
     LibraryType: Shared
     IncludePaths: ["Include"]
     LinkProperties:
-        "All":
+        "Default":
             SearchLibraryNames: ["ssLogger"]
             ExcludeLibraryNames: ["ssLogger_SRC"]
             SearchDirectories: ["./build", "./build/Debug", "./build/Release"]
     Setup:
-        All:
-            "All":
+        Default:
+            "Default":
             -   "mkdir build"
     Build:
-        All:
-            "All":
+        Default:
+            "Default":
             -   "cd build && cmake .. -DssLOG_BUILD_TYPE=SHARED"
             -   "cd build && cmake --build . --config Release -j 16"
 */
@@ -52,6 +57,7 @@ Dependencies:
 int main(int argc, char* argv[])
 {
     std::cout << "Hello World" << std::endl;
+    std::cout << TEST_DEF << std::endl;
     
     for(int i = 0; i < argc; ++i)
         std::cout << "Arg" << i << ": " << argv[i] << std::endl;

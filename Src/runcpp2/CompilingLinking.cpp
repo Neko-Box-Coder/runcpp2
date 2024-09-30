@@ -126,6 +126,44 @@ namespace
             }
         }
         
+        // Add defines
+        if(runcpp2::HasValueFromPlatformMap(scriptInfo.Defines))
+        {
+            const runcpp2::Data::ProfilesDefines& platformDefines = 
+                *runcpp2::GetValueFromPlatformMap(scriptInfo.Defines);
+            
+            std::vector<std::string> profileNames;
+            profile.GetNames(profileNames);
+            
+            std::string validProfileName;
+            for(int i = 0; i < profileNames.size(); ++i)
+            {
+                if(platformDefines.Defines.count(profileNames[i]) > 0)
+                {
+                    validProfileName = profileNames.at(i);
+                    break;
+                }
+            }
+            
+            if(!validProfileName.empty())
+            {
+                const std::vector<runcpp2::Data::Define>& profileDefines = 
+                    platformDefines.Defines.at(validProfileName);
+                
+                for(int i = 0; i < profileDefines.size(); ++i)
+                {
+                    const runcpp2::Data::Define& define = profileDefines.at(i);
+                    if(define.HasValue)
+                    {
+                        substitutionMapTemplate["{DefineName}"].push_back(define.Name);
+                        substitutionMapTemplate["{DefineValue}"].push_back(define.Value);
+                    }
+                    else
+                        substitutionMapTemplate["{DefineNameOnly}"].push_back(define.Name);
+                }
+            }
+        }
+        
         std::unordered_map<std::string, std::vector<std::string>> substitutionMap;
         substitutionMap = substitutionMapTemplate;
         
@@ -717,6 +755,7 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
                 availableDependencies.at(i)->LinkProperties.end())
             {
                 targetProfileName = currentProfileNames.at(j);
+                break;
             }
         }
         
