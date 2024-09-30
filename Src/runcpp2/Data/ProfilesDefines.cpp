@@ -58,11 +58,12 @@ std::string runcpp2::Data::ProfilesDefines::ToString(std::string indentation) co
 {
     std::string result;
     
-    for(const auto& profileDefines : Defines)
+    for(auto it = Defines.begin(); it != Defines.end(); ++it)
     {
-        result += indentation + profileDefines.first + ":\n";
-        for(const auto& define : profileDefines.second)
+        result += indentation + it->first + ":\n";
+        for(int j = 0; j < it->second.size(); ++j)
         {
+            const auto& define = it->second.at(j);
             result += indentation + "-   ";
             if(define.Value.empty())
                 result += define.Name + "\n";
