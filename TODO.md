@@ -1,7 +1,5 @@
 TODO:
-- Add ability to add defines for cross-compiler
 - Track include dependencies for source files
-- Allow to specify files to copy for dependencies
 - Allow runcpp2 to be library
 - Ability to compile runcpp2 as single cpp
 

@@ -6,7 +6,7 @@
 #include "runcpp2/Data/DependencyLinkProperty.hpp"
 #include "runcpp2/Data/DependencyCommands.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
-
+#include "runcpp2/Data/FilesToCopyInfo.hpp"
 #include "ryml.hpp"
 
 #include <string>
@@ -29,6 +29,7 @@ namespace runcpp2
                 std::unordered_map<PlatformName, DependencyCommands> Setup;
                 std::unordered_map<PlatformName, DependencyCommands> Cleanup;
                 std::unordered_map<PlatformName, DependencyCommands> Build;
+                std::unordered_map<PlatformName, FilesToCopyInfo> FilesToCopy;
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;

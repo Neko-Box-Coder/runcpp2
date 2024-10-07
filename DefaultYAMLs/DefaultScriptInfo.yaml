@@ -134,3 +134,20 @@
 #         Linux:
 #             "g++":
 #             -   "sudo apt purge MyLibrary"
+#
+#     # (Optional) Files to be copied for each platform and profile
+#     FilesToCopy:
+#         # Target Platform (Default, Windows, Linux, MacOS, or Unix)
+#         Default:
+#             # Profile name (e.g., "g++", "clang++", "msvc", or "Default" for any profile)
+#             "Default":
+#             # List of files to copy (relative to the dependency folder)
+#             -  "assets/textures/sprite.png"
+#         Windows:
+#             "msvc":
+#             -  "assets/textures/sprite.png"
+#             -  "assets/fonts/windows_specific_font.ttf"
+#         Linux:
+#             "g++":
+#             -  "assets/textures/sprite.png"
+#             -  "assets/shaders/linux_optimized_shader.glsl"
