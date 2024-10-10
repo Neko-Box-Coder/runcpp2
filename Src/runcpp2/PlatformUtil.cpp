@@ -104,11 +104,10 @@ bool runcpp2::RunCommandAndGetOutput(   const std::string& command,
         sys2Result = 
             System2ReadFromOutput(  &commandInfo, 
                                     const_cast<char*>(outOutput.data()) + outOutput.size() - 4096,
-                                    4096 - 1, 
+                                    4096, 
                                     &byteRead);
 
-        outOutput.resize(outOutput.size() - 4096 + byteRead + 1);
-        outOutput.back() = '\0';
+        outOutput.resize(outOutput.size() + byteRead);
     }
     while(sys2Result == SYSTEM2_RESULT_READ_NOT_FINISHED);
     
