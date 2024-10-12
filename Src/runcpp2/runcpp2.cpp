@@ -857,13 +857,15 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 filesToCopyPaths.push_back(copiedBinariesPaths.at(i));
         }
 
-        ssLOG_DEBUG("Files to link:");
-        for(int i = 0; i < linkFilesPaths.size(); ++i)
-            ssLOG_DEBUG("  " << linkFilesPaths[i]);
+        {
+            ssLOG_DEBUG("Files to link:");
+            for(int i = 0; i < linkFilesPaths.size(); ++i)
+                ssLOG_DEBUG("  " << linkFilesPaths[i]);
 
-        ssLOG_INFO("Files to copy:");
-        for(int i = 0; i < filesToCopyPaths.size(); ++i)
-            ssLOG_INFO("  " << filesToCopyPaths[i]);
+            ssLOG_DEBUG("Files to copy:");
+            for(int i = 0; i < filesToCopyPaths.size(); ++i)
+                ssLOG_DEBUG("  " << filesToCopyPaths[i]);
+        }
         
         // Update finalObjectWriteTime
         for(int i = 0; i < linkFilesPaths.size(); ++i)
@@ -1008,6 +1010,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                     ssLOG_ERROR("Failed to copy output file: " << e.message());
                     return PipelineResult::UNEXPECTED_FAILURE;
                 }
+                
+                ssLOG_DEBUG("Copied " << target << " to " << destFile);
             }
 
             // Copy the files that need to be copied
@@ -1024,6 +1028,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                 e.message());
                     return PipelineResult::UNEXPECTED_FAILURE;
                 }
+
+                ssLOG_DEBUG("Copied " << srcFile << " to " << destFile);
             }
 
             ssLOG_BASE("Build completed. Files copied to " << buildOutputDir);

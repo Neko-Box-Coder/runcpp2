@@ -493,6 +493,66 @@ bool runcpp2::CopyDependenciesBinaries( const ghc::filesystem::path& buildDir,
     
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
+        std::vector<std::string> currentProfileNames;
+        profile.GetNames(currentProfileNames);
+        
+        if(runcpp2::HasValueFromPlatformMap(availableDependencies.at(i)->FilesToCopy))
+        {
+            const runcpp2::Data::FilesToCopyInfo& filesToCopy = 
+                *runcpp2::GetValueFromPlatformMap(availableDependencies.at(i)->FilesToCopy);
+            
+            std::string profileNameToUse;
+            for(int j = 0; j < currentProfileNames.size(); ++j)
+            {
+                if( filesToCopy.ProfileFiles.find(currentProfileNames.at(j)) != 
+                    filesToCopy.ProfileFiles.end())
+                {
+                    profileNameToUse = currentProfileNames.at(j);
+                    break;
+                }
+            }
+            
+            if(!profileNameToUse.empty())
+            {
+                const std::vector<std::string>& filesToCopyForProfile = 
+                    filesToCopy.ProfileFiles.at(profileNameToUse);
+                
+                for(int j = 0; j < filesToCopyForProfile.size(); ++j)
+                {
+                    ghc::filesystem::path srcPath = 
+                        ghc::filesystem::path(dependenciesCopiesPaths.at(i)) / 
+                        filesToCopyForProfile.at(j);
+                    
+                    ghc::filesystem::path destPath = 
+                        buildDir / ghc::filesystem::path(filesToCopyForProfile.at(j)).filename();
+                    
+                    std::error_code e;
+                    //TODO: Maybe we can check if destPath timestamp is newer and avoid copy?
+                    if(ghc::filesystem::exists(srcPath, e))
+                    {
+                        ghc::filesystem::copy(  srcPath, 
+                                                destPath, 
+                                                ghc::filesystem::copy_options::overwrite_existing, 
+                                                e);
+                        
+                        if(e)
+                        {
+                            ssLOG_ERROR("Failed to copy file from " << srcPath.string() << 
+                                        " to " << destPath.string());
+                            ssLOG_ERROR("Error: " << e.message());
+                            return false;
+                        }
+                        
+                        ssLOG_INFO("Copied from " << srcPath.string());
+                        ssLOG_INFO("Copied to " << destPath.string());
+                        outCopiedBinariesPaths.push_back(runcpp2::ProcessPath(destPath));
+                    }
+                    else
+                        ssLOG_WARNING("File not found: " << srcPath.string());
+                }
+            }
+        }
+
         std::vector<std::string> extensionsToCopy;
         
         //Get all the file extensions to copy
@@ -525,9 +585,6 @@ bool runcpp2::CopyDependenciesBinaries( const ghc::filesystem::path& buildDir,
         const PropertyMap& linkProperties = availableDependencies.at(i)->LinkProperties;
         
         //See if we can find the link properties with the profile name
-        std::vector<std::string> currentProfileNames;
-        profile.GetNames(currentProfileNames);
-        
         auto foundPropertyIt = linkProperties.end();
         for(int j = 0; j < currentProfileNames.size(); ++j)
         {

@@ -41,6 +41,11 @@ Dependencies:
             "Default":
             -   "cd build && cmake .. -DssLOG_BUILD_TYPE=SHARED"
             -   "cd build && cmake --build . --config Release -j 16"
+    FilesToCopy:
+        # Target Platform (Default, Windows, Linux, MacOS, or Unix)
+        Default:
+            "Default":
+            -  "./Include/ssLogger/ssLog.hpp"
 */
 
 

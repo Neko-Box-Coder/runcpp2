@@ -17,7 +17,8 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
         NodeRequirement("LinkProperties", ryml::NodeType_e::MAP, false, false),
         NodeRequirement("Setup", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("Cleanup", ryml::NodeType_e::MAP, false, true),
-        NodeRequirement("Build", ryml::NodeType_e::MAP, false, true)
+        NodeRequirement("Build", ryml::NodeType_e::MAP, false, true),
+        NodeRequirement("FilesToCopy", ryml::NodeType_e::MAP, false, true)
     };
     
     if(!CheckNodeRequirements(node, requirements))
@@ -141,6 +142,24 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
         }
     }
     
+    if(ExistAndHasChild(node, "FilesToCopy"))
+    {
+        for(int i = 0; i < node["FilesToCopy"].num_children(); ++i)
+        {
+            FilesToCopyInfo currentFilesToCopy;
+            ryml::ConstNodeRef currentFilesToCopyNode = node["FilesToCopy"][i];
+            PlatformName platform = GetKey(currentFilesToCopyNode);
+            
+            if(!currentFilesToCopy.ParseYAML_Node(currentFilesToCopyNode))
+            {
+                ssLOG_ERROR("DependencyInfo: Failed to parse FilesToCopy");
+                return false;
+            }
+            
+            FilesToCopy[platform] = currentFilesToCopy;
+        }
+    }
+
     return true;
     
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
@@ -195,6 +214,13 @@ std::string runcpp2::Data::DependencyInfo::ToString(std::string indentation) con
     
     out += indentation + "    Build:\n";
     for(auto it = Build.begin(); it != Build.end(); ++it)
+    {
+        out += indentation + "        " + it->first + ":\n";
+        out += it->second.ToString(indentation + "            ");
+    }
+    
+    out += indentation + "    FilesToCopy:\n";
+    for(auto it = FilesToCopy.begin(); it != FilesToCopy.end(); ++it)
     {
         out += indentation + "        " + it->first + ":\n";
         out += it->second.ToString(indentation + "            ");
