@@ -2,7 +2,10 @@
 #define RUNCPP2_DATA_PROFILES_COMPILES_FILES_HPP
 
 #include "runcpp2/Data/ParseCommon.hpp"
+
+#define NOMINMAX 1
 #include "ghc/filesystem.hpp"
+
 #include "ryml.hpp"
 #include <unordered_map>
 

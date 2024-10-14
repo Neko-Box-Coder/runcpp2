@@ -46,7 +46,9 @@ int main(int argc, char** argv)
         "./10",
         "./15"
     };
-    constexpr int defaultMappingsCount = 2;
+    
+    //NOTE: Workaround for MSVC
+    static constexpr int defaultMappingsCount = 2;
     std::string mappingsFilePath = "/tmp/Config/Builds/Mappings.csv";
     std::string buildsDirPath = "/tmp/Config/Builds";
     

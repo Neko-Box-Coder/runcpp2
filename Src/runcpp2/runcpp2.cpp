@@ -15,8 +15,8 @@
 #include <fstream>
 #include <chrono>
 
-extern const uint8_t DefaultScriptInfo[];
-extern const size_t DefaultScriptInfo_size;
+extern "C" const uint8_t DefaultScriptInfo[];
+extern "C" const size_t DefaultScriptInfo_size;
 
 namespace
 {

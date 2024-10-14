@@ -105,7 +105,7 @@ target_include_directories(runcpp2 PRIVATE "${CMAKE_CURRENT_LIST_DIR}/Include")
 target_link_libraries(runcpp2 PRIVATE ssLogger ghc_filesystem System2 ryml::ryml dylib CppOverride)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(STANDARD_COMPILE_FLAGS "/utf-8;/W1")
+    set(STANDARD_COMPILE_FLAGS "/utf-8;/W1;/DGHC_WIN_DISABLE_WSTRING_STORAGE_TYPE=1")
 else()
     set(STANDARD_COMPILE_FLAGS  "-Wall"
                                 "-Wno-return-local-addr"
