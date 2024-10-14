@@ -49,8 +49,8 @@ int main(int argc, char** argv)
     
     //NOTE: Workaround for MSVC
     static constexpr int defaultMappingsCount = 2;
-    std::string mappingsFilePath = "/tmp/Config/Builds/Mappings.csv";
-    std::string buildsDirPath = "/tmp/Config/Builds";
+    std::string mappingsFilePath = "/tmp/Config/CachedBuilds/Mappings.csv";
+    std::string buildsDirPath = "/tmp/Config/CachedBuilds";
     
     auto prepareInitialization = 
         [  
