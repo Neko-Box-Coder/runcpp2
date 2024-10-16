@@ -44,17 +44,16 @@ pipeline
             steps 
             {
                 cleanWs()
+                ehco "Displaying Webhook Variables:"
+                echo "GITHUB_PUSH_REF: ${env.GITHUB_PUSH_REF}"
+                echo "GITHUB_PR_ACTION: ${env.GITHUB_PR_ACTION}"
+                echo "GITHUB_PR_GIT_URL: ${env.GITHUB_PR_GIT_URL}"
+                echo "GITHUB_PR_REF: ${env.GITHUB_PR_REF}"
+                echo "X_GitHub_Event: ${env.X_GitHub_Event}"
+                echo "x_github_event: ${env.x_github_event}"
+                
                 script
                 {
-                    ehco "Displaying Webhook Variables:"
-                    echo "GITHUB_PUSH_REF: ${env.GITHUB_PUSH_REF}"
-                    echo "GITHUB_PR_ACTION: ${env.GITHUB_PR_ACTION}"
-                    echo "GITHUB_PR_GIT_URL: ${env.GITHUB_PR_GIT_URL}"
-                    echo "GITHUB_PR_REF: ${env.GITHUB_PR_REF}"
-                    echo "X_GitHub_Event: ${env.X_GitHub_Event}"
-                    echo "x_github_event: ${env.x_github_event}"
-                    
-                    
                     bash "ls -lah"
                     
                     checkout(
