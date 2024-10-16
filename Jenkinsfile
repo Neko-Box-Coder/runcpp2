@@ -87,6 +87,12 @@ pipeline
                         ]
                     )
                     
+                    INPUT_RESULT = input 'Approval this job?'
+                    echo "INPUT_RESULT: ${INPUT_RESULT}"
+                    
+                    INPUT_RESULT = input 'Approval this job?'
+                    echo "INPUT_RESULT: ${INPUT_RESULT}"
+
                     stash 'source'
                 }
             }
