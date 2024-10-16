@@ -55,7 +55,9 @@ pipeline
                     echo "x_github_event: ${env.x_github_event}"
                     
                     bash "ls -lah"
-                    
+                    bash "echo \$X_GitHub_Event"
+                    bash "echo \$x_github_event"
+
                     checkout(
                         [
                             $class: 'GitSCM',
