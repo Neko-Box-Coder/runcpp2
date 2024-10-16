@@ -54,7 +54,7 @@ pipeline
                     echo "X_GitHub_Event: ${env.X_GitHub_Event}"
                     echo "x_github_event: ${env.x_github_event}"
                     
-                    if(env.X_GitHub_Event == 'pull_request')
+                    if(env.X_GitHub_Event == 'push')
                     {
                         TARGET_REF = env.GITHUB_PUSH_REF
                     }
@@ -66,6 +66,8 @@ pipeline
                     {
                         TARGET_REF = 'master'
                     }
+
+                    echo "TARGET_REF: ${env.TARGET_REF}"
 
                     checkout(
                         [
