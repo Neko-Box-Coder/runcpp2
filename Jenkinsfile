@@ -67,7 +67,8 @@ pipeline
                         TARGET_REF = 'master'
                     }
                     
-                    TARGET_REF = env.GITHUB_PUSH_REF
+                    //TARGET_REF = env.GITHUB_PUSH_REF
+                    TARGET_REF = 'master'
 
                     echo "TARGET_REF: ${TARGET_REF}"
 
