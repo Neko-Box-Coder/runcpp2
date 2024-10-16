@@ -54,16 +54,23 @@ pipeline
                     echo "X_GitHub_Event: ${env.X_GitHub_Event}"
                     echo "x_github_event: ${env.x_github_event}"
                     
-                    bash "ls -lah"
-                    bash "echo \$X_GitHub_Event"
-                    bash "echo \$x_github_event"
-                    bash "echo \$GITHUB_PUSH_REF"
-                    bash "echo \$github_push_ref"
+                    if(env.X_GitHub_Event == 'pull_request')
+                    {
+                        TARGET_REF = env.GITHUB_PUSH_REF
+                    }
+                    else if(env.X_GitHub_Event == 'pull_request')
+                    {
+                        TARGET_REF = env.GITHUB_PR_REF
+                    }
+                    else
+                    {
+                        TARGET_REF = 'master'
+                    }
 
                     checkout(
                         [
                             $class: 'GitSCM',
-                            branches: scm.branches,
+                            branches: [[name: TARGET_REF]],
                             doGenerateSubmoduleConfigurations: true,
                             extensions: scm.extensions + 
                             [[
@@ -80,6 +87,7 @@ pipeline
             }
         }
 
+        /*
         stage('Build') 
         {
             parallel 
@@ -142,6 +150,8 @@ pipeline
                 }
             }
         }
+        
+        */
     }
 
     post 
