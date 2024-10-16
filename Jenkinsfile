@@ -57,6 +57,8 @@ pipeline
                     bash "ls -lah"
                     bash "echo \$X_GitHub_Event"
                     bash "echo \$x_github_event"
+                    bash "echo \$GITHUB_PUSH_REF"
+                    bash "echo \$github_push_ref"
 
                     checkout(
                         [
