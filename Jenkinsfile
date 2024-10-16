@@ -69,7 +69,7 @@ pipeline
                     
                     TARGET_REF = env.GITHUB_PUSH_REF
 
-                    echo "TARGET_REF: ${env.TARGET_REF}"
+                    echo "TARGET_REF: ${TARGET_REF}"
 
                     checkout(
                         [
