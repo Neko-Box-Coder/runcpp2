@@ -56,20 +56,28 @@ pipeline
                     
                     if(env.X_GitHub_Event == 'push')
                     {
-                        TARGET_REF = env.GITHUB_PUSH_REF
+                        //TARGET_REF = env.GITHUB_PUSH_REF
+                        TARGET_REF = 'master'
                     }
                     else if(env.X_GitHub_Event == 'pull_request')
                     {
                         TARGET_REF = env.GITHUB_PR_REF
+                        
+                        timeout(time: 30, unit: 'MINUTES')
+                        {
+                            input 'Approval this job?'
+                        }
                     }
                     else
                     {
                         TARGET_REF = 'master'
+                        
+                        timeout(time: 30, unit: 'MINUTES')
+                        {
+                            input 'Approval this job?'
+                        }
                     }
                     
-                    //TARGET_REF = env.GITHUB_PUSH_REF
-                    TARGET_REF = 'master'
-
                     echo "TARGET_REF: ${TARGET_REF}"
 
                     checkout(
@@ -87,12 +95,6 @@ pipeline
                         ]
                     )
                     
-                    INPUT_RESULT = input 'Approval this job?'
-                    echo "INPUT_RESULT: ${INPUT_RESULT}"
-                    
-                    INPUT_RESULT = input 'Approval this job?'
-                    echo "INPUT_RESULT: ${INPUT_RESULT}"
-
                     stash 'source'
                 }
             }
