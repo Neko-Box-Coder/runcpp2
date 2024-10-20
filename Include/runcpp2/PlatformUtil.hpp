@@ -24,6 +24,9 @@ namespace runcpp2
                                 int& outReturnCode,
                                 std::string runDirectory = "");
     
+    #if defined(_WIN32)
+        std::string GetWindowsError();
+    #endif
     
     template <typename T>
     inline bool HasValueFromPlatformMap(const std::unordered_map<PlatformName, T>& map)

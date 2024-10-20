@@ -18,6 +18,17 @@
 extern "C" const uint8_t DefaultScriptInfo[];
 extern "C" const size_t DefaultScriptInfo_size;
 
+//Use for SetDllDirectory
+#if defined(_WIN32)
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+    #include <windows.h>
+#endif
+
 namespace
 {
     bool CreateLocalBuildDirectory( const std::string& scriptPath, 
@@ -131,6 +142,17 @@ namespace
         
         try
         {
+             //TODO: We might want to use unicode instead for the path
+             #if defined(_WIN32)
+                std::string sharedLibDir = compiledSharedLibPath.parent_path().string();
+                if(SetDllDirectoryA(sharedLibDir.c_str()) == FALSE)
+                {
+                    std::string lastError = runcpp2::GetWindowsError();
+                    ssLOG_ERROR("Failed to set DLL directory: " << lastError);
+                    return false;
+                }
+             #endif
+             
              sharedLib = std::unique_ptr<dylib>(new dylib(  compiledSharedLibPath.string(), 
                                                             dylib::no_filename_decorations));
         }
