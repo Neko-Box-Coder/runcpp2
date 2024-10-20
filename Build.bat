@@ -8,7 +8,7 @@ pushd Build || goto :error
 
 cmake .. || goto :error
 cmake --build . --target Embed2C || goto :error
-cmake .. || goto :error
+cmake .. %* || goto :error
 cmake --build . -j 16 || goto :error
 
 popd

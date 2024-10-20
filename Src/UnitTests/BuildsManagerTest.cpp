@@ -33,12 +33,18 @@ class BuildsManagerAccessor
 
 int main(int argc, char** argv)
 {
+    #if defined(_WIN32)
+        const std::string absPathPrefix = "C:";
+    #elif defined(__unix__) || defined(__APPLE__)
+        const std::string absPathPrefix;
+    #endif
+    
     std::unique_ptr<runcpp2::BuildsManager> buildsManager(nullptr);
     std::vector<std::string> scriptsPaths = 
     {
-        "/tmp/Scripts/test.cpp",
-        "/tmp/Scripts/test2.cpp",
-        "/tmp/Scripts/test3.cpp",
+        absPathPrefix + "/tmp/Scripts/test.cpp",
+        absPathPrefix + "/tmp/Scripts/test2.cpp",
+        absPathPrefix + "/tmp/Scripts/test3.cpp",
     };
     std::vector<std::string> scriptsBuildsPaths = 
     {
@@ -46,9 +52,12 @@ int main(int argc, char** argv)
         "./10",
         "./15"
     };
-    constexpr int defaultMappingsCount = 2;
-    std::string mappingsFilePath = "/tmp/Config/Builds/Mappings.csv";
-    std::string buildsDirPath = "/tmp/Config/Builds";
+    
+    //NOTE: Workaround for MSVC
+    static constexpr int defaultMappingsCount = 2;
+    const std::string configDirPath = absPathPrefix + "/tmp/Config";
+    const std::string buildsDirPath = configDirPath + "/CachedBuilds";
+    const std::string mappingsFilePath = buildsDirPath + "/Mappings.csv";
     
     auto prepareInitialization = 
         [  
@@ -107,7 +116,7 @@ int main(int argc, char** argv)
     
     ssTEST_COMMON_SETUP
     {
-        buildsManager.reset(new runcpp2::BuildsManager("/tmp/Config"));
+        buildsManager.reset(new runcpp2::BuildsManager(configDirPath));
         CO_CLEAR_ALL_OVERRIDE_SETUP(OverrideInstance);
     };
     
@@ -343,10 +352,11 @@ int main(int argc, char** argv)
             //Hash script path
             std::shared_ptr<OverrideResult> hashResult = CreateOverrideResult();
             CO_SETUP_OVERRIDE   (OverrideInstance, operator())
-                                .WhenCalledWith(scriptsPaths.at(2))
+                                .WhenCalledWith<std::string>(scriptsPaths.at(2))
                                 .Returns<std::size_t>(15)
                                 .Times(1)
                                 .AssignResult(hashResult);
+            
             //New build mapping doesn't exist
             std::shared_ptr<OverrideResult> newMappedBuildPathExistsResult = CreateOverrideResult();
             CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
@@ -367,6 +377,8 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT(   "CreateBuildMapping should succeed",
                                 buildsManager->CreateBuildMapping(scriptsPaths.at(2)), true);
         ssTEST_OUTPUT_ASSERT(   "Hash script path", hashResult->LastStatusSucceed());
+        ssLOG_DEBUG("hashResult->GetStatusCount(): " << hashResult->GetStatusCount());
+        
         ssTEST_OUTPUT_ASSERT(   "New build mapping doesn't exist", 
                                 newMappedBuildPathExistsResult->LastStatusSucceed());
         ssTEST_OUTPUT_ASSERT(   "Create new build mappings directory", 

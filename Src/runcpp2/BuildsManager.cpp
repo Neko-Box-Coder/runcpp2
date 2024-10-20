@@ -72,6 +72,20 @@ namespace runcpp2
         return true;
     }
     
+    std::string BuildsManager::ProcessPath(const std::string& path)
+    {
+        std::string processedPath;
+        for(int i = 0; i < path.size(); ++i)
+        {
+            if(path[i] == '\\')
+                processedPath += '/';
+            else
+                processedPath += path[i];
+        }
+        
+        return processedPath;
+    };
+    
     BuildsManager::BuildsManager(const ghc::filesystem::path& configDirectory) : 
         ConfigDirectory(configDirectory),
         Mappings(),
@@ -151,7 +165,9 @@ namespace runcpp2
             return false;
         }
         
-        if(Mappings.count(scriptPath.string()) > 0)
+        std::string processScriptPathStr = ProcessPath(scriptPath.string());
+        
+        if(Mappings.count(processScriptPathStr) > 0)
             return true;
         
         //Create build folder for script
@@ -161,7 +177,7 @@ namespace runcpp2
         int i = 0;
         do
         {
-            scriptPathHash = std::hash<std::string>{}(scriptPath.string());
+            scriptPathHash = std::hash<std::string>{}(processScriptPathStr);
             scriptBuildPathStr = "./" + std::to_string(scriptPathHash);
             
             if(ReverseMappings.count(scriptBuildPathStr) == 0)
@@ -195,8 +211,8 @@ namespace runcpp2
         }
         
         ssLOG_INFO("Build path " << scriptBuildPath << " for " << scriptPath);
-        Mappings[scriptPath.string()] = scriptBuildPathStr;
-        ReverseMappings[scriptBuildPathStr] = scriptPath.string();
+        Mappings[processScriptPathStr] = scriptBuildPathStr;
+        ReverseMappings[scriptBuildPathStr] = processScriptPathStr;
         return true;
     }
 
@@ -211,11 +227,12 @@ namespace runcpp2
             return false;
         }
         
-        if(Mappings.count(scriptPath.string()) == 0)
+        std::string processScriptPathStr = ProcessPath(scriptPath.string());
+        if(Mappings.count(processScriptPathStr) == 0)
             return true;
         
-        ReverseMappings.erase(Mappings.at(scriptPath.string()));
-        Mappings.erase(scriptPath.string());
+        ReverseMappings.erase(Mappings.at(processScriptPathStr));
+        Mappings.erase(processScriptPathStr);
         assert(ReverseMappings.size() == Mappings.size());
         return true;
     }
@@ -231,7 +248,7 @@ namespace runcpp2
             return false;
         }
         
-        return Mappings.count(scriptPath.string());
+        return Mappings.count(ProcessPath(scriptPath.string()));
     }
     
     bool BuildsManager::GetBuildMapping(const ghc::filesystem::path& scriptPath, 
@@ -247,13 +264,13 @@ namespace runcpp2
         }
         
         //If it doesn't exist, create the mapping
-        if(!Mappings.count(scriptPath.string()))
+        if(!Mappings.count(ProcessPath(scriptPath.string())))
         {
             if(!CreateBuildMapping(scriptPath))
                 return false;
         }
     
-        outPath = BuildDirectory.string() + "/" + Mappings.at(scriptPath);
+        outPath = BuildDirectory.string() + "/" + Mappings.at(ProcessPath(scriptPath.string()));
         return true;
     }
     
