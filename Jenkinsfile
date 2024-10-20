@@ -68,10 +68,10 @@ pipeline
                     echo "env.TARGET_REF: ${env.TARGET_REF}"
                     echo "env.STORE_BUILD: ${env.STORE_BUILD}"
                     
-                    if(env.TARGET_REF != null)
+                    if(env.TARGET_REF != null && env.TARGET_REF != '')
                         TARGET_REF = env.TARGET_REF
                     
-                    if(env.STORE_BUILD != null)
+                    if(env.STORE_BUILD != null && env.STORE_BUILD != '')
                         STORE_BUILD = env.STORE_BUILD.toBoolean()
                     
                     echo "Displaying Webhook Variables:"
