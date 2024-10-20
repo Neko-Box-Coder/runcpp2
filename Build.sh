@@ -1,11 +1,12 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 mkdir -p ./Build
 pushd ./Build
+
 cmake ..
 cmake --build . --target Embed2C
-cmake ..
+cmake .. "$@"
 cmake --build . -j 16
 
 popd

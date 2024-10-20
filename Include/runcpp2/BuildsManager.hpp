@@ -29,6 +29,7 @@ namespace runcpp2
             bool Initialized;
             
             bool ParseMappings(const std::string& mappingsContent);
+            std::string ProcessPath(const std::string& path);
             
         public:
             BuildsManager(const ghc::filesystem::path& configDirectory);
