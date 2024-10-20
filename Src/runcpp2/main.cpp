@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
     std::unordered_map<runcpp2::CmdOptions, std::string> currentOptions;
 
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 11, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 12, "Update this");
         std::unordered_map<std::string, runcpp2::OptionInfo> longOptionsMap =
         {
             {
@@ -216,10 +216,14 @@ int main(int argc, char* argv[])
             {
                 "--build",
                 runcpp2::OptionInfo(runcpp2::CmdOptions::BUILD, false)
+            },
+            {
+                "--version",
+                runcpp2::OptionInfo(runcpp2::CmdOptions::VERSION, false)
             }
         };
         
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 11, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 12, "Update this");
         std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
         {
             {"-r", longOptionsMap.at("--reset-cache")},
@@ -231,7 +235,8 @@ int main(int argc, char* argv[])
             {"-s", longOptionsMap.at("--show-config-path")},
             {"-t", longOptionsMap.at("--create-script-template")},
             {"-w", longOptionsMap.at("--watch")},
-            {"-b", longOptionsMap.at("--build")}
+            {"-b", longOptionsMap.at("--build")},
+            {"-v", longOptionsMap.at("--version")}
         };
         
         currentArgIndex = ParseArgs(longOptionsMap, shortOptionsMap, currentOptions, argc, argv);
@@ -248,7 +253,7 @@ int main(int argc, char* argv[])
     //Help message
     if(currentOptions.count(runcpp2::CmdOptions::HELP))
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 11, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 12, "Update this");
         ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
         ssLOG_BASE("Options:");
         ssLOG_BASE("    -r, --[r]eset-cache                     Deletes all cache and build everything from scratch");
@@ -261,6 +266,7 @@ int main(int argc, char* argv[])
         ssLOG_BASE("    -t, --create-script-[t]emplate <file>   Creates/prepend runcpp2 script info template");
         ssLOG_BASE("    -w, --[w]atch                           Watch script changes and output any compiling errors");
         ssLOG_BASE("    -b, --[b]uild                           Build the script and copy output files to the working directory");
+        ssLOG_BASE("    -v, --[v]ersion                           Show the version of runcpp2");
         
         return 0;
     }
@@ -269,6 +275,13 @@ int main(int argc, char* argv[])
     if(currentOptions.count(runcpp2::CmdOptions::SHOW_USER_CONFIG))
     {
         ssLOG_BASE(runcpp2::GetConfigFilePath());
+        return 0;
+    }
+
+    // Check if the version flag is present
+    if (currentOptions.count(runcpp2::CmdOptions::VERSION))
+    {
+        ssLOG_BASE("runcpp2 version " << RUNCPP2_VERSION);
         return 0;
     }
     
@@ -415,3 +428,4 @@ int main(int argc, char* argv[])
     
     return result;
 }
+

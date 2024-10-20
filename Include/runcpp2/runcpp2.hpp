@@ -22,6 +22,7 @@ namespace runcpp2
         SCRIPT_TEMPLATE,
         WATCH,
         BUILD,
+        VERSION,
         COUNT
     };
     

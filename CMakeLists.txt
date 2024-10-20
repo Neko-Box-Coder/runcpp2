@@ -11,6 +11,54 @@ option(RUNCPP2_UPDATE_DEFAULT_YAMLS "Update default yaml files" OFF)
 option(RUNCPP2_BUILD_TESTS "Build runcpp2 tests" OFF)
 
 # =========================================================================
+# Retrieving Version String
+# =========================================================================
+
+function(get_version_from_git OUTPUT_VARIABLE)
+    # Get the latest tag
+    execute_process(
+        COMMAND git describe --tags --abbrev=0
+        OUTPUT_VARIABLE GIT_TAG
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE GIT_TAG_RESULT
+        ERROR_QUIET
+    )
+
+    # Get the current commit hash
+    execute_process(
+        COMMAND git rev-parse --short HEAD
+        OUTPUT_VARIABLE GIT_COMMIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+
+    if(GIT_TAG_RESULT EQUAL 0)
+        # Check if the tag is on the current commit
+        execute_process(
+            COMMAND git describe --tags --exact-match
+            RESULT_VARIABLE TAG_ON_COMMIT
+            OUTPUT_QUIET
+            ERROR_QUIET
+        )
+
+        if(TAG_ON_COMMIT EQUAL 0)
+            set(VERSION ${GIT_TAG})
+        else()
+            set(VERSION "${GIT_TAG}-${GIT_COMMIT_HASH}")
+        endif()
+    else()
+        # No tags found, use v0.0.0 with commit hash
+        set(VERSION "v0.0.0-${GIT_COMMIT_HASH}")
+    endif()
+
+    set(${OUTPUT_VARIABLE} ${VERSION} PARENT_SCOPE)
+endfunction()
+
+# Call the function and store the result
+get_version_from_git(RUNCPP2_PROJECT_VERSION)
+message("RUNCPP2_PROJECT_VERSION: ${RUNCPP2_PROJECT_VERSION}")
+
+# =========================================================================
 # External Dependencies
 # =========================================================================
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/ssLogger")
@@ -122,7 +170,8 @@ endif()
 
 target_compile_options(runcpp2 PRIVATE ${STANDARD_COMPILE_FLAGS})
 
-
+# Define the version macro
+target_compile_definitions(runcpp2 PUBLIC RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}")
 
 # TODO: Maybe move this to the UnitTests sub folder
 # Unit Tests
@@ -139,6 +188,7 @@ if(RUNCPP2_BUILD_TESTS)
     #                                                     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
     #                                                     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests")
 endif()
+
 
 
 
