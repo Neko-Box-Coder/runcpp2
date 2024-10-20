@@ -6,7 +6,6 @@ def bash(command, returnOutput=false)
         returnStdout: returnOutput)
 }
 
-
 def SetGithubStatus(githubToken, context, targetUrl, desc, status, repoOwner, repoName, gitHash)
 {
     bash """
@@ -25,7 +24,6 @@ def SetGithubStatus(githubToken, context, targetUrl, desc, status, repoOwner, re
         """
 }
 
-def SKIP_PIPELINE = false
 def REPO_OWNER = "Neko-Box-Coder"
 def REPO_NAME = "runcpp2"
 def TARGET_URL = 'https://github.com/Neko-Box-Coder/runcpp2.git'
@@ -37,32 +35,27 @@ def STORE_BUILD = false
 pipeline 
 {
     agent none
-    
-    options
-    {
-        skipDefaultCheckout()
-    }
-
+    options { skipDefaultCheckout() }
 /*
     External Variables for webhook payload:
     
     Webhook:
         GITHUB_PUSH_REF: $.ref
-        
         GITHUB_PR_ACTION: $.action
         GITHUB_PR_GIT_URL: $.pull_request.head.repo.clone_url
         GITHUB_PR_REF: $.pull_request.head.ref
-        
         GITHUB_PR_REPO_OWNER: $.pull_request.user.login
         GITHUB_PR_REPO_NAME: $.pull_request.head.repo.name
-        
         X-GitHub-Event: (Header)
     
+    Trigger:
+        $GITHUB_PUSH_REF , $GITHUB_PR_REF , $GITHUB_PR_ACTION
+        ^refs/heads/master , , $|^ , .[a-zA-Z/]* , (opened|synchronize)$
+
     Param:
         TARGET_REF
         STORE_BUILD
 */
-
     stages 
     {
         stage('Setup') 
@@ -76,14 +69,10 @@ pipeline
                     echo "env.STORE_BUILD: ${env.STORE_BUILD}"
                     
                     if(env.TARGET_REF != null)
-                    {
                         TARGET_REF = env.TARGET_REF
-                    }
                     
                     if(env.STORE_BUILD != null)
-                    {
                         STORE_BUILD = env.STORE_BUILD.toBoolean()
-                    }
                     
                     echo "Displaying Webhook Variables:"
                     echo "GITHUB_PUSH_REF: ${env.GITHUB_PUSH_REF}"
@@ -92,29 +81,19 @@ pipeline
                     echo "GITHUB_PR_REF: ${env.GITHUB_PR_REF}"
                     echo "GITHUB_PR_REPO_OWNER: ${env.GITHUB_PR_REPO_OWNER}"
                     echo "GITHUB_PR_REPO_NAME: ${env.GITHUB_PR_REPO_NAME}"
-                    
                     echo "X_GitHub_Event: ${env.X_GitHub_Event}"
                     
                     //Trigger pipeline on push to master
                     if(env.X_GitHub_Event == 'push')
                     {
                         if(env.GITHUB_PUSH_REF != 'refs/heads/master')
-                        {
-                            echo "Setting SKIP_PIPELINE for push to true"
                             error('Receiving non master push')
-                            SKIP_PIPELINE = true
-                            echo "SKIP_PIPELINE: ${SKIP_PIPELINE}"
-                        }
                     }
                     //Trigger pipeline with approval on PR
                     else if(env.X_GitHub_Event == 'pull_request')
                     {
-                        if( env.GITHUB_PR_ACTION != 'synchronize' && 
-                            env.GITHUB_PR_ACTION != 'opened')
-                        {
+                        if(env.GITHUB_PR_ACTION != 'synchronize' && env.GITHUB_PR_ACTION != 'opened')
                             error('Receiving non relevant PR action')
-                            SKIP_PIPELINE = true
-                        }
                         else
                         {
                             timeout(time: 30, unit: 'MINUTES')
@@ -130,16 +109,13 @@ pipeline
                     }
                     //Invalid github event
                     else if(env.X_GitHub_Event != null)
-                    {
                         error("Invalid github event: ${env.X_GitHub_Event}")
-                    }
                     
                     echo "TARGET_REF: ${TARGET_REF}"
                     echo "env.TARGET_REF: ${env.TARGET_REF}"
                     echo "TARGET_URL: ${TARGET_URL}"
                     echo "REPO_OWNER: ${REPO_OWNER}"
                     echo "REPO_NAME: ${REPO_NAME}"
-                    echo "SKIP_PIPELINE: ${SKIP_PIPELINE}"
                     echo "STATUS_CONTEXT_URL: ${STATUS_CONTEXT_URL}"
                     echo "STORE_BUILD: ${STORE_BUILD}"
                 }
@@ -149,7 +125,6 @@ pipeline
         stage('Checkout') 
         {
             agent { label 'linux' }
-            when { expression { SKIP_PIPELINE == false } }
             steps 
             {
                 cleanWs()
@@ -175,7 +150,8 @@ pipeline
                     
                     if(!STORE_BUILD)
                     {
-                        withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')])
+                        withCredentials([string(credentialsId: 'github-token', 
+                                                variable: 'GITHUB_TOKEN')])
                         {
                             SetGithubStatus('$GITHUB_TOKEN', 
                                             "Build ${BUILD_NUMBER}", 
@@ -196,7 +172,6 @@ pipeline
 
         stage('Build') 
         {
-            when { expression { SKIP_PIPELINE == false } }
             parallel 
             {
                 stage('Linux Build') 
@@ -235,7 +210,6 @@ pipeline
 
         stage('Test') 
         {
-            when { expression { SKIP_PIPELINE == false } }
             parallel 
             {
                 stage('Linux Test') 
@@ -270,7 +244,7 @@ pipeline
         stage('Notify')
         {
             agent { label 'linux' }
-            when { expression { SKIP_PIPELINE == false && STORE_BUILD == false } }
+            when { expression { STORE_BUILD == false } }
             steps 
             {
                 cleanWs()
@@ -291,22 +265,22 @@ pipeline
         stage('Release')
         {
             agent { label 'linux' }
-            when { expression { SKIP_PIPELINE == false && STORE_BUILD == true } }
+            when { expression { STORE_BUILD == true } }
             steps
             {
                 cleanWs()
                 dir('WindowsBuild') { unstash 'windows_build' }
                 dir('LinuxBuild') { unstash 'linux_build' }
                 
-                archiveArtifacts artifacts: 'LinuxBuild/Build/runcpp2', 
-                    defaultExcludes: false,
-                    fingerprint: true,
-                    onlyIfSuccessful: true
+                archiveArtifacts    artifacts: 'LinuxBuild/Build/runcpp2', 
+                                    defaultExcludes: false,
+                                    fingerprint: true,
+                                    onlyIfSuccessful: true
                 
-                archiveArtifacts artifacts: 'WindowsBuild/Build/Debug/runcpp2.exe', 
-                    defaultExcludes: false,
-                    fingerprint: true,
-                    onlyIfSuccessful: true
+                archiveArtifacts    artifacts: 'WindowsBuild/Build/Debug/runcpp2.exe', 
+                                    defaultExcludes: false,
+                                    fingerprint: true,
+                                    onlyIfSuccessful: true
             }
         }
     } //stages
