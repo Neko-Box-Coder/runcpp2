@@ -2,5 +2,5 @@
 
 std::string TestFunc()
 {
-    return "For GCC";
+    return "For MSVC";
 }

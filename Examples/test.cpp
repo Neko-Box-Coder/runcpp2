@@ -10,9 +10,8 @@ OtherFilesToBeCompiled:
         # Target Profile
         "g++":
         -   "./OtherSources/AnotherSourceFileGcc.cpp"
-        Default:
-        -   "./AnotherSourceFile.cpp"
-        -   "./AnotherSourceFile2.cpp"
+        "msvc":
+        -   "./OtherSources/AnotherSourceFileMSVC.cpp"
 
 Defines:
     Default:
@@ -54,7 +53,13 @@ Dependencies:
 #define ssLOG_DLL 1
 #include "ssLogger/ssLog.hpp"
 
-#include "./OtherSources/AnotherSourceFileGcc.hpp"
+#if defined(__GNUC__)
+    #include "./OtherSources/AnotherSourceFileGcc.hpp"
+#endif
+
+#if defined(_MSC_VER)
+    #include "./OtherSources/AnotherSourceFileMSVC.hpp"
+#endif
 
 #include <iostream>
 #include <chrono>
