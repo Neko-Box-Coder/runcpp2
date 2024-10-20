@@ -171,24 +171,28 @@ namespace runcpp2
             return true;
         
         //Create build folder for script
-        constexpr int MAX_TRIES = 16;
+        constexpr int MAX_TRIES = 1000;
         std::size_t scriptPathHash;
         std::string scriptBuildPathStr;
-        int i = 0;
+        int counter = 0;
         do
         {
-            scriptPathHash = std::hash<std::string>{}(processScriptPathStr);
+            scriptPathHash = std::hash<std::string>{}(processScriptPathStr + std::to_string(counter));
             scriptBuildPathStr = "./" + std::to_string(scriptPathHash);
             
             if(ReverseMappings.count(scriptBuildPathStr) == 0)
                 break;
-            else if(i == MAX_TRIES - 1)
-            {
-                ssLOG_ERROR("Failed to get unique hash for " << scriptPath.string());
-                return false;
-            }
+            
+            counter++;
         }
-        while(i++ < MAX_TRIES);
+        while(counter < MAX_TRIES);
+        
+        if(counter == MAX_TRIES)
+        {
+            ssLOG_ERROR("Failed to get unique hash for " << scriptPath.string() << 
+                        " after " << MAX_TRIES << " attempts");
+            return false;
+        }
         
         ghc::filesystem::path scriptBuildPath = BuildDirectory / scriptBuildPathStr;
         std::error_code e;

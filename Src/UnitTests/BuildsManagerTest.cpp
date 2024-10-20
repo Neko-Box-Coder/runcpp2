@@ -330,6 +330,8 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             std::vector<std::shared_ptr<OverrideResult>> initializeResults(4, nullptr);
+            
+            //NOTE: This initializes the mapping for the first 2 scripts in scriptsPaths
             prepareInitialization(  initializeResults.at(0), initializeResults.at(1), 
                                     initializeResults.at(2), initializeResults.at(3), "");
             CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
@@ -352,7 +354,7 @@ int main(int argc, char** argv)
             //Hash script path
             std::shared_ptr<OverrideResult> hashResult = CreateOverrideResult();
             CO_SETUP_OVERRIDE   (OverrideInstance, operator())
-                                .WhenCalledWith<std::string>(scriptsPaths.at(2))
+                                .WhenCalledWith<std::string>(scriptsPaths.at(2) + "0")
                                 .Returns<std::size_t>(15)
                                 .Times(1)
                                 .AssignResult(hashResult);
@@ -386,6 +388,9 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT(   "New mapping exists",
                                 BuildsManagerAccessor   ::GetMappings(*buildsManager)
                                                         .count(scriptsPaths.at(2)) == 1);
+        ssTEST_OUTPUT_ASSERT(   "New mapping value is correct",
+                                BuildsManagerAccessor   ::GetMappings(*buildsManager)
+                                                        .at(scriptsPaths.at(2)) == scriptsBuildsPaths.at(2));
     };
     
     ssTEST("CreateBuildMapping Should Create Build Mapping When Hashed Output Is Not Unique")
@@ -394,17 +399,17 @@ int main(int argc, char** argv)
         commonInitializeBuildsManager();
         ssTEST_OUTPUT_SETUP
         (
-            //Hash script path not unique
+            //Hash script path not unique (first attempt)
             std::shared_ptr<OverrideResult> hashNotUniqueResult = CreateOverrideResult();
             CO_SETUP_OVERRIDE   (OverrideInstance, operator())
-                                .WhenCalledWith(scriptsPaths.at(2))
+                                .WhenCalledWith(scriptsPaths.at(2) + "0")
                                 .Returns<std::size_t>(10)
                                 .Times(1)
                                 .AssignResult(hashNotUniqueResult);
-            //Hash script path unique
+            //Hash script path unique (second attempt)
             std::shared_ptr<OverrideResult> hashUniqueResult = CreateOverrideResult();
             CO_SETUP_OVERRIDE   (OverrideInstance, operator())
-                                .WhenCalledWith(scriptsPaths.at(2))
+                                .WhenCalledWith(scriptsPaths.at(2) + "1")
                                 .Returns<std::size_t>(15)
                                 .Times(1)
                                 .AssignResult(hashUniqueResult);
@@ -419,13 +424,16 @@ int main(int argc, char** argv)
         );
         ssTEST_OUTPUT_ASSERT(   "CreateBuildMapping should succeed",
                                 buildsManager->CreateBuildMapping(scriptsPaths.at(2)), true);
-        ssTEST_OUTPUT_ASSERT(   "Hash script path not unique", 
+        ssTEST_OUTPUT_ASSERT(   "Hash script path not unique (first attempt)",
                                 hashNotUniqueResult->GetSucceedCount() == 1);
-        ssTEST_OUTPUT_ASSERT(   "Hash script path unique", 
+        ssTEST_OUTPUT_ASSERT(   "Hash script path unique (second attempt)",
                                 hashUniqueResult->LastStatusSucceed());
         ssTEST_OUTPUT_ASSERT(   "New mapping exists",
                                 BuildsManagerAccessor   ::GetMappings(*buildsManager)
                                                         .count(scriptsPaths.at(2)) == 1);
+        ssTEST_OUTPUT_ASSERT(   "New mapping value is correct",
+                                BuildsManagerAccessor   ::GetMappings(*buildsManager)
+                                                        .at(scriptsPaths.at(2)) == scriptsBuildsPaths.at(2));
     };
     
     ssTEST("CreateBuildMapping Should Return True When Mapping For Script Exists")
@@ -628,5 +636,6 @@ int main(int argc, char** argv)
     
     return 0;
 }
+
 
 
