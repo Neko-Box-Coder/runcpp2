@@ -17,7 +17,9 @@ To build from source:
 1. Clone the repository with `git clone --recursive https://github.com/Neko-Box-Coder/runcpp2.git`
 2. Run `Build.sh` or `Build.bat` to build
 
-TODO: Ability to use pre-built binary
+Binary Release (Only Linux and Windows for now): 
+[https://github.com/Neko-Box-Coder/runcpp2/releases](https://github.com/Neko-Box-Coder/runcpp2/releases)
+
 
 Finally, you just need to add runcpp2 binary location to the `PATH` environment variable and 
 you can run c++ files anywhere you want.
