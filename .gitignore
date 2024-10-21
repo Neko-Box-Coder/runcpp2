@@ -43,6 +43,7 @@ Builds/
 Build/
 v0.*/
 *.bak
+*.runcpp2/
 Releases/
 Resources/embed
 Resources/embed.exe

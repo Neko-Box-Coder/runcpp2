@@ -326,8 +326,8 @@ bool runcpp2::Data::StageInfo::ConstructCommand(const SubstitutionMap& substitut
     
     for(int i = 0; i < currentRunParts.size(); ++i)
     {
-        ssLOG_INFO("Parsing run part at index: " << i);
-        ssLOG_INFO("Which is: \"" << currentRunParts.at(i).CommandPart << "\"");
+        ssLOG_DEBUG("Parsing run part at index: " << i);
+        ssLOG_DEBUG("Which is: \"" << currentRunParts.at(i).CommandPart << "\"");
         
         std::string currentEscapedPart;
         std::vector<std::string> substitutionsInCurrentPart;

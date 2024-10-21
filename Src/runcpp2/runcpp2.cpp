@@ -264,8 +264,14 @@ namespace
         
         if(compileFiles == nullptr)
         {
-            ssLOG_ERROR("Failed to get compile files for current platform");
-            return false;
+            ssLOG_INFO("No other files to be compiled files current platform");
+            
+            if(!scriptInfo.OtherFilesToBeCompiled.empty())
+            {
+                ssLOG_WARNING(  "Other source files are present, "
+                                "but none are included for current configuration. Is this intended?");
+            }
+            return true;
         }
         
         std::string foundProfileName;

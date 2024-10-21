@@ -23,6 +23,7 @@ namespace runcpp2
         WATCH,
         BUILD,
         VERSION,
+        LOG_LEVEL,
         COUNT
     };
     
