@@ -292,6 +292,15 @@ namespace
                         ssLOG_ERROR("Compile output: \n" << commandOutput);
                         return false;
                     }
+                    else
+                    {
+                        //TODO: Make this configurable
+                        //Attempt to capture warnings
+                        if(commandOutput.find(" warning") != std::string::npos)
+                            ssLOG_WARNING("Warning detected:\n" << commandOutput);
+                        else
+                            ssLOG_INFO("Compile output:\n" << commandOutput);
+                    }
                 }
                 
                 //Run cleanup if any
@@ -581,6 +590,8 @@ namespace
                     ssLOG_ERROR("Link output: \n" << linkOutput);
                     return false;
                 }
+                else
+                    ssLOG_INFO("Link output:\n" << linkOutput);
             }
             
             //Run cleanup if any

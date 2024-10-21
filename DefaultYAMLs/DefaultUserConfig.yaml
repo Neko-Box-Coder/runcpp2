@@ -1,7 +1,7 @@
 # List of anchors that will be aliased later
 Templates:
     MSVC_CompileFlags: &MSVC_CompileFlags
-        Flags: "/NOLOGO /W3 /WX /diagnostics:caret /D NDEBUG /utf-8 /Gm- /MD /EHa /TP /std:c++17 /GR /TP"
+        Flags: "/NOLOGO /W4 /diagnostics:caret /D NDEBUG /utf-8 /Gm- /MD /EHa /TP /std:c++17 /GR /TP"
     
     "g++_CompileRunParts": &g++_CompileRunParts
     -   Type: Once
@@ -164,7 +164,7 @@ Profiles:
         CompileTypes:
             Executable:
                 Default:
-                    Flags: "-std=c++17 -Wall -Werror"
+                    Flags: "-std=c++17 -Wall"
                     Executable: "g++"
                     RunParts: *g++_CompileRunParts
                     # (Optional) The commands to run in **shell** BEFORE compiling
@@ -175,14 +175,14 @@ Profiles:
                     # Cleanup: []
             Static:
                 Default:
-                    Flags: "-std=c++17 -Wall -Werror"
+                    Flags: "-std=c++17 -Wall"
                     Executable: "g++"
                     RunParts: *g++_CompileRunParts
                     # Setup: []
                     # Cleanup: []
             Shared:
                 Default:
-                    Flags: "-std=c++17 -Wall -Werror -fpic"
+                    Flags: "-std=c++17 -Wall -fpic"
                     Executable: "g++"
                     RunParts: *g++_CompileRunParts
                     # Setup: []

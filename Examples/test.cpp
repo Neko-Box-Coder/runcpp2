@@ -45,6 +45,18 @@ Dependencies:
         Default:
             "Default":
             -  "./Include/ssLogger/ssLog.hpp"
+
+-   Name: System2.cpp
+    Platforms: [Default]
+    Source:
+        Type: Git
+        Value: "https://github.com/Neko-Box-Coder/System2.cpp.git"
+    LibraryType: Header
+    IncludePaths: ["./", "./External/System2"]
+    Setup:
+        Default:
+            "Default":
+            -   "git submodule update --init --recursive"
 */
 
 
@@ -52,6 +64,7 @@ Dependencies:
 
 #define ssLOG_DLL 1
 #include "ssLogger/ssLog.hpp"
+#include "System2.hpp"
 
 #if defined(__GNUC__)
     #include "./OtherSources/AnotherSourceFileGcc.hpp"
@@ -68,6 +81,16 @@ int main(int argc, char* argv[])
 {
     std::cout << "Hello World" << std::endl;
     std::cout << TEST_DEF << std::endl;
+    
+    System2CommandInfo commandInfo = {};
+    int returnCode = 0;
+    
+    #if defined(_WIN32)
+        System2CppRun("dir", commandInfo);
+    #else
+        auto re = System2CppRun("ls -lah", commandInfo);
+    #endif
+    System2CppGetCommandReturnValueSync(commandInfo, returnCode);
     
     for(int i = 0; i < argc; ++i)
         std::cout << "Arg" << i << ": " << argv[i] << std::endl;
