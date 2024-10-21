@@ -118,10 +118,11 @@ bool runcpp2::RunCommandAndGetOutput(   const std::string& command,
         return false;
     }
     
+    ssLOG_DEBUG("outOutput: \n" << outOutput.c_str());
+    
     if(outReturnCode != 0)
     {
-        ssLOG_DEBUG("Failed when running command");
-        ssLOG_DEBUG("outOutput: \n" << outOutput.c_str());
+        ssLOG_DEBUG("Failed when running command with return code: " << outReturnCode);
         return false;
     }
     

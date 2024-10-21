@@ -169,12 +169,13 @@ bool GenerateScriptTemplate(const std::string& outputFilePathStr)
 
 int main(int argc, char* argv[])
 {
+    ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_WARNING);
+    
     //Parse command line options
     int currentArgIndex = 0;
     std::unordered_map<runcpp2::CmdOptions, std::string> currentOptions;
-
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 12, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 13, "Update this");
         std::unordered_map<std::string, runcpp2::OptionInfo> longOptionsMap =
         {
             {
@@ -220,10 +221,14 @@ int main(int argc, char* argv[])
             {
                 "--version",
                 runcpp2::OptionInfo(runcpp2::CmdOptions::VERSION, false)
+            },
+            {
+                "--log-level",
+                runcpp2::OptionInfo(runcpp2::CmdOptions::LOG_LEVEL, true)
             }
         };
         
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 12, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 13, "Update this");
         std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
         {
             {"-r", longOptionsMap.at("--reset-cache")},
@@ -253,7 +258,7 @@ int main(int argc, char* argv[])
     //Help message
     if(currentOptions.count(runcpp2::CmdOptions::HELP))
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 12, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 13, "Update this");
         ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
         ssLOG_BASE("Options:");
         ssLOG_BASE("    -r, --[r]eset-cache                     Deletes all cache and build everything from scratch");
@@ -266,9 +271,31 @@ int main(int argc, char* argv[])
         ssLOG_BASE("    -t, --create-script-[t]emplate <file>   Creates/prepend runcpp2 script info template");
         ssLOG_BASE("    -w, --[w]atch                           Watch script changes and output any compiling errors");
         ssLOG_BASE("    -b, --[b]uild                           Build the script and copy output files to the working directory");
-        ssLOG_BASE("    -v, --[v]ersion                           Show the version of runcpp2");
+        ssLOG_BASE("    -v, --[v]ersion                         Show the version of runcpp2");
+        ssLOG_BASE("        --log-level <level>                 Sets the log level (Normal, Info, Debug) for runcpp2.");
         
         return 0;
+    }
+    
+    //Set Log level
+    if(currentOptions.count(runcpp2::CmdOptions::LOG_LEVEL))
+    {
+        std::string level = currentOptions.at(runcpp2::CmdOptions::LOG_LEVEL);
+        runcpp2::Trim(level);
+        for(int i = 0; i < level.size(); ++i)
+            level[i] = std::tolower(level[i]);
+        
+        if(level == "info")
+            ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_INFO);
+        else if(level == "debug")
+            ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_DEBUG);
+        else if(level == "normal")
+            ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_WARNING);
+        else
+        {
+            ssLOG_ERROR("Invalid level: " << level);
+            return -1;
+        }
     }
     
     //Show user config path
@@ -294,7 +321,7 @@ int main(int argc, char* argv[])
             ssLOG_ERROR("Failed reset user config");
             return -1;
         }
-        
+        ssLOG_BASE("User config reset successful");
         return 0;
     }
     
@@ -304,7 +331,10 @@ int main(int argc, char* argv[])
         if(!GenerateScriptTemplate(currentOptions.at(runcpp2::CmdOptions::SCRIPT_TEMPLATE)))
             return -1;
         else
+        {
+            ssLOG_BASE("Script template generated");
             return 0;
+        }
     }
     
     std::vector<runcpp2::Data::Profile> profiles;
@@ -388,7 +418,6 @@ int main(int argc, char* argv[])
                         return -1;
                     
                     case runcpp2::PipelineResult::UNEXPECTED_FAILURE:
-                    case runcpp2::PipelineResult::SUCCESS:
                     case runcpp2::PipelineResult::INVALID_BUILD_DIR:
                     case runcpp2::PipelineResult::INVALID_SCRIPT_INFO:
                     case runcpp2::PipelineResult::NO_AVAILABLE_PROFILE:
@@ -396,9 +425,12 @@ int main(int argc, char* argv[])
                     case runcpp2::PipelineResult::COMPILE_LINK_FAILED:
                     case runcpp2::PipelineResult::INVALID_PROFILE:
                     case runcpp2::PipelineResult::RUN_SCRIPT_FAILED:
+                        ssLOG_BASE("Watching...");
+                        break;
+                    case runcpp2::PipelineResult::SUCCESS:
+                        ssLOG_BASE("No error. Watching...");
                         break;
                 }
-                ssLOG_BASE("No error. Watching...");
             }
             
             lastScriptWriteTime = ghc::filesystem::last_write_time(script, e);
