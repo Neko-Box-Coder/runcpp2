@@ -180,9 +180,9 @@ namespace
         return true;
     }
 
-    bool GetDependencyBinariesExtensionsToCopy( const runcpp2::Data::DependencyInfo& dependencyInfo,
+    bool GetDependencyBinariesExtensionsToLink( const runcpp2::Data::DependencyInfo& dependencyInfo,
                                                 const runcpp2::Data::Profile& profile,
-                                                std::vector<std::string>& outExtensionsToCopy)
+                                                std::vector<std::string>& outExtensionsToLink)
     {
         static_assert((int)runcpp2::Data::DependencyLibraryType::COUNT == 4, "");
         switch(dependencyInfo.LibraryType)
@@ -197,7 +197,7 @@ namespace
                     return false;
                 }
                 
-                outExtensionsToCopy.push_back(
+                outExtensionsToLink.push_back(
                     *runcpp2::GetValueFromPlatformMap(profile   .FilesTypes
                                                                 .StaticLinkFile
                                                                 .Extension));
@@ -215,13 +215,13 @@ namespace
                     return false;
                 }
                 
-                outExtensionsToCopy.push_back(
+                outExtensionsToLink.push_back(
                     *runcpp2::GetValueFromPlatformMap(profile.FilesTypes.SharedLinkFile.Extension));
                 
                 if( *runcpp2::GetValueFromPlatformMap(profile.FilesTypes.SharedLinkFile.Extension) != 
                     *runcpp2::GetValueFromPlatformMap(profile.FilesTypes.SharedLibraryFile.Extension))
                 {
-                    outExtensionsToCopy.push_back(
+                    outExtensionsToLink.push_back(
                         *runcpp2::GetValueFromPlatformMap(profile   .FilesTypes
                                                                     .SharedLibraryFile
                                                                     .Extension));
@@ -239,7 +239,7 @@ namespace
                     return false;
                 }
                 
-                outExtensionsToCopy.push_back(
+                outExtensionsToLink.push_back(
                     *runcpp2::GetValueFromPlatformMap(profile.FilesTypes.ObjectLinkFile.Extension));
                 
                 break;
@@ -468,12 +468,11 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
     return true;
 }
 
-bool runcpp2::CopyDependenciesBinaries( const ghc::filesystem::path& buildDir,
-                                        const std::vector<Data::DependencyInfo*>& 
-                                            availableDependencies,
-                                        const std::vector<std::string>& dependenciesCopiesPaths,
-                                        const Data::Profile& profile,
-                                        std::vector<std::string>& outCopiedBinariesPaths)
+bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyInfo*>& 
+                                                availableDependencies,
+                                            const std::vector<std::string>& dependenciesCopiesPaths,
+                                            const Data::Profile& profile,
+                                            std::vector<std::string>& outBinariesPaths)
 {
     std::vector<std::string> platformNames = GetPlatformNames();
     
@@ -491,8 +490,10 @@ bool runcpp2::CopyDependenciesBinaries( const ghc::filesystem::path& buildDir,
         return false;
     }
     
+    int nonLinkFilesCount = 0;
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
+        ssLOG_INFO("Evaluating dependency " << availableDependencies.at(i)->Name);
         std::vector<std::string> currentProfileNames;
         profile.GetNames(currentProfileNames);
         
@@ -514,38 +515,21 @@ bool runcpp2::CopyDependenciesBinaries( const ghc::filesystem::path& buildDir,
             
             if(!profileNameToUse.empty())
             {
-                const std::vector<std::string>& filesToCopyForProfile = 
+                const std::vector<std::string>& filesToGatherForProfile = 
                     filesToCopy.ProfileFiles.at(profileNameToUse);
                 
-                for(int j = 0; j < filesToCopyForProfile.size(); ++j)
+                for(int j = 0; j < filesToGatherForProfile.size(); ++j)
                 {
                     ghc::filesystem::path srcPath = 
                         ghc::filesystem::path(dependenciesCopiesPaths.at(i)) / 
-                        filesToCopyForProfile.at(j);
-                    
-                    ghc::filesystem::path destPath = 
-                        buildDir / ghc::filesystem::path(filesToCopyForProfile.at(j)).filename();
+                        filesToGatherForProfile.at(j);
                     
                     std::error_code e;
-                    //TODO: Maybe we can check if destPath timestamp is newer and avoid copy?
                     if(ghc::filesystem::exists(srcPath, e))
                     {
-                        ghc::filesystem::copy(  srcPath, 
-                                                destPath, 
-                                                ghc::filesystem::copy_options::overwrite_existing, 
-                                                e);
-                        
-                        if(e)
-                        {
-                            ssLOG_ERROR("Failed to copy file from " << srcPath.string() << 
-                                        " to " << destPath.string());
-                            ssLOG_ERROR("Error: " << e.message());
-                            return false;
-                        }
-                        
-                        ssLOG_INFO("Copied from " << srcPath.string());
-                        ssLOG_INFO("Copied to " << destPath.string());
-                        outCopiedBinariesPaths.push_back(runcpp2::ProcessPath(destPath));
+                        outBinariesPaths.push_back(runcpp2::ProcessPath(srcPath));
+                        ++nonLinkFilesCount;
+                        ssLOG_INFO("Added binary path: " << srcPath.string());
                     }
                     else
                         ssLOG_WARNING("File not found: " << srcPath.string());
@@ -553,13 +537,13 @@ bool runcpp2::CopyDependenciesBinaries( const ghc::filesystem::path& buildDir,
             }
         }
 
-        std::vector<std::string> extensionsToCopy;
+        std::vector<std::string> extensionsToLink;
         
-        //Get all the file extensions to copy
+        //Get all the file extensions to gather
         {
-            if(!GetDependencyBinariesExtensionsToCopy(  *availableDependencies.at(i),
+            if(!GetDependencyBinariesExtensionsToLink(  *availableDependencies.at(i),
                                                         profile,
-                                                        extensionsToCopy))
+                                                        extensionsToLink))
             {
                 return false;
             }
@@ -572,7 +556,10 @@ bool runcpp2::CopyDependenciesBinaries( const ghc::filesystem::path& buildDir,
                     continue;
                 }
                 
-                extensionsToCopy.push_back(profile.FilesTypes.DebugSymbolFile.Extension.at(platformNames.at(j)));
+                extensionsToLink.push_back(profile  .FilesTypes
+                                                    .DebugSymbolFile
+                                                    .Extension
+                                                    .at(platformNames.at(j)));
                 break;
             }
         }
@@ -602,7 +589,7 @@ bool runcpp2::CopyDependenciesBinaries( const ghc::filesystem::path& buildDir,
         }
         const Data::DependencyLinkProperty& searchProperty = foundPropertyIt->second;
         
-        //Copy the files with extensions that contains the search name if needed
+        //Get the files with extensions that contains the search name if needed
         for(int j = 0; j < searchProperty.SearchLibraryNames.size(); ++j)
         {
             for(int k = 0; k < searchProperty.SearchDirectories.size(); ++k)
@@ -661,9 +648,9 @@ bool runcpp2::CopyDependenciesBinaries( const ghc::filesystem::path& buildDir,
                     
                     bool extensionMatched = false;
                     
-                    for(int j = 0; j < extensionsToCopy.size(); ++j)
+                    for(int j = 0; j < extensionsToLink.size(); ++j)
                     {
-                        if(currentExtension == extensionsToCopy.at(j))
+                        if(currentExtension == extensionsToLink.at(j))
                         {
                             extensionMatched = true;
                             break;
@@ -673,77 +660,20 @@ bool runcpp2::CopyDependenciesBinaries( const ghc::filesystem::path& buildDir,
                     if(!extensionMatched)
                         continue;
                     
-                    //TODO: Group object files in folders to avoid name collision
-                    ghc::filesystem::path copiedPath = buildDir / it.path().filename();
-                    
-                    //Check if we have previously copied the dependencies to the folder
-                    if(ghc::filesystem::exists(copiedPath, e))
-                    {
-                        ghc::filesystem::file_time_type builtWriteTime = 
-                            ghc::filesystem::last_write_time(it.path(), e);
-                        
-                        if(e)
-                        {
-                            ssLOG_ERROR("Failed to get write time of " << it.path().string());
-                            ssLOG_ERROR("Error: " << e.message());
-                            return false;
-                        }
-                        
-                        ghc::filesystem::file_time_type copiedWriteTime = 
-                            ghc::filesystem::last_write_time(copiedPath, e);
-                        
-                        if(e)
-                        {
-                            ssLOG_ERROR("Failed to get write time of " << copiedPath.string());
-                            ssLOG_ERROR("Error: " << e.message());
-                            return false;
-                        }
-                        
-                        //If the copied write time is newer than the original one, that means 
-                        //  the copy is up to date
-                        if(builtWriteTime <= copiedWriteTime)
-                        {
-                            ssLOG_INFO(copiedPath.string() << " is up to date");
-                            outCopiedBinariesPaths.push_back(runcpp2::ProcessPath(copiedPath));
-                            continue;
-                        }
-                        else
-                            ssLOG_INFO(copiedPath.string() << " is outdated");
-                    }
-                    
-                    //Copy the dependency binary to our folder
-                    std::error_code copyErrorCode;
-                    ghc::filesystem::copy(  it.path(), 
-                                            buildDir, 
-                                            ghc::filesystem::copy_options::overwrite_existing,  
-                                            copyErrorCode);
-                    
-                    if(copyErrorCode)
-                    {
-                        ssLOG_ERROR("Failed to copy file from " << it.path().string() << 
-                                    " to " << buildDir.string());
-
-                        ssLOG_ERROR("Error: " << copyErrorCode.message());
-                        return false;
-                    }
-                    
-                    
-                    ssLOG_INFO("Copied from " << it.path().string());
-                    ssLOG_INFO("Copied to " << copiedPath.string());
-                    outCopiedBinariesPaths.push_back(runcpp2::ProcessPath(copiedPath));
+                    ssLOG_INFO("Linking " << it.path().string());
+                    outBinariesPaths.push_back(runcpp2::ProcessPath(it.path().string()));
                 }
             }
         }
     }
     
     //Do a check to see if any dependencies are copied
-    if(outCopiedBinariesPaths.size() < minimumDependenciesCopiesCount)
+    if(outBinariesPaths.size() - nonLinkFilesCount < minimumDependenciesCopiesCount)
     {
-        ssLOG_WARNING("outCopiedBinariesPaths.size() does not match minimumDependenciesCopiesCount");
-        ssLOG_WARNING("outCopiedBinariesPaths are");
+        ssLOG_WARNING("We could missing some link files for dependencies");
         
-        for(int i = 0; i < outCopiedBinariesPaths.size(); ++i)
-            ssLOG_WARNING("outCopiedBinariesPaths[" << i << "]: " << outCopiedBinariesPaths.at(i));
+        for(int i = 0; i < outBinariesPaths.size(); ++i)
+            ssLOG_WARNING("outBinariesPaths[" << i << "]: " << outBinariesPaths.at(i));
     }
     
     return true;

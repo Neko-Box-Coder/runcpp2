@@ -505,6 +505,45 @@ namespace
             return false;
         }
     }
+
+    bool CopyFiles( const ghc::filesystem::path& destDir,
+                    const std::vector<std::string>& filePaths,
+                    std::vector<std::string>& outCopiedPaths)
+    {
+        ssLOG_FUNC_DEBUG();
+        
+        std::error_code e;
+        for (const std::string& srcPath : filePaths)
+        {
+            ghc::filesystem::path destPath = destDir / ghc::filesystem::path(srcPath).filename();
+
+            if(ghc::filesystem::exists(srcPath, e))
+            {
+                ghc::filesystem::copy(srcPath, 
+                                      destPath, 
+                                      ghc::filesystem::copy_options::overwrite_existing, 
+                                      e);
+                
+                if(e)
+                {
+                    ssLOG_ERROR("Failed to copy file from " << srcPath << 
+                                " to " << destPath.string());
+                    ssLOG_ERROR("Error: " << e.message());
+                    return false;
+                }
+                
+                ssLOG_INFO("Copied from " << srcPath << " to " << destPath.string());
+                outCopiedPaths.push_back(runcpp2::ProcessPath(destPath));
+            }
+            else
+            {
+                ssLOG_ERROR("File to copy not found: " << srcPath);
+                return false;
+            }
+        }
+        
+        return true;
+    }
 }
 
 void runcpp2::GetDefaultScriptInfo(std::string& scriptInfo)
@@ -731,7 +770,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             return PipelineResult::NO_AVAILABLE_PROFILE;
         }
         
-        std::vector<std::string> copiedBinariesPaths;
+        std::vector<std::string> gatheredBinariesPaths;
         
         //Process Dependencies
         std::vector<Data::DependencyInfo*> availableDependencies;
@@ -800,13 +839,12 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 return PipelineResult::DEPENDENCIES_FAILED;
             }
 
-            if(!CopyDependenciesBinaries(   buildDir, 
-                                            availableDependencies,
+            if (!GatherDependenciesBinaries(availableDependencies,
                                             dependenciesLocalCopiesPaths,
                                             profiles.at(profileIndex),
-                                            copiedBinariesPaths))
+                                            gatheredBinariesPaths))
             {
-                ssLOG_ERROR("Failed to copy dependencies binaries");
+                ssLOG_ERROR("Failed to gather dependencies binaries");
                 return PipelineResult::DEPENDENCIES_FAILED;
             }
         }
@@ -862,40 +900,40 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                                                                     .Extension));
         }
 
-        //Separate the copied files from dependencies into files to link and files to copy
-        for(int i = 0; i < copiedBinariesPaths.size(); ++i)
+        //Separate the gathered files from dependencies into files to link and files to copy
+        for(int i = 0; i < gatheredBinariesPaths.size(); ++i)
         {
-            ghc::filesystem::path filePath(copiedBinariesPaths.at(i));
+            ghc::filesystem::path filePath(gatheredBinariesPaths.at(i));
             std::string extension = filePath.extension().string();
 
             //Check if the file is a link file based on its extension
             if(linkExtensions.find(extension) != linkExtensions.end())
             {
-                linkFilesPaths.push_back(copiedBinariesPaths.at(i));
+                linkFilesPaths.push_back(gatheredBinariesPaths.at(i));
                 
                 //Special case when SharedLinkFile and SharedLibraryFile share the same extension
                 if( runcpp2::HasValueFromPlatformMap(currentFileTypes.SharedLibraryFile.Extension) && 
                     *runcpp2::GetValueFromPlatformMap(currentFileTypes  .SharedLibraryFile
                                                                         .Extension) == extension)
                 {
-                    filesToCopyPaths.push_back(copiedBinariesPaths.at(i));
+                    filesToCopyPaths.push_back(gatheredBinariesPaths.at(i));
                 }
             }
             else
-                filesToCopyPaths.push_back(copiedBinariesPaths.at(i));
+                filesToCopyPaths.push_back(gatheredBinariesPaths.at(i));
         }
 
         {
-            ssLOG_DEBUG("Files to link:");
+            ssLOG_INFO("Files to link:");
             for(int i = 0; i < linkFilesPaths.size(); ++i)
-                ssLOG_DEBUG("  " << linkFilesPaths[i]);
+                ssLOG_INFO("  " << linkFilesPaths[i]);
 
-            ssLOG_DEBUG("Files to copy:");
+            ssLOG_INFO("Files to copy:");
             for(int i = 0; i < filesToCopyPaths.size(); ++i)
-                ssLOG_DEBUG("  " << filesToCopyPaths[i]);
+                ssLOG_INFO("  " << filesToCopyPaths[i]);
         }
         
-        // Update finalObjectWriteTime
+        //Update finalObjectWriteTime
         for(int i = 0; i < linkFilesPaths.size(); ++i)
         {
             if(!ghc::filesystem::exists(linkFilesPaths.at(i), e))
@@ -999,6 +1037,13 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         
         if(currentOptions.count(CmdOptions::BUILD) == 0)
         {
+            std::vector<std::string> copiedPaths;
+            if(!CopyFiles(buildDir, filesToCopyPaths, copiedPaths))
+            {
+                ssLOG_ERROR("Failed to copy binaries before running the script");
+                return PipelineResult::UNEXPECTED_FAILURE;
+            }
+            
             if(currentOptions.count(CmdOptions::EXECUTABLE) > 0)
             {
                 //Running the script
@@ -1024,42 +1069,16 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         }
         else
         {
-            std::error_code e;
+            //Copy the output file
+            filesToCopyPaths.push_back(target);
             
-            // Copy the output file
+            std::vector<std::string> copiedPaths;
+            if(!CopyFiles(buildOutputDir, filesToCopyPaths, copiedPaths))
             {
-                ghc::filesystem::path destFile = 
-                    ghc::filesystem::path(buildOutputDir) / target.filename();
-                
-                ghc::filesystem::copy(  target, destFile, 
-                                        ghc::filesystem::copy_options::overwrite_existing, e);
-                if(e)
-                {
-                    ssLOG_ERROR("Failed to copy output file: " << e.message());
-                    return PipelineResult::UNEXPECTED_FAILURE;
-                }
-                
-                ssLOG_DEBUG("Copied " << target << " to " << destFile);
+                ssLOG_ERROR("Failed to copy binaries before running the script");
+                return PipelineResult::UNEXPECTED_FAILURE;
             }
-
-            // Copy the files that need to be copied
-            for(int i = 0; i < filesToCopyPaths.size(); ++i)
-            {
-                ghc::filesystem::path srcFile(filesToCopyPaths.at(i));
-                ghc::filesystem::path destFile = 
-                    ghc::filesystem::path(buildOutputDir) / srcFile.filename();
-                ghc::filesystem::copy(  srcFile, destFile, 
-                                        ghc::filesystem::copy_options::overwrite_existing, e);
-                if(e)
-                {
-                    ssLOG_ERROR("Failed to copy file " << filesToCopyPaths.at(i) << ": " << 
-                                e.message());
-                    return PipelineResult::UNEXPECTED_FAILURE;
-                }
-
-                ssLOG_DEBUG("Copied " << srcFile << " to " << destFile);
-            }
-
+            
             ssLOG_BASE("Build completed. Files copied to " << buildOutputDir);
             return PipelineResult::SUCCESS;
         }

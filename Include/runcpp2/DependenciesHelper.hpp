@@ -35,11 +35,10 @@ namespace runcpp2
                             const std::vector<Data::DependencyInfo*>& availableDependencies,
                             const std::vector<std::string>& dependenciesLocalCopiesPaths);
 
-    bool CopyDependenciesBinaries(  const ghc::filesystem::path& buildDir,
-                                    const std::vector<Data::DependencyInfo*>& availableDependencies,
+    bool GatherDependenciesBinaries(const std::vector<Data::DependencyInfo*>& availableDependencies,
                                     const std::vector<std::string>& dependenciesCopiesPaths,
                                     const Data::Profile& profile,
-                                    std::vector<std::string>& outCopiedBinariesPaths);
+                                    std::vector<std::string>& outBinariesPaths);
 }
 
 #endif
