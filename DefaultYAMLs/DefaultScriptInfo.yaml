@@ -135,7 +135,7 @@ Dependencies:
             "g++":
             -   "sudo apt purge MyLibrary"
 
-    # (Optional) Files to be copied for each platform and profile
+    # (Optional) Files to be copied to next to output binary for each platform and profile
     FilesToCopy:
         # Target Platform (Default, Windows, Linux, MacOS, or Unix)
         Default:
