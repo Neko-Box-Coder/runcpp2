@@ -578,7 +578,7 @@ bool runcpp2::CopyDependenciesBinaries( const ghc::filesystem::path& buildDir,
         }
         
         if(availableDependencies.at(i)->LibraryType == Data::DependencyLibraryType::HEADER)
-            return true;
+            continue;
         
         //Get the Search path and search library name
         using PropertyMap = std::unordered_map<ProfileName, Data::DependencyLinkProperty>;
