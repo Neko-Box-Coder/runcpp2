@@ -233,7 +233,7 @@ namespace
             {
                 if(!runcpp2::HasValueFromPlatformMap(profile.FilesTypes.ObjectLinkFile.Extension))
                 {
-                    ssLOG_ERROR("Failed to find shared library extensions for dependency " << 
+                    ssLOG_ERROR("Failed to find object file extensions for dependency " << 
                                 dependencyInfo.Name);
                     
                     return false;

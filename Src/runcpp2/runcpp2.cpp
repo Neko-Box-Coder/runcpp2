@@ -218,7 +218,8 @@ namespace
             if(scriptFullMain != nullptr)
             {
                 std::vector<std::string> runArgsCopy = runArgs;
-                runArgsCopy.insert(runArgsCopy.begin(), scriptPath);
+                runArgsCopy.insert( runArgsCopy.begin(), 
+                                    runcpp2::ProcessPath(compiledSharedLibPath.string()));
                 
                 std::vector<char*> runArgsCStr(runArgsCopy.size());
                 for(int i = 0; i < runArgsCopy.size(); ++i)

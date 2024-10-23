@@ -63,12 +63,12 @@ bool runcpp2::Data::Profile::ParseYAML_Node(ryml::ConstNodeRef& profileNode)
             ryml::ConstNodeRef currentPlatform = profileNode["Setup"][i];
             
             std::string key = GetKey(currentPlatform);
-            std::vector<std::string> extensions;
+            std::vector<std::string> setupSteps;
             
             for(int j = 0; j < currentPlatform.num_children(); ++j)
-                extensions.push_back(GetValue(currentPlatform[j]));
+                setupSteps.push_back(GetValue(currentPlatform[j]));
             
-            Setup[key] = extensions;
+            Setup[key] = setupSteps;
         }
     }
     
@@ -79,12 +79,12 @@ bool runcpp2::Data::Profile::ParseYAML_Node(ryml::ConstNodeRef& profileNode)
             ryml::ConstNodeRef currentPlatform = profileNode["Cleanup"][i];
             
             std::string key = GetKey(currentPlatform);
-            std::vector<std::string> extensions;
+            std::vector<std::string> cleanupSteps;
             
             for(int j = 0; j < currentPlatform.num_children(); ++j)
-                extensions.push_back(GetValue(currentPlatform[j]));
+                cleanupSteps.push_back(GetValue(currentPlatform[j]));
             
-            Cleanup[key] = extensions;
+            Cleanup[key] = cleanupSteps;
         }
     }
     
