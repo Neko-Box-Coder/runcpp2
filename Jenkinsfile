@@ -154,9 +154,9 @@ pipeline
                                                 variable: 'GITHUB_TOKEN')])
                         {
                             SetGithubStatus('$GITHUB_TOKEN', 
-                                            "Build ${BUILD_NUMBER}", 
+                                            "CI Pipeline", 
                                             STATUS_CONTEXT_URL, 
-                                            "Stage ${env.STAGE_NAME} started",
+                                            "Build ${BUILD_NUMBER} stage ${env.STAGE_NAME} started",
                                             "pending",
                                             REPO_OWNER,
                                             REPO_NAME,
@@ -251,9 +251,9 @@ pipeline
                 withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')])
                 {
                     SetGithubStatus('$GITHUB_TOKEN', 
-                                    "Build ${BUILD_NUMBER}", 
+                                    "CI Pipeline", 
                                     STATUS_CONTEXT_URL, 
-                                    "Pipeline passed",
+                                    "Build ${BUILD_NUMBER} Pipeline passed",
                                     "success",
                                     REPO_OWNER,
                                     REPO_NAME,
@@ -298,9 +298,9 @@ pipeline
                         withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')])
                         {
                             SetGithubStatus('$GITHUB_TOKEN', 
-                                            "Build ${BUILD_NUMBER}", 
+                                            "CI Pipeline", 
                                             STATUS_CONTEXT_URL, 
-                                            "Stage ${FAILED_STAGE} failed",
+                                            "Build ${BUILD_NUMBER} Stage ${FAILED_STAGE} failed",
                                             "failure",
                                             REPO_OWNER,
                                             REPO_NAME,
