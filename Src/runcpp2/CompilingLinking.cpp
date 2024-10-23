@@ -406,11 +406,10 @@ namespace
             for(int i = 0; i < objectsFilesPaths.size(); ++i)
             {
                 ssLOG_DEBUG("Trying to link " << objectsFilesPaths.at(i));
+                using namespace runcpp2;
                 
                 //Check if this is a file we can link
-                std::string extension = objectsFilesPaths.at(i).extension();
-                
-                using namespace runcpp2;
+                std::string extension = GetFileExtensionWithoutVersion(objectsFilesPaths.at(i));
                 Data::DependencyLibraryType currentLinkType = Data::DependencyLibraryType::COUNT;
                 
                 if(!HasValueFromPlatformMap(profile.FilesTypes.ObjectLinkFile.Extension))

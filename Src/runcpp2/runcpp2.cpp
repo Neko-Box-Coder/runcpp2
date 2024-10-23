@@ -905,7 +905,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         for(int i = 0; i < gatheredBinariesPaths.size(); ++i)
         {
             ghc::filesystem::path filePath(gatheredBinariesPaths.at(i));
-            std::string extension = filePath.extension().string();
+            std::string extension = runcpp2::GetFileExtensionWithoutVersion(filePath);
 
             //Check if the file is a link file based on its extension
             if(linkExtensions.find(extension) != linkExtensions.end())

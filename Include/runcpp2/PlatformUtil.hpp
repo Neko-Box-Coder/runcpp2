@@ -9,6 +9,14 @@
 #include <unordered_map>
 #include <vector>
 
+namespace ghc
+{
+    namespace filesystem
+    {
+        class path;
+    }
+}
+
 namespace runcpp2
 {
     std::string ProcessPath(const std::string& path);
@@ -55,6 +63,8 @@ namespace runcpp2
         
         return nullptr;
     }
+    
+    std::string GetFileExtensionWithoutVersion(const ghc::filesystem::path& path);
 }
 
 #endif

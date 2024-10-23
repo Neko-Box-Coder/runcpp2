@@ -637,7 +637,7 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                         continue;
                     
                     std::string currentFileName = it.path().stem().string();
-                    std::string currentExtension = it.path().extension().string();
+                    std::string currentExtension = runcpp2::GetFileExtensionWithoutVersion(it.path());
                     
                     ssLOG_DEBUG("currentFileName: " << currentFileName);
                     ssLOG_DEBUG("currentExtension: " << currentExtension);
