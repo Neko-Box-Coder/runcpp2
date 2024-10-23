@@ -164,7 +164,7 @@ Profiles:
         CompileTypes:
             Executable:
                 Default:
-                    Flags: "-std=c++17 -Wall"
+                    Flags: "-std=c++17 -Wall -g"
                     Executable: "g++"
                     RunParts: *g++_CompileRunParts
                     # (Optional) The commands to run in **shell** BEFORE compiling
@@ -175,14 +175,14 @@ Profiles:
                     # Cleanup: []
             Static:
                 Default:
-                    Flags: "-std=c++17 -Wall"
+                    Flags: "-std=c++17 -Wall -g"
                     Executable: "g++"
                     RunParts: *g++_CompileRunParts
                     # Setup: []
                     # Cleanup: []
             Shared:
                 Default:
-                    Flags: "-std=c++17 -Wall -fpic"
+                    Flags: "-std=c++17 -Wall -g -fpic"
                     Executable: "g++"
                     RunParts: *g++_CompileRunParts
                     # Setup: []
