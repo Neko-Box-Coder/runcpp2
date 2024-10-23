@@ -636,7 +636,7 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                     if(it.is_directory())
                         continue;
                     
-                    std::string currentFileName = it.path().stem().string();
+                    std::string currentFileName = it.path().filename().string();
                     std::string currentExtension = runcpp2::GetFileExtensionWithoutVersion(it.path());
                     
                     ssLOG_DEBUG("currentFileName: " << currentFileName);
@@ -663,7 +663,6 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                         continue;
                     
                     bool extensionMatched = false;
-                    
                     for(int j = 0; j < extensionsToLink.size(); ++j)
                     {
                         if(currentExtension == extensionsToLink.at(j))
@@ -677,10 +676,10 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                         continue;
                     
                     //Handle symlink
-                    ghc::filesystem::path finalPath = it.path();
+                    ghc::filesystem::path resolvedPath = it.path();
                     {
                         std::error_code symlink_ec;
-                        finalPath = ResolveSymlink(finalPath, symlink_ec);
+                        resolvedPath = ResolveSymlink(resolvedPath, symlink_ec);
                         if(symlink_ec)
                         {
                             ssLOG_ERROR("Failed to resolve symlink: " << symlink_ec.message());
@@ -688,12 +687,15 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                         }
                     }
                     
-                    const std::string processedFinalPath = runcpp2::ProcessPath(finalPath.string());
-                    if(binariesPathsSet.count(processedFinalPath) == 0)
+                    const std::string processedPath = runcpp2::ProcessPath(it.path().string());
+                    const std::string processedResolvedPath = 
+                        runcpp2::ProcessPath(resolvedPath.string());
+                    
+                    if(binariesPathsSet.count(processedResolvedPath) == 0)
                     {
-                        ssLOG_INFO("Linking " << finalPath.string());
-                        outBinariesPaths.push_back(processedFinalPath);
-                        binariesPathsSet.insert(processedFinalPath);
+                        ssLOG_INFO("Linking " << processedPath);
+                        outBinariesPaths.push_back(processedPath);
+                        binariesPathsSet.insert(processedResolvedPath);
                     }
                 }
             }
