@@ -3,6 +3,8 @@
 #include "runcpp2/PlatformUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
+#include <unordered_set>
+
 namespace
 {
     bool PopulateLocalDependencies( const std::vector<runcpp2::Data::DependencyInfo*>& dependencies,
@@ -253,6 +255,15 @@ namespace
         
         return true;
     }
+
+    ghc::filesystem::path ResolveSymlink(const ghc::filesystem::path& path, std::error_code& ec)
+    {
+        ghc::filesystem::path resolvedPath = ghc::filesystem::canonical(path, ec);
+        if(ec)
+            return path; // Return original path if canonical fails
+        
+        return resolvedPath;
+    }
 }
 
 bool runcpp2::GetDependenciesPaths( const std::vector<Data::DependencyInfo*>& availableDependencies,
@@ -475,6 +486,9 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                                             std::vector<std::string>& outBinariesPaths)
 {
     std::vector<std::string> platformNames = GetPlatformNames();
+    std::unordered_set<std::string> binariesPathsSet;
+    for(int i = 0; i < outBinariesPaths.size(); ++i)
+        binariesPathsSet.insert(outBinariesPaths[i]);
     
     int minimumDependenciesCopiesCount = 0;
     for(int i = 0; i < availableDependencies.size(); ++i)
@@ -527,7 +541,9 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                     std::error_code e;
                     if(ghc::filesystem::exists(srcPath, e))
                     {
-                        outBinariesPaths.push_back(runcpp2::ProcessPath(srcPath));
+                        const std::string processedSrcPath = runcpp2::ProcessPath(srcPath);
+                        outBinariesPaths.push_back(processedSrcPath);
+                        binariesPathsSet.insert(processedSrcPath);
                         ++nonLinkFilesCount;
                         ssLOG_INFO("Added binary path: " << srcPath.string());
                     }
@@ -660,8 +676,25 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                     if(!extensionMatched)
                         continue;
                     
-                    ssLOG_INFO("Linking " << it.path().string());
-                    outBinariesPaths.push_back(runcpp2::ProcessPath(it.path().string()));
+                    //Handle symlink
+                    ghc::filesystem::path finalPath = it.path();
+                    {
+                        std::error_code symlink_ec;
+                        finalPath = ResolveSymlink(finalPath, symlink_ec);
+                        if(symlink_ec)
+                        {
+                            ssLOG_ERROR("Failed to resolve symlink: " << symlink_ec.message());
+                            return false;
+                        }
+                    }
+                    
+                    const std::string processedFinalPath = runcpp2::ProcessPath(finalPath.string());
+                    if(binariesPathsSet.count(processedFinalPath) == 0)
+                    {
+                        ssLOG_INFO("Linking " << finalPath.string());
+                        outBinariesPaths.push_back(processedFinalPath);
+                        binariesPathsSet.insert(processedFinalPath);
+                    }
                 }
             }
         }
