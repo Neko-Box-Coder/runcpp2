@@ -393,10 +393,10 @@ bool runcpp2::Data::StageInfo::ConstructCommand(const SubstitutionMap& substitut
             {
                 if(substitutionMap.count(substitutionsInCurrentPart.at(j)) == 0)
                 {
-                    ssLOG_INFO("Failed to find " << substitutionsInCurrentPart.at(j) << " in " <<
+                    ssLOG_DEBUG("No substitution found for " << substitutionsInCurrentPart.at(j) << " in " <<
                                 currentRunParts.at(i).CommandPart);
                     
-                    ssLOG_INFO("Current run part is type repeat, skipping to next");
+                    ssLOG_DEBUG("Current run part is type repeat, skipping to next");
                     continue;
                 }
                 

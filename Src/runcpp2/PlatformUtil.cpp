@@ -1,7 +1,9 @@
 #include "runcpp2/PlatformUtil.hpp"
 
 #include "ssLogger/ssLog.hpp"
+#include "ghc/filesystem.hpp"
 #include <stdio.h>
+#include <cctype>
 
 namespace
 {
@@ -156,3 +158,26 @@ bool runcpp2::RunCommandAndGetOutput(   const std::string& command,
         return message;
     }
 #endif
+
+std::string runcpp2::GetFileExtensionWithoutVersion(const ghc::filesystem::path& path)
+{
+    std::string filename = path.filename().string();
+    bool inNumericPart = true;
+    int lastDotPos = filename.length();
+    
+    for(int i = filename.length() - 1; i >= 0; --i)
+    {
+        if(filename[i] == '.')
+        {
+            if(!inNumericPart)
+                return filename.substr(i, lastDotPos - i);
+            
+            inNumericPart = true;
+            lastDotPos = i;
+        }
+        else if(!std::isdigit(filename[i]))
+            inNumericPart = false;
+    }
+    
+    return "";
+}

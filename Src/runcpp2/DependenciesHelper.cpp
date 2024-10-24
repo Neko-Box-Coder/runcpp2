@@ -3,6 +3,8 @@
 #include "runcpp2/PlatformUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
+#include <unordered_set>
+
 namespace
 {
     bool PopulateLocalDependencies( const std::vector<runcpp2::Data::DependencyInfo*>& dependencies,
@@ -233,7 +235,7 @@ namespace
             {
                 if(!runcpp2::HasValueFromPlatformMap(profile.FilesTypes.ObjectLinkFile.Extension))
                 {
-                    ssLOG_ERROR("Failed to find shared library extensions for dependency " << 
+                    ssLOG_ERROR("Failed to find object file extensions for dependency " << 
                                 dependencyInfo.Name);
                     
                     return false;
@@ -252,6 +254,15 @@ namespace
         }
         
         return true;
+    }
+
+    ghc::filesystem::path ResolveSymlink(const ghc::filesystem::path& path, std::error_code& ec)
+    {
+        ghc::filesystem::path resolvedPath = ghc::filesystem::canonical(path, ec);
+        if(ec)
+            return path; // Return original path if canonical fails
+        
+        return resolvedPath;
     }
 }
 
@@ -475,6 +486,9 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                                             std::vector<std::string>& outBinariesPaths)
 {
     std::vector<std::string> platformNames = GetPlatformNames();
+    std::unordered_set<std::string> binariesPathsSet;
+    for(int i = 0; i < outBinariesPaths.size(); ++i)
+        binariesPathsSet.insert(outBinariesPaths[i]);
     
     int minimumDependenciesCopiesCount = 0;
     for(int i = 0; i < availableDependencies.size(); ++i)
@@ -527,7 +541,9 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                     std::error_code e;
                     if(ghc::filesystem::exists(srcPath, e))
                     {
-                        outBinariesPaths.push_back(runcpp2::ProcessPath(srcPath));
+                        const std::string processedSrcPath = runcpp2::ProcessPath(srcPath);
+                        outBinariesPaths.push_back(processedSrcPath);
+                        binariesPathsSet.insert(processedSrcPath);
                         ++nonLinkFilesCount;
                         ssLOG_INFO("Added binary path: " << srcPath.string());
                     }
@@ -620,8 +636,8 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                     if(it.is_directory())
                         continue;
                     
-                    std::string currentFileName = it.path().stem().string();
-                    std::string currentExtension = it.path().extension().string();
+                    std::string currentFileName = it.path().filename().string();
+                    std::string currentExtension = runcpp2::GetFileExtensionWithoutVersion(it.path());
                     
                     ssLOG_DEBUG("currentFileName: " << currentFileName);
                     ssLOG_DEBUG("currentExtension: " << currentExtension);
@@ -647,7 +663,6 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                         continue;
                     
                     bool extensionMatched = false;
-                    
                     for(int j = 0; j < extensionsToLink.size(); ++j)
                     {
                         if(currentExtension == extensionsToLink.at(j))
@@ -660,8 +675,28 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                     if(!extensionMatched)
                         continue;
                     
-                    ssLOG_INFO("Linking " << it.path().string());
-                    outBinariesPaths.push_back(runcpp2::ProcessPath(it.path().string()));
+                    //Handle symlink
+                    ghc::filesystem::path resolvedPath = it.path();
+                    {
+                        std::error_code symlink_ec;
+                        resolvedPath = ResolveSymlink(resolvedPath, symlink_ec);
+                        if(symlink_ec)
+                        {
+                            ssLOG_ERROR("Failed to resolve symlink: " << symlink_ec.message());
+                            return false;
+                        }
+                    }
+                    
+                    const std::string processedPath = runcpp2::ProcessPath(it.path().string());
+                    const std::string processedResolvedPath = 
+                        runcpp2::ProcessPath(resolvedPath.string());
+                    
+                    if(binariesPathsSet.count(processedResolvedPath) == 0)
+                    {
+                        ssLOG_INFO("Linking " << processedPath);
+                        outBinariesPaths.push_back(processedPath);
+                        binariesPathsSet.insert(processedResolvedPath);
+                    }
                 }
             }
         }
