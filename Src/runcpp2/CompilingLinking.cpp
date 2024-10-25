@@ -759,10 +759,17 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
         std::vector<std::string> currentProfileNames;
         profile.GetNames(currentProfileNames);
         
+        if(!runcpp2::HasValueFromPlatformMap(availableDependencies.at(i)->LinkProperties))
+            continue;
+        
+        const runcpp2::Data::DependencyLinkProperty& linkProperty = 
+            *runcpp2::GetValueFromPlatformMap(availableDependencies.at(i)->LinkProperties);
+        
+        // Find the matching profile
         for(int j = 0; j < currentProfileNames.size(); ++j)
         {
-            if( availableDependencies.at(i)->LinkProperties.find(currentProfileNames.at(j)) != 
-                availableDependencies.at(i)->LinkProperties.end())
+            if( linkProperty.ProfileProperties.find(currentProfileNames.at(j)) != 
+                linkProperty.ProfileProperties.end())
             {
                 targetProfileName = currentProfileNames.at(j);
                 break;
@@ -772,17 +779,11 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
         if(targetProfileName.empty())
             continue;
         
-        const runcpp2::Data::DependencyLinkProperty& currentLinkProperty = 
-            availableDependencies.at(i)->LinkProperties.at(targetProfileName);
+        const runcpp2::Data::ProfileLinkProperty& profileLinkProperty = 
+            linkProperty.ProfileProperties.at(targetProfileName);
         
-        if(runcpp2::HasValueFromPlatformMap(currentLinkProperty.AdditionalLinkOptions))
-        {
-            const std::vector<std::string> additionalLinkOptions = 
-                *runcpp2::GetValueFromPlatformMap(currentLinkProperty.AdditionalLinkOptions);
-            
-            for(int k = 0; k < additionalLinkOptions.size(); ++k)
-                dependenciesLinkFlags += additionalLinkOptions.at(k) + " ";
-        }
+        for(const std::string& option : profileLinkProperty.AdditionalLinkOptions)
+            dependenciesLinkFlags += option + " ";
     }
     
     runcpp2::TrimRight(dependenciesLinkFlags);

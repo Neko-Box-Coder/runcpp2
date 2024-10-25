@@ -587,41 +587,56 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
         using PropertyMap = std::unordered_map<ProfileName, Data::DependencyLinkProperty>;
         const PropertyMap& linkProperties = availableDependencies.at(i)->LinkProperties;
         
-        //See if we can find the link properties with the profile name
-        auto foundPropertyIt = linkProperties.end();
-        for(int j = 0; j < currentProfileNames.size(); ++j)
+        if(!runcpp2::HasValueFromPlatformMap(linkProperties))
         {
-            foundPropertyIt = linkProperties.find(currentProfileNames.at(j));
-            if(foundPropertyIt != linkProperties.end())
-                break;
-        }
-        
-        if(foundPropertyIt == linkProperties.end())
-        {
-            ssLOG_ERROR("Search properties for dependency " << availableDependencies.at(i)->Name <<
-                        " is missing profile " << profile.Name);
-            
+            ssLOG_ERROR("Link properties for dependency " << availableDependencies.at(i)->Name <<
+                        " is missing for the current platform");
             return false;
         }
-        const Data::DependencyLinkProperty& searchProperty = foundPropertyIt->second;
-        
-        //Get the files with extensions that contains the search name if needed
-        for(int j = 0; j < searchProperty.SearchLibraryNames.size(); ++j)
+
+        const Data::DependencyLinkProperty& linkProperty = 
+            *runcpp2::GetValueFromPlatformMap(linkProperties);
+
+        // Find the matching profile
+        ProfileName targetProfileName;
+        for(int j = 0; j < currentProfileNames.size(); ++j)
         {
-            for(int k = 0; k < searchProperty.SearchDirectories.size(); ++k)
+            if( linkProperty.ProfileProperties.find(currentProfileNames.at(j)) != 
+                linkProperty.ProfileProperties.end())
             {
-                std::string currentSearchLibraryName = searchProperty.SearchLibraryNames.at(j);
-                std::string currentSearchDirectory = searchProperty.SearchDirectories.at(k);
-            
+                targetProfileName = currentProfileNames.at(j);
+                break;
+            }
+        }
+
+        if(targetProfileName.empty())
+            continue;
+
+        const Data::ProfileLinkProperty& profileLinkProperty = 
+            linkProperty.ProfileProperties.at(targetProfileName);
+
+        for(int searchLibIndex = 0; 
+            searchLibIndex < profileLinkProperty.SearchLibraryNames.size(); 
+            ++searchLibIndex)
+        {
+            for(int searchDirIndex = 0; 
+                searchDirIndex < profileLinkProperty.SearchDirectories.size(); 
+                ++searchDirIndex)
+            {
+                std::string currentSearchLibraryName = 
+                    profileLinkProperty.SearchLibraryNames.at(searchLibIndex);
+                std::string currentSearchDirectory = 
+                    profileLinkProperty.SearchDirectories.at(searchDirIndex);
+
                 if(!ghc::filesystem::path(currentSearchDirectory).is_absolute())
                 {
                     currentSearchDirectory =    dependenciesCopiesPaths.at(i) + "/" + 
                                                 currentSearchDirectory;
                 }
-            
+
                 ssLOG_DEBUG("currentSearchDirectory: " << currentSearchDirectory);
                 ssLOG_DEBUG("currentSearchLibraryName: " << currentSearchLibraryName);
-            
+
                 std::error_code e;
                 if( !ghc::filesystem::exists(currentSearchDirectory, e) || 
                     !ghc::filesystem::is_directory(currentSearchDirectory, e))
@@ -629,7 +644,7 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                     ssLOG_INFO("Invalid search path: " << currentSearchDirectory);
                     continue;
                 }
-            
+
                 //Iterate each files in the directory we are searching
                 for(auto it : ghc::filesystem::directory_iterator(currentSearchDirectory, e))
                 {
@@ -647,10 +662,10 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                     if(currentFileName.find(currentSearchLibraryName) != std::string::npos)
                         nameMatched = true;
                     
-                    for(int j = 0; j < searchProperty.ExcludeLibraryNames.size(); ++j)
+                    for(int excludeIndex = 0; excludeIndex < profileLinkProperty.ExcludeLibraryNames.size(); ++excludeIndex)
                     {
                         std::string currentExcludeLibraryName = 
-                            searchProperty.ExcludeLibraryNames.at(j);
+                            profileLinkProperty.ExcludeLibraryNames.at(excludeIndex);
                         
                         if(currentFileName.find(currentExcludeLibraryName) != std::string::npos)
                         {
@@ -663,9 +678,9 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                         continue;
                     
                     bool extensionMatched = false;
-                    for(int j = 0; j < extensionsToLink.size(); ++j)
+                    for(int extIndex = 0; extIndex < extensionsToLink.size(); ++extIndex)
                     {
-                        if(currentExtension == extensionsToLink.at(j))
+                        if(currentExtension == extensionsToLink.at(extIndex))
                         {
                             extensionMatched = true;
                             break;
