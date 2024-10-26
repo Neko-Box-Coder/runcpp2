@@ -25,7 +25,7 @@ namespace runcpp2
                 DependencyLibraryType LibraryType;
                 std::vector<std::string> IncludePaths;
                 std::vector<std::string> AbsoluteIncludePaths;
-                std::unordered_map<ProfileName, DependencyLinkProperty> LinkProperties;
+                std::unordered_map<PlatformName, DependencyLinkProperty> LinkProperties;
                 std::unordered_map<PlatformName, DependencyCommands> Setup;
                 std::unordered_map<PlatformName, DependencyCommands> Cleanup;
                 std::unordered_map<PlatformName, DependencyCommands> Build;

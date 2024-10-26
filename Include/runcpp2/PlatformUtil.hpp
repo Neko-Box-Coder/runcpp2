@@ -2,6 +2,7 @@
 #define RUNCPP2_PLATFORM_UTIL_HPP
 
 #include "runcpp2/Data/ParseCommon.hpp"
+#include "runcpp2/Data/Profile.hpp"
 #include "System2.h"
 
 #include <cstdint>
@@ -65,6 +66,37 @@ namespace runcpp2
     }
     
     std::string GetFileExtensionWithoutVersion(const ghc::filesystem::path& path);
+    
+    template <typename T>
+    inline bool HasValueFromProfileMap( const Data::Profile& profile,
+                                        const std::unordered_map<ProfileName, T>& map)
+    {
+        std::vector<std::string> profileNames;
+        profile.GetNames(profileNames);
+        
+        for(int i = 0; i < profileNames.size(); ++i)
+        {
+            if(map.find(profileNames.at(i)) != map.end())
+                return true;
+        }
+        return false;
+    }
+    
+    template <typename T>
+    inline const T* GetValueFromProfileMap( const Data::Profile& profile,
+                                            const std::unordered_map<ProfileName, T>& map)
+    {
+        std::vector<std::string> profileNames;
+        profile.GetNames(profileNames);
+        
+        for(int i = 0; i < profileNames.size(); ++i)
+        {
+            auto it = map.find(profileNames.at(i));
+            if(it != map.end())
+                return &it->second;
+        }
+        return nullptr;
+    }
 }
 
 #endif

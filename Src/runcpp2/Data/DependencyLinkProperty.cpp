@@ -9,52 +9,55 @@ bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(ryml::ConstNodeRef& n
     
     if(!node.is_map())
     {
-        ssLOG_ERROR("DependencySearchProperty: Node is not a Map");
+        ssLOG_ERROR("DependencyLinkProperty: Node is not a Map");
         return false;
     }
     
-    std::vector<NodeRequirement> requirements =
+    for(int i = 0; i < node.num_children(); ++i)
     {
-        NodeRequirement("SearchLibraryNames", ryml::NodeType_e::SEQ, true, false),
-        NodeRequirement("SearchDirectories", ryml::NodeType_e::SEQ, true, false),
-        NodeRequirement("ExcludeLibraryNames", ryml::NodeType_e::SEQ, false, true),
-        NodeRequirement("AdditionalLinkOptions", ryml::NodeType_e::MAP, false, true)
-    };
-    
-    if(!CheckNodeRequirements(node, requirements))
-    {
-        ssLOG_ERROR("DependencySource: Failed to meet requirements");
-        return false;
-    }
-    
-    for(int i = 0; i < node["SearchLibraryNames"].num_children(); ++i)
-        SearchLibraryNames.push_back(GetValue(node["SearchLibraryNames"][i]));
-    
-    for(int i = 0; i < node["SearchDirectories"].num_children(); ++i)
-        SearchDirectories.push_back(GetValue(node["SearchDirectories"][i]));
-
-    for(int i = 0; i < node["ExcludeLibraryNames"].num_children(); ++i)
-        ExcludeLibraryNames.push_back(GetValue(node["ExcludeLibraryNames"][i]));
-
-    if(ExistAndHasChild(node, "AdditionalLinkOptions"))
-    {
-        ryml::ConstNodeRef additionalLinkNode = node["AdditionalLinkOptions"];
-
-        for(int i = 0; i < additionalLinkNode.num_children(); ++i)
+        ProfileName profile = GetKey(node[i]);
+        ryml::ConstNodeRef profileNode = node[i];
+        
+        ProfileLinkProperty& property = ProfileProperties[profile];
+        
+        std::vector<NodeRequirement> requirements =
         {
-            ryml::ConstNodeRef currentLinkNode = additionalLinkNode[i];
-            
-            if(!currentLinkNode.is_seq())
+            NodeRequirement("SearchLibraryNames", ryml::NodeType_e::SEQ, true, false),
+            NodeRequirement("SearchDirectories", ryml::NodeType_e::SEQ, true, false),
+            NodeRequirement("ExcludeLibraryNames", ryml::NodeType_e::SEQ, false, true),
+            NodeRequirement("AdditionalLinkOptions", ryml::NodeType_e::SEQ, false, true)
+        };
+        
+        if(!CheckNodeRequirements(profileNode, requirements))
+        {
+            ssLOG_ERROR("DependencyLinkProperty: Failed to meet requirements for profile " << 
+                        profile);
+            return false;
+        }
+        
+        for(int j = 0; j < profileNode["SearchLibraryNames"].num_children(); ++j)
+            property.SearchLibraryNames.push_back(GetValue(profileNode["SearchLibraryNames"][j]));
+        
+        for(int j = 0; j < profileNode["SearchDirectories"].num_children(); ++j)
+            property.SearchDirectories.push_back(GetValue(profileNode["SearchDirectories"][j]));
+
+        if(ExistAndHasChild(profileNode, "ExcludeLibraryNames"))
+        {
+            for(int j = 0; j < profileNode["ExcludeLibraryNames"].num_children(); ++j)
             {
-                ssLOG_ERROR("Sequence is expected for AdditionalLinkOptions at " << 
-                            GetKey(currentLinkNode));
+                property.ExcludeLibraryNames
+                        .push_back(GetValue(profileNode["ExcludeLibraryNames"][j]));
                 
-                return false;
             }
-            
-            const std::string currentPlatform = GetKey(currentLinkNode);
-            for(int j = 0; j < currentLinkNode.num_children(); ++j)
-                AdditionalLinkOptions[currentPlatform].push_back(GetValue(currentLinkNode[j]));
+        }
+
+        if(ExistAndHasChild(profileNode, "AdditionalLinkOptions"))
+        {
+            for(int j = 0; j < profileNode["AdditionalLinkOptions"].num_children(); ++j)
+            {
+                property.AdditionalLinkOptions
+                        .push_back(GetValue(profileNode["AdditionalLinkOptions"][j]));
+            }
         }
     }
 
@@ -66,23 +69,32 @@ bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(ryml::ConstNodeRef& n
 std::string runcpp2::Data::DependencyLinkProperty::ToString(std::string indentation) const
 {
     std::string out;
-    out += indentation + "SearchLibraryName: \n";
-    
-    for(int i = 0; i < SearchLibraryNames.size(); ++i)
-        out += indentation + "-   " + SearchLibraryNames[i] + "\n";
-    
-    out += indentation + "SearchDirectories: \n";
-    
-    for(int i = 0; i < SearchDirectories.size(); ++i)
-        out += indentation + "-   " + SearchDirectories[i] + "\n";
-    
-    out += indentation + "AdditionalLinkOptions: \n";
-    
-    for(auto it = AdditionalLinkOptions.begin(); it != AdditionalLinkOptions.end(); ++it)
+    for(const std::pair<const ProfileName, ProfileLinkProperty>& profilePair : ProfileProperties)
     {
-        out += indentation + "-   " + it->first + ":\n";
-        for(int i = 0; i < it->second.size(); ++i)
-            out += indentation + "    -   " + it->second[i] + "\n";
+        out += indentation + profilePair.first + ":\n";
+        const ProfileLinkProperty& property = profilePair.second;
+        
+        out += indentation + "    SearchLibraryNames:\n";
+        for(const std::string& name : property.SearchLibraryNames)
+            out += indentation + "    -   " + name + "\n";
+        
+        out += indentation + "    SearchDirectories:\n";
+        for(const std::string& dir : property.SearchDirectories)
+            out += indentation + "    -   " + dir + "\n";
+        
+        if(!property.ExcludeLibraryNames.empty())
+        {
+            out += indentation + "    ExcludeLibraryNames:\n";
+            for(const std::string& name : property.ExcludeLibraryNames)
+                out += indentation + "    -   " + name + "\n";
+        }
+        
+        if(!property.AdditionalLinkOptions.empty())
+        {
+            out += indentation + "    AdditionalLinkOptions:\n";
+            for(const std::string& option : property.AdditionalLinkOptions)
+                out += indentation + "    -   " + option + "\n";
+        }
     }
     
     return out;

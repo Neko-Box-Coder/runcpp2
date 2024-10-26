@@ -275,23 +275,15 @@ namespace
             return true;
         }
         
-        std::string foundProfileName;
-        std::vector<std::string> currentProfileNames;
-        
-        //TODO: Make getting values with GetNames a common function 
-        currentProfile.GetNames(currentProfileNames);
-        for(int i = 0; i < currentProfileNames.size(); ++i)
+        const std::vector<ghc::filesystem::path>* profileCompileFiles = 
+            runcpp2::GetValueFromProfileMap(currentProfile, compileFiles->CompilesFiles);
+            
+        if(!profileCompileFiles)
         {
-            if(compileFiles->CompilesFiles.count(currentProfileNames.at(i)) > 0)
-            {
-                foundProfileName = currentProfileNames.at(i);
-                break;
-            }
+            ssLOG_INFO("No other files to be compiled for current profile");
+            return true;
         }
-        
-        const std::vector<ghc::filesystem::path>& currentCompilesFiles = 
-            compileFiles->CompilesFiles.at(foundProfileName);
-        
+
         //TODO: Allow filepaths to contain wildcards as follows
         //* as directory or filename wildcard
         //i.e. "./*/test/*.cpp" will match "./moduleA/test/a.cpp" and "./moduleB/test/b.cpp"
@@ -305,15 +297,15 @@ namespace
             const ghc::filesystem::path scriptDirectory = 
                 ghc::filesystem::path(absoluteScriptPath).parent_path();
             
-            for(int i = 0; i < currentCompilesFiles.size(); ++i)
+            for(int i = 0; i < profileCompileFiles->size(); ++i)
             {
-                ghc::filesystem::path currentPath = currentCompilesFiles.at(i);
+                ghc::filesystem::path currentPath = profileCompileFiles->at(i);
                 if(currentPath.is_relative())
                     currentPath = scriptDirectory / currentPath;
                 
                 if(currentPath.is_relative())
                 {
-                    ssLOG_ERROR("Failed to process compile path: " << currentCompilesFiles.at(i));
+                    ssLOG_ERROR("Failed to process compile path: " << profileCompileFiles->at(i));
                     ssLOG_ERROR("Try to append path to script directory but failed");
                     ssLOG_ERROR("Final appended path: " << currentPath);
                     return false;
@@ -323,13 +315,13 @@ namespace
                 if(ghc::filesystem::is_directory(currentPath, e))
                 {
                     ssLOG_ERROR("Directory is found instead of file: " << 
-                                currentCompilesFiles.at(i));
+                                profileCompileFiles->at(i));
                     return false;
                 }
                 
                 if(!ghc::filesystem::exists(currentPath, e))
                 {
-                    ssLOG_ERROR("File doesn't exist: " << currentCompilesFiles.at(i));
+                    ssLOG_ERROR("File doesn't exist: " << profileCompileFiles->at(i));
                     return false;
                 }
                 
@@ -522,7 +514,7 @@ namespace
             {
                 ghc::filesystem::copy(srcPath, 
                                       destPath, 
-                                      ghc::filesystem::copy_options::overwrite_existing, 
+                                      ghc::filesystem::copy_options::update_existing, 
                                       e);
                 
                 if(e)

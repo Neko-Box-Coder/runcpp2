@@ -67,21 +67,20 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     {
         ryml::ConstNodeRef linkPropertiesNode = node["LinkProperties"];
         
-        for(auto it = linkPropertiesNode.begin(); it != linkPropertiesNode.end(); ++it)
-        
         for(int i = 0; i < linkPropertiesNode.num_children(); ++i)
         {
-            ProfileName profile = GetKey(linkPropertiesNode[i]);
-            ryml::ConstNodeRef currentPropertyNode = linkPropertiesNode[i];
+            PlatformName platform = GetKey(linkPropertiesNode[i]);
+            ryml::ConstNodeRef platformNode = linkPropertiesNode[i];
             
-            DependencyLinkProperty property;
-            if(!property.ParseYAML_Node(currentPropertyNode))
+            //Insert an empty DependencyLinkProperty and get a reference to it
+            DependencyLinkProperty& linkProperty = LinkProperties[platform];
+            
+            if(!linkProperty.ParseYAML_Node(platformNode))
             {
-                ssLOG_ERROR("DependencyInfo: Failed to parse SearchProperties");
+                ssLOG_ERROR("DependencyInfo: Failed to parse LinkProperties for platform " << 
+                            platform);
                 return false;
             }
-            
-            LinkProperties[profile] = property;
         }
     }
     else if(LibraryType != DependencyLibraryType::HEADER)

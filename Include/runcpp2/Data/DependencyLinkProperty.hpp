@@ -13,13 +13,18 @@ namespace runcpp2
 {
     namespace Data
     {
+        struct ProfileLinkProperty
+        {
+            std::vector<std::string> SearchLibraryNames;
+            std::vector<std::string> SearchDirectories;
+            std::vector<std::string> ExcludeLibraryNames;
+            std::vector<std::string> AdditionalLinkOptions;
+        };
+
         class DependencyLinkProperty
         {
             public:
-                std::vector<std::string> SearchLibraryNames;
-                std::vector<std::string> SearchDirectories;
-                std::vector<std::string> ExcludeLibraryNames;
-                std::unordered_map<PlatformName, std::vector<std::string>> AdditionalLinkOptions;
+                std::unordered_map<ProfileName, ProfileLinkProperty> ProfileProperties;
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;

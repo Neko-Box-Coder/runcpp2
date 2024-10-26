@@ -119,7 +119,6 @@ namespace
             return true;
         
         //Find the platform name we use for setup
-        PlatformName chosenPlatformName;
         if(!runcpp2::HasValueFromPlatformMap(steps))
         {
             if(required)
@@ -134,20 +133,10 @@ namespace
         const runcpp2::Data::DependencyCommands& dependencySteps = 
             *runcpp2::GetValueFromPlatformMap(steps);
         
-        std::string profileNameToUse;
-        std::vector<std::string> currentProfileNames;
-        profile.GetNames(currentProfileNames);
-        
-        for(int i = 0; i < currentProfileNames.size(); ++i)
-        {
-            if(dependencySteps.CommandSteps.count(currentProfileNames.at(i)) > 0)
-            {
-                profileNameToUse = currentProfileNames.at(i);
-                break;
-            }
-        }
-        
-        if(profileNameToUse.empty())
+        const std::vector<std::string>* commands = 
+            runcpp2::GetValueFromProfileMap(profile, dependencySteps.CommandSteps);
+            
+        if(!commands)
         {
             ssLOG_ERROR("Failed to find steps for profile " << profile.Name << 
                         " for current platform");
@@ -155,18 +144,15 @@ namespace
         }
         
         //Run the commands
-        const std::vector<std::string>& commands = 
-            dependencySteps.CommandSteps.at(profileNameToUse);
-        
-        for(int k = 0; k < commands.size(); ++k)
+        for(int k = 0; k < commands->size(); ++k)
         {
             std::string processedDependencyPath = runcpp2::ProcessPath(dependenciesCopiedDirectory);
-            ssLOG_INFO( "Running command: " << commands.at(k) << " in " << 
+            ssLOG_INFO( "Running command: " << commands->at(k) << " in " << 
                         processedDependencyPath);
             
             int returnCode = 0;
             std::string output;
-            if(!runcpp2::RunCommandAndGetOutput(commands.at(k), 
+            if(!runcpp2::RunCommandAndGetOutput(commands->at(k), 
                                                 output, 
                                                 returnCode, 
                                                 processedDependencyPath))
@@ -485,7 +471,6 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                                             const Data::Profile& profile,
                                             std::vector<std::string>& outBinariesPaths)
 {
-    std::vector<std::string> platformNames = GetPlatformNames();
     std::unordered_set<std::string> binariesPathsSet;
     for(int i = 0; i < outBinariesPaths.size(); ++i)
         binariesPathsSet.insert(outBinariesPaths[i]);
@@ -508,35 +493,22 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
         ssLOG_INFO("Evaluating dependency " << availableDependencies.at(i)->Name);
-        std::vector<std::string> currentProfileNames;
-        profile.GetNames(currentProfileNames);
         
         if(runcpp2::HasValueFromPlatformMap(availableDependencies.at(i)->FilesToCopy))
         {
             const runcpp2::Data::FilesToCopyInfo& filesToCopy = 
                 *runcpp2::GetValueFromPlatformMap(availableDependencies.at(i)->FilesToCopy);
             
-            std::string profileNameToUse;
-            for(int j = 0; j < currentProfileNames.size(); ++j)
-            {
-                if( filesToCopy.ProfileFiles.find(currentProfileNames.at(j)) != 
-                    filesToCopy.ProfileFiles.end())
-                {
-                    profileNameToUse = currentProfileNames.at(j);
-                    break;
-                }
-            }
+            const std::vector<std::string>* filesToGatherForProfile = 
+                runcpp2::GetValueFromProfileMap(profile, filesToCopy.ProfileFiles);
             
-            if(!profileNameToUse.empty())
+            if(filesToGatherForProfile)
             {
-                const std::vector<std::string>& filesToGatherForProfile = 
-                    filesToCopy.ProfileFiles.at(profileNameToUse);
-                
-                for(int j = 0; j < filesToGatherForProfile.size(); ++j)
+                for(int j = 0; j < filesToGatherForProfile->size(); ++j)
                 {
                     ghc::filesystem::path srcPath = 
                         ghc::filesystem::path(dependenciesCopiesPaths.at(i)) / 
-                        filesToGatherForProfile.at(j);
+                        filesToGatherForProfile->at(j);
                     
                     std::error_code e;
                     if(ghc::filesystem::exists(srcPath, e))
@@ -563,21 +535,12 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
             {
                 return false;
             }
-        
-            for(int j = 0; j < platformNames.size(); ++j)
-            {
-                if( profile.FilesTypes.DebugSymbolFile.Extension.find(platformNames.at(j)) == 
-                    profile.FilesTypes.DebugSymbolFile.Extension.end())
-                {
-                    continue;
-                }
+            
+            const std::string* debugSymbolExt = 
+                runcpp2::GetValueFromPlatformMap(profile.FilesTypes.DebugSymbolFile.Extension);
                 
-                extensionsToLink.push_back(profile  .FilesTypes
-                                                    .DebugSymbolFile
-                                                    .Extension
-                                                    .at(platformNames.at(j)));
-                break;
-            }
+            if(debugSymbolExt)
+                extensionsToLink.push_back(*debugSymbolExt);
         }
         
         if(availableDependencies.at(i)->LibraryType == Data::DependencyLibraryType::HEADER)
@@ -587,41 +550,44 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
         using PropertyMap = std::unordered_map<ProfileName, Data::DependencyLinkProperty>;
         const PropertyMap& linkProperties = availableDependencies.at(i)->LinkProperties;
         
-        //See if we can find the link properties with the profile name
-        auto foundPropertyIt = linkProperties.end();
-        for(int j = 0; j < currentProfileNames.size(); ++j)
+        if(!runcpp2::HasValueFromPlatformMap(linkProperties))
         {
-            foundPropertyIt = linkProperties.find(currentProfileNames.at(j));
-            if(foundPropertyIt != linkProperties.end())
-                break;
-        }
-        
-        if(foundPropertyIt == linkProperties.end())
-        {
-            ssLOG_ERROR("Search properties for dependency " << availableDependencies.at(i)->Name <<
-                        " is missing profile " << profile.Name);
-            
+            ssLOG_ERROR("Link properties for dependency " << availableDependencies.at(i)->Name <<
+                        " is missing for the current platform");
             return false;
         }
-        const Data::DependencyLinkProperty& searchProperty = foundPropertyIt->second;
-        
-        //Get the files with extensions that contains the search name if needed
-        for(int j = 0; j < searchProperty.SearchLibraryNames.size(); ++j)
-        {
-            for(int k = 0; k < searchProperty.SearchDirectories.size(); ++k)
-            {
-                std::string currentSearchLibraryName = searchProperty.SearchLibraryNames.at(j);
-                std::string currentSearchDirectory = searchProperty.SearchDirectories.at(k);
+
+        const Data::DependencyLinkProperty& linkProperty = 
+            *runcpp2::GetValueFromPlatformMap(linkProperties);
+
+        const Data::ProfileLinkProperty* profileLinkProperty = 
+            runcpp2::GetValueFromProfileMap(profile, linkProperty.ProfileProperties);
             
+        if(!profileLinkProperty)
+            continue;
+
+        for(int searchLibIndex = 0; 
+            searchLibIndex < profileLinkProperty->SearchLibraryNames.size(); 
+            ++searchLibIndex)
+        {
+            for(int searchDirIndex = 0; 
+                searchDirIndex < profileLinkProperty->SearchDirectories.size(); 
+                ++searchDirIndex)
+            {
+                std::string currentSearchLibraryName = 
+                    profileLinkProperty->SearchLibraryNames.at(searchLibIndex);
+                std::string currentSearchDirectory = 
+                    profileLinkProperty->SearchDirectories.at(searchDirIndex);
+
                 if(!ghc::filesystem::path(currentSearchDirectory).is_absolute())
                 {
                     currentSearchDirectory =    dependenciesCopiesPaths.at(i) + "/" + 
                                                 currentSearchDirectory;
                 }
-            
+
                 ssLOG_DEBUG("currentSearchDirectory: " << currentSearchDirectory);
                 ssLOG_DEBUG("currentSearchLibraryName: " << currentSearchLibraryName);
-            
+
                 std::error_code e;
                 if( !ghc::filesystem::exists(currentSearchDirectory, e) || 
                     !ghc::filesystem::is_directory(currentSearchDirectory, e))
@@ -629,7 +595,7 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                     ssLOG_INFO("Invalid search path: " << currentSearchDirectory);
                     continue;
                 }
-            
+
                 //Iterate each files in the directory we are searching
                 for(auto it : ghc::filesystem::directory_iterator(currentSearchDirectory, e))
                 {
@@ -647,10 +613,12 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                     if(currentFileName.find(currentSearchLibraryName) != std::string::npos)
                         nameMatched = true;
                     
-                    for(int j = 0; j < searchProperty.ExcludeLibraryNames.size(); ++j)
+                    for(int excludeIndex = 0; 
+                        excludeIndex < profileLinkProperty->ExcludeLibraryNames.size(); 
+                        ++excludeIndex)
                     {
                         std::string currentExcludeLibraryName = 
-                            searchProperty.ExcludeLibraryNames.at(j);
+                            profileLinkProperty->ExcludeLibraryNames.at(excludeIndex);
                         
                         if(currentFileName.find(currentExcludeLibraryName) != std::string::npos)
                         {
@@ -663,9 +631,9 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                         continue;
                     
                     bool extensionMatched = false;
-                    for(int j = 0; j < extensionsToLink.size(); ++j)
+                    for(int extIndex = 0; extIndex < extensionsToLink.size(); ++extIndex)
                     {
-                        if(currentExtension == extensionsToLink.at(j))
+                        if(currentExtension == extensionsToLink.at(extIndex))
                         {
                             extensionMatched = true;
                             break;

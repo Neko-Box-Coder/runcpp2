@@ -30,29 +30,17 @@ namespace
         const runcpp2::Data::ProfilesFlagsOverride& currentFlagsOverride = 
             *runcpp2::GetValueFromPlatformMap(overrideFlags);
         
-        std::string foundProfileName;
-        std::vector<std::string> currentProfileNames;
-        profile.GetNames(currentProfileNames);
+        const runcpp2::Data::FlagsOverrideInfo* profileFlagsOverride = 
+            runcpp2::GetValueFromProfileMap(profile, currentFlagsOverride.FlagsOverrides);
         
-        for(int i = 0; i < currentProfileNames.size(); ++i)
-        {
-            if(currentFlagsOverride.FlagsOverrides.count(currentProfileNames.at(i)) > 0)
-            {
-                foundProfileName = currentProfileNames.at(i);
-                break;
-            }
-        }
-        
-        if(foundProfileName.empty())
+        if(!profileFlagsOverride)
         {
             ssLOG_INFO("No override flags found for current profile");
             return;
         }
         
         std::vector<std::string> flagsToRemove; 
-        runcpp2::SplitString(   currentFlagsOverride.FlagsOverrides.at(foundProfileName).Remove, 
-                                " ", 
-                                flagsToRemove);
+        runcpp2::SplitString(profileFlagsOverride->Remove, " ", flagsToRemove);
         
         for(int i = 0; i < flagsToRemove.size(); ++i)
         {
@@ -74,7 +62,7 @@ namespace
         }
         
         runcpp2::TrimRight(inOutFlags);
-        inOutFlags += " " + currentFlagsOverride.FlagsOverrides.at(foundProfileName).Append;
+        inOutFlags += " " + profileFlagsOverride->Append;
         runcpp2::TrimRight(inOutFlags);
     }
     
@@ -132,27 +120,14 @@ namespace
             const runcpp2::Data::ProfilesDefines& platformDefines = 
                 *runcpp2::GetValueFromPlatformMap(scriptInfo.Defines);
             
-            std::vector<std::string> profileNames;
-            profile.GetNames(profileNames);
+            const std::vector<runcpp2::Data::Define>* profileDefines = 
+                runcpp2::GetValueFromProfileMap(profile, platformDefines.Defines);
             
-            std::string validProfileName;
-            for(int i = 0; i < profileNames.size(); ++i)
+            if(profileDefines)
             {
-                if(platformDefines.Defines.count(profileNames[i]) > 0)
+                for(int i = 0; i < profileDefines->size(); ++i)
                 {
-                    validProfileName = profileNames.at(i);
-                    break;
-                }
-            }
-            
-            if(!validProfileName.empty())
-            {
-                const std::vector<runcpp2::Data::Define>& profileDefines = 
-                    platformDefines.Defines.at(validProfileName);
-                
-                for(int i = 0; i < profileDefines.size(); ++i)
-                {
-                    const runcpp2::Data::Define& define = profileDefines.at(i);
+                    const runcpp2::Data::Define& define = profileDefines->at(i);
                     if(define.HasValue)
                     {
                         substitutionMapTemplate["{DefineName}"].push_back(define.Name);
@@ -755,34 +730,20 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
     //Add link flags for the dependencies
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
-        std::string targetProfileName;
-        std::vector<std::string> currentProfileNames;
-        profile.GetNames(currentProfileNames);
-        
-        for(int j = 0; j < currentProfileNames.size(); ++j)
-        {
-            if( availableDependencies.at(i)->LinkProperties.find(currentProfileNames.at(j)) != 
-                availableDependencies.at(i)->LinkProperties.end())
-            {
-                targetProfileName = currentProfileNames.at(j);
-                break;
-            }
-        }
-        
-        if(targetProfileName.empty())
+        if(!runcpp2::HasValueFromPlatformMap(availableDependencies.at(i)->LinkProperties))
             continue;
         
-        const runcpp2::Data::DependencyLinkProperty& currentLinkProperty = 
-            availableDependencies.at(i)->LinkProperties.at(targetProfileName);
+        const runcpp2::Data::DependencyLinkProperty& linkProperty = 
+            *runcpp2::GetValueFromPlatformMap(availableDependencies.at(i)->LinkProperties);
         
-        if(runcpp2::HasValueFromPlatformMap(currentLinkProperty.AdditionalLinkOptions))
-        {
-            const std::vector<std::string> additionalLinkOptions = 
-                *runcpp2::GetValueFromPlatformMap(currentLinkProperty.AdditionalLinkOptions);
+        const runcpp2::Data::ProfileLinkProperty* profileLinkProperty = 
+            runcpp2::GetValueFromProfileMap(profile, linkProperty.ProfileProperties);
             
-            for(int k = 0; k < additionalLinkOptions.size(); ++k)
-                dependenciesLinkFlags += additionalLinkOptions.at(k) + " ";
-        }
+        if(!profileLinkProperty)
+            continue;
+        
+        for(const std::string& option : profileLinkProperty->AdditionalLinkOptions)
+            dependenciesLinkFlags += option + " ";
     }
     
     runcpp2::TrimRight(dependenciesLinkFlags);
