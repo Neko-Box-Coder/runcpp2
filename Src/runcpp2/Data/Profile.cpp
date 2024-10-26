@@ -160,3 +160,33 @@ std::string runcpp2::Data::Profile::ToString(std::string indentation) const
     
     return out;
 }
+
+bool runcpp2::Data::Profile::Equals(const Profile& other) const
+{
+    if( Name != other.Name || 
+        NameAliases != other.NameAliases ||
+        FileExtensions != other.FileExtensions ||
+        Languages != other.Languages ||
+        Setup.size() != other.Setup.size() ||
+        Cleanup.size() != other.Cleanup.size() ||
+        !FilesTypes.Equals(other.FilesTypes) ||
+        !Compiler.Equals(other.Compiler) ||
+        !Linker.Equals(other.Linker))
+    {
+        return false;
+    }
+    
+    for(const auto& it : Setup)
+    {
+        if(other.Setup.count(it.first) == 0 || other.Setup.at(it.first) != it.second)
+            return false;
+    }
+    
+    for(const auto& it : Cleanup)
+    {
+        if(other.Cleanup.count(it.first) == 0 || other.Cleanup.at(it.first) != it.second)
+            return false;
+    }
+    
+    return true;
+}

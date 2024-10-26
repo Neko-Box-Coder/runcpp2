@@ -52,3 +52,8 @@ std::string runcpp2::Data::DependencySource::ToString(std::string indentation) c
     
     return out;
 }
+
+bool runcpp2::Data::DependencySource::Equals(const DependencySource& other) const
+{
+    return Type == other.Type && Value == other.Value;
+}

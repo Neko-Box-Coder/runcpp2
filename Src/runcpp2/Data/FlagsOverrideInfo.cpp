@@ -38,3 +38,8 @@ std::string runcpp2::Data::FlagsOverrideInfo::ToString(std::string indentation) 
     
     return out;
 }
+
+bool runcpp2::Data::FlagsOverrideInfo::Equals(const FlagsOverrideInfo& other) const
+{
+    return Remove == other.Remove && Append == other.Append;
+}

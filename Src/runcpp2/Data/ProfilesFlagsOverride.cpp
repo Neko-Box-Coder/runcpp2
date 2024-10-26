@@ -48,3 +48,20 @@ std::string runcpp2::Data::ProfilesFlagsOverride::ToString(std::string indentati
     
     return out;
 }
+
+bool runcpp2::Data::ProfilesFlagsOverride::Equals(const ProfilesFlagsOverride& other) const
+{
+    if(FlagsOverrides.size() != other.FlagsOverrides.size())
+        return false;
+
+    for(const auto& it : FlagsOverrides)
+    {
+        if( other.FlagsOverrides.count(it.first) == 0 || 
+            !other.FlagsOverrides.at(it.first).Equals(it.second))
+        {
+            return false;
+        }
+    }
+    
+    return true;
+}

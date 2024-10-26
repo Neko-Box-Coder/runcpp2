@@ -99,3 +99,28 @@ std::string runcpp2::Data::DependencyLinkProperty::ToString(std::string indentat
     
     return out;
 }
+
+bool runcpp2::Data::DependencyLinkProperty::Equals(const DependencyLinkProperty& other) const
+{
+    if(ProfileProperties.size() != other.ProfileProperties.size())
+        return false;
+
+    for(const auto& it : ProfileProperties)
+    {
+        if(other.ProfileProperties.count(it.first) == 0)
+            return false;
+            
+        const ProfileLinkProperty& otherProperty = other.ProfileProperties.at(it.first);
+        const ProfileLinkProperty& property = it.second;
+        
+        if( property.SearchLibraryNames != otherProperty.SearchLibraryNames ||
+            property.SearchDirectories != otherProperty.SearchDirectories ||
+            property.ExcludeLibraryNames != otherProperty.ExcludeLibraryNames ||
+            property.AdditionalLinkOptions != otherProperty.AdditionalLinkOptions)
+        {
+            return false;
+        }
+    }
+    
+    return true;
+}

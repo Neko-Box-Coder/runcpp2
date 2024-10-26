@@ -48,3 +48,17 @@ std::string runcpp2::Data::ProfilesCompilesFiles::ToString(std::string indentati
     
     return out;
 }
+
+bool runcpp2::Data::ProfilesCompilesFiles::Equals(const ProfilesCompilesFiles& other) const
+{
+    if(CompilesFiles.size() != other.CompilesFiles.size())
+        return false;
+    
+    for(const auto& it : CompilesFiles)
+    {
+        if(other.CompilesFiles.count(it.first) == 0 || other.CompilesFiles.at(it.first) != it.second)
+            return false;
+    }
+    
+    return true;
+}

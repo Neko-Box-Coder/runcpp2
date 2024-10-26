@@ -89,3 +89,12 @@ std::string runcpp2::Data::FilesTypesInfo::ToString(std::string indentation) con
     
     return out;
 }
+
+bool runcpp2::Data::FilesTypesInfo::Equals(const FilesTypesInfo& other) const
+{
+    return  ObjectLinkFile.Equals(other.ObjectLinkFile) &&
+            SharedLinkFile.Equals(other.SharedLinkFile) &&
+            SharedLibraryFile.Equals(other.SharedLibraryFile) &&
+            StaticLinkFile.Equals(other.StaticLinkFile) &&
+            DebugSymbolFile.Equals(other.DebugSymbolFile);
+}

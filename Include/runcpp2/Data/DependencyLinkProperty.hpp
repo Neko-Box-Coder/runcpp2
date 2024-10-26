@@ -28,6 +28,7 @@ namespace runcpp2
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;
+                bool Equals(const DependencyLinkProperty& other) const;
         };
     }
 }

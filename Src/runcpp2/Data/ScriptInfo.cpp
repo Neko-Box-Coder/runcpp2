@@ -216,3 +216,69 @@ std::string runcpp2::Data::ScriptInfo::ToString(std::string indentation) const
     
     return out;
 }
+
+bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
+{
+    if( Language != other.Language || 
+        PassScriptPath != other.PassScriptPath ||
+        RequiredProfiles.size() != other.RequiredProfiles.size() ||
+        OverrideCompileFlags.size() != other.OverrideCompileFlags.size() ||
+        OverrideLinkFlags.size() != other.OverrideLinkFlags.size() ||
+        OtherFilesToBeCompiled.size() != other.OtherFilesToBeCompiled.size() ||
+        Dependencies.size() != other.Dependencies.size() ||
+        Defines.size() != other.Defines.size() ||
+        Populated != other.Populated)
+    {
+        return false;
+    }
+
+    for(const auto& it : RequiredProfiles)
+    {
+        if( other.RequiredProfiles.count(it.first) == 0 || 
+            other.RequiredProfiles.at(it.first) != it.second)
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : OverrideCompileFlags)
+    {
+        if( other.OverrideCompileFlags.count(it.first) == 0 || 
+            !other.OverrideCompileFlags.at(it.first).Equals(it.second))
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : OverrideLinkFlags)
+    {
+        if( other.OverrideLinkFlags.count(it.first) == 0 || 
+            !other.OverrideLinkFlags.at(it.first).Equals(it.second))
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : OtherFilesToBeCompiled)
+    {
+        if( other.OtherFilesToBeCompiled.count(it.first) == 0 || 
+            !other.OtherFilesToBeCompiled.at(it.first).Equals(it.second))
+        {
+            return false;
+        }
+    }
+
+    for(size_t i = 0; i < Dependencies.size(); ++i)
+    {
+        if(!Dependencies[i].Equals(other.Dependencies[i]))
+            return false;
+    }
+
+    for(const auto& it : Defines)
+    {
+        if(other.Defines.count(it.first) == 0 || !other.Defines.at(it.first).Equals(it.second))
+            return false;
+    }
+
+    return true;
+}

@@ -42,3 +42,17 @@ std::string runcpp2::Data::FilesToCopyInfo::ToString(std::string indentation) co
     
     return out;
 }
+
+bool runcpp2::Data::FilesToCopyInfo::Equals(const FilesToCopyInfo& other) const
+{
+    if(ProfileFiles.size() != other.ProfileFiles.size())
+        return false;
+
+    for(const auto& it : ProfileFiles)
+    {
+        if(other.ProfileFiles.count(it.first) == 0 || other.ProfileFiles.at(it.first) != it.second)
+            return false;
+    }
+    
+    return true;
+}

@@ -43,3 +43,17 @@ std::string runcpp2::Data::DependencyCommands::ToString(std::string indentation)
     
     return out;
 }
+
+bool runcpp2::Data::DependencyCommands::Equals(const DependencyCommands& other) const
+{
+    if(CommandSteps.size() != other.CommandSteps.size())
+        return false;
+    
+    for(const auto& it : CommandSteps)
+    {
+        if(other.CommandSteps.count(it.first) == 0 || other.CommandSteps.at(it.first) != it.second)
+            return false;
+    }
+    
+    return true;
+}

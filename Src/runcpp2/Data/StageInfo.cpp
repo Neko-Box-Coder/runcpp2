@@ -557,3 +557,74 @@ std::string runcpp2::Data::StageInfo::ToString(std::string indentation) const
 
     return out;
 }
+
+bool runcpp2::Data::StageInfo::Equals(const StageInfo& other) const
+{
+    if( PreRun.size() != other.PreRun.size() ||
+        CheckExistence.size() != other.CheckExistence.size())
+    {
+        return false;   
+    }
+    
+    for(const auto& it : PreRun)
+    {
+        if(other.PreRun.count(it.first) == 0 || other.PreRun.at(it.first) != it.second)
+            return false;
+    }
+
+    for(const auto& it : CheckExistence)
+    {
+        if( other.CheckExistence.count(it.first) == 0 || 
+            other.CheckExistence.at(it.first) != it.second)
+        {
+            return false;
+        }
+    }
+
+    auto compareOutputTypeInfoMaps = 
+        []( const std::unordered_map<PlatformName, OutputTypeInfo>& a,
+            const std::unordered_map<PlatformName, OutputTypeInfo>& b) -> bool
+        {
+            if(a.size() != b.size())
+                return false;
+
+            for(const auto& it : a)
+            {
+                if(b.count(it.first) == 0)
+                    return false;
+
+                const OutputTypeInfo& otherInfo = b.at(it.first);
+                const OutputTypeInfo& info = it.second;
+
+                if( info.Flags != otherInfo.Flags ||
+                    info.Executable != otherInfo.Executable ||
+                    info.Setup != otherInfo.Setup ||
+                    info.Cleanup != otherInfo.Cleanup)
+                {
+                    return false;
+                }
+
+                if(info.RunParts.size() != otherInfo.RunParts.size())
+                    return false;
+
+                for(size_t i = 0; i < info.RunParts.size(); ++i)
+                {
+                    if( info.RunParts[i].Type != otherInfo.RunParts[i].Type ||
+                        info.RunParts[i].CommandPart != otherInfo.RunParts[i].CommandPart)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        };
+
+    if( !compareOutputTypeInfoMaps(OutputTypes.Executable, other.OutputTypes.Executable) ||
+        !compareOutputTypeInfoMaps(OutputTypes.Static, other.OutputTypes.Static) ||
+        !compareOutputTypeInfoMaps(OutputTypes.Shared, other.OutputTypes.Shared))
+    {
+        return false;
+    }
+
+    return true;
+}

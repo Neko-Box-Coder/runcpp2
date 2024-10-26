@@ -63,3 +63,23 @@ std::string runcpp2::Data::FileProperties::ToString(std::string indentation) con
     out += "\n";
     return out;
 }
+
+bool runcpp2::Data::FileProperties::Equals(const FileProperties& other) const
+{
+    if(Prefix.size() != other.Prefix.size() || Extension.size() != other.Extension.size())
+        return false;
+
+    for(const auto& it : Prefix)
+    {
+        if(other.Prefix.count(it.first) == 0 || other.Prefix.at(it.first) != it.second)
+            return false;
+    }
+    
+    for(const auto& it : Extension)
+    {
+        if(other.Extension.count(it.first) == 0 || other.Extension.at(it.first) != it.second)
+            return false;
+    }
+    
+    return true;
+}

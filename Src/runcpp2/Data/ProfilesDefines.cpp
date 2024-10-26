@@ -74,3 +74,34 @@ std::string runcpp2::Data::ProfilesDefines::ToString(std::string indentation) co
     
     return result;
 }
+
+bool runcpp2::Data::ProfilesDefines::Equals(const ProfilesDefines& other) const
+{
+    if(Defines.size() != other.Defines.size())
+        return false;
+    
+    for(const auto& it : Defines)
+    {
+        if(other.Defines.count(it.first) == 0)
+            return false;
+            
+        const std::vector<Define>& otherDefines = other.Defines.at(it.first);
+        if(it.second.size() != otherDefines.size())
+            return false;
+            
+        for(size_t i = 0; i < it.second.size(); ++i)
+        {
+            const Define& define = it.second[i];
+            const Define& otherDefine = otherDefines[i];
+            
+            if( define.Name != otherDefine.Name || 
+                define.Value != otherDefine.Value ||
+                define.HasValue != otherDefine.HasValue)
+            {
+                return false;
+            }
+        }
+    }
+    
+    return true;
+}

@@ -59,6 +59,7 @@ namespace runcpp2
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef& node, std::string outputTypeKeyName);
                 std::string ToString(std::string indentation) const;
+                bool Equals(const StageInfo& other) const;
         };
     }
 }

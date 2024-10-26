@@ -227,3 +227,59 @@ std::string runcpp2::Data::DependencyInfo::ToString(std::string indentation) con
     
     return out;
 }
+
+bool runcpp2::Data::DependencyInfo::Equals(const DependencyInfo& other) const
+{
+    if( Name != other.Name || 
+        Platforms != other.Platforms ||
+        !Source.Equals(other.Source) ||
+        LibraryType != other.LibraryType ||
+        IncludePaths != other.IncludePaths ||
+        AbsoluteIncludePaths != other.AbsoluteIncludePaths ||
+        LinkProperties.size() != other.LinkProperties.size() ||
+        Setup.size() != other.Setup.size() ||
+        Cleanup.size() != other.Cleanup.size() ||
+        Build.size() != other.Build.size() ||
+        FilesToCopy.size() != other.FilesToCopy.size())
+    {
+        return false;
+    }
+
+    for(const auto& it : LinkProperties)
+    {
+        if( other.LinkProperties.count(it.first) == 0 || 
+            !other.LinkProperties.at(it.first).Equals(it.second))
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : Setup)
+    {
+        if(other.Setup.count(it.first) == 0 || !other.Setup.at(it.first).Equals(it.second))
+            return false;
+    }
+
+    for(const auto& it : Cleanup)
+    {
+        if(other.Cleanup.count(it.first) == 0 || !other.Cleanup.at(it.first).Equals(it.second))
+            return false;
+    }
+
+    for(const auto& it : Build)
+    {
+        if(other.Build.count(it.first) == 0 || !other.Build.at(it.first).Equals(it.second))
+            return false;
+    }
+
+    for(const auto& it : FilesToCopy)
+    {
+        if( other.FilesToCopy.count(it.first) == 0 || 
+            !other.FilesToCopy.at(it.first).Equals(it.second))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}

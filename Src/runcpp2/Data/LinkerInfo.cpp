@@ -161,3 +161,65 @@ std::string runcpp2::Data::LinkerInfo::ToString(std::string indentation) const
     
     return out;
 }
+
+bool runcpp2::Data::LinkerInfo::Equals(const LinkerInfo& other) const
+{
+    if( EnvironmentSetup.size() != other.EnvironmentSetup.size() ||
+        Executable != other.Executable || 
+        CheckExistence != other.CheckExistence ||
+        DefaultLinkFlags.size() != other.DefaultLinkFlags.size() ||
+        ExecutableLinkFlags.size() != other.ExecutableLinkFlags.size() ||
+        StaticLibLinkFlags.size() != other.StaticLibLinkFlags.size() ||
+        SharedLibLinkFlags.size() != other.SharedLibLinkFlags.size())
+    {
+        return false;
+    }
+
+    for(const auto& it : EnvironmentSetup)
+    {
+        if( other.EnvironmentSetup.count(it.first) == 0 || 
+            other.EnvironmentSetup.at(it.first) != it.second)
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : DefaultLinkFlags)
+    {
+        if( other.DefaultLinkFlags.count(it.first) == 0 || 
+            other.DefaultLinkFlags.at(it.first) != it.second)
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : ExecutableLinkFlags)
+    {
+        if( other.ExecutableLinkFlags.count(it.first) == 0 || 
+            other.ExecutableLinkFlags.at(it.first) != it.second)
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : StaticLibLinkFlags)
+    {
+        if( other.StaticLibLinkFlags.count(it.first) == 0 || 
+            other.StaticLibLinkFlags.at(it.first) != it.second)
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : SharedLibLinkFlags)
+    {
+        if( other.SharedLibLinkFlags.count(it.first) == 0 || 
+            other.SharedLibLinkFlags.at(it.first) != it.second)
+        {
+            return false;
+        }
+    }
+
+    return  LinkArgs.OutputPart == other.LinkArgs.OutputPart &&
+            LinkArgs.LinkPart == other.LinkArgs.LinkPart;
+}

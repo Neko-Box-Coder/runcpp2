@@ -165,3 +165,67 @@ std::string runcpp2::Data::CompilerInfo::ToString(std::string indentation) const
     out += "\n";
     return out;
 }
+
+bool runcpp2::Data::CompilerInfo::Equals(const CompilerInfo& other) const
+{
+    if( Executable != other.Executable || 
+        CheckExistence != other.CheckExistence ||
+        EnvironmentSetup.size() != other.EnvironmentSetup.size() ||
+        DefaultCompileFlags.size() != other.DefaultCompileFlags.size() ||
+        ExecutableCompileFlags.size() != other.ExecutableCompileFlags.size() ||
+        StaticLibCompileFlags.size() != other.StaticLibCompileFlags.size() ||
+        SharedLibCompileFlags.size() != other.SharedLibCompileFlags.size())
+    {
+        return false;
+    }
+
+    for(const auto& it : EnvironmentSetup)
+    {
+        if( other.EnvironmentSetup.count(it.first) == 0 || 
+            other.EnvironmentSetup.at(it.first) != it.second)
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : DefaultCompileFlags)
+    {
+        if( other.DefaultCompileFlags.count(it.first) == 0 || 
+            other.DefaultCompileFlags.at(it.first) != it.second)
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : ExecutableCompileFlags)
+    {
+        if( other.ExecutableCompileFlags.count(it.first) == 0 || 
+            other.ExecutableCompileFlags.at(it.first) != it.second)
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : StaticLibCompileFlags)
+    {
+        if( other.StaticLibCompileFlags.count(it.first) == 0 || 
+            other.StaticLibCompileFlags.at(it.first) != it.second)
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : SharedLibCompileFlags)
+    {
+        if( other.SharedLibCompileFlags.count(it.first) == 0 || 
+            other.SharedLibCompileFlags.at(it.first) != it.second)
+        {
+            return false;
+        }
+    }
+
+    return  CompileArgs.CompilePart == other.CompileArgs.CompilePart &&
+            CompileArgs.IncludePart == other.CompileArgs.IncludePart &&
+            CompileArgs.InputPart == other.CompileArgs.InputPart &&
+            CompileArgs.OutputPart == other.CompileArgs.OutputPart;
+}
