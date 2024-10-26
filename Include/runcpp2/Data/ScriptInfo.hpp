@@ -19,6 +19,7 @@ namespace runcpp2
         {
             public:
                 std::string Language;
+                bool PassScriptPath = false;
                 std::unordered_map<PlatformName, std::vector<ProfileName>> RequiredProfiles;
                 
                 std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideCompileFlags;

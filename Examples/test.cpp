@@ -1,5 +1,7 @@
 /* runcpp2
 
+PassScriptPath: true
+
 RequiredProfiles:
     Windows: ["msvc"]
     Unix: ["g++"]

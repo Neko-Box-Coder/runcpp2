@@ -11,6 +11,7 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     
     std::vector<NodeRequirement> requirements =
     {
+        NodeRequirement("PassScriptPath", ryml::NodeType_e::KEYVAL, false, true),
         NodeRequirement("Language", ryml::NodeType_e::KEYVAL, false, true),
         NodeRequirement("RequiredProfiles", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("OverrideCompileFlags", ryml::NodeType_e::MAP, false, true),
@@ -24,6 +25,24 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     {
         ssLOG_ERROR("ScriptInfo: Failed to meet requirements");
         return false;
+    }
+    
+    if(ExistAndHasChild(node, "PassScriptPath"))
+    {
+        std::string passScriptPathStr = GetValue(node["PassScriptPath"]);
+        for(size_t i = 0; i < passScriptPathStr.length(); ++i)
+            passScriptPathStr[i] = std::tolower(passScriptPathStr[i]);
+        
+        if(passScriptPathStr == "true" || passScriptPathStr == "1")
+            PassScriptPath = true;
+        else if(passScriptPathStr == "false" || passScriptPathStr == "0")
+            PassScriptPath = false;
+        else
+        {
+            ssLOG_ERROR("ScriptInfo: Invalid value for PassScriptPath: " << passScriptPathStr);
+            ssLOG_ERROR("Expected true/false or 1/0");
+            return false;
+        }
     }
     
     if(ExistAndHasChild(node, "Language"))
@@ -148,6 +167,8 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
 std::string runcpp2::Data::ScriptInfo::ToString(std::string indentation) const
 {
     std::string out = indentation + "ScriptInfo:\n";
+    
+    out += indentation + "    PassScriptPath: " + (PassScriptPath ? "true" : "false") + "\n";
     
     if(!Language.empty())
         out += indentation + "    Language: " + Language + "\n";

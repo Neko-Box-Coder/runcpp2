@@ -4,6 +4,9 @@
 # NOTE: All the options here are defaulted to empty. 
 #       You can uncomment different sections to set what you want.
 
+# (Optional) Whether to pass the script path as the second parameter when running
+PassScriptPath: false
+
 # # (Optional) Language of the script
 Language: "c++"
 

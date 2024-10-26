@@ -85,15 +85,9 @@ namespace
         INTERNAL_RUNCPP2_SAFE_START();
         ssLOG_FUNC_DEBUG();
         
-        std::error_code _;
-        std::string interpretedRunPath = runcpp2::ProcessPath(scriptPath);
-        std::vector<const char*> args = { interpretedRunPath.c_str() };
-        
-        if(!runArgs.empty())
-        {
-            for(int i = 0; i < runArgs.size(); ++i)
-                args.push_back(runArgs[i].c_str());
-        }
+        std::vector<const char*> args;
+        for(size_t i = 0; i < runArgs.size(); ++i)
+            args.push_back(runArgs[i].c_str());
         
         System2CommandInfo runCommandInfo = {};
         SYSTEM2_RESULT result = System2RunSubprocess(   executable.c_str(),
@@ -102,7 +96,7 @@ namespace
                                                         &runCommandInfo);
         
         ssLOG_INFO("Running: " << executable.string());
-        for(int i = 0; i < runArgs.size(); ++i)
+        for(size_t i = 0; i < runArgs.size(); ++i)
             ssLOG_INFO("-   " << runArgs[i]);
         
         if(result != SYSTEM2_RESULT_SUCCESS)
@@ -172,12 +166,12 @@ namespace
             return false;
         }
         
-        int (*scriptFullMain)(int, char**) = nullptr;
+        int (*scriptFullMain)(int, const char**) = nullptr;
         int (*scriptMain)() = nullptr;
         
         try
         {
-            scriptFullMain = sharedLib->get_function<int(int, char**)>("main");
+            scriptFullMain = sharedLib->get_function<int(int, const char**)>("main");
         }
         catch(const dylib::exception& ex)
         {
@@ -217,13 +211,9 @@ namespace
         {
             if(scriptFullMain != nullptr)
             {
-                std::vector<std::string> runArgsCopy = runArgs;
-                runArgsCopy.insert( runArgsCopy.begin(), 
-                                    runcpp2::ProcessPath(compiledSharedLibPath.string()));
-                
-                std::vector<char*> runArgsCStr(runArgsCopy.size());
-                for(int i = 0; i < runArgsCopy.size(); ++i)
-                    runArgsCStr.at(i) = &runArgsCopy.at(i).at(0);
+                std::vector<const char*> runArgsCStr(runArgs.size());
+                for(size_t i = 0; i < runArgs.size(); ++i)
+                    runArgsCStr.at(i) = &runArgs.at(i).at(0);
                 
                 returnStatus = scriptFullMain(runArgsCStr.size(), runArgsCStr.data());
             }
@@ -636,6 +626,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
 
     //Parsing the script, setting up dependencies, compiling and linking
     std::vector<std::string> filesToCopyPaths;
+    Data::ScriptInfo scriptInfo;
     {
         //Check if there's script info as yaml file instead
         std::error_code e;
@@ -672,7 +663,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         }
         
         //Try to parse the runcpp2 info
-        Data::ScriptInfo scriptInfo;
         if(!ParseScriptInfo(parsableInfo, scriptInfo))
         {
             ssLOG_ERROR("Failed to parse info");
@@ -1037,10 +1027,20 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 return PipelineResult::UNEXPECTED_FAILURE;
             }
             
+            //Prepare run arguments
+            std::vector<std::string> finalRunArgs;
+            finalRunArgs.push_back(target.string());
+            if(scriptInfo.PassScriptPath)
+                finalRunArgs.push_back(absoluteScriptPath);
+            
+            //Add user provided arguments
+            for(size_t i = 0; i < runArgs.size(); ++i)
+                finalRunArgs.push_back(runArgs[i]);
+            
             if(currentOptions.count(CmdOptions::EXECUTABLE) > 0)
             {
-                //Running the script
-                if(!RunCompiledScript(target, absoluteScriptPath, runArgs, returnStatus))
+                //Running the script with modified args
+                if(!RunCompiledScript(target, absoluteScriptPath, finalRunArgs, returnStatus))
                 {
                     ssLOG_ERROR("Failed to run script");
                     return PipelineResult::RUN_SCRIPT_FAILED;
@@ -1048,10 +1048,10 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 
                 return PipelineResult::SUCCESS;
             }
-            //Load the shared library and run it
+            //Load the shared library and run it with modified args
             else
             {
-                if(!RunCompiledSharedLib(absoluteScriptPath, target, runArgs, returnStatus))
+                if(!RunCompiledSharedLib(absoluteScriptPath, target, finalRunArgs, returnStatus))
                 {
                     ssLOG_ERROR("Failed to run script");
                     return PipelineResult::RUN_SCRIPT_FAILED;
