@@ -16,7 +16,7 @@ OtherFilesToBeCompiled:
 Defines:
     Default:
         # Turns into `TEST_DEF=\"Test Define Working\"` in shell
-        "Default": ["TEST_DEF=\\\"Test Define Working\\\""]
+        Default: ["TEST_DEF=\\\"Test Define Working\\\""]
 
 Dependencies:
 -   Name: ssLogger
@@ -27,23 +27,24 @@ Dependencies:
     LibraryType: Shared
     IncludePaths: ["Include"]
     LinkProperties:
-        "Default":
-            SearchLibraryNames: ["ssLogger"]
-            ExcludeLibraryNames: ["ssLogger_SRC"]
-            SearchDirectories: ["./build", "./build/Debug", "./build/Release"]
+        Default:
+            Default:
+                SearchLibraryNames: ["ssLogger"]
+                ExcludeLibraryNames: ["ssLogger_SRC"]
+                SearchDirectories: ["./build", "./build/Debug", "./build/Release"]
     Setup:
         Default:
-            "Default":
+            Default:
             -   "mkdir build"
     Build:
         Default:
-            "Default":
+            Default:
             -   "cd build && cmake .. -DssLOG_BUILD_TYPE=SHARED"
             -   "cd build && cmake --build . --config Release -j 16"
     FilesToCopy:
         # Target Platform (Default, Windows, Linux, MacOS, or Unix)
         Default:
-            "Default":
+            Default:
             -  "./Include/ssLogger/ssLog.hpp"
 
 -   Name: System2.cpp
@@ -55,7 +56,7 @@ Dependencies:
     IncludePaths: ["./", "./External/System2"]
     Setup:
         Default:
-            "Default":
+            Default:
             -   "git submodule update --init --recursive"
 */
 
