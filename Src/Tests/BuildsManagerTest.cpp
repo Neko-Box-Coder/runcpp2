@@ -5,7 +5,7 @@
 #include "ssLogger/ssLog.hpp"
 
 #define INTERNAL_RUNCPP2_UNDEF_MOCKS 1
-#include "UnitTests/BuildsManager/MockComponents.hpp"
+#include "Tests/BuildsManager/MockComponents.hpp"
 
 #include <memory>
 

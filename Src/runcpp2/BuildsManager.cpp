@@ -5,7 +5,7 @@
 #include <cassert>
 
 #if INTERNAL_RUNCPP2_UNIT_TESTS
-    #include "UnitTests/BuildsManager/MockComponents.hpp"
+    #include "Tests/BuildsManager/MockComponents.hpp"
 #else
     #define CO_NO_OVERRIDE 1
     #include "CppOverride.hpp"
