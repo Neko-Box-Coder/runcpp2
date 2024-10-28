@@ -74,26 +74,36 @@ std::string runcpp2::Data::DependencyLinkProperty::ToString(std::string indentat
         out += indentation + profilePair.first + ":\n";
         const ProfileLinkProperty& property = profilePair.second;
         
-        out += indentation + "    SearchLibraryNames:\n";
-        for(const std::string& name : property.SearchLibraryNames)
-            out += indentation + "    -   " + name + "\n";
+        if(property.SearchLibraryNames.empty())
+            out += indentation + "    SearchLibraryNames: []\n";
+        else
+        {
+            out += indentation + "    SearchLibraryNames:\n";
+            for(const std::string& name : property.SearchLibraryNames)
+                out += indentation + "    -   " + GetEscapedYAMLString(name) + "\n";
+        }
         
-        out += indentation + "    SearchDirectories:\n";
-        for(const std::string& dir : property.SearchDirectories)
-            out += indentation + "    -   " + dir + "\n";
+        if(property.SearchDirectories.empty())
+            out += indentation + "    SearchDirectories: []\n";
+        else
+        {
+            out += indentation + "    SearchDirectories:\n";
+            for(const std::string& dir : property.SearchDirectories)
+                out += indentation + "    -   " + GetEscapedYAMLString(dir) + "\n";
+        }
         
         if(!property.ExcludeLibraryNames.empty())
         {
             out += indentation + "    ExcludeLibraryNames:\n";
             for(const std::string& name : property.ExcludeLibraryNames)
-                out += indentation + "    -   " + name + "\n";
+                out += indentation + "    -   " + GetEscapedYAMLString(name) + "\n";
         }
         
         if(!property.AdditionalLinkOptions.empty())
         {
             out += indentation + "    AdditionalLinkOptions:\n";
             for(const std::string& option : property.AdditionalLinkOptions)
-                out += indentation + "    -   " + option + "\n";
+                out += indentation + "    -   " + GetEscapedYAMLString(option) + "\n";
         }
     }
     

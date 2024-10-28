@@ -43,8 +43,14 @@ std::string runcpp2::Data::ProfilesFlagsOverride::ToString(std::string indentati
 {
     std::string out;
     
+    if(FlagsOverrides.empty())
+        return out;
+    
     for(auto it = FlagsOverrides.begin(); it != FlagsOverrides.end(); ++it)
-        out += indentation + it->first + ":\n" + it->second.ToString(indentation + "    ");
+    {
+        out += indentation + it->first + ":\n";
+        out += it->second.ToString(indentation + "    ");
+    }
     
     return out;
 }

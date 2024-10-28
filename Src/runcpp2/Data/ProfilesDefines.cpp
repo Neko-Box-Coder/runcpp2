@@ -58,17 +58,25 @@ std::string runcpp2::Data::ProfilesDefines::ToString(std::string indentation) co
 {
     std::string result;
     
+    if(Defines.empty())
+        return result;
+    
     for(auto it = Defines.begin(); it != Defines.end(); ++it)
     {
-        result += indentation + it->first + ":\n";
-        for(int j = 0; j < it->second.size(); ++j)
+        if(it->second.empty())
+            result += indentation + it->first + ": []\n";
+        else
         {
-            const auto& define = it->second.at(j);
-            result += indentation + "-   ";
-            if(define.Value.empty())
-                result += define.Name + "\n";
-            else
-                result += define.Name + "=" + define.Value + "\n";
+            result += indentation + it->first + ":\n";
+            for(int j = 0; j < it->second.size(); ++j)
+            {
+                const Define& define = it->second.at(j);
+                result += indentation + "-   ";
+                if(define.Value.empty())
+                    result += GetEscapedYAMLString(define.Name) + "\n";
+                else
+                    result += GetEscapedYAMLString(define.Name + "=" + define.Value) + "\n";
+            }
         }
     }
     

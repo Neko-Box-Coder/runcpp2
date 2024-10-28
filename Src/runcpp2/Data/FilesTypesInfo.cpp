@@ -84,8 +84,11 @@ std::string runcpp2::Data::FilesTypesInfo::ToString(std::string indentation) con
     out += indentation + "StaticLinkFile:\n";
     out += StaticLinkFile.ToString(indentation + "    ");
     
-    out += indentation + "DebugSymbolFile:\n";
-    out += DebugSymbolFile.ToString(indentation + "    ");
+    if(!DebugSymbolFile.Prefix.empty() || !DebugSymbolFile.Extension.empty())
+    {
+        out += indentation + "DebugSymbolFile:\n";
+        out += DebugSymbolFile.ToString(indentation + "    ");
+    }
     
     return out;
 }

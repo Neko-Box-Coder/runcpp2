@@ -33,8 +33,12 @@ bool runcpp2::Data::FlagsOverrideInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
 std::string runcpp2::Data::FlagsOverrideInfo::ToString(std::string indentation) const
 {
     std::string out;
-    out += indentation + "Remove: " + Remove + "\n";
-    out += indentation + "Append: " + Append + "\n";
+    
+    if(!Remove.empty())
+        out += indentation + "Remove: " + GetEscapedYAMLString(Remove) + "\n";
+    
+    if(!Append.empty())
+        out += indentation + "Append: " + GetEscapedYAMLString(Append) + "\n";
     
     return out;
 }

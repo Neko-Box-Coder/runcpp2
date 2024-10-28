@@ -34,11 +34,20 @@ bool runcpp2::Data::DependencyCommands::ParseYAML_Node(ryml::ConstNodeRef& node)
 std::string runcpp2::Data::DependencyCommands::ToString(std::string indentation) const
 {
     std::string out;
+    
+    if(CommandSteps.empty())
+        return out;
+        
     for(auto it = CommandSteps.begin(); it != CommandSteps.end(); it++)
     {
-        out += indentation + it->first + ":\n";
-        for(int i = 0; i < it->second.size(); i++)
-            out += indentation + "-   " + it->second[i] + "\n";
+        if(it->second.empty())
+            out += indentation + it->first + ": []\n";
+        else
+        {
+            out += indentation + it->first + ":\n";
+            for(int i = 0; i < it->second.size(); i++)
+                out += indentation + "-   " + GetEscapedYAMLString(it->second[i]) + "\n";
+        }
     }
     
     return out;

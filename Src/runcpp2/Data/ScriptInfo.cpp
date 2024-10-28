@@ -166,52 +166,80 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
 
 std::string runcpp2::Data::ScriptInfo::ToString(std::string indentation) const
 {
-    std::string out = indentation + "ScriptInfo:\n";
+    std::string out;
     
-    out += indentation + "    PassScriptPath: " + (PassScriptPath ? "true" : "false") + "\n";
+    out += indentation + "PassScriptPath: " + (PassScriptPath ? "true" : "false") + "\n";
     
     if(!Language.empty())
-        out += indentation + "    Language: " + Language + "\n";
+        out += indentation + "Language: " + GetEscapedYAMLString(Language) + "\n";
     
-    out += indentation + "    RequiredProfiles:\n";
-    
-    for(auto it = RequiredProfiles.begin(); it != RequiredProfiles.end(); ++it)
+    if(!RequiredProfiles.empty())
     {
-        out += indentation + "        " + it->first + ":\n";
-        for(int i = 0; i < it->second.size(); ++i)
-            out += indentation + "        -   " + it->second[i] + "\n";
+        out += indentation + "RequiredProfiles:\n";
+        for(auto it = RequiredProfiles.begin(); it != RequiredProfiles.end(); ++it)
+        {
+            if(it->second.empty())
+                out += indentation + "    " + it->first + ": []\n";
+            else
+            {
+                out += indentation + "    " + it->first + ":\n";
+                for(int i = 0; i < it->second.size(); ++i)
+                    out += indentation + "    -   " + GetEscapedYAMLString(it->second[i]) + "\n";
+            }
+        }
     }
     
-    out += indentation + "    OverrideCompileFlags:\n";
-    for(auto it = OverrideCompileFlags.begin(); it != OverrideCompileFlags.end(); ++it)
+    if(!OverrideCompileFlags.empty())
     {
-        out += indentation + "        " + it->first + ":\n";
-        out += it->second.ToString(indentation + "            ");
+        out += indentation + "OverrideCompileFlags:\n";
+        for(auto it = OverrideCompileFlags.begin(); it != OverrideCompileFlags.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
     }
     
-    out += indentation + "    OverrideLinkFlags:\n";
-    for(auto it = OverrideLinkFlags.begin(); it != OverrideLinkFlags.end(); ++it)
+    if(!OverrideLinkFlags.empty())
     {
-        out += indentation + "        " + it->first + ":\n";
-        out += it->second.ToString(indentation + "            ");
+        out += indentation + "OverrideLinkFlags:\n";
+        for(auto it = OverrideLinkFlags.begin(); it != OverrideLinkFlags.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
     }
     
-    out += indentation + "    OtherFilesToBeCompiled:\n";
-    for(auto it = OtherFilesToBeCompiled.begin(); it != OtherFilesToBeCompiled.end(); ++it)
+    if(!OtherFilesToBeCompiled.empty())
     {
-        out += indentation + "        " + it->first + ":\n";
-        out += it->second.ToString(indentation + "            ");
+        out += indentation + "OtherFilesToBeCompiled:\n";
+        for(auto it = OtherFilesToBeCompiled.begin(); it != OtherFilesToBeCompiled.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
     }
     
-    out += indentation + "    Dependencies:\n";
-    for(int i = 0; i < Dependencies.size(); ++i)
-        out += Dependencies[i].ToString(indentation + "    ");
-    
-    out += indentation + "    Defines:\n";
-    for(auto it = Defines.begin(); it != Defines.end(); ++it)
+    if(!Dependencies.empty())
     {
-        out += indentation + "        " + it->first + ":\n";
-        out += it->second.ToString(indentation + "            ");
+        out += indentation + "Dependencies:\n";
+        for(int i = 0; i < Dependencies.size(); ++i)
+        {
+            int currentOutSize = out.size();
+            out += Dependencies[i].ToString(indentation + "    ");
+            
+            //Change character to yaml list
+            out.at(currentOutSize + indentation.size()) = '-';
+        }
+    }
+    
+    if(!Defines.empty())
+    {
+        out += indentation + "Defines:\n";
+        for(auto it = Defines.begin(); it != Defines.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
     }
     
     return out;

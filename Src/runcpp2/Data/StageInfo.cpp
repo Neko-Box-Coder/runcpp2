@@ -111,8 +111,10 @@ namespace
         for(auto it = toStringMap.begin(); it != toStringMap.end(); ++it)
         {
             outString += indentation + "    " + it->first + ": \n";
-            outString += indentation + "        Flags: " + it->second.Flags + "\n";
-            outString += indentation + "        Executable: " + it->second.Executable + "\n";
+            outString +=    indentation + "        Flags: " + 
+                            GetEscapedYAMLString(it->second.Flags) + "\n";
+            outString +=    indentation + "        Executable: " + 
+                            GetEscapedYAMLString(it->second.Executable) + "\n";
             outString += indentation + "        RunParts: \n";
             for(int i = 0; i < it->second.RunParts.size(); ++i)
             {
@@ -128,15 +130,28 @@ namespace
                                 "\n";
                 
                 outString +=    indentation + "            CommandPart: " + 
-                                it->second.RunParts.at(i).CommandPart + "\n";
+                                GetEscapedYAMLString(it->second.RunParts.at(i).CommandPart) + "\n";
             }
-            outString += indentation + "        Setup: \n";
-            for(int i = 0; i < it->second.Setup.size(); ++i)
-                outString +=    indentation + "        -   \"" + it->second.Setup.at(i) + "\"\n";
             
-            outString += indentation + "        Cleanup: \n";
-            for(int i = 0; i < it->second.Cleanup.size(); ++i)
-                outString +=    indentation + "        -   \"" + it->second.Cleanup.at(i) + "\"\n";
+            if(!it->second.Setup.empty())
+            {
+                outString += indentation + "        Setup: \n";
+                for(int i = 0; i < it->second.Setup.size(); ++i)
+                {
+                    outString +=    indentation + "        -   " + 
+                                    GetEscapedYAMLString(it->second.Setup.at(i)) + "\n";
+                }
+            }
+            
+            if(!it->second.Cleanup.empty())
+            {
+                outString += indentation + "        Cleanup: \n";
+                for(int i = 0; i < it->second.Cleanup.size(); ++i)
+                {
+                    outString +=    indentation + "        -   " + 
+                                    GetEscapedYAMLString(it->second.Cleanup.at(i)) + "\n";
+                }
+            }
         }
     }
     
@@ -532,28 +547,34 @@ bool runcpp2::Data::StageInfo::ParseYAML_Node(  ryml::ConstNodeRef& node,
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
-std::string runcpp2::Data::StageInfo::ToString(std::string indentation) const
+std::string runcpp2::Data::StageInfo::ToString( std::string indentation, 
+                                                std::string outputTypeKeyName) const
 {
     ssLOG_FUNC_DEBUG();
 
     std::string out;
     
-    out += indentation + "PreRun:\n";
-    for(auto it = PreRun.begin(); it != PreRun.end(); ++it)
-        out += indentation + "    " + it->first + ": " + it->second + "\n";
+    if(!PreRun.empty())
+    {
+        out += indentation + "PreRun:\n";
+        for(auto it = PreRun.begin(); it != PreRun.end(); ++it)
+            out += indentation + "    " + it->first + ": " + GetEscapedYAMLString(it->second) + "\n";
+    }
     
     out += indentation + "CheckExistence:\n";
     for(auto it = CheckExistence.begin(); it != CheckExistence.end(); ++it)
-        out += indentation + "    " + it->first + ": " + it->second + "\n";
+        out += indentation + "    " + it->first + ": " + GetEscapedYAMLString(it->second) + "\n";
     
-    out += indentation + "Executable: \n";
-    OutputTypeInfoMapToString(indentation, OutputTypes.Executable, out);
+    out += indentation + outputTypeKeyName + ":\n";
     
-    out += indentation + "Static: \n";
-    OutputTypeInfoMapToString(indentation, OutputTypes.Static, out);
+    out += indentation + "    Executable: \n";
+    OutputTypeInfoMapToString(indentation + "    ", OutputTypes.Executable, out);
     
-    out += indentation + "Shared: \n";
-    OutputTypeInfoMapToString(indentation, OutputTypes.Shared, out);
+    out += indentation + "    Static: \n";
+    OutputTypeInfoMapToString(indentation + "    ", OutputTypes.Static, out);
+    
+    out += indentation + "    Shared: \n";
+    OutputTypeInfoMapToString(indentation + "    ", OutputTypes.Shared, out);
 
     return out;
 }

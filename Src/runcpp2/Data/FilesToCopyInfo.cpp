@@ -33,11 +33,20 @@ bool runcpp2::Data::FilesToCopyInfo::ParseYAML_Node(const ryml::ConstNodeRef& no
 std::string runcpp2::Data::FilesToCopyInfo::ToString(std::string indentation) const
 {
     std::string out;
+    
+    if(ProfileFiles.empty())
+        return out;
+        
     for(auto it = ProfileFiles.begin(); it != ProfileFiles.end(); it++)
     {
-        out += indentation + it->first + ":\n";
-        for(int i = 0; i < it->second.size(); i++)
-            out += indentation + "-   " + it->second[i] + "\n";
+        if(it->second.empty())
+            out += indentation + it->first + ": []\n";
+        else
+        {
+            out += indentation + it->first + ":\n";
+            for(int i = 0; i < it->second.size(); i++)
+                out += indentation + "-   " + GetEscapedYAMLString(it->second[i]) + "\n";
+        }
     }
     
     return out;

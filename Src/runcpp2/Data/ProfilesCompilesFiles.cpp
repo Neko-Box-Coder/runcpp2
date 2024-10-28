@@ -38,12 +38,19 @@ std::string runcpp2::Data::ProfilesCompilesFiles::ToString(std::string indentati
 {
     std::string out;
     
+    if(CompilesFiles.empty())
+        return out;
+        
     for(auto it = CompilesFiles.begin(); it != CompilesFiles.end(); ++it)
     {
-        out += indentation + it->first + ":\n";
-        
-        for(int i = 0; i < it->second.size(); ++i)
-            out += indentation + "-   " + it->second.at(i).string() + "\n";
+        if(it->second.empty())
+            out += indentation + it->first + ": []\n";
+        else
+        {
+            out += indentation + it->first + ":\n";
+            for(int i = 0; i < it->second.size(); ++i)
+                out += indentation + "-   " + GetEscapedYAMLString(it->second.at(i).string()) + "\n";
+        }
     }
     
     return out;
