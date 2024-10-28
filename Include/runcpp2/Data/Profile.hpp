@@ -1,8 +1,6 @@
 #ifndef RUNCPP2_DATA_PROFILE_HPP
 #define RUNCPP2_DATA_PROFILE_HPP
 
-#include "runcpp2/Data/CompilerInfo.hpp"
-#include "runcpp2/Data/LinkerInfo.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/Data/FilesTypesInfo.hpp"
 #include "runcpp2/Data/StageInfo.hpp"
