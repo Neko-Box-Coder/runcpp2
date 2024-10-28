@@ -535,8 +535,18 @@ void runcpp2::GetDefaultScriptInfo(std::string& scriptInfo)
                                 DefaultScriptInfo_size);
 }
 
-
-
+//NOTE: Mainly used for test to reduce spamminig
+void runcpp2::SetLogLevel(const std::string& logLevel)
+{
+    if(logLevel == "Debug")
+        ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_DEBUG);
+    else if(logLevel == "Warning")
+        ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_WARNING);
+    else if(logLevel == "Error")
+        ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_ERROR);
+    else
+        ssLOG_ERROR("Invalid log level: " << logLevel);
+}
 
 runcpp2::PipelineResult 
 runcpp2::StartPipeline( const std::string& scriptPath, 

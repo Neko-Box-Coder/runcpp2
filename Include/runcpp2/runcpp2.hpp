@@ -56,6 +56,8 @@ namespace runcpp2
 
     void GetDefaultScriptInfo(std::string& scriptInfo);
 
+    void SetLogLevel(const std::string& logLevel);
+
     PipelineResult StartPipeline(   const std::string& scriptPath, 
                                     const std::vector<Data::Profile>& profiles,
                                     const std::string& configPreferredProfile,

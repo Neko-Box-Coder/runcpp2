@@ -119,7 +119,7 @@ endif()
 # runcpp2
 # =========================================================================
 
-add_executable(runcpp2  
+add_library(runcpp2 STATIC
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/Profile.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencyInfo.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencyLinkProperty.cpp"
@@ -139,18 +139,17 @@ add_executable(runcpp2
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/ConfigParsing.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/DefaultYAMLs.c"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/DependenciesHelper.cpp"
-                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/main.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/ParseUtil.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/PlatformUtil.cpp"
-                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/runcpp2.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/StringUtil.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/runcpp2.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/BuildsManager.cpp"
                         
                         )
 
-target_include_directories(runcpp2 PRIVATE "${CMAKE_CURRENT_LIST_DIR}/Include")
-
-target_link_libraries(runcpp2 PRIVATE ssLogger ghc_filesystem System2 ryml::ryml dylib CppOverride)
+target_include_directories(runcpp2 PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
+target_link_libraries(runcpp2 PRIVATE ssLogger System2 CppOverride dylib)
+target_link_libraries(runcpp2 PUBLIC ghc_filesystem ryml::ryml)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(STANDARD_COMPILE_FLAGS "/utf-8;/W1;/DGHC_WIN_DISABLE_WSTRING_STORAGE_TYPE=1")
@@ -173,21 +172,16 @@ target_compile_options(runcpp2 PRIVATE ${STANDARD_COMPILE_FLAGS})
 # Define the version macro
 target_compile_definitions(runcpp2 PUBLIC RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}")
 
-# TODO: Maybe move this to the UnitTests sub folder
-# Unit Tests
-if(RUNCPP2_BUILD_TESTS)
-    add_executable(BuildsManagerTest "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/BuildsManager.cpp"
-                                     "${CMAKE_CURRENT_LIST_DIR}/Src/UnitTests/BuildsManagerTest.cpp")
-                                     # "${CMAKE_CURRENT_LIST_DIR}/Src/UnitTests/BuildsManager/MockComponents.cpp")
+add_executable(runcpp2_main "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/main.cpp")
+target_compile_options(runcpp2_main PRIVATE ${STANDARD_COMPILE_FLAGS})
+target_link_libraries(runcpp2_main PRIVATE runcpp2 ssLogger ghc_filesystem)
+set_target_properties(runcpp2_main PROPERTIES OUTPUT_NAME "runcpp2")
 
-    target_include_directories(BuildsManagerTest PRIVATE "${CMAKE_CURRENT_LIST_DIR}/Include")
-    target_compile_options(BuildsManagerTest PRIVATE "${STANDARD_COMPILE_FLAGS}")
-    target_link_libraries(BuildsManagerTest PRIVATE ghc_filesystem CppOverride ssTest ssLogger)
-    target_compile_definitions(BuildsManagerTest PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=1)
-    # set_target_properties(BuildsManagerTest PROPERTIES  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
-    #                                                     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
-    #                                                     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests")
+if(RUNCPP2_BUILD_TESTS)
+    add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Src/Tests")
 endif()
+# Unit Tests
+
 
 
 
