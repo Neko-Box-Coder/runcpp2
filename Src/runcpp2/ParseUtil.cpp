@@ -205,6 +205,8 @@ bool runcpp2::GetParsableInfo(const std::string& contentToParse, std::string& ou
                     currentLine.clear();
                     continue;
                 }
+                
+                currentLine.clear();
             }
             //Parse the content
             else
