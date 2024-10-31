@@ -787,9 +787,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 return PipelineResult::DEPENDENCIES_FAILED;
             }
             
-            if( currentOptions.count(CmdOptions::RESET_CACHE) > 0 ||
-                currentOptions.count(CmdOptions::REMOVE_DEPENDENCIES) > 0 ||
-                scriptInfoChanged)
+            if(currentOptions.count(CmdOptions::REMOVE_DEPENDENCIES) > 0 || scriptInfoChanged)
             {
                 if(!CleanupDependencies(profiles.at(profileIndex),
                                         scriptInfo,

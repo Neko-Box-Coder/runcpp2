@@ -261,7 +261,7 @@ int main(int argc, char* argv[])
         static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 13, "Update this");
         ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
         ssLOG_BASE("Options:");
-        ssLOG_BASE("    -r, --[r]eset-cache                     Deletes all cache and build everything from scratch");
+        ssLOG_BASE("    -r, --[r]eset-cache                     Deletes compiled source files cache only");
         ssLOG_BASE("    -c, --reset-user-[c]onfig               Replace current user config with the default one");
         ssLOG_BASE("    -e, --[e]xecutable                      Runs as executable instead of shared library");
         ssLOG_BASE("    -h, --[h]elp                            Show this help message");
