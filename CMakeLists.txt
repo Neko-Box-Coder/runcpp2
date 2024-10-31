@@ -180,9 +180,5 @@ set_target_properties(runcpp2_main PROPERTIES OUTPUT_NAME "runcpp2")
 if(RUNCPP2_BUILD_TESTS)
     add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Src/Tests")
 endif()
-# Unit Tests
-
-
-
 
 
