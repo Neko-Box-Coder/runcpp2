@@ -224,7 +224,7 @@ pipeline
                         bash "ls -lah"
                         bash "ls -lah ./Build/Src/Tests"
                         bash "chmod +x ./Build/Src/Tests/RunAllTests.sh"
-                        bash "./Build/Src/Tests/RunAllTests.sh"
+                        bash "cd ./Build/Src/Tests && ./RunAllTests.sh"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
@@ -238,7 +238,7 @@ pipeline
                         unstash 'windows_build'
                         bat 'dir'
                         bat 'dir .\\Build\\Src\\Tests\\Debug'
-                        bat '.\\Build\\Src\\Tests\\RunAllTests.bat -d'
+                        bat 'cd .\\Build\\Src\\Tests && .\\RunAllTests.bat -d'
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
