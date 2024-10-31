@@ -167,13 +167,13 @@ else()
                                 "-Werror")
 endif()
 
-target_compile_options(runcpp2 PRIVATE ${STANDARD_COMPILE_FLAGS})
+target_compile_options(runcpp2 PRIVATE "${STANDARD_COMPILE_FLAGS}")
 
 # Define the version macro
 target_compile_definitions(runcpp2 PUBLIC RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}")
 
 add_executable(runcpp2_main "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/main.cpp")
-target_compile_options(runcpp2_main PRIVATE ${STANDARD_COMPILE_FLAGS})
+target_compile_options(runcpp2_main PRIVATE "${STANDARD_COMPILE_FLAGS}")
 target_link_libraries(runcpp2_main PRIVATE runcpp2 ssLogger ghc_filesystem)
 set_target_properties(runcpp2_main PROPERTIES OUTPUT_NAME "runcpp2")
 
