@@ -12,45 +12,45 @@ int main(int argc, char** argv)
     
     ssTEST("StageInfo Should Parse Valid YAML")
     {
+        const char* yamlStr = R"(
+            PreRun:
+                GCC: source env.sh
+            CheckExistence:
+                GCC: which gcc
+            LinkTypes:
+                Executable:
+                    Unix:
+                        Flags: "-Wl,-rpath,\\$ORIGIN"
+                        Executable: "g++"
+                        Setup: ["mkdir build"]
+                        Cleanup: ["rm -rf build"]
+                        RunParts:
+                        -   Type: Once
+                            CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+                        -   Type: Repeats
+                            CommandPart: " \"{LinkFilePath}\""
+                Static:
+                    Unix:
+                        Flags: "-Wl,-rpath,\\$ORIGIN"
+                        Executable: "g++"
+                        RunParts:
+                        -   Type: Once
+                            CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+                        -   Type: Repeats
+                            CommandPart: " \"{LinkFilePath}\""
+                Shared:
+                    Unix:
+                        Flags: "-Wl,-rpath,\\$ORIGIN"
+                        Executable: "g++"
+                        RunParts: 
+                        -   Type: Once
+                            CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+                        -   Type: Repeats
+                            CommandPart: " \"{LinkFilePath}\""
+        )";
+        
         ssTEST_OUTPUT_SETUP
         (
-            const char* yamlStr = R"(
-                PreRun:
-                    GCC: source env.sh
-                CheckExistence:
-                    GCC: which gcc
-                LinkTypes:
-                    Executable:
-                        Unix:
-                            Flags: "-Wl,-rpath,\\$ORIGIN"
-                            Executable: "g++"
-                            Setup: ["mkdir build"]
-                            Cleanup: ["rm -rf build"]
-                            RunParts:
-                            -   Type: Once
-                                CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
-                            -   Type: Repeats
-                                CommandPart: " \"{LinkFilePath}\""
-                    Static:
-                        Unix:
-                            Flags: "-Wl,-rpath,\\$ORIGIN"
-                            Executable: "g++"
-                            RunParts:
-                            -   Type: Once
-                                CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
-                            -   Type: Repeats
-                                CommandPart: " \"{LinkFilePath}\""
-                    Shared:
-                        Unix:
-                            Flags: "-Wl,-rpath,\\$ORIGIN"
-                            Executable: "g++"
-                            RunParts: 
-                            -   Type: Once
-                                CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
-                            -   Type: Repeats
-                                CommandPart: " \"{LinkFilePath}\""
-            )";
-            
             ryml::Tree tree = ryml::parse_in_arena(c4::to_csubstr(yamlStr));
             ryml::ConstNodeRef root = tree.rootref();
             

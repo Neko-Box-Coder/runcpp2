@@ -12,115 +12,115 @@ int main(int argc, char** argv)
     
     ssTEST("Profile Should Parse Valid YAML")
     {
+        const char* yamlStr = R"(
+            Name: "g++"
+            NameAliases: ["mingw"]
+            FileExtensions: [.cpp, .cc, .cxx]
+            Languages: ["c++"]
+            Setup:
+                Default: ["setup command 1", "setup command 2"]
+            Cleanup:
+                Default: []
+            FilesTypes:
+                ObjectLinkFile:
+                    Prefix:
+                        Default: ""
+                    Extension:
+                        Windows: ".obj"
+                        Unix: ".o"
+                SharedLinkFile:
+                    Prefix:
+                        Windows: ""
+                        Linux: "lib"
+                        MacOS: ""
+                    Extension:
+                        Windows: ".lib"
+                        Linux: ".so"
+                        MacOS: ".dylib"
+                SharedLibraryFile:
+                    Prefix:
+                        Windows: ""
+                        Linux: "lib"
+                        MacOS: ""
+                    Extension:
+                        Windows: ".dll"
+                        Linux: ".so"
+                        MacOS: ".dylib"
+                StaticLinkFile:
+                    Prefix:
+                        Unix: "lib"
+                        Windows: ""
+                    Extension:
+                        Windows: ".lib"
+                        Unix: ".a"
+            Compiler:
+                PreRun:
+                    Default: ""
+                CheckExistence:
+                    Default: "g++ -v"
+                CompileTypes:
+                    Executable:
+                        Default:
+                            Flags: "-std=c++17 -Wall -g"
+                            Executable: "g++"
+                            RunParts:
+                            -   Type: Once
+                                CommandPart: "{Executable} -c {CompileFlags}"
+                            -   Type: Repeats
+                                CommandPart: " -I\"{IncludeDirectoryPath}\""
+                            -   Type: Once
+                                CommandPart: " \"{InputFilePath}\" -o \"{OutputFilePath}\""
+                    Static:
+                        Default:
+                            Flags: "-std=c++17 -Wall -g"
+                            Executable: "g++"
+                            RunParts:
+                            -   Type: Once
+                                CommandPart: "{Executable} -c {CompileFlags}"
+                    Shared:
+                        Default:
+                            Flags: "-std=c++17 -Wall -g -fpic"
+                            Executable: "g++"
+                            RunParts:
+                            -   Type: Once
+                                CommandPart: "{Executable} -c {CompileFlags}"
+            Linker:
+                PreRun:
+                    Default: ""
+                CheckExistence:
+                    Default: "g++ -v"
+                LinkTypes:
+                    Executable:
+                        Unix:
+                            Flags: "-Wl,-rpath,\\$ORIGIN"
+                            Executable: "g++"
+                            RunParts:
+                            -   Type: Once
+                                CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+                        Windows:
+                            Flags: "-Wl,-rpath,\\$ORIGIN"
+                            Executable: "g++"
+                            RunParts:
+                            -   Type: Once
+                                CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+                    Static:
+                        Default:
+                            Flags: ""
+                            Executable: "g++"
+                            RunParts:
+                            -   Type: Once
+                                CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+                    Shared:
+                        Unix:
+                            Flags: "-shared -Wl,-rpath,\\$ORIGIN"
+                            Executable: "g++"
+                            RunParts:
+                            -   Type: Once
+                                CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+        )";
+        
         ssTEST_OUTPUT_SETUP
         (
-            const char* yamlStr = R"(
-                Name: "g++"
-                NameAliases: ["mingw"]
-                FileExtensions: [.cpp, .cc, .cxx]
-                Languages: ["c++"]
-                Setup:
-                    Default: ["setup command 1", "setup command 2"]
-                Cleanup:
-                    Default: []
-                FilesTypes:
-                    ObjectLinkFile:
-                        Prefix:
-                            Default: ""
-                        Extension:
-                            Windows: ".obj"
-                            Unix: ".o"
-                    SharedLinkFile:
-                        Prefix:
-                            Windows: ""
-                            Linux: "lib"
-                            MacOS: ""
-                        Extension:
-                            Windows: ".lib"
-                            Linux: ".so"
-                            MacOS: ".dylib"
-                    SharedLibraryFile:
-                        Prefix:
-                            Windows: ""
-                            Linux: "lib"
-                            MacOS: ""
-                        Extension:
-                            Windows: ".dll"
-                            Linux: ".so"
-                            MacOS: ".dylib"
-                    StaticLinkFile:
-                        Prefix:
-                            Unix: "lib"
-                            Windows: ""
-                        Extension:
-                            Windows: ".lib"
-                            Unix: ".a"
-                Compiler:
-                    PreRun:
-                        Default: ""
-                    CheckExistence:
-                        Default: "g++ -v"
-                    CompileTypes:
-                        Executable:
-                            Default:
-                                Flags: "-std=c++17 -Wall -g"
-                                Executable: "g++"
-                                RunParts:
-                                -   Type: Once
-                                    CommandPart: "{Executable} -c {CompileFlags}"
-                                -   Type: Repeats
-                                    CommandPart: " -I\"{IncludeDirectoryPath}\""
-                                -   Type: Once
-                                    CommandPart: " \"{InputFilePath}\" -o \"{OutputFilePath}\""
-                        Static:
-                            Default:
-                                Flags: "-std=c++17 -Wall -g"
-                                Executable: "g++"
-                                RunParts:
-                                -   Type: Once
-                                    CommandPart: "{Executable} -c {CompileFlags}"
-                        Shared:
-                            Default:
-                                Flags: "-std=c++17 -Wall -g -fpic"
-                                Executable: "g++"
-                                RunParts:
-                                -   Type: Once
-                                    CommandPart: "{Executable} -c {CompileFlags}"
-                Linker:
-                    PreRun:
-                        Default: ""
-                    CheckExistence:
-                        Default: "g++ -v"
-                    LinkTypes:
-                        Executable:
-                            Unix:
-                                Flags: "-Wl,-rpath,\\$ORIGIN"
-                                Executable: "g++"
-                                RunParts:
-                                -   Type: Once
-                                    CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
-                            Windows:
-                                Flags: "-Wl,-rpath,\\$ORIGIN"
-                                Executable: "g++"
-                                RunParts:
-                                -   Type: Once
-                                    CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
-                        Static:
-                            Default:
-                                Flags: ""
-                                Executable: "g++"
-                                RunParts:
-                                -   Type: Once
-                                    CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
-                        Shared:
-                            Unix:
-                                Flags: "-shared -Wl,-rpath,\\$ORIGIN"
-                                Executable: "g++"
-                                RunParts:
-                                -   Type: Once
-                                    CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
-            )";
-            
             ryml::Tree tree = ryml::parse_in_arena(c4::to_csubstr(yamlStr));
             ryml::ConstNodeRef root = tree.rootref();
             
