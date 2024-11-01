@@ -195,8 +195,8 @@ int main(int argc, char* argv[])
                 runcpp2::OptionInfo(runcpp2::CmdOptions::HELP, false)
             },
             {
-                "--remove-dependencies", 
-                runcpp2::OptionInfo(runcpp2::CmdOptions::REMOVE_DEPENDENCIES, false)
+                "--reset-dependencies", 
+                runcpp2::OptionInfo(runcpp2::CmdOptions::RESET_DEPENDENCIES, true)
             },
             {
                 "--local",
@@ -235,7 +235,7 @@ int main(int argc, char* argv[])
             {"-c", longOptionsMap.at("--reset-user-config")},
             {"-e", longOptionsMap.at("--executable")},
             {"-h", longOptionsMap.at("--help")},
-            {"-d", longOptionsMap.at("--remove-dependencies")},
+            {"-d", longOptionsMap.at("--reset-dependencies")},
             {"-l", longOptionsMap.at("--local")},
             {"-s", longOptionsMap.at("--show-config-path")},
             {"-t", longOptionsMap.at("--create-script-template")},
@@ -265,7 +265,7 @@ int main(int argc, char* argv[])
         ssLOG_BASE("    -c, --reset-user-[c]onfig               Replace current user config with the default one");
         ssLOG_BASE("    -e, --[e]xecutable                      Runs as executable instead of shared library");
         ssLOG_BASE("    -h, --[h]elp                            Show this help message");
-        ssLOG_BASE("    -d, --remove-[d]ependencies             Remove dependencies listed in the script");
+        ssLOG_BASE("    -d, --reset-[d]ependencies <names>      Reset dependencies (comma-separated names, or \"all\" for all)");
         ssLOG_BASE("    -l, --[l]ocal                           Build in the current working directory under .runcpp2 directory");
         ssLOG_BASE("    -s, --[s]how-config-path                Show where runcpp2 is reading the config from");
         ssLOG_BASE("    -t, --create-script-[t]emplate <file>   Creates/prepend runcpp2 script info template");

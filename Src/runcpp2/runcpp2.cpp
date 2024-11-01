@@ -683,7 +683,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         if(!parsableInfo.empty())
         {
             ssLOG_INFO("Parsed script info YAML:");
-            ssLOG_INFO(scriptInfo.ToString(""));
+            ssLOG_INFO("\n" << scriptInfo.ToString(""));
         }
         
         //Create build directory
@@ -787,19 +787,21 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 return PipelineResult::DEPENDENCIES_FAILED;
             }
             
-            if(currentOptions.count(CmdOptions::REMOVE_DEPENDENCIES) > 0 || scriptInfoChanged)
+            if(currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 || scriptInfoChanged)
             {
                 if(!CleanupDependencies(profiles.at(profileIndex),
                                         scriptInfo,
                                         availableDependencies,
-                                        dependenciesLocalCopiesPaths))
+                                        dependenciesLocalCopiesPaths,
+                                        currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 ?
+                                            currentOptions.at(CmdOptions::RESET_DEPENDENCIES) : "all"))
                 {
                     ssLOG_ERROR("Failed to cleanup dependencies");
                     return PipelineResult::DEPENDENCIES_FAILED;
                 }
             }
             
-            if(currentOptions.count(CmdOptions::REMOVE_DEPENDENCIES) > 0)
+            if(currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0)
             {
                 ssLOG_LINE("Removed script dependencies");
                 return PipelineResult::SUCCESS;
