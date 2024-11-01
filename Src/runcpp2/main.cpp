@@ -231,13 +231,13 @@ int main(int argc, char* argv[])
         static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 13, "Update this");
         std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
         {
-            {"-r", longOptionsMap.at("--reset-cache")},
-            {"-c", longOptionsMap.at("--reset-user-config")},
+            {"-rc", longOptionsMap.at("--reset-cache")},
+            {"-ru", longOptionsMap.at("--reset-user-config")},
             {"-e", longOptionsMap.at("--executable")},
             {"-h", longOptionsMap.at("--help")},
-            {"-d", longOptionsMap.at("--reset-dependencies")},
+            {"-rd", longOptionsMap.at("--reset-dependencies")},
             {"-l", longOptionsMap.at("--local")},
-            {"-s", longOptionsMap.at("--show-config-path")},
+            {"-sc", longOptionsMap.at("--show-config-path")},
             {"-t", longOptionsMap.at("--create-script-template")},
             {"-w", longOptionsMap.at("--watch")},
             {"-b", longOptionsMap.at("--build")},
@@ -261,18 +261,18 @@ int main(int argc, char* argv[])
         static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 13, "Update this");
         ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
         ssLOG_BASE("Options:");
-        ssLOG_BASE("    -r, --[r]eset-cache                     Deletes compiled source files cache only");
-        ssLOG_BASE("    -c, --reset-user-[c]onfig               Replace current user config with the default one");
-        ssLOG_BASE("    -e, --[e]xecutable                      Runs as executable instead of shared library");
-        ssLOG_BASE("    -h, --[h]elp                            Show this help message");
-        ssLOG_BASE("    -d, --reset-[d]ependencies <names>      Reset dependencies (comma-separated names, or \"all\" for all)");
-        ssLOG_BASE("    -l, --[l]ocal                           Build in the current working directory under .runcpp2 directory");
-        ssLOG_BASE("    -s, --[s]how-config-path                Show where runcpp2 is reading the config from");
-        ssLOG_BASE("    -t, --create-script-[t]emplate <file>   Creates/prepend runcpp2 script info template");
-        ssLOG_BASE("    -w, --[w]atch                           Watch script changes and output any compiling errors");
-        ssLOG_BASE("    -b, --[b]uild                           Build the script and copy output files to the working directory");
-        ssLOG_BASE("    -v, --[v]ersion                         Show the version of runcpp2");
-        ssLOG_BASE("        --log-level <level>                 Sets the log level (Normal, Info, Debug) for runcpp2.");
+        ssLOG_BASE("    -rc, --[r]eset-[c]ache                  Deletes compiled source files cache only");
+        ssLOG_BASE("    -ru, --[r]eset-[u]ser-config            Replace current user config with the default one");
+        ssLOG_BASE("    -e,  --[e]xecutable                     Runs as executable instead of shared library");
+        ssLOG_BASE("    -h,  --[h]elp                           Show this help message");
+        ssLOG_BASE("    -rd, --[r]eset-[d]ependencies <names>   Reset dependencies (comma-separated names, or \"all\" for all)");
+        ssLOG_BASE("    -l,  --[l]ocal                          Build in the current working directory under .runcpp2 directory");
+        ssLOG_BASE("    -sc, --[s]how-[c]onfig-path             Show where runcpp2 is reading the config from");
+        ssLOG_BASE("    -t,  --create-script-[t]emplate <file>  Creates/prepend runcpp2 script info template");
+        ssLOG_BASE("    -w,  --[w]atch                          Watch script changes and output any compiling errors");
+        ssLOG_BASE("    -b,  --[b]uild                          Build the script and copy output files to the working directory");
+        ssLOG_BASE("    -v,  --[v]ersion                        Show the version of runcpp2");
+        ssLOG_BASE("         --log-level <level>                Sets the log level (Normal, Info, Debug) for runcpp2.");
         
         return 0;
     }
