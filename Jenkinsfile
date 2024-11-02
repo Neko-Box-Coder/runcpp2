@@ -199,7 +199,20 @@ pipeline
                         bat 'dir'
                         unstash 'source'
                         bat 'dir'
-                        bat 'Build.bat -DRUNCPP2_BUILD_TESTS=ON'
+                        script
+                        {
+                            try 
+                            {
+                                bat 'Build.bat -DRUNCPP2_BUILD_TESTS=ON'
+                            } 
+                            catch(error) 
+                            {
+                                echo "Build failed. Maybe .pdb is locked? Retrying..."
+                                sleep 5
+                                bat 'Build.bat -DRUNCPP2_BUILD_TESTS=ON'
+                            }
+                        }
+                        
                         stash 'windows_build'
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
