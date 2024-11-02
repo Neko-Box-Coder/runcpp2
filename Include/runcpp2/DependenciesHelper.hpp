@@ -21,7 +21,8 @@ namespace runcpp2
     bool CleanupDependencies(   const runcpp2::Data::Profile& profile,
                                 const Data::ScriptInfo& scriptInfo,
                                 const std::vector<Data::DependencyInfo*>& availableDependencies,
-                                const std::vector<std::string>& dependenciesLocalCopiesPaths);
+                                const std::vector<std::string>& dependenciesLocalCopiesPaths,
+                                const std::string& dependenciesToReset);
     
     bool SetupDependenciesIfNeeded( const runcpp2::Data::Profile& profile,
                                     const ghc::filesystem::path& buildDir,

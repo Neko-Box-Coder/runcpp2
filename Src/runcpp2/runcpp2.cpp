@@ -85,15 +85,9 @@ namespace
         INTERNAL_RUNCPP2_SAFE_START();
         ssLOG_FUNC_DEBUG();
         
-        std::error_code _;
-        std::string interpretedRunPath = runcpp2::ProcessPath(scriptPath);
-        std::vector<const char*> args = { interpretedRunPath.c_str() };
-        
-        if(!runArgs.empty())
-        {
-            for(int i = 0; i < runArgs.size(); ++i)
-                args.push_back(runArgs[i].c_str());
-        }
+        std::vector<const char*> args;
+        for(size_t i = 0; i < runArgs.size(); ++i)
+            args.push_back(runArgs[i].c_str());
         
         System2CommandInfo runCommandInfo = {};
         SYSTEM2_RESULT result = System2RunSubprocess(   executable.c_str(),
@@ -102,7 +96,7 @@ namespace
                                                         &runCommandInfo);
         
         ssLOG_INFO("Running: " << executable.string());
-        for(int i = 0; i < runArgs.size(); ++i)
+        for(size_t i = 0; i < runArgs.size(); ++i)
             ssLOG_INFO("-   " << runArgs[i]);
         
         if(result != SYSTEM2_RESULT_SUCCESS)
@@ -172,12 +166,12 @@ namespace
             return false;
         }
         
-        int (*scriptFullMain)(int, char**) = nullptr;
+        int (*scriptFullMain)(int, const char**) = nullptr;
         int (*scriptMain)() = nullptr;
         
         try
         {
-            scriptFullMain = sharedLib->get_function<int(int, char**)>("main");
+            scriptFullMain = sharedLib->get_function<int(int, const char**)>("main");
         }
         catch(const dylib::exception& ex)
         {
@@ -217,13 +211,9 @@ namespace
         {
             if(scriptFullMain != nullptr)
             {
-                std::vector<std::string> runArgsCopy = runArgs;
-                runArgsCopy.insert( runArgsCopy.begin(), 
-                                    runcpp2::ProcessPath(compiledSharedLibPath.string()));
-                
-                std::vector<char*> runArgsCStr(runArgsCopy.size());
-                for(int i = 0; i < runArgsCopy.size(); ++i)
-                    runArgsCStr.at(i) = &runArgsCopy.at(i).at(0);
+                std::vector<const char*> runArgsCStr(runArgs.size());
+                for(size_t i = 0; i < runArgs.size(); ++i)
+                    runArgsCStr.at(i) = &runArgs.at(i).at(0);
                 
                 returnStatus = scriptFullMain(runArgsCStr.size(), runArgsCStr.data());
             }
@@ -545,8 +535,18 @@ void runcpp2::GetDefaultScriptInfo(std::string& scriptInfo)
                                 DefaultScriptInfo_size);
 }
 
-
-
+//NOTE: Mainly used for test to reduce spamminig
+void runcpp2::SetLogLevel(const std::string& logLevel)
+{
+    if(logLevel == "Debug")
+        ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_DEBUG);
+    else if(logLevel == "Warning")
+        ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_WARNING);
+    else if(logLevel == "Error")
+        ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_ERROR);
+    else
+        ssLOG_ERROR("Invalid log level: " << logLevel);
+}
 
 runcpp2::PipelineResult 
 runcpp2::StartPipeline( const std::string& scriptPath, 
@@ -560,9 +560,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                         int& returnStatus)
 {
     INTERNAL_RUNCPP2_SAFE_START();
-    
-    //Do lexically_normal on all the paths
-    //lexically_normal
     
     ssLOG_FUNC_DEBUG();
     
@@ -636,6 +633,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
 
     //Parsing the script, setting up dependencies, compiling and linking
     std::vector<std::string> filesToCopyPaths;
+    Data::ScriptInfo scriptInfo;
     {
         //Check if there's script info as yaml file instead
         std::error_code e;
@@ -672,7 +670,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         }
         
         //Try to parse the runcpp2 info
-        Data::ScriptInfo scriptInfo;
         if(!ParseScriptInfo(parsableInfo, scriptInfo))
         {
             ssLOG_ERROR("Failed to parse info");
@@ -683,7 +680,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         if(!parsableInfo.empty())
         {
             ssLOG_INFO("Parsed script info YAML:");
-            ssLOG_INFO(scriptInfo.ToString(""));
+            ssLOG_INFO("\n" << scriptInfo.ToString(""));
         }
         
         //Create build directory
@@ -717,39 +714,126 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         }
         
         //Check if script info has changed if provided
-        bool scriptInfoChanged = true;
+        bool recompileNeeded = false;
+        bool relinkNeeded = false;
+        std::vector<std::string> changedDependencies;
         {
             ghc::filesystem::path lastScriptInfoFilePath = buildDir / "LastScriptInfo.yaml";
+            Data::ScriptInfo lastScriptInfoFromDisk;
             
-            //Compare script info in memory
-            if(lastScriptInfo != nullptr)
-                scriptInfoChanged = lastScriptInfo->ToString("") != scriptInfo.ToString("");
-            //Compare script info in disk
-            else
+            //Compare script info in memory or from disk
+            const Data::ScriptInfo* lastInfo = lastScriptInfo;
+            if(lastScriptInfo == nullptr && ghc::filesystem::exists(lastScriptInfoFilePath, e))
             {
-                if(ghc::filesystem::exists(lastScriptInfoFilePath, e))
+                ssLOG_DEBUG("Last script info file exists: " << lastScriptInfoFilePath);
+                std::ifstream lastScriptInfoFile;
+                lastScriptInfoFile.open(lastScriptInfoFilePath);
+                std::stringstream lastScriptInfoBuffer;
+                lastScriptInfoBuffer << lastScriptInfoFile.rdbuf();
+                
+                if(ParseScriptInfo(lastScriptInfoBuffer.str(), lastScriptInfoFromDisk))
+                    lastInfo = &lastScriptInfoFromDisk;
+            }
+            
+            if(lastInfo != nullptr)
+            {
+                //Check link flags
+                const Data::ProfilesFlagsOverride* lastLinkFlags = 
+                    runcpp2::GetValueFromPlatformMap(lastInfo->OverrideLinkFlags);
+                const Data::ProfilesFlagsOverride* currentLinkFlags = 
+                    runcpp2::GetValueFromPlatformMap(scriptInfo.OverrideLinkFlags);
+                
+                relinkNeeded =  (lastLinkFlags == nullptr) != (currentLinkFlags == nullptr) ||
+                                    (
+                                        lastLinkFlags != nullptr && 
+                                        currentLinkFlags != nullptr && 
+                                        !lastLinkFlags->Equals(*currentLinkFlags)
+                                    );
+                
+                recompileNeeded = relinkNeeded;
+                
+                //Check dependencies
+                if(lastInfo->Dependencies.size() == scriptInfo.Dependencies.size())
                 {
-                    ssLOG_DEBUG("Last script info file exists: " << lastScriptInfoFilePath);
-                    std::ifstream lastScriptInfoFile;
-                    lastScriptInfoFile.open(lastScriptInfoFilePath);
-                    std::stringstream lastScriptInfoBuffer;
-                    lastScriptInfoBuffer << lastScriptInfoFile.rdbuf();
-                    scriptInfoChanged = lastScriptInfoBuffer.str() != scriptInfo.ToString("");
+                    for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+                    {
+                        if(!scriptInfo.Dependencies.at(i).Equals(lastInfo->Dependencies.at(i)))
+                        {
+                            changedDependencies.push_back(scriptInfo.Dependencies.at(i).Name);
+                            recompileNeeded = true;
+                        }
+                    }
+                }
+                else
+                {
+                    recompileNeeded = true;
+                    //All dependencies need to be reset if count changed
+                    changedDependencies.clear();
+                }
+                
+                if(!recompileNeeded)
+                {
+                    //Other changes that require recompilation
+                    const Data::ProfilesFlagsOverride* lastCompileFlags = 
+                        runcpp2::GetValueFromPlatformMap(lastInfo->OverrideCompileFlags);
+                    const Data::ProfilesFlagsOverride* currentCompileFlags = 
+                        runcpp2::GetValueFromPlatformMap(scriptInfo.OverrideCompileFlags);
+                    
+                    const Data::ProfilesCompilesFiles* lastCompileFiles = 
+                        runcpp2::GetValueFromPlatformMap(lastInfo->OtherFilesToBeCompiled);
+                    const Data::ProfilesCompilesFiles* currentCompileFiles = 
+                        runcpp2::GetValueFromPlatformMap(scriptInfo.OtherFilesToBeCompiled);
+                    
+                    const Data::ProfilesDefines* lastDefines = 
+                        runcpp2::GetValueFromPlatformMap(lastInfo->Defines);
+                    const Data::ProfilesDefines* currentDefines = 
+                        runcpp2::GetValueFromPlatformMap(scriptInfo.Defines);
+                
+                    recompileNeeded = 
+                        (lastCompileFlags == nullptr) != (currentCompileFlags == nullptr) ||
+                        (
+                            lastCompileFlags != nullptr && 
+                            currentCompileFlags != nullptr && 
+                            !lastCompileFlags->Equals(*currentCompileFlags)
+                        ) ||
+                        (lastCompileFiles == nullptr) != (currentCompileFiles == nullptr) ||
+                        (
+                            lastCompileFiles != nullptr && 
+                            currentCompileFiles != nullptr && 
+                            !lastCompileFiles->Equals(*currentCompileFiles)
+                        ) ||
+                        (lastDefines == nullptr) != (currentDefines == nullptr) ||
+                        (
+                            lastDefines != nullptr && 
+                            currentDefines != nullptr && 
+                            !lastDefines->Equals(*currentDefines)
+                        );
                 }
             }
+            else
+                recompileNeeded = true;
             
-            std::ofstream writeOutputFile(lastScriptInfoFilePath);
-            if(!writeOutputFile)
+            ssLOG_DEBUG("recompileNeeded: " << recompileNeeded << 
+                        ", changedDependencies.size(): " << changedDependencies.size() << 
+                        ", relinkNeeded: " << relinkNeeded);
+            
+            if(recompileNeeded || !changedDependencies.empty() || relinkNeeded)
             {
-                ssLOG_ERROR("Failed to open file: " << lastScriptInfoFilePath);
-                //TODO: Maybee add a pipeline result for this?
-                return PipelineResult::INVALID_BUILD_DIR;
-            }
+                std::ofstream writeOutputFile(lastScriptInfoFilePath);
+                if(!writeOutputFile)
+                {
+                    ssLOG_ERROR("Failed to open file: " << lastScriptInfoFilePath);
+                    //TODO: Maybee add a pipeline result for this?
+                    return PipelineResult::INVALID_BUILD_DIR;
+                }
 
-            writeOutputFile << scriptInfo.ToString("");
-            
-            //Pass the current script info out
-            outScriptInfo = scriptInfo;
+                writeOutputFile << scriptInfo.ToString("");
+
+                //Pass the current script info out
+                outScriptInfo = scriptInfo;
+                
+                ssLOG_DEBUG("Wrote current script info to " << lastScriptInfoFilePath.string());
+            }
         }
 
         profileIndex = GetPreferredProfileIndex(absoluteScriptPath, 
@@ -787,21 +871,31 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 return PipelineResult::DEPENDENCIES_FAILED;
             }
             
-            if( currentOptions.count(CmdOptions::RESET_CACHE) > 0 ||
-                currentOptions.count(CmdOptions::REMOVE_DEPENDENCIES) > 0 ||
-                scriptInfoChanged)
+            if( currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 || 
+                !changedDependencies.empty())
             {
+                std::string depsToReset = "all";
+                if(!changedDependencies.empty())
+                {
+                    depsToReset = changedDependencies[0];
+                    for(int i = 1; i < changedDependencies.size(); ++i)
+                        depsToReset += "," + changedDependencies[i];
+                }
+                
                 if(!CleanupDependencies(profiles.at(profileIndex),
                                         scriptInfo,
                                         availableDependencies,
-                                        dependenciesLocalCopiesPaths))
+                                        dependenciesLocalCopiesPaths,
+                                        currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 ?
+                                            currentOptions.at(CmdOptions::RESET_DEPENDENCIES) : 
+                                            depsToReset))
                 {
                     ssLOG_ERROR("Failed to cleanup dependencies");
                     return PipelineResult::DEPENDENCIES_FAILED;
                 }
             }
             
-            if(currentOptions.count(CmdOptions::REMOVE_DEPENDENCIES) > 0)
+            if(currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0)
             {
                 ssLOG_LINE("Removed script dependencies");
                 return PipelineResult::SUCCESS;
@@ -858,7 +952,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         std::vector<ghc::filesystem::path> cachedObjectsFiles;
         ghc::filesystem::file_time_type finalObjectWriteTime;
         
-        if(currentOptions.count(runcpp2::CmdOptions::RESET_CACHE) > 0 || scriptInfoChanged)
+        if(currentOptions.count(runcpp2::CmdOptions::RESET_CACHE) > 0 || recompileNeeded)
             sourceHasCache = std::vector<bool>(sourceFiles.size(), false);
         else if(!HasCompiledCache(  absoluteScriptPath,
                                     sourceFiles, 
@@ -950,7 +1044,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                             scriptName,
                             exeExt,
                             linkFilesPaths,
-                            finalObjectWriteTime))
+                            finalObjectWriteTime) || relinkNeeded)
         {
             for(int i = 0; i < cachedObjectsFiles.size(); ++i)
                 linkFilesPaths.push_back(cachedObjectsFiles.at(i));
@@ -1037,10 +1131,20 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 return PipelineResult::UNEXPECTED_FAILURE;
             }
             
+            //Prepare run arguments
+            std::vector<std::string> finalRunArgs;
+            finalRunArgs.push_back(target.string());
+            if(scriptInfo.PassScriptPath)
+                finalRunArgs.push_back(absoluteScriptPath);
+            
+            //Add user provided arguments
+            for(size_t i = 0; i < runArgs.size(); ++i)
+                finalRunArgs.push_back(runArgs[i]);
+            
             if(currentOptions.count(CmdOptions::EXECUTABLE) > 0)
             {
-                //Running the script
-                if(!RunCompiledScript(target, absoluteScriptPath, runArgs, returnStatus))
+                //Running the script with modified args
+                if(!RunCompiledScript(target, absoluteScriptPath, finalRunArgs, returnStatus))
                 {
                     ssLOG_ERROR("Failed to run script");
                     return PipelineResult::RUN_SCRIPT_FAILED;
@@ -1048,10 +1152,10 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 
                 return PipelineResult::SUCCESS;
             }
-            //Load the shared library and run it
+            //Load the shared library and run it with modified args
             else
             {
-                if(!RunCompiledSharedLib(absoluteScriptPath, target, runArgs, returnStatus))
+                if(!RunCompiledSharedLib(absoluteScriptPath, target, finalRunArgs, returnStatus))
                 {
                     ssLOG_ERROR("Failed to run script");
                     return PipelineResult::RUN_SCRIPT_FAILED;

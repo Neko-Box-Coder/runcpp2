@@ -1,6 +1,7 @@
 #include "runcpp2/DependenciesHelper.hpp"
 #include "ghc/filesystem.hpp"
 #include "runcpp2/PlatformUtil.hpp"
+#include "runcpp2/StringUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
 #include <unordered_set>
@@ -332,11 +333,8 @@ bool runcpp2::IsDependencyAvailableForThisPlatform(const Data::DependencyInfo& d
     
     for(int i = 0; i < platformNames.size(); ++i)
     {
-        if( dependency.Platforms.find(platformNames.at(i)) != 
-            dependency.Platforms.end())
-        {
+        if(dependency.Platforms.find(platformNames.at(i)) != dependency.Platforms.end())
             return true;
-        }
     }
     
     return false;
@@ -345,7 +343,8 @@ bool runcpp2::IsDependencyAvailableForThisPlatform(const Data::DependencyInfo& d
 bool runcpp2::CleanupDependencies(  const runcpp2::Data::Profile& profile,
                                     const Data::ScriptInfo& scriptInfo,
                                     const std::vector<Data::DependencyInfo*>& availableDependencies,
-                                    const std::vector<std::string>& dependenciesLocalCopiesPaths)
+                                    const std::vector<std::string>& dependenciesLocalCopiesPaths,
+                                    const std::string& dependenciesToReset)
 {
     ssLOG_FUNC_DEBUG();
     
@@ -354,8 +353,52 @@ bool runcpp2::CleanupDependencies(  const runcpp2::Data::Profile& profile,
         return true;
 
     assert(availableDependencies.size() == dependenciesLocalCopiesPaths.size());
+    
+    //Split dependency names if not "all"
+    std::unordered_set<std::string> dependencyNames;
+    if(dependenciesToReset != "all")
+    {
+        std::string currentName;
+        for(int i = 0; i < dependenciesToReset.size(); ++i)
+        {
+            if(dependenciesToReset[i] == ',' || i == dependenciesToReset.size() - 1)
+            {
+                if(dependenciesToReset[i] != ',')
+                    currentName += dependenciesToReset[i];
+                
+                if(!currentName.empty())
+                {
+                    runcpp2::Trim(currentName);
+                    //Convert to lowercase for case-insensitive comparison
+                    for(int j = 0; j < currentName.size(); ++j)
+                        currentName[j] = std::tolower(currentName[j]);
+                    
+                    dependencyNames.insert(currentName);
+                    currentName.clear();
+                }
+            }
+            else
+                currentName += dependenciesToReset[i];
+        }
+    }
+
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
+        //Skip if not in the list of dependencies to reset
+        if(!dependencyNames.empty())
+        {
+            //Convert dependency name to lowercase for comparison
+            std::string depName = availableDependencies.at(i)->Name;
+            for(int j = 0; j < depName.size(); ++j)
+                depName[j] = std::tolower(depName[j]);
+            
+            if(dependencyNames.count(depName) == 0)
+            {
+                ssLOG_DEBUG(availableDependencies.at(i)->Name << " not in list to remove");
+                continue;
+            }
+        }
+
         std::error_code e;
         ssLOG_INFO("Running cleanup commands for " << availableDependencies.at(i)->Name);
         
@@ -377,6 +420,8 @@ bool runcpp2::CleanupDependencies(  const runcpp2::Data::Profile& profile,
             
             return false;
         }
+        
+        ssLOG_DEBUG(availableDependencies.at(i)->Name << " removed");
     }
     
     return true;

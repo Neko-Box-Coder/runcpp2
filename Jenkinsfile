@@ -67,6 +67,7 @@ pipeline
                 {
                     echo "env.TARGET_REF: ${env.TARGET_REF}"
                     echo "env.STORE_BUILD: ${env.STORE_BUILD}"
+                    echo "Updated Jenkinsfile"
                     
                     if(env.TARGET_REF != null && env.TARGET_REF != '')
                         TARGET_REF = env.TARGET_REF
@@ -221,7 +222,9 @@ pipeline
                         bash "ls -lah"
                         unstash 'linux_build'
                         bash "ls -lah"
-                        bash './Build/BuildsManagerTest'
+                        bash "ls -lah ./Build/Src/Tests"
+                        bash "chmod +x ./Build/Src/Tests/RunAllTests.sh"
+                        bash "cd ./Build/Src/Tests && ./RunAllTests.sh"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
@@ -234,7 +237,8 @@ pipeline
                         bat 'dir'
                         unstash 'windows_build'
                         bat 'dir'
-                        bat '.\\Build\\Debug\\BuildsManagerTest.exe'
+                        bat 'dir .\\Build\\Src\\Tests\\Debug'
+                        bat 'cd .\\Build\\Src\\Tests && .\\RunAllTests.bat -d'
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }

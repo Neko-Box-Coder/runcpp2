@@ -58,19 +58,58 @@ std::string runcpp2::Data::ProfilesDefines::ToString(std::string indentation) co
 {
     std::string result;
     
+    if(Defines.empty())
+        return result;
+    
     for(auto it = Defines.begin(); it != Defines.end(); ++it)
     {
-        result += indentation + it->first + ":\n";
-        for(int j = 0; j < it->second.size(); ++j)
+        if(it->second.empty())
+            result += indentation + it->first + ": []\n";
+        else
         {
-            const auto& define = it->second.at(j);
-            result += indentation + "-   ";
-            if(define.Value.empty())
-                result += define.Name + "\n";
-            else
-                result += define.Name + "=" + define.Value + "\n";
+            result += indentation + it->first + ":\n";
+            for(int j = 0; j < it->second.size(); ++j)
+            {
+                const Define& define = it->second.at(j);
+                result += indentation + "-   ";
+                if(define.Value.empty())
+                    result += GetEscapedYAMLString(define.Name) + "\n";
+                else
+                    result += GetEscapedYAMLString(define.Name + "=" + define.Value) + "\n";
+            }
         }
     }
     
     return result;
+}
+
+bool runcpp2::Data::ProfilesDefines::Equals(const ProfilesDefines& other) const
+{
+    if(Defines.size() != other.Defines.size())
+        return false;
+    
+    for(const auto& it : Defines)
+    {
+        if(other.Defines.count(it.first) == 0)
+            return false;
+            
+        const std::vector<Define>& otherDefines = other.Defines.at(it.first);
+        if(it.second.size() != otherDefines.size())
+            return false;
+            
+        for(size_t i = 0; i < it.second.size(); ++i)
+        {
+            const Define& define = it.second[i];
+            const Define& otherDefine = otherDefines[i];
+            
+            if( define.Name != otherDefine.Name || 
+                define.Value != otherDefine.Value ||
+                define.HasValue != otherDefine.HasValue)
+            {
+                return false;
+            }
+        }
+    }
+    
+    return true;
 }

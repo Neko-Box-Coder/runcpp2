@@ -11,6 +11,7 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     
     std::vector<NodeRequirement> requirements =
     {
+        NodeRequirement("PassScriptPath", ryml::NodeType_e::KEYVAL, false, true),
         NodeRequirement("Language", ryml::NodeType_e::KEYVAL, false, true),
         NodeRequirement("RequiredProfiles", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("OverrideCompileFlags", ryml::NodeType_e::MAP, false, true),
@@ -24,6 +25,24 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     {
         ssLOG_ERROR("ScriptInfo: Failed to meet requirements");
         return false;
+    }
+    
+    if(ExistAndHasChild(node, "PassScriptPath"))
+    {
+        std::string passScriptPathStr = GetValue(node["PassScriptPath"]);
+        for(size_t i = 0; i < passScriptPathStr.length(); ++i)
+            passScriptPathStr[i] = std::tolower(passScriptPathStr[i]);
+        
+        if(passScriptPathStr == "true" || passScriptPathStr == "1")
+            PassScriptPath = true;
+        else if(passScriptPathStr == "false" || passScriptPathStr == "0")
+            PassScriptPath = false;
+        else
+        {
+            ssLOG_ERROR("ScriptInfo: Invalid value for PassScriptPath: " << passScriptPathStr);
+            ssLOG_ERROR("Expected true/false or 1/0");
+            return false;
+        }
     }
     
     if(ExistAndHasChild(node, "Language"))
@@ -147,51 +166,147 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
 
 std::string runcpp2::Data::ScriptInfo::ToString(std::string indentation) const
 {
-    std::string out = indentation + "ScriptInfo:\n";
+    std::string out;
+    
+    out += indentation + "PassScriptPath: " + (PassScriptPath ? "true" : "false") + "\n";
     
     if(!Language.empty())
-        out += indentation + "    Language: " + Language + "\n";
+        out += indentation + "Language: " + GetEscapedYAMLString(Language) + "\n";
     
-    out += indentation + "    RequiredProfiles:\n";
-    
-    for(auto it = RequiredProfiles.begin(); it != RequiredProfiles.end(); ++it)
+    if(!RequiredProfiles.empty())
     {
-        out += indentation + "        " + it->first + ":\n";
-        for(int i = 0; i < it->second.size(); ++i)
-            out += indentation + "        -   " + it->second[i] + "\n";
+        out += indentation + "RequiredProfiles:\n";
+        for(auto it = RequiredProfiles.begin(); it != RequiredProfiles.end(); ++it)
+        {
+            if(it->second.empty())
+                out += indentation + "    " + it->first + ": []\n";
+            else
+            {
+                out += indentation + "    " + it->first + ":\n";
+                for(int i = 0; i < it->second.size(); ++i)
+                    out += indentation + "    -   " + GetEscapedYAMLString(it->second[i]) + "\n";
+            }
+        }
     }
     
-    out += indentation + "    OverrideCompileFlags:\n";
-    for(auto it = OverrideCompileFlags.begin(); it != OverrideCompileFlags.end(); ++it)
+    if(!OverrideCompileFlags.empty())
     {
-        out += indentation + "        " + it->first + ":\n";
-        out += it->second.ToString(indentation + "            ");
+        out += indentation + "OverrideCompileFlags:\n";
+        for(auto it = OverrideCompileFlags.begin(); it != OverrideCompileFlags.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
     }
     
-    out += indentation + "    OverrideLinkFlags:\n";
-    for(auto it = OverrideLinkFlags.begin(); it != OverrideLinkFlags.end(); ++it)
+    if(!OverrideLinkFlags.empty())
     {
-        out += indentation + "        " + it->first + ":\n";
-        out += it->second.ToString(indentation + "            ");
+        out += indentation + "OverrideLinkFlags:\n";
+        for(auto it = OverrideLinkFlags.begin(); it != OverrideLinkFlags.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
     }
     
-    out += indentation + "    OtherFilesToBeCompiled:\n";
-    for(auto it = OtherFilesToBeCompiled.begin(); it != OtherFilesToBeCompiled.end(); ++it)
+    if(!OtherFilesToBeCompiled.empty())
     {
-        out += indentation + "        " + it->first + ":\n";
-        out += it->second.ToString(indentation + "            ");
+        out += indentation + "OtherFilesToBeCompiled:\n";
+        for(auto it = OtherFilesToBeCompiled.begin(); it != OtherFilesToBeCompiled.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
     }
     
-    out += indentation + "    Dependencies:\n";
-    for(int i = 0; i < Dependencies.size(); ++i)
-        out += Dependencies[i].ToString(indentation + "    ");
-    
-    out += indentation + "    Defines:\n";
-    for(auto it = Defines.begin(); it != Defines.end(); ++it)
+    if(!Dependencies.empty())
     {
-        out += indentation + "        " + it->first + ":\n";
-        out += it->second.ToString(indentation + "            ");
+        out += indentation + "Dependencies:\n";
+        for(int i = 0; i < Dependencies.size(); ++i)
+        {
+            int currentOutSize = out.size();
+            out += Dependencies[i].ToString(indentation + "    ");
+            
+            //Change character to yaml list
+            out.at(currentOutSize + indentation.size()) = '-';
+        }
+    }
+    
+    if(!Defines.empty())
+    {
+        out += indentation + "Defines:\n";
+        for(auto it = Defines.begin(); it != Defines.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
     }
     
     return out;
+}
+
+bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
+{
+    if( Language != other.Language || 
+        PassScriptPath != other.PassScriptPath ||
+        RequiredProfiles.size() != other.RequiredProfiles.size() ||
+        OverrideCompileFlags.size() != other.OverrideCompileFlags.size() ||
+        OverrideLinkFlags.size() != other.OverrideLinkFlags.size() ||
+        OtherFilesToBeCompiled.size() != other.OtherFilesToBeCompiled.size() ||
+        Dependencies.size() != other.Dependencies.size() ||
+        Defines.size() != other.Defines.size() ||
+        Populated != other.Populated)
+    {
+        return false;
+    }
+
+    for(const auto& it : RequiredProfiles)
+    {
+        if( other.RequiredProfiles.count(it.first) == 0 || 
+            other.RequiredProfiles.at(it.first) != it.second)
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : OverrideCompileFlags)
+    {
+        if( other.OverrideCompileFlags.count(it.first) == 0 || 
+            !other.OverrideCompileFlags.at(it.first).Equals(it.second))
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : OverrideLinkFlags)
+    {
+        if( other.OverrideLinkFlags.count(it.first) == 0 || 
+            !other.OverrideLinkFlags.at(it.first).Equals(it.second))
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : OtherFilesToBeCompiled)
+    {
+        if( other.OtherFilesToBeCompiled.count(it.first) == 0 || 
+            !other.OtherFilesToBeCompiled.at(it.first).Equals(it.second))
+        {
+            return false;
+        }
+    }
+
+    for(size_t i = 0; i < Dependencies.size(); ++i)
+    {
+        if(!Dependencies[i].Equals(other.Dependencies[i]))
+            return false;
+    }
+
+    for(const auto& it : Defines)
+    {
+        if(other.Defines.count(it.first) == 0 || !other.Defines.at(it.first).Equals(it.second))
+            return false;
+    }
+
+    return true;
 }

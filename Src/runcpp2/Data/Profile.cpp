@@ -120,43 +120,109 @@ std::string runcpp2::Data::Profile::ToString(std::string indentation) const
 {
     std::string out;
     
-    out += indentation + "Name: " + Name + "\n";
-    out += indentation + "NameAliases:\n";
-    for(auto it = NameAliases.begin(); it != NameAliases.end(); ++it)
-        out += indentation + "-   " + *it + "\n";
+    out += indentation + "Name: " + GetEscapedYAMLString(Name) + "\n";
     
-    out += indentation + "FileExtensions:\n";
-    for(auto it = FileExtensions.begin(); it != FileExtensions.end(); ++it)
-        out += indentation + "-   " + *it + "\n";
-    
-    out += indentation + "Languages:\n";
-    for(auto it = Languages.begin(); it != Languages.end(); ++it)
-        out += indentation + "-   " + *it + "\n";
-    
-    out += indentation + "Setup:\n";
-    for(auto it = Setup.begin(); it != Setup.end(); ++it)
+    if(!NameAliases.empty())
     {
-        out += indentation + "    " + it->first + ":\n";
-        for(int i = 0; i < it->second.size(); ++i)
-            out += indentation + "    -   " + it->second[i] + "\n";
+        out += indentation + "NameAliases:\n";
+        for(auto it = NameAliases.begin(); it != NameAliases.end(); ++it)
+            out += indentation + "-   " + GetEscapedYAMLString(*it) + "\n";
     }
     
-    out += indentation + "Cleanup:\n";
-    for(auto it = Cleanup.begin(); it != Cleanup.end(); ++it)
+    if(FileExtensions.empty())
+        out += indentation + "FileExtensions: []\n";
+    else
     {
-        out += indentation + "    " + it->first + ":\n";
-        for(int i = 0; i < it->second.size(); ++i)
-            out += indentation + "    -   " + it->second[i] + "\n";
+        out += indentation + "FileExtensions:\n";
+        for(auto it = FileExtensions.begin(); it != FileExtensions.end(); ++it)
+            out += indentation + "-   " + GetEscapedYAMLString(*it) + "\n";
+    }
+    
+    if(!Languages.empty())
+    {
+        out += indentation + "Languages:\n";
+        for(auto it = Languages.begin(); it != Languages.end(); ++it)
+            out += indentation + "-   " + GetEscapedYAMLString(*it) + "\n";
+    }
+    
+    if(!Setup.empty())
+    {
+        out += indentation + "Setup:\n";
+        for(auto it = Setup.begin(); it != Setup.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            for(int i = 0; i < it->second.size(); ++i)
+                out += indentation + "    -   " + GetEscapedYAMLString(it->second[i]) + "\n";
+        }
+    }
+    
+    if(!Cleanup.empty())
+    {
+        out += indentation + "Cleanup:\n";
+        for(auto it = Cleanup.begin(); it != Cleanup.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            for(int i = 0; i < it->second.size(); ++i)
+                out += indentation + "    -   " + GetEscapedYAMLString(it->second[i]) + "\n";
+        }
     }
     
     out += indentation + "FilesTypes:\n";
     out += FilesTypes.ToString(indentation + "    ");
     
     out += indentation + "Compiler:\n";
-    out += Compiler.ToString(indentation + "    ");
+    out += Compiler.ToString(indentation + "    ", "CompileTypes");
     
     out += indentation + "Linker:\n";
-    out += Linker.ToString(indentation + "    ");
+    out += Linker.ToString(indentation + "    ", "LinkTypes");
     
     return out;
+}
+
+bool runcpp2::Data::Profile::Equals(const Profile& other) const
+{
+    if( Name != other.Name || 
+        NameAliases.size() != other.NameAliases.size() ||
+        FileExtensions.size() != other.FileExtensions.size() ||
+        Languages.size() != other.Languages.size() ||
+        Setup.size() != other.Setup.size() ||
+        Cleanup.size() != other.Cleanup.size() ||
+        !FilesTypes.Equals(other.FilesTypes) ||
+        !Compiler.Equals(other.Compiler) ||
+        !Linker.Equals(other.Linker))
+    {
+        return false;
+    }
+    
+    for(const std::string& it : NameAliases)
+    {
+        if(other.NameAliases.count(it) == 0)
+            return false;
+    }
+    
+    for(const std::string& it : FileExtensions)
+    {
+        if(other.FileExtensions.count(it) == 0)
+            return false;
+    }
+    
+    for(const std::string& it : Languages)
+    {
+        if(other.Languages.count(it) == 0)
+            return false;
+    }
+    
+    for(const auto& it : Setup)
+    {
+        if(other.Setup.count(it.first) == 0 || other.Setup.at(it.first) != it.second)
+            return false;
+    }
+    
+    for(const auto& it : Cleanup)
+    {
+        if(other.Cleanup.count(it.first) == 0 || other.Cleanup.at(it.first) != it.second)
+            return false;
+    }
+    
+    return true;
 }

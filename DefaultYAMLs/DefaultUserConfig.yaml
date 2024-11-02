@@ -236,7 +236,7 @@ Profiles:
                     # Setup: []
                     # Cleanup: []
                 Windows:
-                    Flags: "-Wl,-rpath,$ORIGIN"
+                    Flags: "-Wl,-rpath,\\$ORIGIN"
                     Executable: "g++"
                     RunParts: *g++_LinkRunParts
                     # Setup: []
@@ -256,7 +256,7 @@ Profiles:
                     # Setup: []
                     # Cleanup: []
                 Windows:
-                    Flags: "-shared -Wl,-rpath,$ORIGIN"
+                    Flags: "-shared -Wl,-rpath,\\$ORIGIN"
                     Executable: "g++"
                     RunParts: *g++_LinkRunParts
                     # Setup: []

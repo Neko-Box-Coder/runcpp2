@@ -84,8 +84,20 @@ std::string runcpp2::Data::FilesTypesInfo::ToString(std::string indentation) con
     out += indentation + "StaticLinkFile:\n";
     out += StaticLinkFile.ToString(indentation + "    ");
     
-    out += indentation + "DebugSymbolFile:\n";
-    out += DebugSymbolFile.ToString(indentation + "    ");
+    if(!DebugSymbolFile.Prefix.empty() || !DebugSymbolFile.Extension.empty())
+    {
+        out += indentation + "DebugSymbolFile:\n";
+        out += DebugSymbolFile.ToString(indentation + "    ");
+    }
     
     return out;
+}
+
+bool runcpp2::Data::FilesTypesInfo::Equals(const FilesTypesInfo& other) const
+{
+    return  ObjectLinkFile.Equals(other.ObjectLinkFile) &&
+            SharedLinkFile.Equals(other.SharedLinkFile) &&
+            SharedLibraryFile.Equals(other.SharedLibraryFile) &&
+            StaticLinkFile.Equals(other.StaticLinkFile) &&
+            DebugSymbolFile.Equals(other.DebugSymbolFile);
 }

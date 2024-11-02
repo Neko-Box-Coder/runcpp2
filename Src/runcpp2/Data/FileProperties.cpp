@@ -49,17 +49,39 @@ std::string runcpp2::Data::FileProperties::ToString(std::string indentation) con
     std::string out;
     
     if(!Prefix.empty())
-        out += indentation + "Prefix: \n";
-    
-    for(auto it = Prefix.begin(); it != Prefix.end(); ++it)
-        out += indentation + "    " + it->first + ": " + it->second + "\n";
+    {
+        out += indentation + "Prefix:\n";
+        for(const auto& it : Prefix)
+            out += indentation + "    " + it.first + ": " + GetEscapedYAMLString(it.second) + "\n";
+    }
     
     if(!Extension.empty())
-        out += indentation + "Extension: \n";
-    
-    for(auto it = Extension.begin(); it != Extension.end(); ++it)
-        out += indentation + "    " + it->first + ": " + it->second + "\n";
+    {
+        out += indentation + "Extension:\n";
+        for(const auto& it : Extension)
+            out += indentation + "    " + it.first + ": " + GetEscapedYAMLString(it.second) + "\n";
+    }
     
     out += "\n";
     return out;
+}
+
+bool runcpp2::Data::FileProperties::Equals(const FileProperties& other) const
+{
+    if(Prefix.size() != other.Prefix.size() || Extension.size() != other.Extension.size())
+        return false;
+
+    for(const auto& it : Prefix)
+    {
+        if(other.Prefix.count(it.first) == 0 || other.Prefix.at(it.first) != it.second)
+            return false;
+    }
+    
+    for(const auto& it : Extension)
+    {
+        if(other.Extension.count(it.first) == 0 || other.Extension.at(it.first) != it.second)
+            return false;
+    }
+    
+    return true;
 }

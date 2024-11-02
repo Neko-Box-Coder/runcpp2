@@ -19,6 +19,7 @@ namespace runcpp2
         {
             public:
                 std::string Language;
+                bool PassScriptPath = false;
                 std::unordered_map<PlatformName, std::vector<ProfileName>> RequiredProfiles;
                 
                 std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideCompileFlags;
@@ -34,6 +35,7 @@ namespace runcpp2
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;
+                bool Equals(const ScriptInfo& other) const;
         };
     }
 }

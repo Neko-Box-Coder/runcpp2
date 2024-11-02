@@ -205,6 +205,8 @@ bool runcpp2::GetParsableInfo(const std::string& contentToParse, std::string& ou
                     currentLine.clear();
                     continue;
                 }
+                
+                currentLine.clear();
             }
             //Parse the content
             else
@@ -334,4 +336,25 @@ std::string runcpp2::GetValue(ryml::ConstNodeRef node)
 std::string runcpp2::GetKey(ryml::ConstNodeRef node)
 {
     return std::string(node.key().str, node.key().len);
+}
+
+std::string runcpp2::GetEscapedYAMLString(const std::string& input)
+{
+    std::string output = "\"";
+    
+    for(char c : input)
+    {
+        switch(c)
+        {
+            case '\\': output += "\\\\"; break;
+            case '\"': output += "\\\""; break;
+            case '\'': output += "\\\'"; break;
+            case '\n': output += "\\n"; break;
+            case '\t': output += "\\t"; break;
+            default: output += c;
+        }
+    }
+    
+    output += "\"";
+    return output;
 }

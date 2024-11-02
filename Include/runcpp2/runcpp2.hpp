@@ -16,7 +16,7 @@ namespace runcpp2
         RESET_USER_CONFIG,
         EXECUTABLE,
         HELP,
-        REMOVE_DEPENDENCIES,
+        RESET_DEPENDENCIES,
         LOCAL,
         SHOW_USER_CONFIG,
         SCRIPT_TEMPLATE,
@@ -55,6 +55,8 @@ namespace runcpp2
     };
 
     void GetDefaultScriptInfo(std::string& scriptInfo);
+
+    void SetLogLevel(const std::string& logLevel);
 
     PipelineResult StartPipeline(   const std::string& scriptPath, 
                                     const std::vector<Data::Profile>& profiles,

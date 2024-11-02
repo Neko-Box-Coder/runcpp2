@@ -167,63 +167,144 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
 std::string runcpp2::Data::DependencyInfo::ToString(std::string indentation) const
 {
     std::string out;
-    out += indentation + "-   Name: " + Name + "\n";
+    out += indentation + "Name: " + GetEscapedYAMLString(Name) + "\n";
     
-    out += indentation + "    Platforms:\n";
+    out += indentation + "Platforms:\n";
     for(auto it = Platforms.begin(); it != Platforms.end(); ++it)
-        out += indentation + "    -   " + *it + "\n";
+        out += indentation + "-   " + GetEscapedYAMLString(*it) + "\n";
     
+    out += indentation + "Source:\n";
     out += Source.ToString(indentation + "    ");
     
     static_assert((int)DependencyLibraryType::COUNT == 4, "");
     
     if(LibraryType == DependencyLibraryType::STATIC)
-        out += indentation + "    LibraryType: Static\n";
+        out += indentation + "LibraryType: Static\n";
     else if(LibraryType == DependencyLibraryType::SHARED)
-        out += indentation + "    LibraryType: Shared\n";
+        out += indentation + "LibraryType: Shared\n";
     else if(LibraryType == DependencyLibraryType::OBJECT)
-        out += indentation + "    LibraryType: Object\n";
+        out += indentation + "LibraryType: Object\n";
     else if(LibraryType == DependencyLibraryType::HEADER)
-        out += indentation + "    LibraryType: Header\n";
+        out += indentation + "LibraryType: Header\n";
     
-    out += indentation + "    IncludePaths:\n";
-    for(auto it = IncludePaths.begin(); it != IncludePaths.end(); ++it)
-        out += indentation + "    -   " + *it + "\n";
-    
-    out += indentation + "    LinkProperties:\n";
-    for(auto it = LinkProperties.begin(); it != LinkProperties.end(); ++it)
+    if(!IncludePaths.empty())
     {
-        out += indentation + "        " + it->first + ":\n";
-        out += it->second.ToString(indentation + "            ");
+        out += indentation + "IncludePaths:\n";
+        for(auto it = IncludePaths.begin(); it != IncludePaths.end(); ++it)
+            out += indentation + "-   " + GetEscapedYAMLString(*it) + "\n";
     }
     
-    out += indentation + "    Setup:\n";
-    for(auto it = Setup.begin(); it != Setup.end(); ++it)
+    if(!LinkProperties.empty())
     {
-        out += indentation + "        " + it->first + ":\n";
-        out += it->second.ToString(indentation + "            ");
+        out += indentation + "LinkProperties:\n";
+        for(auto it = LinkProperties.begin(); it != LinkProperties.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
     }
     
-    out += indentation + "    Cleanup:\n";
-    for(auto it = Cleanup.begin(); it != Cleanup.end(); ++it)
+    if(!Setup.empty())
     {
-        out += indentation + "        " + it->first + ":\n";
-        out += it->second.ToString(indentation + "            ");
+        out += indentation + "Setup:\n";
+        for(auto it = Setup.begin(); it != Setup.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
     }
     
-    out += indentation + "    Build:\n";
-    for(auto it = Build.begin(); it != Build.end(); ++it)
+    if(!Cleanup.empty())
     {
-        out += indentation + "        " + it->first + ":\n";
-        out += it->second.ToString(indentation + "            ");
+        out += indentation + "Cleanup:\n";
+        for(auto it = Cleanup.begin(); it != Cleanup.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
     }
     
-    out += indentation + "    FilesToCopy:\n";
-    for(auto it = FilesToCopy.begin(); it != FilesToCopy.end(); ++it)
+    if(!Build.empty())
     {
-        out += indentation + "        " + it->first + ":\n";
-        out += it->second.ToString(indentation + "            ");
+        out += indentation + "Build:\n";
+        for(auto it = Build.begin(); it != Build.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
+    }
+    
+    if(!FilesToCopy.empty())
+    {
+        out += indentation + "FilesToCopy:\n";
+        for(auto it = FilesToCopy.begin(); it != FilesToCopy.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
     }
     
     return out;
+}
+
+bool runcpp2::Data::DependencyInfo::Equals(const DependencyInfo& other) const
+{
+    if( Name != other.Name || 
+        Platforms.size() != other.Platforms.size() ||
+        !Source.Equals(other.Source) ||
+        LibraryType != other.LibraryType ||
+        IncludePaths != other.IncludePaths ||
+        AbsoluteIncludePaths != other.AbsoluteIncludePaths ||
+        LinkProperties.size() != other.LinkProperties.size() ||
+        Setup.size() != other.Setup.size() ||
+        Cleanup.size() != other.Cleanup.size() ||
+        Build.size() != other.Build.size() ||
+        FilesToCopy.size() != other.FilesToCopy.size())
+    {
+        return false;
+    }
+
+    for(const std::string& it : Platforms)
+    {
+        if(other.Platforms.count(it) == 0)
+            return false;
+    }
+
+    for(const auto& it : LinkProperties)
+    {
+        if( other.LinkProperties.count(it.first) == 0 || 
+            !other.LinkProperties.at(it.first).Equals(it.second))
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : Setup)
+    {
+        if(other.Setup.count(it.first) == 0 || !other.Setup.at(it.first).Equals(it.second))
+            return false;
+    }
+
+    for(const auto& it : Cleanup)
+    {
+        if(other.Cleanup.count(it.first) == 0 || !other.Cleanup.at(it.first).Equals(it.second))
+            return false;
+    }
+
+    for(const auto& it : Build)
+    {
+        if(other.Build.count(it.first) == 0 || !other.Build.at(it.first).Equals(it.second))
+            return false;
+    }
+
+    for(const auto& it : FilesToCopy)
+    {
+        if( other.FilesToCopy.count(it.first) == 0 || 
+            !other.FilesToCopy.at(it.first).Equals(it.second))
+        {
+            return false;
+        }
+    }
+
+    return true;
 }

@@ -39,16 +39,21 @@ bool runcpp2::Data::DependencySource::ParseYAML_Node(ryml::ConstNodeRef& node)
 
 std::string runcpp2::Data::DependencySource::ToString(std::string indentation) const
 {
-    std::string out = indentation + "Source:\n";
+    std::string out;
     
     static_assert((int)DependencySourceType::COUNT == 2, "");
     
     if(Type == DependencySourceType::GIT)
-        out += indentation + "    Type: Git\n";
+        out += indentation + "Type: Git\n";
     else if(Type == DependencySourceType::LOCAL)
-        out += indentation + "    Type: Local\n";
+        out += indentation + "Type: Local\n";
     
-    out += indentation + "    Value: " + Value + "\n";
+    out += indentation + "Value: " + GetEscapedYAMLString(Value) + "\n";
     
     return out;
+}
+
+bool runcpp2::Data::DependencySource::Equals(const DependencySource& other) const
+{
+    return Type == other.Type && Value == other.Value;
 }
