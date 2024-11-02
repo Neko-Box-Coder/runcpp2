@@ -155,6 +155,8 @@ namespace
         }
     }
     
+    //NOTE: This extracts substitutions and also allow escapes to happen for substitution characters.
+    //      To escape a substitution character, just repeat it. (i.e. {{text}} will be escaped as {text})
     void GetEscapedStringAndExtractSubstitutions(   const std::string& processString, 
                                                     std::string& outEscapedString,
                                                     std::vector<std::string>& outFoundSubstitutions,

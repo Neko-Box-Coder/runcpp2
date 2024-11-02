@@ -7,6 +7,60 @@ namespace
 {
     bool IsProfileAvailableOnSystem(const runcpp2::Data::Profile& profile)
     {
+        if(!runcpp2::HasValueFromPlatformMap(profile.Compiler.CheckExistence))
+        {
+            ssLOG_INFO( "Compiler for profile " << profile.Name << 
+                        " does not have CheckExistence for current platform");
+            return false;
+        }
+        
+        if(!runcpp2::HasValueFromPlatformMap(profile.Linker.CheckExistence))
+        {
+            ssLOG_INFO( "Linker for profile " << profile.Name << 
+                        " does not have CheckExistence for current platform");
+            return false;
+        }
+        
+        //Global cleanup
+        auto runCleanup = [&profile]() -> bool
+        {
+            if(runcpp2::HasValueFromPlatformMap(profile.Cleanup))
+            {
+                const std::vector<std::string>& cleanupSteps = 
+                    *runcpp2::GetValueFromPlatformMap(profile.Cleanup);
+                
+                for(int i = 0; i < cleanupSteps.size(); ++i)
+                {
+                    std::string output;
+                    if(!runcpp2::RunCommandAndGetOutput(cleanupSteps.at(i), output))
+                    {
+                        ssLOG_INFO("Failed to run cleanup for " << profile.Name);
+                        return false;
+                    }
+                }
+            }
+            
+            return true;
+        };
+        
+        //Global setup
+        if(runcpp2::HasValueFromPlatformMap(profile.Setup))
+        {
+            const std::vector<std::string>& setupSteps = 
+                *runcpp2::GetValueFromPlatformMap(profile.Setup);
+            
+            for(int i = 0; i < setupSteps.size(); ++i)
+            {
+                std::string output;
+                if(!runcpp2::RunCommandAndGetOutput(setupSteps.at(i), output))
+                {
+                    ssLOG_INFO("Failed to run setup for " << profile.Name);
+                    runCleanup();
+                    return false;
+                }
+            }
+        }
+        
         //Check compiler
         {
             //Getting PreRun command
@@ -19,18 +73,13 @@ namespace
                     command += " && ";
             }
             
-            if(!runcpp2::HasValueFromPlatformMap(profile.Compiler.CheckExistence))
-            {
-                ssLOG_INFO( "Compiler for profile " << profile.Name << 
-                            " does not have CheckExistence for current platform");
-                return false;
-            }
             command += *runcpp2::GetValueFromPlatformMap(profile.Compiler.CheckExistence);
             
             std::string output;
             if(!runcpp2::RunCommandAndGetOutput(command, output))
             {
                 ssLOG_INFO("Failed to find compiler for profile " << profile.Name);
+                runCleanup();
                 return false;
             }
         }
@@ -47,22 +96,20 @@ namespace
                     command += " && ";
             }
             
-            if(!runcpp2::HasValueFromPlatformMap(profile.Linker.CheckExistence))
-            {
-                ssLOG_INFO( "Linker for profile " << profile.Name << 
-                            " does not have CheckExistence for current platform");
-                return false;
-            }
             command += *runcpp2::GetValueFromPlatformMap(profile.Linker.CheckExistence);
             
             std::string output;
             if(!runcpp2::RunCommandAndGetOutput(command, output))
             {
                 ssLOG_INFO("Failed to find linker for profile " << profile.Name);
+                runCleanup();
                 return false;
             }
         }
 
+        if(!runCleanup())
+            return false;
+        
         return true;
     }
 

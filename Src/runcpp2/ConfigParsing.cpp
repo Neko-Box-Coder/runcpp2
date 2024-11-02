@@ -177,21 +177,35 @@ bool runcpp2::WriteDefaultConfig(const std::string& userConfigPath)
 
 
 bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles, 
-                                std::string& outPreferredProfile)
+                                std::string& outPreferredProfile,
+                                const std::string& customConfigPath)
 {
     INTERNAL_RUNCPP2_SAFE_START();
 
     ssLOG_FUNC_DEBUG();
     
-    std::string configPath = GetConfigFilePath();
+    std::string configPath = !customConfigPath.empty() ? customConfigPath : GetConfigFilePath();
     if(configPath.empty())
         return false;
     
-    if(!ghc::filesystem::exists(configPath))
+    std::error_code e;
+    if(!ghc::filesystem::exists(configPath, e))
     {
+        if(!customConfigPath.empty())
+        {
+            ssLOG_ERROR("Config file doesn't exist: " << configPath);
+            return false;
+        }
+        
         ssLOG_INFO("Config file doesn't exist. Creating one at: " << configPath);
         if(!WriteDefaultConfig(configPath))
             return false;
+    }
+    
+    if(ghc::filesystem::is_directory(configPath, e))
+    {
+        ssLOG_ERROR("Config file path is a directory: " << configPath);
+        return false;
     }
     
     //Read compiler profiles

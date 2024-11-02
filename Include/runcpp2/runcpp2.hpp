@@ -24,6 +24,7 @@ namespace runcpp2
         BUILD,
         VERSION,
         LOG_LEVEL,
+        CONFIG_FILE,
         COUNT
     };
     
