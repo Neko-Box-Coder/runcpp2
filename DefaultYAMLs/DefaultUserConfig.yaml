@@ -270,7 +270,7 @@ Profiles:
         Windows:
         -   >-
             for /f "usebackq tokens=*" %i in (`CALL "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" 
-            -version "[17.0,18.0)" -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do ( 
+            -version "[17.0,18.0)" -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do ( 
             echo "%i\VC\Auxiliary\Build\vcvarsall.bat" x64 > .\prerun.bat
             )
     Cleanup: 
