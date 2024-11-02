@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
     int currentArgIndex = 0;
     std::unordered_map<runcpp2::CmdOptions, std::string> currentOptions;
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 13, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 14, "Update this");
         std::unordered_map<std::string, runcpp2::OptionInfo> longOptionsMap =
         {
             {
@@ -225,10 +225,14 @@ int main(int argc, char* argv[])
             {
                 "--log-level",
                 runcpp2::OptionInfo(runcpp2::CmdOptions::LOG_LEVEL, true)
+            },
+            {
+                "--config",
+                runcpp2::OptionInfo(runcpp2::CmdOptions::CONFIG_FILE, true)
             }
         };
         
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 13, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 14, "Update this");
         std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
         {
             {"-rc", longOptionsMap.at("--reset-cache")},
@@ -241,7 +245,8 @@ int main(int argc, char* argv[])
             {"-t", longOptionsMap.at("--create-script-template")},
             {"-w", longOptionsMap.at("--watch")},
             {"-b", longOptionsMap.at("--build")},
-            {"-v", longOptionsMap.at("--version")}
+            {"-v", longOptionsMap.at("--version")},
+            {"-c", longOptionsMap.at("--config")}
         };
         
         currentArgIndex = ParseArgs(longOptionsMap, shortOptionsMap, currentOptions, argc, argv);
@@ -258,7 +263,7 @@ int main(int argc, char* argv[])
     //Help message
     if(currentOptions.count(runcpp2::CmdOptions::HELP))
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 13, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 14, "Update this");
         ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
         ssLOG_BASE("Options:");
         ssLOG_BASE("    -rc, --[r]eset-[c]ache                  Deletes compiled source files cache only");
@@ -272,6 +277,7 @@ int main(int argc, char* argv[])
         ssLOG_BASE("    -w,  --[w]atch                          Watch script changes and output any compiling errors");
         ssLOG_BASE("    -b,  --[b]uild                          Build the script and copy output files to the working directory");
         ssLOG_BASE("    -v,  --[v]ersion                        Show the version of runcpp2");
+        ssLOG_BASE("    -c,  --[c]onfig <file>                  Use specified config file instead of default");
         ssLOG_BASE("         --log-level <level>                Sets the log level (Normal, Info, Debug) for runcpp2.");
         
         return 0;
@@ -340,12 +346,16 @@ int main(int argc, char* argv[])
     std::vector<runcpp2::Data::Profile> profiles;
     std::string preferredProfile;
     
-    if(!runcpp2::ReadUserConfig(profiles, preferredProfile))
+    std::string configPath;
+    if(currentOptions.count(runcpp2::CmdOptions::CONFIG_FILE))
+        configPath = currentOptions.at(runcpp2::CmdOptions::CONFIG_FILE);
+
+    if(!runcpp2::ReadUserConfig(profiles, preferredProfile, configPath))
     {
         ssLOG_ERROR("Failed read user config");
         return -1;
     }
-
+    
     ssLOG_DEBUG("\nprofiles:");
     for(int i = 0; i < profiles.size(); ++i)
         ssLOG_DEBUG("\n" << profiles.at(i).ToString("    "));
