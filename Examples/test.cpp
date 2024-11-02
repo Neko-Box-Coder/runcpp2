@@ -55,7 +55,7 @@ Dependencies:
         Type: Git
         Value: "https://github.com/Neko-Box-Coder/System2.cpp.git"
     LibraryType: Header
-    IncludePaths: ["./", "./External/System2"]
+    IncludePaths: [".", "./External/System2"]
     Setup:
         Default:
             Default:

@@ -4,6 +4,12 @@ TODO:
 - Allow runcpp2 to be library
 - Ability to compile runcpp2 as single cpp
 
+- Handle escape characters at the end
+    - To avoid situation like this:
+        - Substitution string: -I "{path}"
+        - Substitution value: .\
+        - Substituted string: -I ".\"
+            - Where the path contains escape character which escaped the wrapping quotes
 - Use <csignal> to handle potential segfaults
 - Separate git and local source options
 - Migrate to libyaml

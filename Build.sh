@@ -6,7 +6,7 @@ pushd ./Build
 
 cmake ..
 cmake --build . --target Embed2C
-cmake .. "$@"
+cmake .. -DssLOG_LEVEL=DEBUG -DCMAKE_BUILD_TYPE=Debug "$@"
 cmake --build . -j 16
 
 popd
