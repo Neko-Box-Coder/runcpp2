@@ -213,7 +213,7 @@ pipeline
         {
             parallel 
             {
-                stage('Linux Test') 
+                stage('Linux Unit Test') 
                 {
                     agent { label 'linux' }
                     steps 
@@ -228,7 +228,24 @@ pipeline
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
-                stage('Windows Test') 
+                stage('Linux Integration Test') 
+                {
+                    agent { label 'linux' }
+                    steps 
+                    {
+                        cleanWs()
+                        bash "ls -lah"
+                        unstash 'linux_build'
+                        bash "ls -lah"
+                        bash "ls -lah ./Build/Src/Tests"
+                        bash    "cd ./Build && ./runcpp2 -l " + 
+                                "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
+                                "--log-level info ../Examples/test.cpp"
+                    }
+                    post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
+                }
+                
+                stage('Windows Unit Test') 
                 {
                     agent { label 'windows' }
                     steps 
@@ -239,6 +256,22 @@ pipeline
                         bat 'dir'
                         bat 'dir .\\Build\\Src\\Tests\\Debug'
                         bat 'cd .\\Build\\Src\\Tests && .\\RunAllTests.bat -d'
+                        
+                    }
+                    post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
+                }
+                stage('Windows Integration Test') 
+                {
+                    agent { label 'windows' }
+                    steps 
+                    {
+                        cleanWs()
+                        bat 'dir'
+                        unstash 'windows_build'
+                        bat 'dir'
+                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l " + 
+                            "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
+                            "--log-level info ..\\..\\Examples\\test.cpp"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
