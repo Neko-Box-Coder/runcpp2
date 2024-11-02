@@ -561,9 +561,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
 {
     INTERNAL_RUNCPP2_SAFE_START();
     
-    //Do lexically_normal on all the paths
-    //lexically_normal
-    
     ssLOG_FUNC_DEBUG();
     
     if(profiles.empty())
@@ -717,39 +714,126 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         }
         
         //Check if script info has changed if provided
-        bool scriptInfoChanged = true;
+        bool recompileNeeded = false;
+        bool relinkNeeded = false;
+        std::vector<std::string> changedDependencies;
         {
             ghc::filesystem::path lastScriptInfoFilePath = buildDir / "LastScriptInfo.yaml";
+            Data::ScriptInfo lastScriptInfoFromDisk;
             
-            //Compare script info in memory
-            if(lastScriptInfo != nullptr)
-                scriptInfoChanged = lastScriptInfo->ToString("") != scriptInfo.ToString("");
-            //Compare script info in disk
-            else
+            //Compare script info in memory or from disk
+            const Data::ScriptInfo* lastInfo = lastScriptInfo;
+            if(lastScriptInfo == nullptr && ghc::filesystem::exists(lastScriptInfoFilePath, e))
             {
-                if(ghc::filesystem::exists(lastScriptInfoFilePath, e))
+                ssLOG_DEBUG("Last script info file exists: " << lastScriptInfoFilePath);
+                std::ifstream lastScriptInfoFile;
+                lastScriptInfoFile.open(lastScriptInfoFilePath);
+                std::stringstream lastScriptInfoBuffer;
+                lastScriptInfoBuffer << lastScriptInfoFile.rdbuf();
+                
+                if(ParseScriptInfo(lastScriptInfoBuffer.str(), lastScriptInfoFromDisk))
+                    lastInfo = &lastScriptInfoFromDisk;
+            }
+            
+            if(lastInfo != nullptr)
+            {
+                //Check link flags
+                const Data::ProfilesFlagsOverride* lastLinkFlags = 
+                    runcpp2::GetValueFromPlatformMap(lastInfo->OverrideLinkFlags);
+                const Data::ProfilesFlagsOverride* currentLinkFlags = 
+                    runcpp2::GetValueFromPlatformMap(scriptInfo.OverrideLinkFlags);
+                
+                relinkNeeded =  (lastLinkFlags == nullptr) != (currentLinkFlags == nullptr) ||
+                                    (
+                                        lastLinkFlags != nullptr && 
+                                        currentLinkFlags != nullptr && 
+                                        !lastLinkFlags->Equals(*currentLinkFlags)
+                                    );
+                
+                recompileNeeded = relinkNeeded;
+                
+                //Check dependencies
+                if(lastInfo->Dependencies.size() == scriptInfo.Dependencies.size())
                 {
-                    ssLOG_DEBUG("Last script info file exists: " << lastScriptInfoFilePath);
-                    std::ifstream lastScriptInfoFile;
-                    lastScriptInfoFile.open(lastScriptInfoFilePath);
-                    std::stringstream lastScriptInfoBuffer;
-                    lastScriptInfoBuffer << lastScriptInfoFile.rdbuf();
-                    scriptInfoChanged = lastScriptInfoBuffer.str() != scriptInfo.ToString("");
+                    for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+                    {
+                        if(!scriptInfo.Dependencies.at(i).Equals(lastInfo->Dependencies.at(i)))
+                        {
+                            changedDependencies.push_back(scriptInfo.Dependencies.at(i).Name);
+                            recompileNeeded = true;
+                        }
+                    }
+                }
+                else
+                {
+                    recompileNeeded = true;
+                    //All dependencies need to be reset if count changed
+                    changedDependencies.clear();
+                }
+                
+                if(!recompileNeeded)
+                {
+                    //Other changes that require recompilation
+                    const Data::ProfilesFlagsOverride* lastCompileFlags = 
+                        runcpp2::GetValueFromPlatformMap(lastInfo->OverrideCompileFlags);
+                    const Data::ProfilesFlagsOverride* currentCompileFlags = 
+                        runcpp2::GetValueFromPlatformMap(scriptInfo.OverrideCompileFlags);
+                    
+                    const Data::ProfilesCompilesFiles* lastCompileFiles = 
+                        runcpp2::GetValueFromPlatformMap(lastInfo->OtherFilesToBeCompiled);
+                    const Data::ProfilesCompilesFiles* currentCompileFiles = 
+                        runcpp2::GetValueFromPlatformMap(scriptInfo.OtherFilesToBeCompiled);
+                    
+                    const Data::ProfilesDefines* lastDefines = 
+                        runcpp2::GetValueFromPlatformMap(lastInfo->Defines);
+                    const Data::ProfilesDefines* currentDefines = 
+                        runcpp2::GetValueFromPlatformMap(scriptInfo.Defines);
+                
+                    recompileNeeded = 
+                        (lastCompileFlags == nullptr) != (currentCompileFlags == nullptr) ||
+                        (
+                            lastCompileFlags != nullptr && 
+                            currentCompileFlags != nullptr && 
+                            !lastCompileFlags->Equals(*currentCompileFlags)
+                        ) ||
+                        (lastCompileFiles == nullptr) != (currentCompileFiles == nullptr) ||
+                        (
+                            lastCompileFiles != nullptr && 
+                            currentCompileFiles != nullptr && 
+                            !lastCompileFiles->Equals(*currentCompileFiles)
+                        ) ||
+                        (lastDefines == nullptr) != (currentDefines == nullptr) ||
+                        (
+                            lastDefines != nullptr && 
+                            currentDefines != nullptr && 
+                            !lastDefines->Equals(*currentDefines)
+                        );
                 }
             }
+            else
+                recompileNeeded = true;
             
-            std::ofstream writeOutputFile(lastScriptInfoFilePath);
-            if(!writeOutputFile)
+            ssLOG_DEBUG("recompileNeeded: " << recompileNeeded << 
+                        ", changedDependencies.size(): " << changedDependencies.size() << 
+                        ", relinkNeeded: " << relinkNeeded);
+            
+            if(recompileNeeded || !changedDependencies.empty() || relinkNeeded)
             {
-                ssLOG_ERROR("Failed to open file: " << lastScriptInfoFilePath);
-                //TODO: Maybee add a pipeline result for this?
-                return PipelineResult::INVALID_BUILD_DIR;
-            }
+                std::ofstream writeOutputFile(lastScriptInfoFilePath);
+                if(!writeOutputFile)
+                {
+                    ssLOG_ERROR("Failed to open file: " << lastScriptInfoFilePath);
+                    //TODO: Maybee add a pipeline result for this?
+                    return PipelineResult::INVALID_BUILD_DIR;
+                }
 
-            writeOutputFile << scriptInfo.ToString("");
-            
-            //Pass the current script info out
-            outScriptInfo = scriptInfo;
+                writeOutputFile << scriptInfo.ToString("");
+
+                //Pass the current script info out
+                outScriptInfo = scriptInfo;
+                
+                ssLOG_DEBUG("Wrote current script info to " << lastScriptInfoFilePath.string());
+            }
         }
 
         profileIndex = GetPreferredProfileIndex(absoluteScriptPath, 
@@ -787,14 +871,24 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 return PipelineResult::DEPENDENCIES_FAILED;
             }
             
-            if(currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 || scriptInfoChanged)
+            if( currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 || 
+                !changedDependencies.empty())
             {
+                std::string depsToReset = "all";
+                if(!changedDependencies.empty())
+                {
+                    depsToReset = changedDependencies[0];
+                    for(int i = 1; i < changedDependencies.size(); ++i)
+                        depsToReset += "," + changedDependencies[i];
+                }
+                
                 if(!CleanupDependencies(profiles.at(profileIndex),
                                         scriptInfo,
                                         availableDependencies,
                                         dependenciesLocalCopiesPaths,
                                         currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 ?
-                                            currentOptions.at(CmdOptions::RESET_DEPENDENCIES) : "all"))
+                                            currentOptions.at(CmdOptions::RESET_DEPENDENCIES) : 
+                                            depsToReset))
                 {
                     ssLOG_ERROR("Failed to cleanup dependencies");
                     return PipelineResult::DEPENDENCIES_FAILED;
@@ -858,7 +952,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         std::vector<ghc::filesystem::path> cachedObjectsFiles;
         ghc::filesystem::file_time_type finalObjectWriteTime;
         
-        if(currentOptions.count(runcpp2::CmdOptions::RESET_CACHE) > 0 || scriptInfoChanged)
+        if(currentOptions.count(runcpp2::CmdOptions::RESET_CACHE) > 0 || recompileNeeded)
             sourceHasCache = std::vector<bool>(sourceFiles.size(), false);
         else if(!HasCompiledCache(  absoluteScriptPath,
                                     sourceFiles, 
@@ -950,7 +1044,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                             scriptName,
                             exeExt,
                             linkFilesPaths,
-                            finalObjectWriteTime))
+                            finalObjectWriteTime) || relinkNeeded)
         {
             for(int i = 0; i < cachedObjectsFiles.size(); ++i)
                 linkFilesPaths.push_back(cachedObjectsFiles.at(i));

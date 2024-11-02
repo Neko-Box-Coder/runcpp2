@@ -333,11 +333,8 @@ bool runcpp2::IsDependencyAvailableForThisPlatform(const Data::DependencyInfo& d
     
     for(int i = 0; i < platformNames.size(); ++i)
     {
-        if( dependency.Platforms.find(platformNames.at(i)) != 
-            dependency.Platforms.end())
-        {
+        if(dependency.Platforms.find(platformNames.at(i)) != dependency.Platforms.end())
             return true;
-        }
     }
     
     return false;

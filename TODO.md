@@ -4,6 +4,7 @@ TODO:
 - Allow runcpp2 to be library
 - Ability to compile runcpp2 as single cpp
 
+- Use <csignal> to handle potential segfaults
 - Separate git and local source options
 - Migrate to libyaml
 - Add wildcard support for filenames and extensions
