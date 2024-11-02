@@ -1,7 +1,7 @@
 # List of anchors that will be aliased later
 Templates:
     MSVC_CompileFlags: &MSVC_CompileFlags
-        Flags: "/NOLOGO /W4 /diagnostics:caret /D NDEBUG /utf-8 /Gm- /MD /EHa /TP /std:c++17 /GR /TP"
+        Flags: "/nologo /W4 /diagnostics:caret /D NDEBUG /utf-8 /Gm- /MD /EHa /TP /std:c++17 /GR /TP"
     
     "g++_CompileRunParts": &g++_CompileRunParts
     -   Type: Once
@@ -135,8 +135,7 @@ Profiles:
     
     # Specify the compiler settings
     Compiler:
-        # (Optional) The command to run together before running each compile command
-        #               in **shell** for each platform
+        # (Optional) The command to be prepend for each compile command in **shell** for each platform
         # PreRun: 
         #     Default: ""
         
@@ -190,8 +189,7 @@ Profiles:
     
     # Specify the linker settings
     Linker:
-        # (Optional) The command to run together before running each link command 
-        #               in **shell** for each platform
+        # (Optional) The command to be prepend for each link command in **shell** for each platform
         # PreRun: 
         #     Default: ""
         
@@ -268,9 +266,18 @@ Profiles:
     Languages: ["c++"]
     FileExtensions: [.cpp, .cc, .cxx]
     FilesTypes: *CommonFilesTypes
+    Setup: 
+        Windows:
+        -   >-
+            for /f "usebackq tokens=*" %i in (`CALL "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" 
+            -version "[17.0,18.0)" -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do ( 
+            echo "%i\VC\Auxiliary\Build\vcvarsall.bat" x64 > .\prerun.bat
+            )
+    Cleanup: 
+        Windows: [ "del .\\prerun.bat" ]
     Compiler:
         PreRun: 
-            Windows: "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat\" x64"
+            Windows: ".\\prerun.bat"
         CheckExistence: 
             Windows: "where.exe CL.exe"
         CompileTypes:
@@ -292,7 +299,7 @@ Profiles:
     # Specify the linker settings
     Linker:
         PreRun: 
-            Windows: "\"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvarsall.bat\" x64"
+            Windows: ".\\prerun.bat"
         CheckExistence:
             Windows: "where.exe link.exe"
         LinkTypes:
