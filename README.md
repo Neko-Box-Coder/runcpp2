@@ -2,9 +2,7 @@
 
 ![runcpp2 logo](./Runcpp2Logo.png)
 
-A cross-platform tool that can let you run any c++ files as a script, just like python!
-
-Run c++ files anytime, anywhere.
+A cross-platform declarative <s>and scriptable (WIP)</s> build system for c++ with the addition of letting you run any c++ files as a script, just like python!
 
 ### 🛠️ Prerequisites
 - Any C++ compiler. The default user config only has g++ and msvc profiles. But feel free to
@@ -34,8 +32,7 @@ runcpp2 ./script.cpp <any arguments>
 ```
 
 > [!NOTE]
-> When invoking a c++ file with runcpp2, the first argument (`argv[0]`) to `main()` is the path
-> to the script, not the path to an executable.
+> On Unix, if you have added runcpp2 to your PATH and add this line `//bin/true;runcpp2 "$0" "$@"; exit;` to the top of your script, you can run the script directly by `./script.cpp <arguments>`
 
 #### 2. Watch and give compile errors
 If you want to edit the script but want to have feedback for any error, you can use "watch" mode.

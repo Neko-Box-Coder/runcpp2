@@ -1,5 +1,4 @@
 TODO:
-- Track script info changes properly for either script change or dependency change
 - Track include files for compiling
 - Allow runcpp2 to be library
 - Ability to compile runcpp2 as single cpp
@@ -12,6 +11,9 @@ TODO:
             - Where the path contains escape character which escaped the wrapping quotes
 - Use <csignal> to handle potential segfaults
 - Separate git and local source options
+    - Add branch/tag option for git
+    - Add initialize submodule option for git
+- Change "Default" to "DefaultProfile" and "DefaultPlatform"
 - Migrate to libyaml
 - Add wildcard support for filenames and extensions
 - Add tests and examples (On Windows as well)

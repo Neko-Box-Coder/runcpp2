@@ -1,3 +1,5 @@
+//bin/true;runcpp2 "$0" "$@"; exit;
+
 /* runcpp2
 
 PassScriptPath: true
