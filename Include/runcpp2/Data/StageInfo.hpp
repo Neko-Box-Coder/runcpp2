@@ -2,7 +2,7 @@
 #define RUNCPP2_DATA_STAGE_INFO_HPP
 
 #include "runcpp2/Data/ParseCommon.hpp"
-#include "ryml.hpp"
+#include "runcpp2/YamlLib.hpp"
 
 #include <vector>
 #include <string>

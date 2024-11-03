@@ -2,7 +2,8 @@
 #define RUNCPP2_DATA_PROFILES_DEFINES_HPP
 
 #include "runcpp2/Data/ParseCommon.hpp"
-#include "ryml.hpp"
+#include "runcpp2/YamlLib.hpp"
+
 #include <unordered_map>
 #include <vector>
 #include <string>

@@ -2,8 +2,8 @@
 #define RUNCPP2_DATA_FILE_PROPERTIES_HPP
 
 #include "runcpp2/Data/ParseCommon.hpp"
+#include "runcpp2/YamlLib.hpp"
 
-#include "ryml.hpp"
 #include <unordered_map>
 
 namespace runcpp2

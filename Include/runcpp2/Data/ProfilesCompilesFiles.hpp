@@ -3,10 +3,11 @@
 
 #include "runcpp2/Data/ParseCommon.hpp"
 
+#include "runcpp2/YamlLib.hpp"
+
 #define NOMINMAX 1
 #include "ghc/filesystem.hpp"
 
-#include "ryml.hpp"
 #include <unordered_map>
 
 namespace runcpp2
