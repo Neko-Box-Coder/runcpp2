@@ -10,7 +10,7 @@ RequiredProfiles:
 
 OtherFilesToBeCompiled:
     # Target Platform
-    Default:
+    DefaultPlatform:
         # Target Profile
         "g++":
         -   "./OtherSources/AnotherSourceFileGcc.cpp"
@@ -18,9 +18,9 @@ OtherFilesToBeCompiled:
         -   "./OtherSources/AnotherSourceFileMSVC.cpp"
 
 Defines:
-    Default:
+    DefaultPlatform:
         # Turns into `TEST_DEF=\"Test Define Working\"` in shell
-        Default: ["TEST_DEF=\\\"Test Define Working\\\""]
+        DefaultProfile: ["TEST_DEF=\\\"Test Define Working\\\""]
 
 Dependencies:
 -   Name: ssLogger
@@ -31,36 +31,36 @@ Dependencies:
     LibraryType: Shared
     IncludePaths: ["Include"]
     LinkProperties:
-        Default:
-            Default:
+        DefaultPlatform:
+            DefaultProfile:
                 SearchLibraryNames: ["ssLogger"]
                 ExcludeLibraryNames: ["ssLogger_SRC"]
                 SearchDirectories: ["./build", "./build/Debug", "./build/Release"]
     Setup:
-        Default:
-            Default:
+        DefaultPlatform:
+            DefaultProfile:
             -   "mkdir build"
     Build:
-        Default:
-            Default:
+        DefaultPlatform:
+            DefaultProfile:
             -   "cd build && cmake .. -DssLOG_BUILD_TYPE=SHARED"
             -   "cd build && cmake --build . --config Release -j 16"
     FilesToCopy:
         # Target Platform (Default, Windows, Linux, MacOS, or Unix)
-        Default:
-            Default:
+        DefaultPlatform:
+            DefaultProfile:
             -  "./Include/ssLogger/ssLog.hpp"
 
 -   Name: System2.cpp
-    Platforms: [Default]
+    Platforms: [DefaultPlatform]
     Source:
         Type: Git
         Value: "https://github.com/Neko-Box-Coder/System2.cpp.git"
     LibraryType: Header
     IncludePaths: [".", "./External/System2"]
     Setup:
-        Default:
-            Default:
+        DefaultPlatform:
+            DefaultProfile:
             -   "git submodule update --init --recursive"
 */
 

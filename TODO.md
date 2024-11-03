@@ -13,7 +13,6 @@ TODO:
 - Separate git and local source options
     - Add branch/tag option for git
     - Add initialize submodule option for git
-- Change "Default" to "DefaultProfile" and "DefaultPlatform"
 - Migrate to libyaml
 - Add wildcard support for filenames and extensions
 - Add tests and examples (On Windows as well)

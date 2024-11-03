@@ -57,15 +57,15 @@ std::string runcpp2::ProcessPath(const std::string& path)
 std::vector<std::string> runcpp2::GetPlatformNames()
 {
     #ifdef _WIN32
-        return {"Windows", "Default"};
+        return {"Windows", "DefaultPlatform"};
     #elif __linux__
-        return {"Linux", "Unix", "Default"};
+        return {"Linux", "Unix", "DefaultPlatform"};
     #elif __APPLE__
-        return {"MacOS", "Unix", "Default"};
+        return {"MacOS", "Unix", "DefaultPlatform"};
     #elif __unix__
-        return {"Unix", "Default"};
+        return {"Unix", "DefaultPlatform"};
     #else
-        return {"Unknown", "Default"};
+        return {"Unknown", "DefaultPlatform"};
     #endif
 }
 

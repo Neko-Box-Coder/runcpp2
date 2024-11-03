@@ -27,8 +27,8 @@ RequiredProfiles:
 # (Optional) Override the default compile flags for each platform.
 OverrideCompileFlags:
     # Target Platform
-    Default:
-        # Profile with the respective flags to override. ("Default" for any profile)
+    DefaultPlatform:
+        # Profile with the respective flags to override. ("DefaultProfile" for any profile)
         "g++":
             # (Optional) Flags to be removed from the default compile flags, separated by space
             Remove: ""
@@ -39,8 +39,8 @@ OverrideCompileFlags:
 # (Optional) Override the default link flags for each platform.
 OverrideLinkFlags:
     # Target Platform
-    Default:
-        # Profile with the respective flags to override ("Default" for any profile)
+    DefaultPlatform:
+        # Profile with the respective flags to override ("DefaultProfile" for any profile)
         "g++":
             # (Optional) Flags to be removed from the default link flags, separated by space
             Remove: ""
@@ -52,18 +52,18 @@ OverrideLinkFlags:
 # (Optional) Other source files (relative to script file path) to be compiled.
 OtherFilesToBeCompiled:
     # Target Platform
-    Default:
+    DefaultPlatform:
         # Target Profile
-        Default:
+        DefaultProfile:
         -   "./AnotherSourceFile.cpp"
 
 # (Optional) Define cross-compiler defines for each platform and profile.
 # Defines can be specified as just a name or as a name-value pair.
 Defines:
-    # Target Platform (Default, Windows, Linux, MacOS, or Unix)
-    Default:
-        # Profile name (e.g., "g++", "clang++", "msvc", or "Default" for any profile)
-        "Default":
+    # Target Platform (DefaultPlatform, Windows, Linux, MacOS, or Unix)
+    DefaultPlatform:
+        # Profile name (e.g., "g++", "clang++", "msvc", or "DefaultProfile" for any profile)
+        "DefaultProfile":
         -   "EXAMPLE_DEFINE"              # Define without a value
         -   "VERSION_MAJOR=1"             # Define with a value
 
@@ -117,7 +117,7 @@ Dependencies:
         Default:
             # Setup shell commands for the specified profile. 
             # Default commands are run in the dependency folder
-            # You can also use "Default" if all the compilers run the same setup commands
+            # You can also use "DefaultProfile" if all the compilers run the same setup commands
             "g++":
             -   "mkdir build"
             
@@ -126,7 +126,7 @@ Dependencies:
     Build:
         # Target Platform
         Default:
-            # Target Profile ("Default" for any profile)
+            # Target Profile ("DefaultProfile" for any profile)
             "g++":
             -   "cd build && cmake .."
             -   "cd build && cmake --build ."
@@ -140,10 +140,10 @@ Dependencies:
 
     # (Optional) Files to be copied to next to output binary for each platform and profile
     FilesToCopy:
-        # Target Platform (Default, Windows, Linux, MacOS, or Unix)
-        Default:
-            # Profile name (e.g., "g++", "clang++", "msvc", or "Default" for any profile)
-            "Default":
+        # Target Platform (DefaultPlatform, Windows, Linux, MacOS, or Unix)
+        DefaultPlatform:
+            # Profile name (e.g., "g++", "clang++", "msvc", or "DefaultProfile" for any profile)
+            DefaultProfile:
             # List of files to copy (relative to the dependency folder)
             -  "assets/textures/sprite.png"
         Windows:

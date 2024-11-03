@@ -18,13 +18,13 @@ int main(int argc, char** argv)
             FileExtensions: [.cpp, .cc, .cxx]
             Languages: ["c++"]
             Setup:
-                Default: ["setup command 1", "setup command 2"]
+                DefaultPlatform: ["setup command 1", "setup command 2"]
             Cleanup:
-                Default: []
+                DefaultPlatform: []
             FilesTypes:
                 ObjectLinkFile:
                     Prefix:
-                        Default: ""
+                        DefaultPlatform: ""
                     Extension:
                         Windows: ".obj"
                         Unix: ".o"
@@ -55,12 +55,12 @@ int main(int argc, char** argv)
                         Unix: ".a"
             Compiler:
                 PreRun:
-                    Default: ""
+                    DefaultPlatform: ""
                 CheckExistence:
-                    Default: "g++ -v"
+                    DefaultPlatform: "g++ -v"
                 CompileTypes:
                     Executable:
-                        Default:
+                        DefaultPlatform:
                             Flags: "-std=c++17 -Wall -g"
                             Executable: "g++"
                             RunParts:
@@ -71,14 +71,14 @@ int main(int argc, char** argv)
                             -   Type: Once
                                 CommandPart: " \"{InputFilePath}\" -o \"{OutputFilePath}\""
                     Static:
-                        Default:
+                        DefaultPlatform:
                             Flags: "-std=c++17 -Wall -g"
                             Executable: "g++"
                             RunParts:
                             -   Type: Once
                                 CommandPart: "{Executable} -c {CompileFlags}"
                     Shared:
-                        Default:
+                        DefaultPlatform:
                             Flags: "-std=c++17 -Wall -g -fpic"
                             Executable: "g++"
                             RunParts:
@@ -86,9 +86,9 @@ int main(int argc, char** argv)
                                 CommandPart: "{Executable} -c {CompileFlags}"
             Linker:
                 PreRun:
-                    Default: ""
+                    DefaultPlatform: ""
                 CheckExistence:
-                    Default: "g++ -v"
+                    DefaultPlatform: "g++ -v"
                 LinkTypes:
                     Executable:
                         Unix:
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
                             -   Type: Once
                                 CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
                     Static:
-                        Default:
+                        DefaultPlatform:
                             Flags: ""
                             Executable: "g++"
                             RunParts:
@@ -155,12 +155,12 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT("Languages contains c++", profile.Languages.count("c++") == 1);
         
         //Verify Setup
-        ssTEST_OUTPUT_ASSERT("Setup has Default platform", profile.Setup.count("Default") == 1);
+        ssTEST_OUTPUT_ASSERT("Setup has Default platform", profile.Setup.count("DefaultPlatform") == 1);
         ssTEST_OUTPUT_SETUP
         (
-            const std::vector<std::string>& setupCommands = profile.Setup.at("Default");
+            const std::vector<std::string>& setupCommands = profile.Setup.at("DefaultPlatform");
         );
-        ssTEST_OUTPUT_ASSERT("Setup Default has 2 commands", setupCommands.size() == 2);
+        ssTEST_OUTPUT_ASSERT("Setup DefaultPlatform has 2 commands", setupCommands.size() == 2);
         ssTEST_OUTPUT_ASSERT("Setup command 1", setupCommands.at(0) == "setup command 1");
         ssTEST_OUTPUT_ASSERT("Setup command 2", setupCommands.at(1) == "setup command 2");
         
@@ -184,11 +184,11 @@ int main(int argc, char** argv)
                                 sharedLinkFile.Extension.at("Linux") == ".so");
         
         //Verify Compiler
-        ssTEST_OUTPUT_ASSERT(   "Compiler CheckExistence Default", 
-                                profile.Compiler.CheckExistence.at("Default") == "g++ -v");
+        ssTEST_OUTPUT_ASSERT(   "Compiler CheckExistence DefaultPlatform", 
+                                profile.Compiler.CheckExistence.at("DefaultPlatform") == "g++ -v");
         ssTEST_OUTPUT_SETUP
         (
-            const auto& executableCompile = profile.Compiler.OutputTypes.Executable.at("Default");
+            const auto& executableCompile = profile.Compiler.OutputTypes.Executable.at("DefaultPlatform");
         );
         ssTEST_OUTPUT_ASSERT(   "Compiler Executable flags", 
                                 executableCompile.Flags == "-std=c++17 -Wall -g");
@@ -198,8 +198,8 @@ int main(int argc, char** argv)
                                 executableCompile.RunParts.size() == 3);
         
         //Verify Linker
-        ssTEST_OUTPUT_ASSERT(   "Linker CheckExistence Default", 
-                                profile.Linker.CheckExistence.at("Default") == "g++ -v");
+        ssTEST_OUTPUT_ASSERT(   "Linker CheckExistence DefaultPlatform", 
+                                profile.Linker.CheckExistence.at("DefaultPlatform") == "g++ -v");
         ssTEST_OUTPUT_SETUP
         (
             const auto& executableLink = profile.Linker.OutputTypes.Executable.at("Unix");
