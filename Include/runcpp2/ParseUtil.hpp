@@ -1,7 +1,7 @@
 #ifndef RUNCPP2_PARSE_UTIL_HPP
 #define RUNCPP2_PARSE_UTIL_HPP
 
-#include "ryml.hpp"
+#include "runcpp2/YamlLib.hpp"
 
 #include <vector>
 

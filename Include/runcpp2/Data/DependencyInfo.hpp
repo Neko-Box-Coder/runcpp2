@@ -7,7 +7,7 @@
 #include "runcpp2/Data/DependencyCommands.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/Data/FilesToCopyInfo.hpp"
-#include "ryml.hpp"
+#include "runcpp2/YamlLib.hpp"
 
 #include <string>
 #include <unordered_set>

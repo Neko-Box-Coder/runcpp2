@@ -2,7 +2,8 @@
 #define RUNCPP2_DATA_DEPENDENCY_SOURCE_HPP
 
 #include "runcpp2/Data/DependencySourceType.hpp"
-#include "ryml.hpp"
+#include "runcpp2/YamlLib.hpp"
+
 #include <string>
 
 namespace runcpp2

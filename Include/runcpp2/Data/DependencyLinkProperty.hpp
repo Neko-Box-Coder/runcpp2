@@ -2,8 +2,7 @@
 #define RUNCPP2_DATA_DEPENDENCY_LINK_PROPERTY_HPP
 
 #include "runcpp2/Data/ParseCommon.hpp"
-
-#include "ryml.hpp"
+#include "runcpp2/YamlLib.hpp"
 
 #include <vector>
 #include <unordered_map>
