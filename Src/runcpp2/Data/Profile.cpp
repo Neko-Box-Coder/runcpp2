@@ -11,7 +11,7 @@ void runcpp2::Data::Profile::GetNames(std::vector<std::string>& outNames) const
         outNames.push_back(alias);
     
     //Special name all that applies to all profile
-    outNames.push_back("Default");
+    outNames.push_back("DefaultProfile");
 }
 
 bool runcpp2::Data::Profile::ParseYAML_Node(ryml::ConstNodeRef& profileNode)

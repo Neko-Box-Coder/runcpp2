@@ -45,7 +45,7 @@ Templates:
     
     # TODO: Add support for custom platform
     # Each of the platform dependent settings can be listed under
-    # - Default
+    # - DefaultPlatform
     # - Windows
     # - Linux
     # - MacOS
@@ -53,7 +53,7 @@ Templates:
     FilesTypes: &CommonFilesTypes
         ObjectLinkFile:
             Prefix:
-                Default: ""
+                DefaultPlatform: ""
             Extension:
                 Windows: ".obj"
                 Unix: ".o"
@@ -123,12 +123,12 @@ Profiles:
     # (Optional) The commands to run in **shell** before calling the compiler/linker for each platform.
     #            This is run inside the .runcpp2 directory where the build happens.
     # Setup: 
-    #     Default: []
+    #     DefaultPlatform: []
     
     # (Optional) The commands to run in **shell** after calling the compiler/linker for each platform.
     #            This is run inside the .runcpp2 directory where the build happens.
     # Cleanup: 
-    #     Default: []
+    #     DefaultPlatform: []
     
     # The file properties for the object files for each platform.
     FilesTypes: *CommonFilesTypes
@@ -137,11 +137,11 @@ Profiles:
     Compiler:
         # (Optional) The command to be prepend for each compile command in **shell** for each platform
         # PreRun: 
-        #     Default: ""
+        #     DefaultPlatform: ""
         
         # Shell command to use for checking if the executable exists or not
         CheckExistence: 
-            Default: "g++ -v"
+            DefaultPlatform: "g++ -v"
         
         # Here are a list of substitution strings for RunParts, Setup and Cleanup
         # {Executable}:             Compiler executable
@@ -162,7 +162,7 @@ Profiles:
         # {OutputFilePath}:         (Similar to previous)
         CompileTypes:
             Executable:
-                Default:
+                DefaultPlatform:
                     Flags: "-std=c++17 -Wall -g"
                     Executable: "g++"
                     RunParts: *g++_CompileRunParts
@@ -173,14 +173,14 @@ Profiles:
                     #            This is run inside the .runcpp2 directory where the build happens.
                     # Cleanup: []
             Static:
-                Default:
+                DefaultPlatform:
                     Flags: "-std=c++17 -Wall -g"
                     Executable: "g++"
                     RunParts: *g++_CompileRunParts
                     # Setup: []
                     # Cleanup: []
             Shared:
-                Default:
+                DefaultPlatform:
                     Flags: "-std=c++17 -Wall -g -fpic"
                     Executable: "g++"
                     RunParts: *g++_CompileRunParts
@@ -191,11 +191,11 @@ Profiles:
     Linker:
         # (Optional) The command to be prepend for each link command in **shell** for each platform
         # PreRun: 
-        #     Default: ""
+        #     DefaultPlatform: ""
         
         # Shell command to use for checking if the executable exists or not
         CheckExistence:
-            Default: "g++ -v"
+            DefaultPlatform: "g++ -v"
         
         # Here are a list of substitution strings for RunParts, Setup and Cleanup
         # {Executable}:                 Linker executable
@@ -240,7 +240,7 @@ Profiles:
                     # Setup: []
                     # Cleanup: []
             Static:
-                Default:
+                DefaultPlatform:
                     Flags: ""
                     Executable: "g++"
                     RunParts: *g++_LinkRunParts
