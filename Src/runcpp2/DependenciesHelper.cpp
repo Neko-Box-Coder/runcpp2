@@ -110,7 +110,7 @@ namespace
 
     bool RunDependenciesSteps(  const runcpp2::Data::Profile& profile,
                                 const std::unordered_map<   PlatformName, 
-                                                            runcpp2::Data::DependencyCommands> steps,
+                                                            runcpp2::Data::ProfilesCommands> steps,
                                 const std::string& dependenciesCopiedDirectory,
                                 bool required)
     {
@@ -131,7 +131,7 @@ namespace
                 return true;
         }
         
-        const runcpp2::Data::DependencyCommands& dependencySteps = 
+        const runcpp2::Data::ProfilesCommands& dependencySteps = 
             *runcpp2::GetValueFromPlatformMap(steps);
         
         const std::vector<std::string>* commands = 

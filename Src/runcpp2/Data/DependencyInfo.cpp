@@ -94,7 +94,7 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     {
         for(int i = 0; i < node["Setup"].num_children(); ++i)
         {
-            DependencyCommands currentSetup;
+            ProfilesCommands currentSetup;
             ryml::ConstNodeRef currentSetupNode = node["Setup"][i];
             
             if(!currentSetup.ParseYAML_Node(currentSetupNode))
@@ -111,7 +111,7 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     {
         for(int i = 0; i < node["Cleanup"].num_children(); ++i)
         {
-            DependencyCommands currentCleanup;
+            ProfilesCommands currentCleanup;
             ryml::ConstNodeRef currentCleanupNode = node["Cleanup"][i];
             
             if(!currentCleanup.ParseYAML_Node(currentCleanupNode))
@@ -128,7 +128,7 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     {
         for(int i = 0; i < node["Build"].num_children(); ++i)
         {
-            DependencyCommands currentBuild;
+            ProfilesCommands currentBuild;
             ryml::ConstNodeRef currentBuildNode = node["Build"][i];
             
             if(!currentBuild.ParseYAML_Node(currentBuildNode))

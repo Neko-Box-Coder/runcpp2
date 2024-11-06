@@ -4,7 +4,7 @@
 #include "runcpp2/Data/DependencyLibraryType.hpp"
 #include "runcpp2/Data/DependencySource.hpp"
 #include "runcpp2/Data/DependencyLinkProperty.hpp"
-#include "runcpp2/Data/DependencyCommands.hpp"
+#include "runcpp2/Data/ProfilesCommands.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/Data/FilesToCopyInfo.hpp"
 #include "runcpp2/YamlLib.hpp"
@@ -26,9 +26,9 @@ namespace runcpp2
                 std::vector<std::string> IncludePaths;
                 std::vector<std::string> AbsoluteIncludePaths;
                 std::unordered_map<PlatformName, DependencyLinkProperty> LinkProperties;
-                std::unordered_map<PlatformName, DependencyCommands> Setup;
-                std::unordered_map<PlatformName, DependencyCommands> Cleanup;
-                std::unordered_map<PlatformName, DependencyCommands> Build;
+                std::unordered_map<PlatformName, ProfilesCommands> Setup;
+                std::unordered_map<PlatformName, ProfilesCommands> Cleanup;
+                std::unordered_map<PlatformName, ProfilesCommands> Build;
                 std::unordered_map<PlatformName, FilesToCopyInfo> FilesToCopy;
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef& node);
