@@ -37,6 +37,49 @@ int main(int argc, char** argv)
                         MSVC:
                         -   src/extra.cpp
                         -   src/debug.cpp
+                Defines:
+                    Windows:
+                        MSVC:
+                        -   _DEBUG
+                        -   VERSION=1.0.0
+                        GCC:
+                        -   NDEBUG
+                Setup:
+                    Windows:
+                        MSVC:
+                        -   echo 1
+                        -   echo 2
+                    Unix:
+                        GCC:
+                        -   echo 3
+                        -   echo 4
+                PreBuild:
+                    Windows:
+                        MSVC:
+                        -   echo 2
+                        -   echo 3
+                    Unix:
+                        GCC:
+                        -   echo 4
+                        -   echo 5
+                PostBuild:
+                    Windows:
+                        MSVC:
+                        -   echo 3
+                        -   echo 4
+                    Unix:
+                        GCC:
+                        -   echo 5
+                        -   echo 6
+                Cleanup:
+                    Windows:
+                        MSVC:
+                        -   echo 4
+                        -   echo 5
+                    Unix:
+                        GCC:
+                        -   echo 6
+                        -   echo 7
                 Dependencies:
                 -   Name: MyLib
                     Platforms:
@@ -55,13 +98,6 @@ int main(int argc, char** argv)
                                 -   mylib
                                 SearchDirectories:
                                 -   lib/Debug
-                Defines:
-                    Windows:
-                        MSVC:
-                        -   _DEBUG
-                        -   VERSION=1.0.0
-                        GCC:
-                        -   NDEBUG
             )";
             
             ryml::Tree tree = ryml::parse_in_arena(c4::to_csubstr(yamlStr));
@@ -122,13 +158,6 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT("MSVC files count", msvcFiles.size() == 2);
         ssTEST_OUTPUT_ASSERT("MSVC first file", msvcFiles.at(0) == "src/extra.cpp");
         
-        //Verify Dependencies
-        ssTEST_OUTPUT_ASSERT("Dependencies count", scriptInfo.Dependencies.size(), 1);
-        ssTEST_OUTPUT_ASSERT("Dependency name", scriptInfo.Dependencies.at(0).Name == "MyLib");
-        ssTEST_OUTPUT_ASSERT(   "Dependency type", 
-                                scriptInfo.Dependencies.at(0).LibraryType == 
-                                runcpp2::Data::DependencyLibraryType::SHARED);
-        
         //Verify Defines
         ssTEST_OUTPUT_SETUP
         (
@@ -139,6 +168,81 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT("MSVC first define", msvcDefines.at(0).Name == "_DEBUG");
         ssTEST_OUTPUT_ASSERT("MSVC second define name", msvcDefines.at(1).Name == "VERSION");
         ssTEST_OUTPUT_ASSERT("MSVC second define value", msvcDefines.at(1).Value == "1.0.0");
+        
+        //Verify Setup
+        ssTEST_OUTPUT_ASSERT(   "Setup commands count MSVC", 
+                                scriptInfo.Setup.at("Windows").CommandSteps.at("MSVC").size() == 2);
+        ssTEST_OUTPUT_ASSERT(   "Setup commands count GCC", 
+                                scriptInfo.Setup.at("Unix").CommandSteps.at("GCC").size() == 2);
+        
+        ssTEST_OUTPUT_SETUP
+        (
+            const std::vector<std::string>& msvcSetupCommands = 
+                scriptInfo.Setup.at("Windows").CommandSteps.at("MSVC");
+            
+            const std::vector<std::string>& gccSetupCommands = 
+                scriptInfo.Setup.at("Unix").CommandSteps.at("GCC");
+        );
+        
+        ssTEST_OUTPUT_ASSERT("MSVC setup commands count", msvcSetupCommands.size() == 2);
+        ssTEST_OUTPUT_ASSERT("MSVC setup commands", msvcSetupCommands.at(0) == "echo 1");
+        
+        ssTEST_OUTPUT_ASSERT("GCC setup commands count", gccSetupCommands.size() == 2);
+        ssTEST_OUTPUT_ASSERT("GCC setup commands", gccSetupCommands.at(0) == "echo 3");
+        
+        //Verify PreBuild
+        ssTEST_OUTPUT_ASSERT(   "PreBuild commands count MSVC", 
+                                scriptInfo.PreBuild.at("Windows").CommandSteps.at("MSVC").size() == 2);
+        ssTEST_OUTPUT_ASSERT(   "PreBuild commands count GCC", 
+                                scriptInfo.PreBuild.at("Unix").CommandSteps.at("GCC").size() == 2);
+        
+        ssTEST_OUTPUT_SETUP
+        (
+            const std::vector<std::string>& msvcPreBuildCommands = 
+                scriptInfo.PreBuild.at("Windows").CommandSteps.at("MSVC");
+
+            const std::vector<std::string>& gccPreBuildCommands = 
+                scriptInfo.PreBuild.at("Unix").CommandSteps.at("GCC");
+        );
+        
+        ssTEST_OUTPUT_ASSERT("MSVC prebuild commands count", msvcPreBuildCommands.size() == 2);
+        ssTEST_OUTPUT_ASSERT("MSVC prebuild commands", msvcPreBuildCommands.at(0) == "echo 2");
+        
+        ssTEST_OUTPUT_ASSERT("GCC prebuild commands count", gccPreBuildCommands.size() == 2);
+        ssTEST_OUTPUT_ASSERT("GCC prebuild commands", gccPreBuildCommands.at(1) == "echo 5");
+
+        //Verify PostBuild
+        ssTEST_OUTPUT_ASSERT(   "PostBuild commands count GCC", 
+                                scriptInfo.PostBuild.at("Unix").CommandSteps.at("GCC").size() == 2);
+
+        ssTEST_OUTPUT_SETUP
+        (
+            const std::vector<std::string>& gccPostBuildCommands = 
+                scriptInfo.PostBuild.at("Unix").CommandSteps.at("GCC");
+        );
+        
+        ssTEST_OUTPUT_ASSERT("GCC postbuild commands count", gccPostBuildCommands.size() == 2);
+        ssTEST_OUTPUT_ASSERT("GCC postbuild commands", gccPostBuildCommands.at(1) == "echo 6");
+
+        //Verify Cleanup
+        ssTEST_OUTPUT_ASSERT(   "Cleanup commands count MSVC", 
+                                scriptInfo.Cleanup.at("Windows").CommandSteps.at("MSVC").size() == 2);
+        
+        ssTEST_OUTPUT_SETUP
+        (
+            const std::vector<std::string>& msvcCleanupCommands = 
+                scriptInfo.Cleanup.at("Windows").CommandSteps.at("MSVC");
+        );
+
+        ssTEST_OUTPUT_ASSERT("MSVC cleanup commands count", msvcCleanupCommands.size() == 2);
+        ssTEST_OUTPUT_ASSERT("MSVC cleanup commands", msvcCleanupCommands.at(0) == "echo 4");
+
+        //Verify Dependencies
+        ssTEST_OUTPUT_ASSERT("Dependencies count", scriptInfo.Dependencies.size(), 1);
+        ssTEST_OUTPUT_ASSERT("Dependency name", scriptInfo.Dependencies.at(0).Name == "MyLib");
+        ssTEST_OUTPUT_ASSERT(   "Dependency type", 
+                                scriptInfo.Dependencies.at(0).LibraryType == 
+                                runcpp2::Data::DependencyLibraryType::SHARED);
 
         //Test ToString() and Equals()
         ssTEST_OUTPUT_EXECUTION

@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
     int currentArgIndex = 0;
     std::unordered_map<runcpp2::CmdOptions, std::string> currentOptions;
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 14, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 15, "Update this");
         std::unordered_map<std::string, runcpp2::OptionInfo> longOptionsMap =
         {
             {
@@ -229,10 +229,14 @@ int main(int argc, char* argv[])
             {
                 "--config",
                 runcpp2::OptionInfo(runcpp2::CmdOptions::CONFIG_FILE, true)
+            },
+            {
+                "--cleanup",
+                runcpp2::OptionInfo(runcpp2::CmdOptions::CLEANUP, false)
             }
         };
         
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 14, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 15, "Update this");
         std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
         {
             {"-rc", longOptionsMap.at("--reset-cache")},
@@ -246,7 +250,8 @@ int main(int argc, char* argv[])
             {"-w", longOptionsMap.at("--watch")},
             {"-b", longOptionsMap.at("--build")},
             {"-v", longOptionsMap.at("--version")},
-            {"-c", longOptionsMap.at("--config")}
+            {"-c", longOptionsMap.at("--config")},
+            {"-cu", longOptionsMap.at("--cleanup")}
         };
         
         currentArgIndex = ParseArgs(longOptionsMap, shortOptionsMap, currentOptions, argc, argv);
@@ -263,7 +268,7 @@ int main(int argc, char* argv[])
     //Help message
     if(currentOptions.count(runcpp2::CmdOptions::HELP))
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 14, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 15, "Update this");
         ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
         ssLOG_BASE("Options:");
         ssLOG_BASE("    -rc, --[r]eset-[c]ache                  Deletes compiled source files cache only");
@@ -272,6 +277,7 @@ int main(int argc, char* argv[])
         ssLOG_BASE("    -h,  --[h]elp                           Show this help message");
         ssLOG_BASE("    -rd, --[r]eset-[d]ependencies <names>   Reset dependencies (comma-separated names, or \"all\" for all)");
         ssLOG_BASE("    -l,  --[l]ocal                          Build in the current working directory under .runcpp2 directory");
+        ssLOG_BASE("    -cu, --[c]lean[u]p                      Run cleanup commands and remove build directory");
         ssLOG_BASE("    -sc, --[s]how-[c]onfig-path             Show where runcpp2 is reading the config from");
         ssLOG_BASE("    -t,  --create-script-[t]emplate <file>  Creates/prepend runcpp2 script info template");
         ssLOG_BASE("    -w,  --[w]atch                          Watch script changes and output any compiling errors");
@@ -467,6 +473,9 @@ int main(int argc, char* argv[])
     {
         return -1;
     }
+    
+    if(currentOptions.count(runcpp2::CmdOptions::CLEANUP) > 0)
+        ssLOG_BASE("Cleanup successful");
     
     return result;
 }

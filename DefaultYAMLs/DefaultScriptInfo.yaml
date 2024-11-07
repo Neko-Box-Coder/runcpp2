@@ -67,6 +67,43 @@ Defines:
         -   "EXAMPLE_DEFINE"              # Define without a value
         -   "VERSION_MAJOR=1"             # Define with a value
 
+# (Optional) Setup commands are run once before the script is first built.
+# These commands are run at the script's location when no build directory exists.
+Setup:
+    # Target Platform (DefaultPlatform, Windows, Linux, MacOS, or Unix)
+    DefaultPlatform:
+        # Profile name (e.g., "g++", "clang++", "msvc", or "DefaultProfile" for any profile)
+        DefaultProfile:
+        # List of setup commands
+        -   "echo Setting up script..."
+
+# (Optional) PreBuild commands are run before each build.
+# These commands are run in the build directory before compilation starts.
+PreBuild:
+    # Target Platform
+    DefaultPlatform:
+        # Profile name
+        DefaultProfile:
+        -   "echo Starting build..."
+
+# (Optional) PostBuild commands are run after each successful build.
+# These commands are run in the output directory where binaries are located.
+PostBuild:
+    # Target Platform
+    DefaultPlatform:
+        # Profile name
+        DefaultProfile:
+        -   "echo Build completed..."
+
+# (Optional) Cleanup commands are run when using the --cleanup option.
+# These commands are run at the script's location before the build directory is removed.
+Cleanup:
+    # Target Platform
+    DefaultPlatform:
+        # Profile name
+        DefaultProfile:
+        -   "echo Cleaning up script..."
+
 # (Optional) The list of dependencies needed by the script
 Dependencies:
     # Dependency name

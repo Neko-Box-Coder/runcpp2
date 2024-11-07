@@ -6,6 +6,7 @@
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/Data/ProfilesCompilesFiles.hpp"
 #include "runcpp2/Data/ProfilesDefines.hpp"
+#include "runcpp2/Data/ProfilesCommands.hpp"
 
 #include <string>
 #include <vector>
@@ -30,6 +31,11 @@ namespace runcpp2
                 std::vector<DependencyInfo> Dependencies;
                 
                 std::unordered_map<PlatformName, ProfilesDefines> Defines;
+                
+                std::unordered_map<PlatformName, ProfilesCommands> Setup;
+                std::unordered_map<PlatformName, ProfilesCommands> PreBuild;
+                std::unordered_map<PlatformName, ProfilesCommands> PostBuild;
+                std::unordered_map<PlatformName, ProfilesCommands> Cleanup;
                 
                 bool Populated = false;
                 
