@@ -1012,11 +1012,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 return PipelineResult::DEPENDENCIES_FAILED;
             }
             
-            //NOTE: We don't need to build and copy the dependencies for watch since we
-            //      only need to compile the script
-            if(currentOptions.count(CmdOptions::WATCH) > 0)
-                break;
-            
             if(!BuildDependencies(  profiles.at(profileIndex),
                                     scriptInfo,
                                     availableDependencies, 
@@ -1262,7 +1257,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         
         if(currentOptions.count(CmdOptions::BUILD) == 0)
         {
-            //TODO(NOW): Move copying to before post build
+            //Move copying to before post build
             std::vector<std::string> copiedPaths;
             if(!CopyFiles(buildDir, filesToCopyPaths, copiedPaths))
             {

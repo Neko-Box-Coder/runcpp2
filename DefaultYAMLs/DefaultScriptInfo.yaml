@@ -131,7 +131,7 @@ Dependencies:
     # (Optional if LibraryType is Header) Link properties of the dependency
     LinkProperties:
         # Properties for searching the library binary for each platform
-        Default:
+        DefaultPlatform:
             # Profile-specific properties
             "g++":
                 # The library names to be searched for when linking against the script. 
@@ -151,7 +151,7 @@ Dependencies:
     # (Optional) Setup commands are run once when the dependency is populated
     Setup:
         # Target Platform
-        Default:
+        DefaultPlatform:
             # Setup shell commands for the specified profile. 
             # Default commands are run in the dependency folder
             # You can also use "DefaultProfile" if all the compilers run the same setup commands
@@ -162,7 +162,7 @@ Dependencies:
     # (Optional) Build commands are run every time before the script is being built
     Build:
         # Target Platform
-        Default:
+        DefaultPlatform:
             # Target Profile ("DefaultProfile" for any profile)
             "g++":
             -   "cd build && cmake .."
