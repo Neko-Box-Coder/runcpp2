@@ -505,6 +505,39 @@ namespace
         
         return true;
     }
+
+    bool RunPostBuildCommands(  const runcpp2::Data::ScriptInfo& scriptInfo,
+                                const runcpp2::Data::Profile& profile,
+                                const std::string& outputDir)
+    {
+        const runcpp2::Data::ProfilesCommands* postBuildCommands = 
+            runcpp2::GetValueFromPlatformMap(scriptInfo.PostBuild);
+        
+        if(postBuildCommands != nullptr)
+        {
+            const std::vector<std::string>* commands = 
+                runcpp2::GetValueFromProfileMap(profile, postBuildCommands->CommandSteps);
+            if(commands != nullptr)
+            {
+                for(const std::string& cmd : *commands)
+                {
+                    std::string output;
+                    int returnCode = 0;
+                    if(!runcpp2::RunCommandAndGetOutput(cmd, output, returnCode, outputDir))
+                    {
+                        ssLOG_ERROR("PostBuild command failed: " << cmd << 
+                                    " with return code " << returnCode);
+                        ssLOG_ERROR("Output: \n" << output);
+                        return false;
+                    }
+                    
+                    ssLOG_INFO("PostBuild command ran: \n" << cmd);
+                    ssLOG_INFO("PostBuild command output: \n" << output);
+                }
+            }
+        }
+        return true;
+    }
 }
 
 void runcpp2::GetDefaultScriptInfo(std::string& scriptInfo)
@@ -726,6 +759,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                             return PipelineResult::UNEXPECTED_FAILURE;
                         }
                         
+                        ssLOG_INFO("Cleanup command ran: \n" << cmd);
                         ssLOG_INFO("Cleanup command output: \n" << output);
                     }
                 }
@@ -790,6 +824,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                 return PipelineResult::UNEXPECTED_FAILURE;
                             }
                             
+                            ssLOG_INFO("Setup command ran: \n" << cmd);
                             ssLOG_INFO("Setup command output: \n" << output);
                         }
                     }
@@ -1127,6 +1162,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                         return PipelineResult::UNEXPECTED_FAILURE;
                     }
                     
+                    ssLOG_INFO("PreBuild command ran: \n" << cmd);
                     ssLOG_INFO("PreBuild command output: \n" << output);
                 }
             }
@@ -1175,40 +1211,17 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 return PipelineResult::COMPILE_LINK_FAILED;
             }
         }
-
-        //Run PostBuild commands after successful compilation
-        const Data::ProfilesCommands* postBuildCommands = 
-            runcpp2::GetValueFromPlatformMap(scriptInfo.PostBuild);
-        
-        if(postBuildCommands != nullptr)
-        {
-            const std::vector<std::string>* commands = 
-                runcpp2::GetValueFromProfileMap(profiles.at(profileIndex), 
-                                                postBuildCommands->CommandSteps);
-            if(commands != nullptr)
-            {
-                std::string outputDir = buildOutputDir.empty() ? buildDir.string() : buildOutputDir;
-                for(const std::string& cmd : *commands)
-                {
-                    std::string output;
-                    int returnCode = 0;
-                    if(!runcpp2::RunCommandAndGetOutput(cmd, output, returnCode, outputDir))
-                    {
-                        ssLOG_ERROR("PostBuild command failed: " << cmd << 
-                                    " with return code " << returnCode);
-                        ssLOG_ERROR("Output: \n" << output);
-                        return PipelineResult::UNEXPECTED_FAILURE;
-                    }
-                    
-                    ssLOG_INFO("PostBuild command output: \n" << output);
-                }
-            }
-        }
     }
 
     //We are only compiling when watching changes
     if(currentOptions.count(CmdOptions::WATCH) > 0)
+    {
+        //Run PostBuild commands after successful compilation
+        if(!RunPostBuildCommands(scriptInfo, profiles.at(profileIndex), buildDir.string()))
+            return PipelineResult::UNEXPECTED_FAILURE;
+        
         return PipelineResult::SUCCESS;
+    }
 
     //Run the compiled file at script directory
     {
@@ -1249,12 +1262,17 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         
         if(currentOptions.count(CmdOptions::BUILD) == 0)
         {
+            //TODO(NOW): Move copying to before post build
             std::vector<std::string> copiedPaths;
             if(!CopyFiles(buildDir, filesToCopyPaths, copiedPaths))
             {
                 ssLOG_ERROR("Failed to copy binaries before running the script");
                 return PipelineResult::UNEXPECTED_FAILURE;
             }
+
+            //Run PostBuild commands after successful compilation
+            if(!RunPostBuildCommands(scriptInfo, profiles.at(profileIndex), buildDir.string()))
+                return PipelineResult::UNEXPECTED_FAILURE;
             
             //Prepare run arguments
             std::vector<std::string> finalRunArgs;
@@ -1300,6 +1318,10 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 ssLOG_ERROR("Failed to copy binaries before running the script");
                 return PipelineResult::UNEXPECTED_FAILURE;
             }
+
+            //Run PostBuild commands after successful compilation
+            if(!RunPostBuildCommands(scriptInfo, profiles.at(profileIndex), buildOutputDir))
+                return PipelineResult::UNEXPECTED_FAILURE;
             
             ssLOG_BASE("Build completed. Files copied to " << buildOutputDir);
             return PipelineResult::SUCCESS;
