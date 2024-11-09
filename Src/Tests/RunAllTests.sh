@@ -17,7 +17,7 @@ runTest ./BuildsManagerTest
 runTest ./FilePropertiesTest
 runTest ./FlagsOverrideInfoTest
 runTest ./DependencySourceTest
-runTest ./DependencyCommandsTest
+runTest ./ProfilesCommandsTest
 runTest ./FilesToCopyInfoTest
 runTest ./ProfilesCompilesFilesTest
 runTest ./ProfilesDefinesTest

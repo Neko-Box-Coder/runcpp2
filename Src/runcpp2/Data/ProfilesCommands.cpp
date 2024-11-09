@@ -1,15 +1,15 @@
-#include "runcpp2/Data/DependencyCommands.hpp"
+#include "runcpp2/Data/ProfilesCommands.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::DependencyCommands::ParseYAML_Node(ryml::ConstNodeRef& node)
+bool runcpp2::Data::ProfilesCommands::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
     INTERNAL_RUNCPP2_SAFE_START();
     
     if(!node.is_map())
     {
-        ssLOG_ERROR("DependencyCommands: Node is not a Map");
+        ssLOG_ERROR("ProfilesCommands: Node is not a Map");
         return false;
     }
     
@@ -17,7 +17,7 @@ bool runcpp2::Data::DependencyCommands::ParseYAML_Node(ryml::ConstNodeRef& node)
     {
         if(!node[i].is_seq())
         {
-            ssLOG_ERROR("DependencyCommands: Node is not a sequence");
+            ssLOG_ERROR("ProfilesCommands: Node is not a sequence");
             return false;
         }
         
@@ -31,7 +31,7 @@ bool runcpp2::Data::DependencyCommands::ParseYAML_Node(ryml::ConstNodeRef& node)
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
-std::string runcpp2::Data::DependencyCommands::ToString(std::string indentation) const
+std::string runcpp2::Data::ProfilesCommands::ToString(std::string indentation) const
 {
     std::string out;
     
@@ -53,7 +53,7 @@ std::string runcpp2::Data::DependencyCommands::ToString(std::string indentation)
     return out;
 }
 
-bool runcpp2::Data::DependencyCommands::Equals(const DependencyCommands& other) const
+bool runcpp2::Data::ProfilesCommands::Equals(const ProfilesCommands& other) const
 {
     if(CommandSteps.size() != other.CommandSteps.size())
         return false;

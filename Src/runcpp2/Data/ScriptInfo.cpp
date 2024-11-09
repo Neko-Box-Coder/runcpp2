@@ -18,7 +18,11 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
         NodeRequirement("OverrideLinkFlags", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("OtherFilesToBeCompiled", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("Dependencies", ryml::NodeType_e::SEQ, false, true),
-        NodeRequirement("Defines", ryml::NodeType_e::MAP, false, true)
+        NodeRequirement("Defines", ryml::NodeType_e::MAP, false, true),
+        NodeRequirement("Setup", ryml::NodeType_e::MAP, false, true),
+        NodeRequirement("PreBuild", ryml::NodeType_e::MAP, false, true),
+        NodeRequirement("PostBuild", ryml::NodeType_e::MAP, false, true),
+        NodeRequirement("Cleanup", ryml::NodeType_e::MAP, false, true)
     };
     
     if(!CheckNodeRequirements(node, requirements))
@@ -159,6 +163,74 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
         }
     }
     
+    if(ExistAndHasChild(node, "Setup"))
+    {
+        for(int i = 0; i < node["Setup"].num_children(); ++i)
+        {
+            PlatformName platform = GetKey(node["Setup"][i]);
+            ProfilesCommands commands;
+            ryml::ConstNodeRef currentCommandsNode = node["Setup"][i];
+            
+            if(!commands.ParseYAML_Node(currentCommandsNode))
+            {
+                ssLOG_ERROR("ScriptInfo: Failed to parse Setup.");
+                return false;
+            }
+            Setup[platform] = commands;
+        }
+    }
+    
+    if(ExistAndHasChild(node, "PreBuild"))
+    {
+        for(int i = 0; i < node["PreBuild"].num_children(); ++i)
+        {
+            PlatformName platform = GetKey(node["PreBuild"][i]);
+            ProfilesCommands commands;
+            ryml::ConstNodeRef currentCommandsNode = node["PreBuild"][i];
+            
+            if(!commands.ParseYAML_Node(currentCommandsNode))
+            {
+                ssLOG_ERROR("ScriptInfo: Failed to parse PreBuild.");
+                return false;
+            }
+            PreBuild[platform] = commands;
+        }
+    }
+    
+    if(ExistAndHasChild(node, "PostBuild"))
+    {
+        for(int i = 0; i < node["PostBuild"].num_children(); ++i)
+        {
+            PlatformName platform = GetKey(node["PostBuild"][i]);
+            ProfilesCommands commands;
+            ryml::ConstNodeRef currentCommandsNode = node["PostBuild"][i];
+            
+            if(!commands.ParseYAML_Node(currentCommandsNode))
+            {
+                ssLOG_ERROR("ScriptInfo: Failed to parse PostBuild.");
+                return false;
+            }
+            PostBuild[platform] = commands;
+        }
+    }
+    
+    if(ExistAndHasChild(node, "Cleanup"))
+    {
+        for(int i = 0; i < node["Cleanup"].num_children(); ++i)
+        {
+            PlatformName platform = GetKey(node["Cleanup"][i]);
+            ProfilesCommands commands;
+            ryml::ConstNodeRef currentCommandsNode = node["Cleanup"][i];
+            
+            if(!commands.ParseYAML_Node(currentCommandsNode))
+            {
+                ssLOG_ERROR("ScriptInfo: Failed to parse Cleanup.");
+                return false;
+            }
+            Cleanup[platform] = commands;
+        }
+    }
+    
     return true;
     
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
@@ -242,6 +314,46 @@ std::string runcpp2::Data::ScriptInfo::ToString(std::string indentation) const
         }
     }
     
+    if(!Setup.empty())
+    {
+        out += indentation + "Setup:\n";
+        for(auto it = Setup.begin(); it != Setup.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
+    }
+    
+    if(!PreBuild.empty())
+    {
+        out += indentation + "PreBuild:\n";
+        for(auto it = PreBuild.begin(); it != PreBuild.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
+    }
+    
+    if(!PostBuild.empty())
+    {
+        out += indentation + "PostBuild:\n";
+        for(auto it = PostBuild.begin(); it != PostBuild.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
+    }
+    
+    if(!Cleanup.empty())
+    {
+        out += indentation + "Cleanup:\n";
+        for(auto it = Cleanup.begin(); it != Cleanup.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
+    }
+    
     return out;
 }
 
@@ -255,6 +367,10 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
         OtherFilesToBeCompiled.size() != other.OtherFilesToBeCompiled.size() ||
         Dependencies.size() != other.Dependencies.size() ||
         Defines.size() != other.Defines.size() ||
+        Setup.size() != other.Setup.size() ||
+        PreBuild.size() != other.PreBuild.size() ||
+        PostBuild.size() != other.PostBuild.size() ||
+        Cleanup.size() != other.Cleanup.size() ||
         Populated != other.Populated)
     {
         return false;
@@ -305,6 +421,30 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
     for(const auto& it : Defines)
     {
         if(other.Defines.count(it.first) == 0 || !other.Defines.at(it.first).Equals(it.second))
+            return false;
+    }
+
+    for(const auto& it : Setup)
+    {
+        if(other.Setup.count(it.first) == 0 || !other.Setup.at(it.first).Equals(it.second))
+            return false;
+    }
+
+    for(const auto& it : PreBuild)
+    {
+        if(other.PreBuild.count(it.first) == 0 || !other.PreBuild.at(it.first).Equals(it.second))
+            return false;
+    }
+
+    for(const auto& it : PostBuild)
+    {
+        if(other.PostBuild.count(it.first) == 0 || !other.PostBuild.at(it.first).Equals(it.second))
+            return false;
+    }
+
+    for(const auto& it : Cleanup)
+    {
+        if(other.Cleanup.count(it.first) == 0 || !other.Cleanup.at(it.first).Equals(it.second))
             return false;
     }
 

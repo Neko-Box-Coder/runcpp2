@@ -22,6 +22,38 @@ Defines:
         # Turns into `TEST_DEF=\"Test Define Working\"` in shell
         DefaultProfile: ["TEST_DEF=\\\"Test Define Working\\\""]
 
+Setup:
+    Unix:
+        DefaultProfile:
+        -   "echo Setting up script... in $PWD"
+    Windows:
+        DefaultProfile:
+        -   "echo Setting up script... in %cd%"
+
+PreBuild:
+    Unix:
+        DefaultProfile:
+        -   "echo Starting build... in $PWD"
+    Windows:
+        DefaultProfile:
+        -   "echo Starting build... in %cd%"
+
+PostBuild:
+    Unix:
+        DefaultProfile:
+        -   "echo Build completed... in $PWD"
+    Windows:
+        DefaultProfile:
+        -   "echo Build completed... in %cd%"
+
+Cleanup:
+    Unix:
+        DefaultProfile:
+        -   "echo Cleaning up script... in $PWD"
+    Windows:
+        DefaultProfile:
+        -   "echo Cleaning up script... in %cd%"
+
 Dependencies:
 -   Name: ssLogger
     Platforms: [Windows, Linux, MacOS]

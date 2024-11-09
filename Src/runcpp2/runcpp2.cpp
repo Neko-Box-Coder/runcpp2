@@ -31,52 +31,6 @@ extern "C" const size_t DefaultScriptInfo_size;
 
 namespace
 {
-    bool CreateLocalBuildDirectory( const std::string& scriptPath, 
-                                    ghc::filesystem::path& outBuildPath)
-    {
-        // Get the current working directory
-        std::string currentWorkingDir = ghc::filesystem::current_path().string();
-        
-        // Create the .runcpp2 directory in the current working directory
-        std::string runcpp2Dir = currentWorkingDir + "/.runcpp2";
-        
-        std::error_code e;
-        if(!ghc::filesystem::exists(runcpp2Dir, e))
-        {
-            if(!ghc::filesystem::create_directory(runcpp2Dir, e))
-            {
-                ssLOG_ERROR("Failed to create .runcpp2 directory in the current working directory");
-                return false;
-            }
-        }
-        
-        //Using builds manager in local builds directory instead
-        {
-            runcpp2::BuildsManager buildsManager(runcpp2Dir);
-            if(!buildsManager.Initialize())
-            {
-                ssLOG_FATAL("Failed to initialize builds manager");
-                return false;
-            }
-            
-            bool writeMapping = false;
-            if(!buildsManager.HasBuildMapping(scriptPath))
-                writeMapping = true;
-            
-            if(buildsManager.GetBuildMapping(scriptPath, outBuildPath))
-            {
-                if(writeMapping && !buildsManager.SaveBuildsMappings())
-                {
-                    ssLOG_FATAL("Failed to save builds mappings");
-                    ssLOG_FATAL("Failed to create local build directory for: " << 
-                                scriptPath);
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
     bool RunCompiledScript( const ghc::filesystem::path& executable,
                             const std::string& scriptPath,
                             const std::vector<std::string>& runArgs,
@@ -446,7 +400,19 @@ namespace
                     ssLOG_INFO("Using output cache");
                     return true;
                 }
+                else
+                {
+                    ssLOG_INFO("Link binaries have more recent write time");
+                    ssLOG_DEBUG("lastExecutableWriteTime: " << 
+                                lastExecutableWriteTime.time_since_epoch().count());
+                    ssLOG_DEBUG("currentFinalObjectWriteTime: " << 
+                                currentFinalObjectWriteTime.time_since_epoch().count());
+                }
             }
+            else
+                ssLOG_INFO(exeToCopy.string() << " doesn't exist");
+            
+            ssLOG_INFO("Not using output cache");
             return false;
         }
         else
@@ -484,7 +450,19 @@ namespace
                     ssLOG_INFO("Using output cache");
                     return true;
                 }
+                else
+                {
+                    ssLOG_INFO("Link binaries have more recent write time");
+                    ssLOG_DEBUG("lastSharedLibWriteTime: " << 
+                                lastSharedLibWriteTime.time_since_epoch().count());
+                    ssLOG_DEBUG("currentFinalObjectWriteTime: " << 
+                                currentFinalObjectWriteTime.time_since_epoch().count());
+                }
             }
+            else
+                ssLOG_INFO(sharedLibBuild.string() << " doesn't exist");
+            
+            ssLOG_INFO("Not using output cache");
             return false;
         }
     }
@@ -525,6 +503,39 @@ namespace
             }
         }
         
+        return true;
+    }
+
+    bool RunPostBuildCommands(  const runcpp2::Data::ScriptInfo& scriptInfo,
+                                const runcpp2::Data::Profile& profile,
+                                const std::string& outputDir)
+    {
+        const runcpp2::Data::ProfilesCommands* postBuildCommands = 
+            runcpp2::GetValueFromPlatformMap(scriptInfo.PostBuild);
+        
+        if(postBuildCommands != nullptr)
+        {
+            const std::vector<std::string>* commands = 
+                runcpp2::GetValueFromProfileMap(profile, postBuildCommands->CommandSteps);
+            if(commands != nullptr)
+            {
+                for(const std::string& cmd : *commands)
+                {
+                    std::string output;
+                    int returnCode = 0;
+                    if(!runcpp2::RunCommandAndGetOutput(cmd, output, returnCode, outputDir))
+                    {
+                        ssLOG_ERROR("PostBuild command failed: " << cmd << 
+                                    " with return code " << returnCode);
+                        ssLOG_ERROR("Output: \n" << output);
+                        return false;
+                    }
+                    
+                    ssLOG_INFO("PostBuild command ran: \n" << cmd);
+                    ssLOG_INFO("PostBuild command output: \n" << output);
+                }
+            }
+        }
         return true;
     }
 }
@@ -610,14 +621,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         }
     }
     
-    //Create a class that manages build folder
-    BuildsManager buildsManager(configDir);
-    if(!buildsManager.Initialize())
-    {
-        ssLOG_FATAL("Failed to initialize builds manager");
-        return PipelineResult::INVALID_BUILD_DIR;
-    }
-    
     int profileIndex = -1;
 
     ssLOG_DEBUG("scriptPath: " << scriptPath);
@@ -683,33 +686,105 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             ssLOG_INFO("\n" << scriptInfo.ToString(""));
         }
         
-        //Create build directory
+        profileIndex = GetPreferredProfileIndex(absoluteScriptPath, 
+                                                scriptInfo, 
+                                                profiles, 
+                                                configPreferredProfile);
+
+        if(profileIndex == -1)
         {
-            bool createdBuildDir = false;
-            if(currentOptions.count(CmdOptions::LOCAL) > 0)
+            ssLOG_ERROR("Failed to find a profile to run");
+            return PipelineResult::NO_AVAILABLE_PROFILE;
+        }
+
+        //Create build directory
+        ghc::filesystem::path buildDirPath =    currentOptions.count(CmdOptions::LOCAL) > 0 ?
+                                                ghc::filesystem::current_path() / ".runcpp2":
+                                                configDir;
+        
+        //Create a class that manages build folder
+        BuildsManager buildsManager(buildDirPath);
+        {
+            if(!buildsManager.Initialize())
             {
-                if(CreateLocalBuildDirectory(absoluteScriptPath, buildDir))
-                    createdBuildDir = true;
-            }
-            else
-            {
-                bool writeMapping = false;
-                if(!buildsManager.HasBuildMapping(absoluteScriptPath))
-                    writeMapping = true;
-                
-                if(buildsManager.GetBuildMapping(absoluteScriptPath, buildDir))
-                {
-                    if(writeMapping && !buildsManager.SaveBuildsMappings())
-                        ssLOG_FATAL("Failed to save builds mappings");
-                    else
-                        createdBuildDir = true;
-                }
+                ssLOG_FATAL("Failed to initialize builds manager");
+                return PipelineResult::INVALID_BUILD_DIR;
             }
             
+            bool createdBuildDir = false;
+            bool writeMapping = false;
+            if(!buildsManager.HasBuildMapping(absoluteScriptPath))
+                writeMapping = true;
+            
+            if(buildsManager.GetBuildMapping(absoluteScriptPath, buildDir))
+            {
+                if(writeMapping && !buildsManager.SaveBuildsMappings())
+                    ssLOG_FATAL("Failed to save builds mappings");
+                else
+                    createdBuildDir = true;
+            }
+
             if(!createdBuildDir)
             {
                 ssLOG_FATAL("Failed to create local build directory for: " << absoluteScriptPath);
                 return PipelineResult::INVALID_BUILD_DIR;
+            }
+        }
+
+        //Handle cleanup command if present
+        if(currentOptions.count(CmdOptions::CLEANUP) > 0)
+        {
+            const Data::ProfilesCommands* cleanupCommands = 
+                runcpp2::GetValueFromPlatformMap(scriptInfo.Cleanup);
+                
+            if(cleanupCommands != nullptr)
+            {
+                const std::vector<std::string>* commands = 
+                    runcpp2::GetValueFromProfileMap(profiles.at(profileIndex), 
+                                                    cleanupCommands->CommandSteps);
+                if(commands != nullptr)
+                {
+                    for(const std::string& cmd : *commands)
+                    {
+                        std::string output;
+                        int returnCode = 0;
+                        if(!runcpp2::RunCommandAndGetOutput(cmd, 
+                                                            output, 
+                                                            returnCode, 
+                                                            scriptDirectory))
+                        {
+                            ssLOG_ERROR("Cleanup command failed: " << cmd << 
+                                        " with return code " << returnCode);
+                            ssLOG_ERROR("Output: \n" << output);
+                            return PipelineResult::UNEXPECTED_FAILURE;
+                        }
+                        
+                        ssLOG_INFO("Cleanup command ran: \n" << cmd);
+                        ssLOG_INFO("Cleanup command output: \n" << output);
+                    }
+                }
+
+                //Remove build directory
+                std::error_code e;
+                if(!ghc::filesystem::remove_all(buildDir, e))
+                {
+                    ssLOG_ERROR("Failed to remove build directory: " << buildDir);
+                    return PipelineResult::UNEXPECTED_FAILURE;
+                }
+                
+                if(!buildsManager.RemoveBuildMapping(absoluteScriptPath))
+                {
+                    ssLOG_ERROR("Failed to remove build mapping");
+                    return PipelineResult::UNEXPECTED_FAILURE;
+                }
+                
+                if(!buildsManager.SaveBuildsMappings())
+                {
+                    ssLOG_ERROR("Failed to save build mappings");
+                    return PipelineResult::UNEXPECTED_FAILURE;
+                }
+                
+                return PipelineResult::SUCCESS;
             }
         }
         
@@ -720,6 +795,41 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         {
             ghc::filesystem::path lastScriptInfoFilePath = buildDir / "LastScriptInfo.yaml";
             Data::ScriptInfo lastScriptInfoFromDisk;
+            
+            //Run Setup commands if we don't have previous build
+            if(!ghc::filesystem::exists(lastScriptInfoFilePath, e))
+            {
+                const Data::ProfilesCommands* setupCommands = 
+                    runcpp2::GetValueFromPlatformMap(scriptInfo.Setup);
+                    
+                if(setupCommands != nullptr)
+                {
+                    const std::vector<std::string>* commands = 
+                        runcpp2::GetValueFromProfileMap(profiles.at(profileIndex), 
+                                                        setupCommands->CommandSteps);
+                    if(commands != nullptr)
+                    {
+                        for(const std::string& cmd : *commands)
+                        {
+                            std::string output;
+                            int returnCode = 0;
+                            if(!runcpp2::RunCommandAndGetOutput(cmd, 
+                                                                output, 
+                                                                returnCode, 
+                                                                scriptDirectory))
+                            {
+                                ssLOG_ERROR("Setup command failed: " << cmd << 
+                                            " with return code " << returnCode);
+                                ssLOG_ERROR("Output: \n" << output);
+                                return PipelineResult::UNEXPECTED_FAILURE;
+                            }
+                            
+                            ssLOG_INFO("Setup command ran: \n" << cmd);
+                            ssLOG_INFO("Setup command output: \n" << output);
+                        }
+                    }
+                }
+            }
             
             //Compare script info in memory or from disk
             const Data::ScriptInfo* lastInfo = lastScriptInfo;
@@ -836,16 +946,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             }
         }
 
-        profileIndex = GetPreferredProfileIndex(absoluteScriptPath, 
-                                                scriptInfo, 
-                                                profiles, 
-                                                configPreferredProfile);
-
-        if(profileIndex == -1)
-        {
-            ssLOG_ERROR("Failed to find a profile to run");
-            return PipelineResult::NO_AVAILABLE_PROFILE;
-        }
         
         std::vector<std::string> gatheredBinariesPaths;
         
@@ -1036,6 +1136,38 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 finalObjectWriteTime = lastWriteTime;
         }
         
+        //Run PreBuild commands before compilation
+        const Data::ProfilesCommands* preBuildCommands = 
+            runcpp2::GetValueFromPlatformMap(scriptInfo.PreBuild);
+        
+        if(preBuildCommands != nullptr)
+        {
+            const std::vector<std::string>* commands = 
+                runcpp2::GetValueFromProfileMap(profiles.at(profileIndex), 
+                                                preBuildCommands->CommandSteps);
+            if(commands != nullptr)
+            {
+                for(const std::string& cmd : *commands)
+                {
+                    std::string output;
+                    int returnCode = 0;
+                    if(!runcpp2::RunCommandAndGetOutput(cmd, 
+                                                        output, 
+                                                        returnCode, 
+                                                        buildDir.string()))
+                    {
+                        ssLOG_ERROR("PreBuild command failed: " << cmd << 
+                                    " with return code " << returnCode);
+                        ssLOG_ERROR("Output: \n" << output);
+                        return PipelineResult::UNEXPECTED_FAILURE;
+                    }
+                    
+                    ssLOG_INFO("PreBuild command ran: \n" << cmd);
+                    ssLOG_INFO("PreBuild command output: \n" << output);
+                }
+            }
+        }
+
         //Compiling/Linking
         if(!HasOutputCache( sourceHasCache, 
                             buildDir, 
@@ -1083,7 +1215,13 @@ runcpp2::StartPipeline( const std::string& scriptPath,
 
     //We are only compiling when watching changes
     if(currentOptions.count(CmdOptions::WATCH) > 0)
+    {
+        //Run PostBuild commands after successful compilation
+        if(!RunPostBuildCommands(scriptInfo, profiles.at(profileIndex), buildDir.string()))
+            return PipelineResult::UNEXPECTED_FAILURE;
+        
         return PipelineResult::SUCCESS;
+    }
 
     //Run the compiled file at script directory
     {
@@ -1124,12 +1262,17 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         
         if(currentOptions.count(CmdOptions::BUILD) == 0)
         {
+            //TODO(NOW): Move copying to before post build
             std::vector<std::string> copiedPaths;
             if(!CopyFiles(buildDir, filesToCopyPaths, copiedPaths))
             {
                 ssLOG_ERROR("Failed to copy binaries before running the script");
                 return PipelineResult::UNEXPECTED_FAILURE;
             }
+
+            //Run PostBuild commands after successful compilation
+            if(!RunPostBuildCommands(scriptInfo, profiles.at(profileIndex), buildDir.string()))
+                return PipelineResult::UNEXPECTED_FAILURE;
             
             //Prepare run arguments
             std::vector<std::string> finalRunArgs;
@@ -1175,6 +1318,10 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 ssLOG_ERROR("Failed to copy binaries before running the script");
                 return PipelineResult::UNEXPECTED_FAILURE;
             }
+
+            //Run PostBuild commands after successful compilation
+            if(!RunPostBuildCommands(scriptInfo, profiles.at(profileIndex), buildOutputDir))
+                return PipelineResult::UNEXPECTED_FAILURE;
             
             ssLOG_BASE("Build completed. Files copied to " << buildOutputDir);
             return PipelineResult::SUCCESS;

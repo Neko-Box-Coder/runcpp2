@@ -1,5 +1,5 @@
-#ifndef RUNCPP2_DATA_DEPENDENCY_COMMANDS_HPP
-#define RUNCPP2_DATA_DEPENDENCY_COMMANDS_HPP
+#ifndef RUNCPP2_DATA_PROFILES_COMMANDS_HPP
+#define RUNCPP2_DATA_PROFILES_COMMANDS_HPP
 
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/YamlLib.hpp"
@@ -12,7 +12,7 @@ namespace runcpp2
 {
     namespace Data
     {
-        class DependencyCommands
+        class ProfilesCommands
         {
             public:
                 //TODO: Allow specifying command can fail
@@ -20,7 +20,7 @@ namespace runcpp2
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;
-                bool Equals(const DependencyCommands& other) const;
+                bool Equals(const ProfilesCommands& other) const;
         };
     }
 }

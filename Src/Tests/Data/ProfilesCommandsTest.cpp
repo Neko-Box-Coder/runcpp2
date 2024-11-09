@@ -1,4 +1,4 @@
-#include "runcpp2/Data/DependencyCommands.hpp"
+#include "runcpp2/Data/ProfilesCommands.hpp"
 #include "ssTest.hpp"
 #include "runcpp2/YamlLib.hpp"
 #include "runcpp2/runcpp2.hpp"
@@ -9,7 +9,7 @@ int main(int argc, char** argv)
     
     ssTEST_INIT_TEST_GROUP();
     
-    ssTEST("DependencyCommands Should Parse Valid YAML")
+    ssTEST("ProfilesCommands Should Parse Valid YAML")
     {
         ssTEST_OUTPUT_SETUP
         (
@@ -27,40 +27,40 @@ int main(int argc, char** argv)
             ryml::Tree tree = ryml::parse_in_arena(c4::to_csubstr(yamlStr));
             ryml::ConstNodeRef root = tree.rootref();
             
-            runcpp2::Data::DependencyCommands dependencyCommands;
+            runcpp2::Data::ProfilesCommands profilesCommands;
         );
         
         ssTEST_OUTPUT_EXECUTION
         (
             ryml::ConstNodeRef nodeRef = root;
-            bool parseResult = dependencyCommands.ParseYAML_Node(nodeRef);
+            bool parseResult = profilesCommands.ParseYAML_Node(nodeRef);
         );
         
         ssTEST_OUTPUT_ASSERT("ParseYAML_Node should succeed", parseResult);
         
         //Verify parsed values
         ssTEST_OUTPUT_ASSERT(   "MSVC commands count", 
-                                dependencyCommands.CommandSteps.at("MSVC").size() == 3);
+                                profilesCommands.CommandSteps.at("MSVC").size() == 3);
         ssTEST_OUTPUT_ASSERT(   "GCC commands count", 
-                                dependencyCommands.CommandSteps.at("GCC").size() == 3);
+                                profilesCommands.CommandSteps.at("GCC").size() == 3);
         ssTEST_OUTPUT_ASSERT(   "MSVC first command", 
-                                dependencyCommands.CommandSteps.at("MSVC").at(0) == "mkdir build");
+                                profilesCommands.CommandSteps.at("MSVC").at(0) == "mkdir build");
         ssTEST_OUTPUT_ASSERT(   "GCC last command", 
-                                dependencyCommands.CommandSteps.at("GCC").at(2) == "make install");
+                                profilesCommands.CommandSteps.at("GCC").at(2) == "make install");
         
         //Test ToString() and Equals()
         ssTEST_OUTPUT_EXECUTION
         (
-            std::string yamlOutput = dependencyCommands.ToString("");
+            std::string yamlOutput = profilesCommands.ToString("");
             ryml::Tree outputTree = ryml::parse_in_arena(ryml::to_csubstr(yamlOutput));
             
-            runcpp2::Data::DependencyCommands parsedOutput;
+            runcpp2::Data::ProfilesCommands parsedOutput;
             nodeRef = outputTree.rootref();
             parsedOutput.ParseYAML_Node(nodeRef);
         );
         
         ssTEST_OUTPUT_ASSERT(   "Parsed output should equal original", 
-                                dependencyCommands.Equals(parsedOutput));
+                                profilesCommands.Equals(parsedOutput));
     };
     
     ssTEST_END_TEST_GROUP();
