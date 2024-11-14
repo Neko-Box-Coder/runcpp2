@@ -1208,20 +1208,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         }
     }
 
-    //We are only compiling when watching changes
-    if(currentOptions.count(CmdOptions::WATCH) > 0)
-    {
-        //Run PostBuild commands after successful compilation
-        if(!RunPostBuildCommands(scriptInfo, profiles.at(profileIndex), buildDir.string()))
-            return PipelineResult::UNEXPECTED_FAILURE;
-        
-        return PipelineResult::SUCCESS;
-    }
-
     //Run the compiled file at script directory
     {
-        ssLOG_INFO("Running script...");
-        
         std::error_code _;
         ghc::filesystem::path target = buildDir;
         
@@ -1269,6 +1257,12 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             if(!RunPostBuildCommands(scriptInfo, profiles.at(profileIndex), buildDir.string()))
                 return PipelineResult::UNEXPECTED_FAILURE;
             
+            //Don't run if we are just watching
+            if(currentOptions.count(CmdOptions::WATCH) > 0)
+                return PipelineResult::SUCCESS;
+            
+            ssLOG_INFO("Running script...");
+
             //Prepare run arguments
             std::vector<std::string> finalRunArgs;
             finalRunArgs.push_back(target.string());
@@ -1313,10 +1307,14 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 ssLOG_ERROR("Failed to copy binaries before running the script");
                 return PipelineResult::UNEXPECTED_FAILURE;
             }
-
+            
             //Run PostBuild commands after successful compilation
             if(!RunPostBuildCommands(scriptInfo, profiles.at(profileIndex), buildOutputDir))
                 return PipelineResult::UNEXPECTED_FAILURE;
+            
+            //Don't output anything here if we are just watching
+            if(currentOptions.count(CmdOptions::WATCH) > 0)
+                return PipelineResult::SUCCESS;
             
             ssLOG_BASE("Build completed. Files copied to " << buildOutputDir);
             return PipelineResult::SUCCESS;
