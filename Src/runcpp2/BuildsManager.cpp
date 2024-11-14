@@ -93,6 +93,21 @@ namespace runcpp2
         MappingsFile(BuildDirectory / "Mappings.csv"),
         Initialized(false)
     {}
+
+    BuildsManager::BuildsManager(const BuildsManager& other)
+    {
+        *this = other;
+    }
+
+    BuildsManager& BuildsManager::operator=(const BuildsManager& other)
+    {
+        ConfigDirectory = other.ConfigDirectory;
+        Mappings = other.Mappings;
+        BuildDirectory = other.BuildDirectory;
+        MappingsFile = other.MappingsFile;
+        Initialized = other.Initialized;
+        return *this;
+    }
     
     BuildsManager::~BuildsManager()
     {}
