@@ -83,6 +83,12 @@ namespace runcpp2
                                     const ghc::filesystem::path& absoluteScriptPath,
                                     BuildsManager& buildsManager);
 
+    PipelineResult 
+    InitializeBuildDirectory(   const ghc::filesystem::path& configDir,
+                                const ghc::filesystem::path& absoluteScriptPath,
+                                bool useLocalBuildDir,
+                                BuildsManager& outBuildsManager,
+                                ghc::filesystem::path& outBuildDir);
 
     PipelineResult StartPipeline(   const std::string& scriptPath, 
                                     const std::vector<Data::Profile>& profiles,

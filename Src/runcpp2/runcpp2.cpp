@@ -721,6 +721,49 @@ runcpp2::PipelineResult runcpp2::HandleCleanup( const Data::ScriptInfo& scriptIn
 }
 
 runcpp2::PipelineResult 
+runcpp2::InitializeBuildDirectory(  const ghc::filesystem::path& configDir,
+                                    const ghc::filesystem::path& absoluteScriptPath,
+                                    bool useLocalBuildDir,
+                                    BuildsManager& outBuildsManager,
+                                    ghc::filesystem::path& outBuildDir)
+{
+    //Create build directory
+    ghc::filesystem::path buildDirPath = useLocalBuildDir ?
+                                        ghc::filesystem::current_path() / ".runcpp2" :
+                                        configDir;
+    
+    //Create a class that manages build folder
+    outBuildsManager = BuildsManager(buildDirPath);
+    
+    if(!outBuildsManager.Initialize())
+    {
+        ssLOG_FATAL("Failed to initialize builds manager");
+        return PipelineResult::INVALID_BUILD_DIR;
+    }
+    
+    bool createdBuildDir = false;
+    bool writeMapping = false;
+    if(!outBuildsManager.HasBuildMapping(absoluteScriptPath))
+        writeMapping = true;
+    
+    if(outBuildsManager.GetBuildMapping(absoluteScriptPath, outBuildDir))
+    {
+        if(writeMapping && !outBuildsManager.SaveBuildsMappings())
+            ssLOG_FATAL("Failed to save builds mappings");
+        else
+            createdBuildDir = true;
+    }
+
+    if(!createdBuildDir)
+    {
+        ssLOG_FATAL("Failed to create local build directory for: " << absoluteScriptPath);
+        return PipelineResult::INVALID_BUILD_DIR;
+    }
+
+    return PipelineResult::SUCCESS;
+}
+
+runcpp2::PipelineResult 
 runcpp2::StartPipeline( const std::string& scriptPath, 
                         const std::vector<Data::Profile>& profiles,
                         const std::string& configPreferredProfile,
@@ -792,39 +835,16 @@ runcpp2::StartPipeline( const std::string& scriptPath,
     //Parsing the script, setting up dependencies, compiling and linking
     std::vector<std::string> filesToCopyPaths;
     {
-        //Create build directory
-        ghc::filesystem::path buildDirPath =    currentOptions.count(CmdOptions::LOCAL) > 0 ?
-                                                ghc::filesystem::current_path() / ".runcpp2":
-                                                configDir;
-        
-        //Create a class that manages build folder
-        BuildsManager buildsManager(buildDirPath);
-        {
-            if(!buildsManager.Initialize())
-            {
-                ssLOG_FATAL("Failed to initialize builds manager");
-                return PipelineResult::INVALID_BUILD_DIR;
-            }
+        BuildsManager buildsManager("/tmp");
+        PipelineResult result = 
+            InitializeBuildDirectory(   configDir,
+                                        absoluteScriptPath,
+                                        currentOptions.count(CmdOptions::LOCAL) > 0,
+                                        buildsManager,
+                                        buildDir);
             
-            bool createdBuildDir = false;
-            bool writeMapping = false;
-            if(!buildsManager.HasBuildMapping(absoluteScriptPath))
-                writeMapping = true;
-            
-            if(buildsManager.GetBuildMapping(absoluteScriptPath, buildDir))
-            {
-                if(writeMapping && !buildsManager.SaveBuildsMappings())
-                    ssLOG_FATAL("Failed to save builds mappings");
-                else
-                    createdBuildDir = true;
-            }
-
-            if(!createdBuildDir)
-            {
-                ssLOG_FATAL("Failed to create local build directory for: " << absoluteScriptPath);
-                return PipelineResult::INVALID_BUILD_DIR;
-            }
-        }
+        if (result != PipelineResult::SUCCESS)
+            return result;
 
         //Handle cleanup command if present
         if(currentOptions.count(CmdOptions::CLEANUP) > 0)
