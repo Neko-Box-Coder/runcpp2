@@ -62,6 +62,19 @@ namespace runcpp2
 
     void SetLogLevel(const std::string& logLevel);
 
+    PipelineResult ValidateInputs(  const std::string& scriptPath, 
+                                    const std::vector<Data::Profile>& profiles,
+                                    ghc::filesystem::path& outAbsoluteScriptPath,
+                                    ghc::filesystem::path& outScriptDirectory,
+                                    std::string& outScriptName);
+
+    PipelineResult 
+    ParseAndValidateScriptInfo( const ghc::filesystem::path& absoluteScriptPath,
+                                const ghc::filesystem::path& scriptDirectory,
+                                const std::string& scriptName,
+                                const Data::ScriptInfo* lastScriptInfo,
+                                Data::ScriptInfo& outScriptInfo);
+
     PipelineResult StartPipeline(   const std::string& scriptPath, 
                                     const std::vector<Data::Profile>& profiles,
                                     const std::string& configPreferredProfile,
@@ -73,6 +86,8 @@ namespace runcpp2
                                     int& returnStatus);
     
     std::string PipelineResultToString(PipelineResult result);
+
+   
 }
 
 #endif

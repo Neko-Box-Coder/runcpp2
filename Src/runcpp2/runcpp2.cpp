@@ -559,6 +559,111 @@ void runcpp2::SetLogLevel(const std::string& logLevel)
         ssLOG_ERROR("Invalid log level: " << logLevel);
 }
 
+runcpp2::PipelineResult runcpp2::ValidateInputs(const std::string& scriptPath, 
+                                                const std::vector<Data::Profile>& profiles,
+                                                ghc::filesystem::path& outAbsoluteScriptPath,
+                                                ghc::filesystem::path& outScriptDirectory,
+                                                std::string& outScriptName)
+{
+    INTERNAL_RUNCPP2_SAFE_START();
+    
+    if(profiles.empty())
+    {
+        ssLOG_ERROR("No compiler profiles found");
+        return PipelineResult::EMPTY_PROFILES;
+    }
+
+    //Check if input file exists
+    std::error_code _;
+    if(!ghc::filesystem::exists(scriptPath, _))
+    {
+        ssLOG_ERROR("File does not exist: " << scriptPath);
+        return PipelineResult::INVALID_SCRIPT_PATH;
+    }
+    
+    if(ghc::filesystem::is_directory(scriptPath, _))
+    {
+        ssLOG_ERROR("The input file must not be a directory: " << scriptPath);
+        return PipelineResult::INVALID_SCRIPT_PATH;
+    }
+
+    outAbsoluteScriptPath = ghc::filesystem::absolute(scriptPath);
+    outScriptDirectory = outAbsoluteScriptPath.parent_path();
+    outScriptName = outAbsoluteScriptPath.stem().string();
+
+    ssLOG_DEBUG("scriptPath: " << scriptPath);
+    ssLOG_DEBUG("absoluteScriptPath: " << outAbsoluteScriptPath.string());
+    ssLOG_DEBUG("scriptDirectory: " << outScriptDirectory.string());
+    ssLOG_DEBUG("scriptName: " << outScriptName);
+    ssLOG_DEBUG("is_directory: " << ghc::filesystem::is_directory(outScriptDirectory));
+
+    return PipelineResult::SUCCESS;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
+}
+
+runcpp2::PipelineResult 
+runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptPath,
+                                    const ghc::filesystem::path& scriptDirectory,
+                                    const std::string& scriptName,
+                                    const Data::ScriptInfo* lastScriptInfo,
+                                    Data::ScriptInfo& outScriptInfo)
+{
+    INTERNAL_RUNCPP2_SAFE_START();
+
+    //Check if there's script info as yaml file instead
+    std::error_code e;
+    std::string parsableInfo;
+    std::ifstream inputFile;
+    std::string dedicatedYamlLoc = ProcessPath(scriptDirectory.string() +"/" + scriptName + ".yaml");
+    
+    if(ghc::filesystem::exists(dedicatedYamlLoc, e))
+    {
+        inputFile.open(dedicatedYamlLoc);
+        std::stringstream buffer;
+        buffer << inputFile.rdbuf();
+        parsableInfo = buffer.str();
+    }
+    else
+    {
+        inputFile.open(absoluteScriptPath);
+        
+        if (!inputFile)
+        {
+            ssLOG_ERROR("Failed to open file: " << absoluteScriptPath);
+            return PipelineResult::INVALID_SCRIPT_PATH;
+        }
+
+        std::stringstream buffer;
+        buffer << inputFile.rdbuf();
+        std::string source(buffer.str());
+        
+        if(!GetParsableInfo(source, parsableInfo))
+        {
+            ssLOG_ERROR("An error has been encountered when parsing info: " << absoluteScriptPath);
+            return PipelineResult::INVALID_SCRIPT_INFO;
+        }
+    }
+    
+    //Try to parse the runcpp2 info
+    if(!ParseScriptInfo(parsableInfo, outScriptInfo))
+    {
+        ssLOG_ERROR("Failed to parse info");
+        ssLOG_ERROR("Content trying to parse: " << "\n" << parsableInfo);
+        return PipelineResult::INVALID_SCRIPT_INFO;
+    }
+    
+    if(!parsableInfo.empty())
+    {
+        ssLOG_INFO("Parsed script info YAML:");
+        ssLOG_INFO("\n" << outScriptInfo.ToString(""));
+    }
+
+    return PipelineResult::SUCCESS;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
+}
+
 runcpp2::PipelineResult 
 runcpp2::StartPipeline( const std::string& scriptPath, 
                         const std::vector<Data::Profile>& profiles,
@@ -571,38 +676,34 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                         int& returnStatus)
 {
     INTERNAL_RUNCPP2_SAFE_START();
-    
     ssLOG_FUNC_DEBUG();
+
+    //Validate inputs and get paths
+    ghc::filesystem::path absoluteScriptPath;
+    ghc::filesystem::path scriptDirectory;
+    std::string scriptName;
     
-    if(profiles.empty())
-    {
-        ssLOG_ERROR("No compiler profiles found");
-        return PipelineResult::EMPTY_PROFILES;
-    }
-    
-    //Check if input file exists
-    {
-        std::error_code _;
-        
-        if(!ghc::filesystem::exists(scriptPath, _))
-        {
-            ssLOG_ERROR("File does not exist: " << scriptPath);
-            return PipelineResult::INVALID_SCRIPT_PATH;
-        }
-        
-        if(ghc::filesystem::is_directory(scriptPath, _))
-        {
-            ssLOG_ERROR("The input file must not be a directory: " << scriptPath);
-            return PipelineResult::INVALID_SCRIPT_PATH;
-        }
-    }
-    
-    //TODO: Use ghc::filesystem::path instead of string?
-    std::string absoluteScriptPath = ghc::filesystem::absolute(scriptPath).string();
-    std::string scriptDirectory = ghc::filesystem::path(absoluteScriptPath).parent_path().string();
-    std::string scriptName = ghc::filesystem::path(absoluteScriptPath).stem().string();
+    PipelineResult result = ValidateInputs( scriptPath, 
+                                            profiles, 
+                                            absoluteScriptPath,
+                                            scriptDirectory,
+                                            scriptName);
+    if(result != PipelineResult::SUCCESS)
+        return result;
+
+    //Rest of the original function remains the same...
     ghc::filesystem::path configDir = GetConfigFilePath();
     ghc::filesystem::path buildDir;
+
+    //Parse script info
+    Data::ScriptInfo scriptInfo;
+    result = ParseAndValidateScriptInfo(absoluteScriptPath,
+                                      scriptDirectory,
+                                      scriptName,
+                                      lastScriptInfo,
+                                      scriptInfo);
+    if(result != PipelineResult::SUCCESS)
+        return result;
     
     //Parse and get the config directory
     {
@@ -623,12 +724,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
     
     int profileIndex = -1;
 
-    ssLOG_DEBUG("scriptPath: " << scriptPath);
-    ssLOG_DEBUG("absoluteScriptPath: " << absoluteScriptPath);
-    ssLOG_DEBUG("scriptDirectory: " << scriptDirectory);
-    ssLOG_DEBUG("scriptName: " << scriptName);
-    ssLOG_DEBUG("is_directory: " << ghc::filesystem::is_directory(scriptDirectory));
-
     std::string exeExt = "";
     #ifdef _WIN32
         exeExt = ".exe";
@@ -636,56 +731,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
 
     //Parsing the script, setting up dependencies, compiling and linking
     std::vector<std::string> filesToCopyPaths;
-    Data::ScriptInfo scriptInfo;
-    {
-        //Check if there's script info as yaml file instead
-        std::error_code e;
-        std::string parsableInfo;
-        std::ifstream inputFile;
-        std::string dedicatedYamlLoc = ProcessPath(scriptDirectory + "/" + scriptName + ".yaml");
-        if(ghc::filesystem::exists(dedicatedYamlLoc, e))
-        {
-            inputFile.open(dedicatedYamlLoc);
-            std::stringstream buffer;
-            buffer << inputFile.rdbuf();
-            parsableInfo = buffer.str();
-        }
-        else
-        {
-            inputFile.open(absoluteScriptPath);
-            
-            if (!inputFile)
-            {
-                ssLOG_ERROR("Failed to open file: " << absoluteScriptPath);
-                return PipelineResult::INVALID_SCRIPT_PATH;
-            }
-
-            std::stringstream buffer;
-            buffer << inputFile.rdbuf();
-            std::string source(buffer.str());
-            
-            if(!GetParsableInfo(source, parsableInfo))
-            {
-                ssLOG_ERROR("An error has been encountered when parsing info: " << 
-                            absoluteScriptPath);
-                return PipelineResult::INVALID_SCRIPT_INFO;
-            }
-        }
-        
-        //Try to parse the runcpp2 info
-        if(!ParseScriptInfo(parsableInfo, scriptInfo))
-        {
-            ssLOG_ERROR("Failed to parse info");
-            ssLOG_ERROR("Content trying to parse: " << "\n" << parsableInfo);
-            return PipelineResult::INVALID_SCRIPT_INFO;
-        }
-        
-        if(!parsableInfo.empty())
-        {
-            ssLOG_INFO("Parsed script info YAML:");
-            ssLOG_INFO("\n" << scriptInfo.ToString(""));
-        }
-        
+    {    
         profileIndex = GetPreferredProfileIndex(absoluteScriptPath, 
                                                 scriptInfo, 
                                                 profiles, 
@@ -795,7 +841,9 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         {
             ghc::filesystem::path lastScriptInfoFilePath = buildDir / "LastScriptInfo.yaml";
             Data::ScriptInfo lastScriptInfoFromDisk;
-            
+
+            std::error_code e;
+
             //Run Setup commands if we don't have previous build
             if(!ghc::filesystem::exists(lastScriptInfoFilePath, e))
             {
@@ -1123,6 +1171,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 ssLOG_INFO("  " << filesToCopyPaths[i]);
         }
         
+        std::error_code e;
+
         //Update finalObjectWriteTime
         for(int i = 0; i < linkFilesPaths.size(); ++i)
         {
