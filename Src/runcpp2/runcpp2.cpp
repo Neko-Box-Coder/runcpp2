@@ -951,7 +951,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         
         //Process Dependencies
         std::vector<Data::DependencyInfo*> availableDependencies;
-        do
         {
             for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
             {
@@ -974,6 +973,13 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             if( currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 || 
                 !changedDependencies.empty())
             {
+                if(currentOptions.count(CmdOptions::BUILD_SOURCE_ONLY) > 0)
+                {
+                    ssLOG_ERROR("Dependencies settings have changed or being reset explicitly.");
+                    ssLOG_ERROR("Cannot just build source files only without building dependencies");
+                    return PipelineResult::INVALID_OPTION;
+                }
+                
                 std::string depsToReset = "all";
                 if(!changedDependencies.empty())
                 {
@@ -1011,17 +1017,20 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 ssLOG_ERROR("Failed to setup script dependencies");
                 return PipelineResult::DEPENDENCIES_FAILED;
             }
-            
-            if(!BuildDependencies(  profiles.at(profileIndex),
-                                    scriptInfo,
-                                    availableDependencies, 
-                                    dependenciesLocalCopiesPaths))
+
+            if(currentOptions.count(CmdOptions::BUILD_SOURCE_ONLY) == 0)
             {
-                ssLOG_ERROR("Failed to build script dependencies");
-                return PipelineResult::DEPENDENCIES_FAILED;
+                if(!BuildDependencies(  profiles.at(profileIndex),
+                                        scriptInfo,
+                                        availableDependencies, 
+                                        dependenciesLocalCopiesPaths))
+                {
+                    ssLOG_ERROR("Failed to build script dependencies");
+                    return PipelineResult::DEPENDENCIES_FAILED;
+                }
             }
 
-            if (!GatherDependenciesBinaries(availableDependencies,
+            if(!GatherDependenciesBinaries( availableDependencies,
                                             dependenciesLocalCopiesPaths,
                                             profiles.at(profileIndex),
                                             gatheredBinariesPaths))
@@ -1030,7 +1039,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 return PipelineResult::DEPENDENCIES_FAILED;
             }
         }
-        while(0);
         
         //Get all the files we are trying to compile
         std::vector<ghc::filesystem::path> sourceFiles;
@@ -1324,5 +1332,42 @@ runcpp2::StartPipeline( const std::string& scriptPath,
     return PipelineResult::UNEXPECTED_FAILURE;
     
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
+}
+
+std::string runcpp2::PipelineResultToString(PipelineResult result)
+{
+    static_assert(static_cast<int>(PipelineResult::COUNT) == 13, "PipelineResult enum has changed");
+
+    switch(result)
+    {
+        case PipelineResult::UNEXPECTED_FAILURE:
+            return "UNEXPECTED_FAILURE";
+        case PipelineResult::SUCCESS:
+            return "SUCCESS";
+        case PipelineResult::EMPTY_PROFILES:
+            return "EMPTY_PROFILES";
+        case PipelineResult::INVALID_SCRIPT_PATH:
+            return "INVALID_SCRIPT_PATH";
+        case PipelineResult::INVALID_CONFIG_PATH:
+            return "INVALID_CONFIG_PATH";
+        case PipelineResult::INVALID_BUILD_DIR:
+            return "INVALID_BUILD_DIR";
+        case PipelineResult::INVALID_SCRIPT_INFO:
+            return "INVALID_SCRIPT_INFO";
+        case PipelineResult::NO_AVAILABLE_PROFILE:
+            return "NO_AVAILABLE_PROFILE";
+        case PipelineResult::DEPENDENCIES_FAILED:
+            return "DEPENDENCIES_FAILED";
+        case PipelineResult::COMPILE_LINK_FAILED:
+            return "COMPILE_LINK_FAILED";
+        case PipelineResult::INVALID_PROFILE:
+            return "INVALID_PROFILE";
+        case PipelineResult::RUN_SCRIPT_FAILED:
+            return "RUN_SCRIPT_FAILED";
+        case PipelineResult::INVALID_OPTION:
+            return "INVALID_OPTION";
+        default:
+            return "UNKNOWN_PIPELINE_RESULT";
+    }
 }
 

@@ -26,6 +26,7 @@ namespace runcpp2
         LOG_LEVEL,
         CONFIG_FILE,
         CLEANUP,
+        BUILD_SOURCE_ONLY,
         COUNT
     };
     
@@ -43,6 +44,7 @@ namespace runcpp2
         COMPILE_LINK_FAILED,
         INVALID_PROFILE,
         RUN_SCRIPT_FAILED,
+        INVALID_OPTION,
         COUNT
     };
     
@@ -69,6 +71,8 @@ namespace runcpp2
                                     Data::ScriptInfo& outScriptInfo,
                                     const std::string& buildOutputDir,
                                     int& returnStatus);
+    
+    std::string PipelineResultToString(PipelineResult result);
 }
 
 #endif

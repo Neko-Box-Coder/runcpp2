@@ -175,7 +175,7 @@ int main(int argc, char* argv[])
     int currentArgIndex = 0;
     std::unordered_map<runcpp2::CmdOptions, std::string> currentOptions;
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 15, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 16, "Update this");
         std::unordered_map<std::string, runcpp2::OptionInfo> longOptionsMap =
         {
             {
@@ -233,10 +233,14 @@ int main(int argc, char* argv[])
             {
                 "--cleanup",
                 runcpp2::OptionInfo(runcpp2::CmdOptions::CLEANUP, false)
+            },
+            {
+                "--build-source-only",
+                runcpp2::OptionInfo(runcpp2::CmdOptions::BUILD_SOURCE_ONLY, false)
             }
         };
         
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 15, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 16, "Update this");
         std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
         {
             {"-rc", longOptionsMap.at("--reset-cache")},
@@ -251,7 +255,8 @@ int main(int argc, char* argv[])
             {"-b", longOptionsMap.at("--build")},
             {"-v", longOptionsMap.at("--version")},
             {"-c", longOptionsMap.at("--config")},
-            {"-cu", longOptionsMap.at("--cleanup")}
+            {"-cu", longOptionsMap.at("--cleanup")},
+            {"-s", longOptionsMap.at("--build-source-only")},
         };
         
         currentArgIndex = ParseArgs(longOptionsMap, shortOptionsMap, currentOptions, argc, argv);
@@ -268,7 +273,7 @@ int main(int argc, char* argv[])
     //Help message
     if(currentOptions.count(runcpp2::CmdOptions::HELP))
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 15, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 16, "Update this");
         ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
         ssLOG_BASE("Options:");
         ssLOG_BASE("  Run/Build:");
@@ -278,6 +283,9 @@ int main(int argc, char* argv[])
         ssLOG_BASE("    -e,  --[e]xecutable                     Runs as executable instead of shared library");
         ssLOG_BASE("    -c,  --[c]onfig <file>                  Use specified config file instead of default");
         ssLOG_BASE("    -t,  --create-script-[t]emplate <file>  Creates/prepend runcpp2 script info template");
+        ssLOG_BASE("    -s,  --build-[s]ource-only              (Re)Builds source files only without building dependencies.");
+        ssLOG_BASE("                                            The previous built binaries will be used for dependencies.");
+        ssLOG_BASE("                                            Requires dependencies to be built already.");
         ssLOG_BASE("  Reset/Cleanup:");
         ssLOG_BASE("    -rc, --[r]eset-[c]ache                  Deletes compiled source files cache only");
         ssLOG_BASE("    -ru, --[r]eset-[u]ser-config            Replace current user config with the default one");
@@ -427,7 +435,7 @@ int main(int argc, char* argv[])
                                             "",
                                             result);
             
-                static_assert(static_cast<int>(runcpp2::PipelineResult::COUNT) == 12, "Update this");
+                static_assert(static_cast<int>(runcpp2::PipelineResult::COUNT) == 13, "Update this");
                 switch(pipelineResult)
                 {
                     case runcpp2::PipelineResult::INVALID_SCRIPT_PATH:
@@ -444,6 +452,7 @@ int main(int argc, char* argv[])
                     case runcpp2::PipelineResult::COMPILE_LINK_FAILED:
                     case runcpp2::PipelineResult::INVALID_PROFILE:
                     case runcpp2::PipelineResult::RUN_SCRIPT_FAILED:
+                    case runcpp2::PipelineResult::INVALID_OPTION:
                         ssLOG_BASE("Watching...");
                         break;
                     case runcpp2::PipelineResult::SUCCESS:
