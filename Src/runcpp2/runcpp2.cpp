@@ -664,6 +664,62 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
 }
 
+runcpp2::PipelineResult runcpp2::HandleCleanup( const Data::ScriptInfo& scriptInfo,
+                                                const Data::Profile& profile,
+                                                const ghc::filesystem::path& scriptDirectory,
+                                                const ghc::filesystem::path& buildDir,
+                                                const ghc::filesystem::path& absoluteScriptPath,
+                                                BuildsManager& buildsManager)
+{
+    const Data::ProfilesCommands* cleanupCommands = 
+        runcpp2::GetValueFromPlatformMap(scriptInfo.Cleanup);
+            
+    if(cleanupCommands != nullptr)
+    {
+        const std::vector<std::string>* commands = 
+            runcpp2::GetValueFromProfileMap(profile, cleanupCommands->CommandSteps);
+        if(commands != nullptr)
+        {
+            for(const std::string& cmd : *commands)
+            {
+                std::string output;
+                int returnCode = 0;
+                if(!runcpp2::RunCommandAndGetOutput(cmd, output, returnCode, scriptDirectory))
+                {
+                    ssLOG_ERROR("Cleanup command failed: " << cmd << 
+                                " with return code " << returnCode);
+                    ssLOG_ERROR("Output: \n" << output);
+                    return PipelineResult::UNEXPECTED_FAILURE;
+                }
+                
+                ssLOG_INFO("Cleanup command ran: \n" << cmd);
+                ssLOG_INFO("Cleanup command output: \n" << output);
+            }
+        }
+    }
+    
+    //Remove build directory
+    std::error_code e;
+    if(!ghc::filesystem::remove_all(buildDir, e))
+    {
+        ssLOG_ERROR("Failed to remove build directory: " << buildDir);
+        return PipelineResult::UNEXPECTED_FAILURE;
+    }
+    
+    if(!buildsManager.RemoveBuildMapping(absoluteScriptPath))
+    {
+        ssLOG_ERROR("Failed to remove build mapping");
+        return PipelineResult::UNEXPECTED_FAILURE;
+    }
+    
+    if(!buildsManager.SaveBuildsMappings())
+    {
+        ssLOG_ERROR("Failed to save build mappings");
+        return PipelineResult::UNEXPECTED_FAILURE;
+    }
+    return PipelineResult::SUCCESS;
+}
+
 runcpp2::PipelineResult 
 runcpp2::StartPipeline( const std::string& scriptPath, 
                         const std::vector<Data::Profile>& profiles,
@@ -722,27 +778,20 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         }
     }
     
-    int profileIndex = -1;
-
-    std::string exeExt = "";
-    #ifdef _WIN32
-        exeExt = ".exe";
-    #endif
-
-    //Parsing the script, setting up dependencies, compiling and linking
-    std::vector<std::string> filesToCopyPaths;
-    {    
-        profileIndex = GetPreferredProfileIndex(absoluteScriptPath, 
+    int profileIndex = GetPreferredProfileIndex(absoluteScriptPath, 
                                                 scriptInfo, 
                                                 profiles, 
                                                 configPreferredProfile);
 
-        if(profileIndex == -1)
-        {
-            ssLOG_ERROR("Failed to find a profile to run");
-            return PipelineResult::NO_AVAILABLE_PROFILE;
-        }
+    if(profileIndex == -1)
+    {
+        ssLOG_ERROR("Failed to find a profile to run");
+        return PipelineResult::NO_AVAILABLE_PROFILE;
+    }
 
+    //Parsing the script, setting up dependencies, compiling and linking
+    std::vector<std::string> filesToCopyPaths;
+    {
         //Create build directory
         ghc::filesystem::path buildDirPath =    currentOptions.count(CmdOptions::LOCAL) > 0 ?
                                                 ghc::filesystem::current_path() / ".runcpp2":
@@ -780,58 +829,12 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         //Handle cleanup command if present
         if(currentOptions.count(CmdOptions::CLEANUP) > 0)
         {
-            const Data::ProfilesCommands* cleanupCommands = 
-                runcpp2::GetValueFromPlatformMap(scriptInfo.Cleanup);
-                
-            if(cleanupCommands != nullptr)
-            {
-                const std::vector<std::string>* commands = 
-                    runcpp2::GetValueFromProfileMap(profiles.at(profileIndex), 
-                                                    cleanupCommands->CommandSteps);
-                if(commands != nullptr)
-                {
-                    for(const std::string& cmd : *commands)
-                    {
-                        std::string output;
-                        int returnCode = 0;
-                        if(!runcpp2::RunCommandAndGetOutput(cmd, 
-                                                            output, 
-                                                            returnCode, 
-                                                            scriptDirectory))
-                        {
-                            ssLOG_ERROR("Cleanup command failed: " << cmd << 
-                                        " with return code " << returnCode);
-                            ssLOG_ERROR("Output: \n" << output);
-                            return PipelineResult::UNEXPECTED_FAILURE;
-                        }
-                        
-                        ssLOG_INFO("Cleanup command ran: \n" << cmd);
-                        ssLOG_INFO("Cleanup command output: \n" << output);
-                    }
-                }
-
-                //Remove build directory
-                std::error_code e;
-                if(!ghc::filesystem::remove_all(buildDir, e))
-                {
-                    ssLOG_ERROR("Failed to remove build directory: " << buildDir);
-                    return PipelineResult::UNEXPECTED_FAILURE;
-                }
-                
-                if(!buildsManager.RemoveBuildMapping(absoluteScriptPath))
-                {
-                    ssLOG_ERROR("Failed to remove build mapping");
-                    return PipelineResult::UNEXPECTED_FAILURE;
-                }
-                
-                if(!buildsManager.SaveBuildsMappings())
-                {
-                    ssLOG_ERROR("Failed to save build mappings");
-                    return PipelineResult::UNEXPECTED_FAILURE;
-                }
-                
-                return PipelineResult::SUCCESS;
-            }
+            return HandleCleanup(   scriptInfo, 
+                                    profiles.at(profileIndex),
+                                    scriptDirectory,
+                                    buildDir,
+                                    absoluteScriptPath,
+                                    buildsManager);
         }
         
         //Check if script info has changed if provided
@@ -1221,6 +1224,11 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             }
         }
 
+        std::string exeExt = "";
+        #ifdef _WIN32
+            exeExt = ".exe";
+        #endif
+
         //Compiling/Linking
         if(!HasOutputCache( sourceHasCache, 
                             buildDir, 
@@ -1268,6 +1276,11 @@ runcpp2::StartPipeline( const std::string& scriptPath,
 
     //Run the compiled file at script directory
     {
+        std::string exeExt = "";
+        #ifdef _WIN32
+            exeExt = ".exe";
+        #endif
+        
         std::error_code _;
         ghc::filesystem::path target = buildDir;
         

@@ -3,6 +3,7 @@
 
 #include "runcpp2/Data/Profile.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
+#include "runcpp2/BuildsManager.hpp"
 
 #include <string>
 #include <vector>
@@ -75,6 +76,14 @@ namespace runcpp2
                                 const Data::ScriptInfo* lastScriptInfo,
                                 Data::ScriptInfo& outScriptInfo);
 
+    PipelineResult HandleCleanup(   const Data::ScriptInfo& scriptInfo,
+                                    const Data::Profile& profile,
+                                    const ghc::filesystem::path& scriptDirectory,
+                                    const ghc::filesystem::path& buildDir,
+                                    const ghc::filesystem::path& absoluteScriptPath,
+                                    BuildsManager& buildsManager);
+
+
     PipelineResult StartPipeline(   const std::string& scriptPath, 
                                     const std::vector<Data::Profile>& profiles,
                                     const std::string& configPreferredProfile,
@@ -85,9 +94,7 @@ namespace runcpp2
                                     const std::string& buildOutputDir,
                                     int& returnStatus);
     
-    std::string PipelineResultToString(PipelineResult result);
-
-   
+    std::string PipelineResultToString(PipelineResult result);    
 }
 
 #endif
