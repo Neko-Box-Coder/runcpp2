@@ -144,7 +144,7 @@ add_library(runcpp2 STATIC
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/StringUtil.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/runcpp2.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/BuildsManager.cpp"
-                        
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/PipelineSteps.cpp"
                         )
 
 target_include_directories(runcpp2 PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
