@@ -109,6 +109,15 @@ namespace runcpp2
                         std::vector<Data::DependencyInfo*>& outAvailableDependencies,
                         std::vector<std::string>& outGatheredBinariesPaths);
 
+    void SeparateDependencyFiles(   const Data::FilesTypesInfo& filesTypes,
+                                    const std::vector<std::string>& gatheredBinariesPaths,
+                                    std::vector<std::string>& outLinkFilesPaths,
+                                    std::vector<std::string>& outFilesToCopyPaths);
+
+    PipelineResult HandlePreBuild(  const Data::ScriptInfo& scriptInfo,
+                                    const Data::Profile& profile,
+                                    const ghc::filesystem::path& buildDir);
+
     PipelineResult StartPipeline(   const std::string& scriptPath, 
                                     const std::vector<Data::Profile>& profiles,
                                     const std::string& configPreferredProfile,

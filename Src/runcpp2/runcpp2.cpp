@@ -1020,6 +1020,90 @@ runcpp2::ProcessDependencies(   Data::ScriptInfo& scriptInfo,
     return PipelineResult::SUCCESS;
 }
 
+void runcpp2::SeparateDependencyFiles(  const Data::FilesTypesInfo& filesTypes,
+                                        const std::vector<std::string>& gatheredBinariesPaths,
+                                        std::vector<std::string>& outLinkFilesPaths,
+                                        std::vector<std::string>& outFilesToCopyPaths)
+{
+    std::unordered_set<std::string> linkExtensions;
+
+    //Populate the set of link extensions
+    if(runcpp2::HasValueFromPlatformMap(filesTypes.StaticLinkFile.Extension))
+        linkExtensions.insert(*runcpp2::GetValueFromPlatformMap(filesTypes.StaticLinkFile.Extension));
+    if(runcpp2::HasValueFromPlatformMap(filesTypes.SharedLinkFile.Extension))
+        linkExtensions.insert(*runcpp2::GetValueFromPlatformMap(filesTypes.SharedLinkFile.Extension));
+    if(runcpp2::HasValueFromPlatformMap(filesTypes.ObjectLinkFile.Extension))
+        linkExtensions.insert(*runcpp2::GetValueFromPlatformMap(filesTypes.ObjectLinkFile.Extension));
+
+    //Separate the gathered files from dependencies into files to link and files to copy
+    for(int i = 0; i < gatheredBinariesPaths.size(); ++i)
+    {
+        ghc::filesystem::path filePath(gatheredBinariesPaths.at(i));
+        std::string extension = runcpp2::GetFileExtensionWithoutVersion(filePath);
+
+        //Check if the file is a link file based on its extension
+        if(linkExtensions.find(extension) != linkExtensions.end())
+        {
+            outLinkFilesPaths.push_back(gatheredBinariesPaths.at(i));
+            
+            //Special case when SharedLinkFile and SharedLibraryFile share the same extension
+            if( runcpp2::HasValueFromPlatformMap(filesTypes.SharedLibraryFile.Extension) && 
+                *runcpp2::GetValueFromPlatformMap(filesTypes.SharedLibraryFile
+                                                            .Extension) == extension)
+            {
+                outFilesToCopyPaths.push_back(gatheredBinariesPaths.at(i));
+            }
+        }
+        else
+            outFilesToCopyPaths.push_back(gatheredBinariesPaths.at(i));
+    }
+
+    ssLOG_INFO("Files to link:");
+    for(int i = 0; i < outLinkFilesPaths.size(); ++i)
+        ssLOG_INFO("  " << outLinkFilesPaths[i]);
+
+    ssLOG_INFO("Files to copy:");
+    for(int i = 0; i < outFilesToCopyPaths.size(); ++i)
+        ssLOG_INFO("  " << outFilesToCopyPaths[i]);
+}
+
+runcpp2::PipelineResult runcpp2::HandlePreBuild(    const Data::ScriptInfo& scriptInfo,
+                                                    const Data::Profile& profile,
+                                                    const ghc::filesystem::path& buildDir)
+{
+    const Data::ProfilesCommands* preBuildCommands = 
+        runcpp2::GetValueFromPlatformMap(scriptInfo.PreBuild);
+    
+    if(preBuildCommands != nullptr)
+    {
+        const std::vector<std::string>* commands = 
+            runcpp2::GetValueFromProfileMap(profile, preBuildCommands->CommandSteps);
+        if(commands != nullptr)
+        {
+            for(const std::string& cmd : *commands)
+            {
+                std::string output;
+                int returnCode = 0;
+                if(!runcpp2::RunCommandAndGetOutput(cmd, 
+                                                  output, 
+                                                  returnCode, 
+                                                  buildDir.string()))
+                {
+                    ssLOG_ERROR("PreBuild command failed: " << cmd << 
+                               " with return code " << returnCode);
+                    ssLOG_ERROR("Output: \n" << output);
+                    return PipelineResult::UNEXPECTED_FAILURE;
+                }
+                
+                ssLOG_INFO("PreBuild command ran: \n" << cmd);
+                ssLOG_INFO("PreBuild command output: \n" << output);
+            }
+        }
+    }
+    
+    return PipelineResult::SUCCESS;
+}
+
 runcpp2::PipelineResult runcpp2::StartPipeline( const std::string& scriptPath, 
                                                 const std::vector<Data::Profile>& profiles,
                                                 const std::string& configPreferredProfile,
@@ -1182,58 +1266,10 @@ runcpp2::PipelineResult runcpp2::StartPipeline( const std::string& scriptPath,
         }
         
         std::vector<std::string> linkFilesPaths;
-        std::unordered_set<std::string> linkExtensions;
-        const Data::FilesTypesInfo& currentFileTypes = profiles.at(profileIndex).FilesTypes;
-
-        //Populate the set of link extensions
-        if(runcpp2::HasValueFromPlatformMap(currentFileTypes.StaticLinkFile.Extension))
-        {
-            linkExtensions.insert(*runcpp2::GetValueFromPlatformMap(currentFileTypes.StaticLinkFile
-                                                                                    .Extension));
-        }
-        if(runcpp2::HasValueFromPlatformMap(currentFileTypes.SharedLinkFile.Extension))
-        {
-            linkExtensions.insert(*runcpp2::GetValueFromPlatformMap(currentFileTypes.SharedLinkFile
-                                                                                    .Extension));
-        }
-        if(runcpp2::HasValueFromPlatformMap(currentFileTypes.ObjectLinkFile.Extension))
-        {
-            linkExtensions.insert(*runcpp2::GetValueFromPlatformMap(currentFileTypes.ObjectLinkFile
-                                                                                    .Extension));
-        }
-
-        //Separate the gathered files from dependencies into files to link and files to copy
-        for(int i = 0; i < gatheredBinariesPaths.size(); ++i)
-        {
-            ghc::filesystem::path filePath(gatheredBinariesPaths.at(i));
-            std::string extension = runcpp2::GetFileExtensionWithoutVersion(filePath);
-
-            //Check if the file is a link file based on its extension
-            if(linkExtensions.find(extension) != linkExtensions.end())
-            {
-                linkFilesPaths.push_back(gatheredBinariesPaths.at(i));
-                
-                //Special case when SharedLinkFile and SharedLibraryFile share the same extension
-                if( runcpp2::HasValueFromPlatformMap(currentFileTypes.SharedLibraryFile.Extension) && 
-                    *runcpp2::GetValueFromPlatformMap(currentFileTypes  .SharedLibraryFile
-                                                                        .Extension) == extension)
-                {
-                    filesToCopyPaths.push_back(gatheredBinariesPaths.at(i));
-                }
-            }
-            else
-                filesToCopyPaths.push_back(gatheredBinariesPaths.at(i));
-        }
-
-        {
-            ssLOG_INFO("Files to link:");
-            for(int i = 0; i < linkFilesPaths.size(); ++i)
-                ssLOG_INFO("  " << linkFilesPaths[i]);
-
-            ssLOG_INFO("Files to copy:");
-            for(int i = 0; i < filesToCopyPaths.size(); ++i)
-                ssLOG_INFO("  " << filesToCopyPaths[i]);
-        }
+        SeparateDependencyFiles(profiles.at(profileIndex).FilesTypes, 
+                                gatheredBinariesPaths, 
+                                linkFilesPaths, 
+                                filesToCopyPaths);
         
         std::error_code e;
 
@@ -1254,36 +1290,9 @@ runcpp2::PipelineResult runcpp2::StartPipeline( const std::string& scriptPath,
         }
         
         //Run PreBuild commands before compilation
-        const Data::ProfilesCommands* preBuildCommands = 
-            runcpp2::GetValueFromPlatformMap(scriptInfo.PreBuild);
-        
-        if(preBuildCommands != nullptr)
-        {
-            const std::vector<std::string>* commands = 
-                runcpp2::GetValueFromProfileMap(profiles.at(profileIndex), 
-                                                preBuildCommands->CommandSteps);
-            if(commands != nullptr)
-            {
-                for(const std::string& cmd : *commands)
-                {
-                    std::string output;
-                    int returnCode = 0;
-                    if(!runcpp2::RunCommandAndGetOutput(cmd, 
-                                                        output, 
-                                                        returnCode, 
-                                                        buildDir.string()))
-                    {
-                        ssLOG_ERROR("PreBuild command failed: " << cmd << 
-                                    " with return code " << returnCode);
-                        ssLOG_ERROR("Output: \n" << output);
-                        return PipelineResult::UNEXPECTED_FAILURE;
-                    }
-                    
-                    ssLOG_INFO("PreBuild command ran: \n" << cmd);
-                    ssLOG_INFO("PreBuild command output: \n" << output);
-                }
-            }
-        }
+        result = HandlePreBuild(scriptInfo, profiles.at(profileIndex), buildDir);
+        if(result != PipelineResult::SUCCESS)
+            return result;
 
         std::string exeExt = "";
         #ifdef _WIN32
