@@ -1104,15 +1104,87 @@ runcpp2::PipelineResult runcpp2::HandlePreBuild(    const Data::ScriptInfo& scri
     return PipelineResult::SUCCESS;
 }
 
-runcpp2::PipelineResult runcpp2::StartPipeline( const std::string& scriptPath, 
-                                                const std::vector<Data::Profile>& profiles,
-                                                const std::string& configPreferredProfile,
-                                                const std::unordered_map<CmdOptions, std::string> currentOptions,
-                                                const std::vector<std::string>& runArgs,
-                                                const Data::ScriptInfo* lastScriptInfo,
-                                                Data::ScriptInfo& outScriptInfo,
-                                                const std::string& buildOutputDir,
-                                                int& returnStatus)
+runcpp2::PipelineResult 
+runcpp2::RunCompiledOutput( const ghc::filesystem::path& target,
+                            const ghc::filesystem::path& absoluteScriptPath,
+                            const Data::ScriptInfo& scriptInfo,
+                            const std::vector<std::string>& runArgs,
+                            const std::unordered_map<CmdOptions, std::string>& currentOptions,
+                            int& returnStatus)
+{
+    //Prepare run arguments
+    std::vector<std::string> finalRunArgs;
+    finalRunArgs.push_back(target.string());
+    if(scriptInfo.PassScriptPath)
+        finalRunArgs.push_back(absoluteScriptPath);
+    
+    //Add user provided arguments
+    for(size_t i = 0; i < runArgs.size(); ++i)
+        finalRunArgs.push_back(runArgs[i]);
+    
+    if(currentOptions.count(CmdOptions::EXECUTABLE) > 0)
+    {
+        //Running the script with modified args
+        if(!RunCompiledScript(target, absoluteScriptPath, finalRunArgs, returnStatus))
+        {
+            ssLOG_ERROR("Failed to run script");
+            return PipelineResult::RUN_SCRIPT_FAILED;
+        }
+    }
+    else
+    {
+        //Load the shared library and run it with modified args
+        if(!RunCompiledSharedLib(absoluteScriptPath, target, finalRunArgs, returnStatus))
+        {
+            ssLOG_ERROR("Failed to run script");
+            return PipelineResult::RUN_SCRIPT_FAILED;
+        }
+    }
+    
+    return PipelineResult::SUCCESS;
+}
+
+runcpp2::PipelineResult 
+runcpp2::HandleBuildOutput( const ghc::filesystem::path& target,
+                            const std::vector<std::string>& filesToCopyPaths,
+                            const Data::ScriptInfo& scriptInfo,
+                            const Data::Profile& profile,
+                            const std::string& buildOutputDir,
+                            const std::unordered_map<CmdOptions, std::string>& currentOptions)
+{
+    //Copy the output file
+    std::vector<std::string> filesToCopy = filesToCopyPaths;
+    filesToCopy.push_back(target);
+    
+    std::vector<std::string> copiedPaths;
+    if(!CopyFiles(buildOutputDir, filesToCopy, copiedPaths))
+    {
+        ssLOG_ERROR("Failed to copy binaries before running the script");
+        return PipelineResult::UNEXPECTED_FAILURE;
+    }
+    
+    //Run PostBuild commands after successful compilation
+    if(!RunPostBuildCommands(scriptInfo, profile, buildOutputDir))
+        return PipelineResult::UNEXPECTED_FAILURE;
+    
+    //Don't output anything here if we are just watching
+    if(currentOptions.count(CmdOptions::WATCH) > 0)
+        return PipelineResult::SUCCESS;
+    
+    ssLOG_BASE("Build completed. Files copied to " << buildOutputDir);
+    return PipelineResult::SUCCESS;
+}
+
+runcpp2::PipelineResult 
+runcpp2::StartPipeline( const std::string& scriptPath, 
+                        const std::vector<Data::Profile>& profiles,
+                        const std::string& configPreferredProfile,
+                        const std::unordered_map<CmdOptions, std::string> currentOptions,
+                        const std::vector<std::string>& runArgs,
+                        const Data::ScriptInfo* lastScriptInfo,
+                        Data::ScriptInfo& outScriptInfo,
+                        const std::string& buildOutputDir,
+                        int& returnStatus)
 {
     INTERNAL_RUNCPP2_SAFE_START();
     ssLOG_FUNC_DEBUG();
@@ -1403,62 +1475,21 @@ runcpp2::PipelineResult runcpp2::StartPipeline( const std::string& scriptPath,
                 return PipelineResult::SUCCESS;
             
             ssLOG_INFO("Running script...");
-
-            //Prepare run arguments
-            std::vector<std::string> finalRunArgs;
-            finalRunArgs.push_back(target.string());
-            if(scriptInfo.PassScriptPath)
-                finalRunArgs.push_back(absoluteScriptPath);
-            
-            //Add user provided arguments
-            for(size_t i = 0; i < runArgs.size(); ++i)
-                finalRunArgs.push_back(runArgs[i]);
-            
-            if(currentOptions.count(CmdOptions::EXECUTABLE) > 0)
-            {
-                //Running the script with modified args
-                if(!RunCompiledScript(target, absoluteScriptPath, finalRunArgs, returnStatus))
-                {
-                    ssLOG_ERROR("Failed to run script");
-                    return PipelineResult::RUN_SCRIPT_FAILED;
-                }
-                
-                return PipelineResult::SUCCESS;
-            }
-            //Load the shared library and run it with modified args
-            else
-            {
-                if(!RunCompiledSharedLib(absoluteScriptPath, target, finalRunArgs, returnStatus))
-                {
-                    ssLOG_ERROR("Failed to run script");
-                    return PipelineResult::RUN_SCRIPT_FAILED;
-                }
-                
-                return PipelineResult::SUCCESS;
-            }
+            return RunCompiledOutput(   target, 
+                                        absoluteScriptPath, 
+                                        scriptInfo, 
+                                        runArgs, 
+                                        currentOptions, 
+                                        returnStatus);
         }
         else
         {
-            //Copy the output file
-            filesToCopyPaths.push_back(target);
-            
-            std::vector<std::string> copiedPaths;
-            if(!CopyFiles(buildOutputDir, filesToCopyPaths, copiedPaths))
-            {
-                ssLOG_ERROR("Failed to copy binaries before running the script");
-                return PipelineResult::UNEXPECTED_FAILURE;
-            }
-            
-            //Run PostBuild commands after successful compilation
-            if(!RunPostBuildCommands(scriptInfo, profiles.at(profileIndex), buildOutputDir))
-                return PipelineResult::UNEXPECTED_FAILURE;
-            
-            //Don't output anything here if we are just watching
-            if(currentOptions.count(CmdOptions::WATCH) > 0)
-                return PipelineResult::SUCCESS;
-            
-            ssLOG_BASE("Build completed. Files copied to " << buildOutputDir);
-            return PipelineResult::SUCCESS;
+            return HandleBuildOutput(   target, 
+                                        filesToCopyPaths, 
+                                        scriptInfo, 
+                                        profiles.at(profileIndex), 
+                                        buildOutputDir, 
+                                        currentOptions);
         }
     }
 

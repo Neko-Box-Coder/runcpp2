@@ -118,6 +118,22 @@ namespace runcpp2
                                     const Data::Profile& profile,
                                     const ghc::filesystem::path& buildDir);
 
+    PipelineResult 
+    RunCompiledOutput(  const ghc::filesystem::path& target,
+                        const ghc::filesystem::path& absoluteScriptPath,
+                        const Data::ScriptInfo& scriptInfo,
+                        const std::vector<std::string>& runArgs,
+                        const std::unordered_map<CmdOptions, std::string>& currentOptions,
+                        int& returnStatus);
+
+    PipelineResult 
+    HandleBuildOutput(  const ghc::filesystem::path& target,
+                        const std::vector<std::string>& filesToCopyPaths,
+                        const Data::ScriptInfo& scriptInfo,
+                        const Data::Profile& profile,
+                        const std::string& buildOutputDir,
+                        const std::unordered_map<CmdOptions, std::string>& currentOptions);
+
     PipelineResult StartPipeline(   const std::string& scriptPath, 
                                     const std::vector<Data::Profile>& profiles,
                                     const std::string& configPreferredProfile,
