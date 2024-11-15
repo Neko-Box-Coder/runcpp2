@@ -1176,6 +1176,50 @@ runcpp2::HandleBuildOutput( const ghc::filesystem::path& target,
 }
 
 runcpp2::PipelineResult 
+runcpp2::GetTargetPath( const ghc::filesystem::path& buildDir,
+                        const std::string& scriptName,
+                        const Data::Profile& profile,
+                        const std::unordered_map<CmdOptions, std::string>& currentOptions,
+                        ghc::filesystem::path& outTarget)
+{
+    std::string exeExt = "";
+    #ifdef _WIN32
+        exeExt = ".exe";
+    #endif
+    
+    std::error_code _;
+    outTarget = buildDir;
+    
+    const std::string* targetSharedLibExt = 
+        runcpp2::GetValueFromPlatformMap(profile.FilesTypes.SharedLibraryFile.Extension);
+    
+    const std::string* targetSharedLibPrefix =
+        runcpp2::GetValueFromPlatformMap(profile.FilesTypes.SharedLibraryFile.Prefix);
+    
+    if(currentOptions.find(CmdOptions::EXECUTABLE) != currentOptions.end())
+        outTarget = (outTarget / scriptName).concat(exeExt);
+    else
+    {
+        if(targetSharedLibExt == nullptr || targetSharedLibPrefix == nullptr)
+        {
+            ssLOG_ERROR("Shared library extension or prefix not found in compiler profile");
+            return PipelineResult::INVALID_PROFILE;
+        }
+
+        outTarget = (outTarget / *targetSharedLibPrefix).concat(scriptName)
+                                                        .concat(*targetSharedLibExt);
+    }
+    
+    if(!ghc::filesystem::exists(outTarget, _))
+    {
+        ssLOG_ERROR("Failed to find the compiled file: " << outTarget.string());
+        return PipelineResult::COMPILE_LINK_FAILED;
+    }
+
+    return PipelineResult::SUCCESS;
+}
+
+runcpp2::PipelineResult 
 runcpp2::StartPipeline( const std::string& scriptPath, 
                         const std::vector<Data::Profile>& profiles,
                         const std::string& configPreferredProfile,
@@ -1418,43 +1462,15 @@ runcpp2::StartPipeline( const std::string& scriptPath,
 
     //Run the compiled file at script directory
     {
-        std::string exeExt = "";
-        #ifdef _WIN32
-            exeExt = ".exe";
-        #endif
-        
-        std::error_code _;
-        ghc::filesystem::path target = buildDir;
-        
-        const std::string* targetSharedLibExt = 
-            runcpp2::GetValueFromPlatformMap(profiles.at(profileIndex)  .FilesTypes
-                                                                        .SharedLibraryFile
-                                                                        .Extension);
-        
-        const std::string* targetSharedLibPrefix =
-            runcpp2::GetValueFromPlatformMap(profiles.at(profileIndex)  .FilesTypes
-                                                                        .SharedLibraryFile
-                                                                        .Prefix);
-        
-        if(currentOptions.find(CmdOptions::EXECUTABLE) != currentOptions.end())
-            target = (target / scriptName).concat(exeExt);
-        else
-        {
-            if(targetSharedLibExt == nullptr || targetSharedLibPrefix == nullptr)
-            {
-                ssLOG_ERROR("Shared library extension or prefix not found in compiler profile");
-                return PipelineResult::INVALID_PROFILE;
-            }
-
-            target = (target / *targetSharedLibPrefix)  .concat(scriptName)
-                                                        .concat(*targetSharedLibExt);
-        }
-        
-        if(!ghc::filesystem::exists(target, _))
-        {
-            ssLOG_ERROR("Failed to find the compiled file: " << target.string());
-            return PipelineResult::COMPILE_LINK_FAILED;
-        }
+        ghc::filesystem::path target;
+        result = GetTargetPath( buildDir, 
+                                scriptName, 
+                                profiles.at(profileIndex), 
+                                currentOptions, 
+                                target);
+            
+        if(result != PipelineResult::SUCCESS)
+            return result;
         
         if(currentOptions.count(CmdOptions::BUILD) == 0)
         {
