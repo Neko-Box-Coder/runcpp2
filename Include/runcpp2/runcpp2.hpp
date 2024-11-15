@@ -63,6 +63,11 @@ namespace runcpp2
 
     void SetLogLevel(const std::string& logLevel);
 
+    PipelineResult RunProfileCommands(  const Data::ProfilesCommands* commands,
+                                        const Data::Profile& profile,
+                                        const std::string& workingDir,
+                                        const std::string& commandType);
+
     PipelineResult ValidateInputs(  const std::string& scriptPath, 
                                     const std::vector<Data::Profile>& profiles,
                                     ghc::filesystem::path& outAbsoluteScriptPath,
@@ -115,6 +120,10 @@ namespace runcpp2
                                     std::vector<std::string>& outFilesToCopyPaths);
 
     PipelineResult HandlePreBuild(  const Data::ScriptInfo& scriptInfo,
+                                    const Data::Profile& profile,
+                                    const ghc::filesystem::path& buildDir);
+
+    PipelineResult HandlePostBuild( const Data::ScriptInfo& scriptInfo,
                                     const Data::Profile& profile,
                                     const ghc::filesystem::path& buildDir);
 

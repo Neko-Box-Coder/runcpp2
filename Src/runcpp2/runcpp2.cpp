@@ -505,39 +505,6 @@ namespace
         
         return true;
     }
-
-    bool RunPostBuildCommands(  const runcpp2::Data::ScriptInfo& scriptInfo,
-                                const runcpp2::Data::Profile& profile,
-                                const std::string& outputDir)
-    {
-        const runcpp2::Data::ProfilesCommands* postBuildCommands = 
-            runcpp2::GetValueFromPlatformMap(scriptInfo.PostBuild);
-        
-        if(postBuildCommands != nullptr)
-        {
-            const std::vector<std::string>* commands = 
-                runcpp2::GetValueFromProfileMap(profile, postBuildCommands->CommandSteps);
-            if(commands != nullptr)
-            {
-                for(const std::string& cmd : *commands)
-                {
-                    std::string output;
-                    int returnCode = 0;
-                    if(!runcpp2::RunCommandAndGetOutput(cmd, output, returnCode, outputDir))
-                    {
-                        ssLOG_ERROR("PostBuild command failed: " << cmd << 
-                                    " with return code " << returnCode);
-                        ssLOG_ERROR("Output: \n" << output);
-                        return false;
-                    }
-                    
-                    ssLOG_INFO("PostBuild command ran: \n" << cmd);
-                    ssLOG_INFO("PostBuild command output: \n" << output);
-                }
-            }
-        }
-        return true;
-    }
 }
 
 void runcpp2::GetDefaultScriptInfo(std::string& scriptInfo)
@@ -557,6 +524,39 @@ void runcpp2::SetLogLevel(const std::string& logLevel)
         ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_ERROR);
     else
         ssLOG_ERROR("Invalid log level: " << logLevel);
+}
+
+runcpp2::PipelineResult 
+runcpp2::RunProfileCommands(const Data::ProfilesCommands* commands,
+                            const Data::Profile& profile,
+                            const std::string& workingDir,
+                            const std::string& commandType)
+{
+    if(commands != nullptr)
+    {
+        const std::vector<std::string>* commandSteps = 
+            runcpp2::GetValueFromProfileMap(profile, commands->CommandSteps);
+            
+        if(commandSteps != nullptr)
+        {
+            for(const std::string& cmd : *commandSteps)
+            {
+                std::string output;
+                int returnCode = 0;
+                if(!runcpp2::RunCommandAndGetOutput(cmd, output, returnCode, workingDir))
+                {
+                    ssLOG_ERROR(commandType << " command failed: " << cmd << 
+                                " with return code " << returnCode);
+                    ssLOG_ERROR("Output: \n" << output);
+                    return PipelineResult::UNEXPECTED_FAILURE;
+                }
+                
+                ssLOG_INFO(commandType << " command ran: \n" << cmd);
+                ssLOG_INFO(commandType << " command output: \n" << output);
+            }
+        }
+    }
+    return PipelineResult::SUCCESS;
 }
 
 runcpp2::PipelineResult runcpp2::ValidateInputs(const std::string& scriptPath, 
@@ -786,26 +786,12 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
             
         if(setupCommands != nullptr)
         {
-            const std::vector<std::string>* commands = 
-                runcpp2::GetValueFromProfileMap(profile, setupCommands->CommandSteps);
-            if(commands != nullptr)
-            {
-                for(const std::string& cmd : *commands)
-                {
-                    std::string output;
-                    int returnCode = 0;
-                    if(!runcpp2::RunCommandAndGetOutput(cmd, output, returnCode, scriptDirectory))
-                    {
-                        ssLOG_ERROR("Setup command failed: " << cmd << 
-                                    " with return code " << returnCode);
-                        ssLOG_ERROR("Output: \n" << output);
-                        return PipelineResult::UNEXPECTED_FAILURE;
-                    }
-                    
-                    ssLOG_INFO("Setup command ran: \n" << cmd);
-                    ssLOG_INFO("Setup command output: \n" << output);
-                }
-            }
+            PipelineResult result = RunProfileCommands( setupCommands, 
+                                                        profile, 
+                                                        scriptDirectory.string(), 
+                                                        "Setup");
+            if(result != PipelineResult::SUCCESS)
+                return result;
         }
     }
     
@@ -1067,41 +1053,24 @@ void runcpp2::SeparateDependencyFiles(  const Data::FilesTypesInfo& filesTypes,
         ssLOG_INFO("  " << outFilesToCopyPaths[i]);
 }
 
-runcpp2::PipelineResult runcpp2::HandlePreBuild(    const Data::ScriptInfo& scriptInfo,
-                                                    const Data::Profile& profile,
-                                                    const ghc::filesystem::path& buildDir)
+runcpp2::PipelineResult runcpp2::HandlePreBuild(const Data::ScriptInfo& scriptInfo,
+                                                const Data::Profile& profile,
+                                                const ghc::filesystem::path& buildDir)
 {
     const Data::ProfilesCommands* preBuildCommands = 
         runcpp2::GetValueFromPlatformMap(scriptInfo.PreBuild);
     
-    if(preBuildCommands != nullptr)
-    {
-        const std::vector<std::string>* commands = 
-            runcpp2::GetValueFromProfileMap(profile, preBuildCommands->CommandSteps);
-        if(commands != nullptr)
-        {
-            for(const std::string& cmd : *commands)
-            {
-                std::string output;
-                int returnCode = 0;
-                if(!runcpp2::RunCommandAndGetOutput(cmd, 
-                                                  output, 
-                                                  returnCode, 
-                                                  buildDir.string()))
-                {
-                    ssLOG_ERROR("PreBuild command failed: " << cmd << 
-                               " with return code " << returnCode);
-                    ssLOG_ERROR("Output: \n" << output);
-                    return PipelineResult::UNEXPECTED_FAILURE;
-                }
-                
-                ssLOG_INFO("PreBuild command ran: \n" << cmd);
-                ssLOG_INFO("PreBuild command output: \n" << output);
-            }
-        }
-    }
+    return RunProfileCommands(preBuildCommands, profile, buildDir.string(), "PreBuild");
+}
+
+runcpp2::PipelineResult runcpp2::HandlePostBuild(   const Data::ScriptInfo& scriptInfo,
+                                                    const Data::Profile& profile,
+                                                    const ghc::filesystem::path& buildDir)
+{
+    const Data::ProfilesCommands* postBuildCommands = 
+        GetValueFromPlatformMap(scriptInfo.PostBuild);
     
-    return PipelineResult::SUCCESS;
+    return RunProfileCommands(postBuildCommands, profile, buildDir.string(), "PostBuild");
 }
 
 runcpp2::PipelineResult 
@@ -1164,8 +1133,9 @@ runcpp2::HandleBuildOutput( const ghc::filesystem::path& target,
     }
     
     //Run PostBuild commands after successful compilation
-    if(!RunPostBuildCommands(scriptInfo, profile, buildOutputDir))
-        return PipelineResult::UNEXPECTED_FAILURE;
+    PipelineResult result = HandlePostBuild(scriptInfo, profile, buildOutputDir);
+    if(result != PipelineResult::SUCCESS)
+        return result;
     
     //Don't output anything here if we are just watching
     if(currentOptions.count(CmdOptions::WATCH) > 0)
@@ -1483,7 +1453,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             }
 
             //Run PostBuild commands after successful compilation
-            if(!RunPostBuildCommands(scriptInfo, profiles.at(profileIndex), buildDir.string()))
+            result = HandlePostBuild(scriptInfo, profiles.at(profileIndex), buildDir.string());
+            if(result != PipelineResult::SUCCESS)
                 return PipelineResult::UNEXPECTED_FAILURE;
             
             //Don't run if we are just watching
@@ -1550,4 +1521,3 @@ std::string runcpp2::PipelineResultToString(PipelineResult result)
             return "UNKNOWN_PIPELINE_RESULT";
     }
 }
-
