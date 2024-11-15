@@ -89,7 +89,16 @@ namespace runcpp2
                                 bool useLocalBuildDir,
                                 BuildsManager& outBuildsManager,
                                 ghc::filesystem::path& outBuildDir);
-
+    
+    PipelineResult CheckScriptInfoChanges(  const ghc::filesystem::path& buildDir,
+                                            const Data::ScriptInfo& scriptInfo,
+                                            const Data::Profile& profile,
+                                            const ghc::filesystem::path& scriptDirectory,
+                                            const Data::ScriptInfo* lastScriptInfo,
+                                            bool& outRecompileNeeded,
+                                            bool& outRelinkNeeded,
+                                            std::vector<std::string>& outChangedDependencies);
+    
     PipelineResult StartPipeline(   const std::string& scriptPath, 
                                     const std::vector<Data::Profile>& profiles,
                                     const std::string& configPreferredProfile,
@@ -99,8 +108,8 @@ namespace runcpp2
                                     Data::ScriptInfo& outScriptInfo,
                                     const std::string& buildOutputDir,
                                     int& returnStatus);
-    
-    std::string PipelineResultToString(PipelineResult result);    
+
+    std::string PipelineResultToString(PipelineResult result);
 }
 
 #endif
