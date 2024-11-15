@@ -99,6 +99,16 @@ namespace runcpp2
                                             bool& outRelinkNeeded,
                                             std::vector<std::string>& outChangedDependencies);
     
+    PipelineResult 
+    ProcessDependencies(Data::ScriptInfo& scriptInfo,
+                        const Data::Profile& profile,
+                        const ghc::filesystem::path& absoluteScriptPath,
+                        const ghc::filesystem::path& buildDir,
+                        const std::unordered_map<CmdOptions, std::string>& currentOptions,
+                        const std::vector<std::string>& changedDependencies,
+                        std::vector<Data::DependencyInfo*>& outAvailableDependencies,
+                        std::vector<std::string>& outGatheredBinariesPaths);
+
     PipelineResult StartPipeline(   const std::string& scriptPath, 
                                     const std::vector<Data::Profile>& profiles,
                                     const std::string& configPreferredProfile,

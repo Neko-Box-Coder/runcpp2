@@ -921,6 +921,105 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
     return PipelineResult::SUCCESS;
 }
 
+runcpp2::PipelineResult 
+runcpp2::ProcessDependencies(   Data::ScriptInfo& scriptInfo,
+                                const Data::Profile& profile,
+                                const ghc::filesystem::path& absoluteScriptPath,
+                                const ghc::filesystem::path& buildDir,
+                                const std::unordered_map<CmdOptions, std::string>& currentOptions,
+                                const std::vector<std::string>& changedDependencies,
+                                std::vector<Data::DependencyInfo*>& outAvailableDependencies,
+                                std::vector<std::string>& outGatheredBinariesPaths)
+{
+    for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+    {
+        if(IsDependencyAvailableForThisPlatform(scriptInfo.Dependencies.at(i)))
+            outAvailableDependencies.push_back(&scriptInfo.Dependencies.at(i));
+    }
+    
+    std::vector<std::string> dependenciesLocalCopiesPaths;
+    std::vector<std::string> dependenciesSourcePaths;
+    if(!GetDependenciesPaths(   outAvailableDependencies,
+                                dependenciesLocalCopiesPaths,
+                                dependenciesSourcePaths,
+                                absoluteScriptPath,
+                                buildDir))
+    {
+        ssLOG_ERROR("Failed to get dependencies paths");
+        return PipelineResult::DEPENDENCIES_FAILED;
+    }
+    
+    if(currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 || !changedDependencies.empty())
+    {
+        if(currentOptions.count(CmdOptions::BUILD_SOURCE_ONLY) > 0)
+        {
+            ssLOG_ERROR("Dependencies settings have changed or being reset explicitly.");
+            ssLOG_ERROR("Cannot just build source files only without building dependencies");
+            return PipelineResult::INVALID_OPTION;
+        }
+        
+        std::string depsToReset = "all";
+        if(!changedDependencies.empty())
+        {
+            depsToReset = changedDependencies[0];
+            for(int i = 1; i < changedDependencies.size(); ++i)
+                depsToReset += "," + changedDependencies[i];
+        }
+        
+        if(!CleanupDependencies(profile,
+                                scriptInfo,
+                                outAvailableDependencies,
+                                dependenciesLocalCopiesPaths,
+                                currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 ?
+                                    currentOptions.at(CmdOptions::RESET_DEPENDENCIES) : 
+                                    depsToReset))
+        {
+            ssLOG_ERROR("Failed to cleanup dependencies");
+            return PipelineResult::DEPENDENCIES_FAILED;
+        }
+    }
+    
+    if(currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0)
+    {
+        ssLOG_LINE("Removed script dependencies");
+        return PipelineResult::SUCCESS;
+    }
+    
+    if(!SetupDependenciesIfNeeded(  profile, 
+                                    buildDir,
+                                    scriptInfo, 
+                                    outAvailableDependencies,
+                                    dependenciesLocalCopiesPaths,
+                                    dependenciesSourcePaths))
+    {
+        ssLOG_ERROR("Failed to setup script dependencies");
+        return PipelineResult::DEPENDENCIES_FAILED;
+    }
+
+    if(currentOptions.count(CmdOptions::BUILD_SOURCE_ONLY) == 0)
+    {
+        if(!BuildDependencies(  profile,
+                                scriptInfo,
+                                outAvailableDependencies, 
+                                dependenciesLocalCopiesPaths))
+        {
+            ssLOG_ERROR("Failed to build script dependencies");
+            return PipelineResult::DEPENDENCIES_FAILED;
+        }
+    }
+
+    if(!GatherDependenciesBinaries( outAvailableDependencies,
+                                    dependenciesLocalCopiesPaths,
+                                    profile,
+                                    outGatheredBinariesPaths))
+    {
+        ssLOG_ERROR("Failed to gather dependencies binaries");
+        return PipelineResult::DEPENDENCIES_FAILED;
+    }
+
+    return PipelineResult::SUCCESS;
+}
+
 runcpp2::PipelineResult runcpp2::StartPipeline( const std::string& scriptPath, 
                                                 const std::vector<Data::Profile>& profiles,
                                                 const std::string& configPreferredProfile,
@@ -1038,95 +1137,21 @@ runcpp2::PipelineResult runcpp2::StartPipeline( const std::string& scriptPath,
         
         //Process Dependencies
         std::vector<Data::DependencyInfo*> availableDependencies;
-        {
-            for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
-            {
-                if(IsDependencyAvailableForThisPlatform(scriptInfo.Dependencies.at(i)))
-                    availableDependencies.push_back(&scriptInfo.Dependencies.at(i));
-            }
-            
-            std::vector<std::string> dependenciesLocalCopiesPaths;
-            std::vector<std::string> dependenciesSourcePaths;
-            if(!GetDependenciesPaths(   availableDependencies,
-                                        dependenciesLocalCopiesPaths,
-                                        dependenciesSourcePaths,
+        result = ProcessDependencies(   scriptInfo,
+                                        profiles.at(profileIndex),
                                         absoluteScriptPath,
-                                        buildDir))
-            {
-                ssLOG_ERROR("Failed to get dependencies paths");
-                return PipelineResult::DEPENDENCIES_FAILED;
-            }
-            
-            if( currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 || 
-                !changedDependencies.empty())
-            {
-                if(currentOptions.count(CmdOptions::BUILD_SOURCE_ONLY) > 0)
-                {
-                    ssLOG_ERROR("Dependencies settings have changed or being reset explicitly.");
-                    ssLOG_ERROR("Cannot just build source files only without building dependencies");
-                    return PipelineResult::INVALID_OPTION;
-                }
-                
-                std::string depsToReset = "all";
-                if(!changedDependencies.empty())
-                {
-                    depsToReset = changedDependencies[0];
-                    for(int i = 1; i < changedDependencies.size(); ++i)
-                        depsToReset += "," + changedDependencies[i];
-                }
-                
-                if(!CleanupDependencies(profiles.at(profileIndex),
-                                        scriptInfo,
+                                        buildDir,
+                                        currentOptions,
+                                        changedDependencies,
                                         availableDependencies,
-                                        dependenciesLocalCopiesPaths,
-                                        currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 ?
-                                            currentOptions.at(CmdOptions::RESET_DEPENDENCIES) : 
-                                            depsToReset))
-                {
-                    ssLOG_ERROR("Failed to cleanup dependencies");
-                    return PipelineResult::DEPENDENCIES_FAILED;
-                }
-            }
+                                        gatheredBinariesPaths);
             
-            if(currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0)
-            {
-                ssLOG_LINE("Removed script dependencies");
-                return PipelineResult::SUCCESS;
-            }
-            
-            if(!SetupDependenciesIfNeeded(  profiles.at(profileIndex), 
-                                            buildDir,
-                                            scriptInfo, 
-                                            availableDependencies,
-                                            dependenciesLocalCopiesPaths,
-                                            dependenciesSourcePaths))
-            {
-                ssLOG_ERROR("Failed to setup script dependencies");
-                return PipelineResult::DEPENDENCIES_FAILED;
-            }
-
-            if(currentOptions.count(CmdOptions::BUILD_SOURCE_ONLY) == 0)
-            {
-                if(!BuildDependencies(  profiles.at(profileIndex),
-                                        scriptInfo,
-                                        availableDependencies, 
-                                        dependenciesLocalCopiesPaths))
-                {
-                    ssLOG_ERROR("Failed to build script dependencies");
-                    return PipelineResult::DEPENDENCIES_FAILED;
-                }
-            }
-
-            if(!GatherDependenciesBinaries( availableDependencies,
-                                            dependenciesLocalCopiesPaths,
-                                            profiles.at(profileIndex),
-                                            gatheredBinariesPaths))
-            {
-                ssLOG_ERROR("Failed to gather dependencies binaries");
-                return PipelineResult::DEPENDENCIES_FAILED;
-            }
-        }
+        if(result != PipelineResult::SUCCESS)
+            return result;
         
+        if(currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0)
+            return PipelineResult::SUCCESS;
+
         //Get all the files we are trying to compile
         std::vector<ghc::filesystem::path> sourceFiles;
         if(!GatherSourceFiles(  absoluteScriptPath, 
