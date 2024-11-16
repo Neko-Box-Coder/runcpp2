@@ -37,6 +37,10 @@ int main(int argc, char** argv)
                         MSVC:
                         -   src/extra.cpp
                         -   src/debug.cpp
+                IncludePaths:
+                    Windows:
+                        MSVC:
+                        -   include
                 Defines:
                     Windows:
                         MSVC:
@@ -152,12 +156,21 @@ int main(int argc, char** argv)
         //Verify OtherFilesToBeCompiled
         ssTEST_OUTPUT_SETUP
         (
-            const std::vector<ghc::filesystem::path>& msvcFiles = 
-                scriptInfo.OtherFilesToBeCompiled.at("Windows").CompilesFiles.at("MSVC");
+            const std::vector<ghc::filesystem::path>& msvcCompileFiles = 
+                scriptInfo.OtherFilesToBeCompiled.at("Windows").Paths.at("MSVC");
         );
-        ssTEST_OUTPUT_ASSERT("MSVC files count", msvcFiles.size() == 2);
-        ssTEST_OUTPUT_ASSERT("MSVC first file", msvcFiles.at(0) == "src/extra.cpp");
+        ssTEST_OUTPUT_ASSERT("MSVC files count", msvcCompileFiles.size() == 2);
+        ssTEST_OUTPUT_ASSERT("MSVC first file", msvcCompileFiles.at(0) == "src/extra.cpp");
         
+        //Verify IncludePaths
+        ssTEST_OUTPUT_SETUP
+        (
+            const std::vector<ghc::filesystem::path>& msvcIncludeFiles = 
+                scriptInfo.IncludePaths.at("Windows").Paths.at("MSVC");
+        );
+        ssTEST_OUTPUT_ASSERT("IncludePaths count", msvcIncludeFiles.size() == 1);
+        ssTEST_OUTPUT_ASSERT("IncludePaths first path", msvcIncludeFiles.at(0) == "include");
+
         //Verify Defines
         ssTEST_OUTPUT_SETUP
         (

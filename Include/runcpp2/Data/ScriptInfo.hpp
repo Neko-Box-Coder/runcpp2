@@ -4,7 +4,7 @@
 #include "runcpp2/Data/DependencyInfo.hpp"
 #include "runcpp2/Data/ProfilesFlagsOverride.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
-#include "runcpp2/Data/ProfilesCompilesFiles.hpp"
+#include "runcpp2/Data/ProfilesProcessPaths.hpp"
 #include "runcpp2/Data/ProfilesDefines.hpp"
 #include "runcpp2/Data/ProfilesCommands.hpp"
 
@@ -26,7 +26,8 @@ namespace runcpp2
                 std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideCompileFlags;
                 std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideLinkFlags;
                 
-                std::unordered_map<PlatformName, ProfilesCompilesFiles> OtherFilesToBeCompiled;
+                std::unordered_map<PlatformName, ProfilesProcessPaths> OtherFilesToBeCompiled;
+                std::unordered_map<PlatformName, ProfilesProcessPaths> IncludePaths;
                 
                 std::vector<DependencyInfo> Dependencies;
                 

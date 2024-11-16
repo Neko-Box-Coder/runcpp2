@@ -1,8 +1,8 @@
-#include "runcpp2/Data/ProfilesCompilesFiles.hpp"
+#include "runcpp2/Data/ProfilesProcessPaths.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::ProfilesCompilesFiles::ParseYAML_Node(ryml::ConstNodeRef& node)
+bool runcpp2::Data::ProfilesProcessPaths::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
     ssLOG_FUNC_DEBUG();
 
@@ -10,7 +10,7 @@ bool runcpp2::Data::ProfilesCompilesFiles::ParseYAML_Node(ryml::ConstNodeRef& no
     
     if(!node.is_map())
     {
-        ssLOG_ERROR("ProfilesCompilesFiles: Not a map type");
+        ssLOG_ERROR("ProfilesProcessPaths: Not a map type");
         return false;
     }
     
@@ -18,7 +18,7 @@ bool runcpp2::Data::ProfilesCompilesFiles::ParseYAML_Node(ryml::ConstNodeRef& no
     {
         if(!INTERNAL_RUNCPP2_BIT_CONTANTS(node[i].type().type, ryml::NodeType_e::SEQ))
         {
-            ssLOG_ERROR("ProfilesCompilesFiles: CompileFiles type requires a list");
+            ssLOG_ERROR("ProfilesProcessPaths: Paths type requires a list");
             return false;
         }
         
@@ -26,7 +26,7 @@ bool runcpp2::Data::ProfilesCompilesFiles::ParseYAML_Node(ryml::ConstNodeRef& no
         ProfileName profile = GetKey(currentProfilePathsNode);
 
         for(int j = 0; j <  currentProfilePathsNode.num_children(); ++j)
-            CompilesFiles[profile].push_back(GetValue(currentProfilePathsNode[j]));
+            Paths[profile].push_back(GetValue(currentProfilePathsNode[j]));
     }
     
     return true;
@@ -34,14 +34,14 @@ bool runcpp2::Data::ProfilesCompilesFiles::ParseYAML_Node(ryml::ConstNodeRef& no
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
-std::string runcpp2::Data::ProfilesCompilesFiles::ToString(std::string indentation) const
+std::string runcpp2::Data::ProfilesProcessPaths::ToString(std::string indentation) const
 {
     std::string out;
     
-    if(CompilesFiles.empty())
+    if(Paths.empty())
         return out;
         
-    for(auto it = CompilesFiles.begin(); it != CompilesFiles.end(); ++it)
+    for(auto it = Paths.begin(); it != Paths.end(); ++it)
     {
         if(it->second.empty())
             out += indentation + it->first + ": []\n";
@@ -56,14 +56,14 @@ std::string runcpp2::Data::ProfilesCompilesFiles::ToString(std::string indentati
     return out;
 }
 
-bool runcpp2::Data::ProfilesCompilesFiles::Equals(const ProfilesCompilesFiles& other) const
+bool runcpp2::Data::ProfilesProcessPaths::Equals(const ProfilesProcessPaths& other) const
 {
-    if(CompilesFiles.size() != other.CompilesFiles.size())
+    if(Paths.size() != other.Paths.size())
         return false;
     
-    for(const auto& it : CompilesFiles)
+    for(const auto& it : Paths)
     {
-        if(other.CompilesFiles.count(it.first) == 0 || other.CompilesFiles.at(it.first) != it.second)
+        if(other.Paths.count(it.first) == 0 || other.Paths.at(it.first) != it.second)
             return false;
     }
     

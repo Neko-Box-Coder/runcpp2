@@ -17,6 +17,11 @@ OtherFilesToBeCompiled:
         "msvc":
         -   "./OtherSources/AnotherSourceFileMSVC.cpp"
 
+IncludePaths:
+    DefaultPlatform:
+        DefaultProfile:
+        -   "./OtherSources"
+
 Defines:
     DefaultPlatform:
         # Turns into `TEST_DEF=\"Test Define Working\"` in shell
@@ -104,11 +109,11 @@ Dependencies:
 #include "System2.hpp"
 
 #if defined(__GNUC__)
-    #include "./OtherSources/AnotherSourceFileGcc.hpp"
+    #include "AnotherSourceFileGcc.hpp"
 #endif
 
 #if defined(_MSC_VER)
-    #include "./OtherSources/AnotherSourceFileMSVC.hpp"
+    #include "AnotherSourceFileMSVC.hpp"
 #endif
 
 #include <iostream>
