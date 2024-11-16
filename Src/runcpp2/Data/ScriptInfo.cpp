@@ -115,7 +115,7 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     {
         for(int i = 0; i < node["OtherFilesToBeCompiled"].num_children(); ++i)
         {
-            ProfilesCompilesFiles compilesFiles;
+            ProfilesProcessPaths compilesFiles;
             ryml::ConstNodeRef currentProfileMapNode = node["OtherFilesToBeCompiled"][i];
             PlatformName platform = GetKey(currentProfileMapNode);
             
@@ -132,7 +132,7 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     {
         for(int i = 0; i < node["IncludePaths"].num_children(); ++i)
         {
-            ProfilesCompilesFiles includePaths;
+            ProfilesProcessPaths includePaths;
             ryml::ConstNodeRef currentProfileMapNode = node["IncludePaths"][i];
             PlatformName platform = GetKey(currentProfileMapNode);
             

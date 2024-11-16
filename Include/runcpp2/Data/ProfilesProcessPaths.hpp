@@ -1,5 +1,5 @@
-#ifndef RUNCPP2_DATA_PROFILES_COMPILES_FILES_HPP
-#define RUNCPP2_DATA_PROFILES_COMPILES_FILES_HPP
+#ifndef RUNCPP2_DATA_PROFILES_PROCESS_PATHS_HPP
+#define RUNCPP2_DATA_PROFILES_PROCESS_PATHS_HPP
 
 #include "runcpp2/Data/ParseCommon.hpp"
 
@@ -14,14 +14,14 @@ namespace runcpp2
 {
     namespace Data
     {
-        class ProfilesCompilesFiles
+        class ProfilesProcessPaths
         {
             public:
-                std::unordered_map<ProfileName, std::vector<ghc::filesystem::path>> CompilesFiles;
+                std::unordered_map<ProfileName, std::vector<ghc::filesystem::path>> Paths;
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;
-                bool Equals(const ProfilesCompilesFiles& other) const;
+                bool Equals(const ProfilesProcessPaths& other) const;
         };
     }
 }
