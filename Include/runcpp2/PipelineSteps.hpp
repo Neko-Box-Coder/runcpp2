@@ -105,6 +105,17 @@ namespace runcpp2
                                     const Data::Profile& profile,
                                     const std::unordered_map<CmdOptions, std::string>& currentOptions,
                                     ghc::filesystem::path& outTarget);
+    
+    bool GatherSourceFiles( const ghc::filesystem::path& absoluteScriptPath, 
+                            const Data::ScriptInfo& scriptInfo,
+                            const Data::Profile& currentProfile,
+                            std::vector<ghc::filesystem::path>& outSourcePaths);
+    
+    bool GatherIncludePaths(const ghc::filesystem::path& scriptDirectory, 
+                            const Data::ScriptInfo& scriptInfo,
+                            const Data::Profile& currentProfile,
+                            const std::vector<Data::DependencyInfo*>& dependencies,
+                            std::vector<ghc::filesystem::path>& outIncludePaths);
 }
 
 

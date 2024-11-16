@@ -27,6 +27,7 @@ namespace runcpp2
                 std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideLinkFlags;
                 
                 std::unordered_map<PlatformName, ProfilesCompilesFiles> OtherFilesToBeCompiled;
+                std::unordered_map<PlatformName, ProfilesCompilesFiles> IncludePaths;
                 
                 std::vector<DependencyInfo> Dependencies;
                 

@@ -57,13 +57,22 @@ OtherFilesToBeCompiled:
         DefaultProfile:
         -   "./AnotherSourceFile.cpp"
 
+# (Optional) Include paths (relative to script file path) for each platform and profile
+IncludePaths:
+    # Target Platform (DefaultPlatform, Windows, Linux, MacOS, or Unix)
+    DefaultPlatform:
+        # Target Profile (e.g., "g++", "clang++", "msvc", or "DefaultProfile" for any profile)
+        DefaultProfile:
+        -   "./include"
+        -   "./src/include"
+
 # (Optional) Define cross-compiler defines for each platform and profile.
 # Defines can be specified as just a name or as a name-value pair.
 Defines:
     # Target Platform (DefaultPlatform, Windows, Linux, MacOS, or Unix)
     DefaultPlatform:
         # Profile name (e.g., "g++", "clang++", "msvc", or "DefaultProfile" for any profile)
-        "DefaultProfile":
+        DefaultProfile:
         -   "EXAMPLE_DEFINE"              # Define without a value
         -   "VERSION_MAJOR=1"             # Define with a value
 

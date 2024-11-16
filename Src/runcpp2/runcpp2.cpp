@@ -27,92 +27,6 @@ extern "C" const size_t DefaultScriptInfo_size;
 
 namespace
 {
-    bool GatherSourceFiles( ghc::filesystem::path absoluteScriptPath, 
-                            const runcpp2::Data::ScriptInfo& scriptInfo,
-                            const runcpp2::Data::Profile& currentProfile,
-                            std::vector<ghc::filesystem::path>& outSourcePaths)
-    {
-        if(!currentProfile.FileExtensions.count(absoluteScriptPath.extension()))
-        {
-            ssLOG_ERROR("File extension of script doesn't match profile");
-            return false;
-        }
-        
-        outSourcePaths.clear();
-        outSourcePaths.push_back(absoluteScriptPath);
-        
-        const runcpp2::Data::ProfilesCompilesFiles* compileFiles = 
-            runcpp2::GetValueFromPlatformMap(scriptInfo.OtherFilesToBeCompiled);
-        
-        if(compileFiles == nullptr)
-        {
-            ssLOG_INFO("No other files to be compiled files current platform");
-            
-            if(!scriptInfo.OtherFilesToBeCompiled.empty())
-            {
-                ssLOG_WARNING(  "Other source files are present, "
-                                "but none are included for current configuration. Is this intended?");
-            }
-            return true;
-        }
-        
-        const std::vector<ghc::filesystem::path>* profileCompileFiles = 
-            runcpp2::GetValueFromProfileMap(currentProfile, compileFiles->CompilesFiles);
-            
-        if(!profileCompileFiles)
-        {
-            ssLOG_INFO("No other files to be compiled for current profile");
-            return true;
-        }
-
-        //TODO: Allow filepaths to contain wildcards as follows
-        //* as directory or filename wildcard
-        //i.e. "./*/test/*.cpp" will match "./moduleA/test/a.cpp" and "./moduleB/test/b.cpp"
-        
-        //** as recursive directory wildcard
-        //i.e. "./**/*.cpp" will match any .cpp files
-        //i.e. "./**/test.cpp" will match any files named "test.cpp"
-        
-        //For the time being, each entry will represent a path
-        {
-            const ghc::filesystem::path scriptDirectory = 
-                ghc::filesystem::path(absoluteScriptPath).parent_path();
-            
-            for(int i = 0; i < profileCompileFiles->size(); ++i)
-            {
-                ghc::filesystem::path currentPath = profileCompileFiles->at(i);
-                if(currentPath.is_relative())
-                    currentPath = scriptDirectory / currentPath;
-                
-                if(currentPath.is_relative())
-                {
-                    ssLOG_ERROR("Failed to process compile path: " << profileCompileFiles->at(i));
-                    ssLOG_ERROR("Try to append path to script directory but failed");
-                    ssLOG_ERROR("Final appended path: " << currentPath);
-                    return false;
-                }
-                
-                std::error_code e;
-                if(ghc::filesystem::is_directory(currentPath, e))
-                {
-                    ssLOG_ERROR("Directory is found instead of file: " << 
-                                profileCompileFiles->at(i));
-                    return false;
-                }
-                
-                if(!ghc::filesystem::exists(currentPath, e))
-                {
-                    ssLOG_ERROR("File doesn't exist: " << profileCompileFiles->at(i));
-                    return false;
-                }
-                
-                outSourcePaths.push_back(currentPath);
-            }
-        }
-        
-        return true;
-    }
-    
     bool HasCompiledCache(  const ghc::filesystem::path& scriptPath,
                             const std::vector<ghc::filesystem::path>& sourceFiles,
                             const ghc::filesystem::path& buildDir,
@@ -466,7 +380,19 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         {
             return PipelineResult::INVALID_SCRIPT_INFO;
         }
-        
+
+        //Get all include paths
+        std::vector<ghc::filesystem::path> includePaths;
+        if(!GatherIncludePaths( scriptDirectory,
+                                scriptInfo,
+                                profiles.at(profileIndex),
+                                availableDependencies,
+                                includePaths))
+        {
+            ssLOG_ERROR("Failed to gather include paths");
+            return PipelineResult::INVALID_SCRIPT_INFO;
+        }
+
         //Check if we have already compiled before.
         std::vector<bool> sourceHasCache;
         std::vector<ghc::filesystem::path> cachedObjectsFiles;
@@ -539,6 +465,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                         absoluteScriptPath,
                                         sourceFiles,
                                         sourceHasCache,
+                                        includePaths, 
                                         scriptInfo,
                                         availableDependencies,
                                         profiles.at(profileIndex),
@@ -552,6 +479,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                             ghc::filesystem::path(absoluteScriptPath).stem(), 
                                             sourceFiles,
                                             sourceHasCache,
+                                            includePaths,  
                                             scriptInfo,
                                             availableDependencies,
                                             profiles.at(profileIndex),

@@ -17,6 +17,7 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
         NodeRequirement("OverrideCompileFlags", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("OverrideLinkFlags", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("OtherFilesToBeCompiled", ryml::NodeType_e::MAP, false, true),
+        NodeRequirement("IncludePaths", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("Dependencies", ryml::NodeType_e::SEQ, false, true),
         NodeRequirement("Defines", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("Setup", ryml::NodeType_e::MAP, false, true),
@@ -124,6 +125,23 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
                 return false;
             }
             OtherFilesToBeCompiled[platform] = compilesFiles;
+        }
+    }
+
+    if(ExistAndHasChild(node, "IncludePaths"))
+    {
+        for(int i = 0; i < node["IncludePaths"].num_children(); ++i)
+        {
+            ProfilesCompilesFiles includePaths;
+            ryml::ConstNodeRef currentProfileMapNode = node["IncludePaths"][i];
+            PlatformName platform = GetKey(currentProfileMapNode);
+            
+            if(!includePaths.ParseYAML_Node(currentProfileMapNode))
+            {
+                ssLOG_ERROR("ScriptInfo: Failed to parse IncludePaths.");
+                return false;
+            }
+            IncludePaths[platform] = includePaths;
         }
     }
     
@@ -290,6 +308,16 @@ std::string runcpp2::Data::ScriptInfo::ToString(std::string indentation) const
             out += it->second.ToString(indentation + "        ");
         }
     }
+
+    if(!IncludePaths.empty())
+    {
+        out += indentation + "IncludePaths:\n";
+        for(auto it = IncludePaths.begin(); it != IncludePaths.end(); ++it)
+        {
+            out += indentation + "    " + it->first + ":\n";
+            out += it->second.ToString(indentation + "        ");
+        }
+    }
     
     if(!Dependencies.empty())
     {
@@ -365,6 +393,7 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
         OverrideCompileFlags.size() != other.OverrideCompileFlags.size() ||
         OverrideLinkFlags.size() != other.OverrideLinkFlags.size() ||
         OtherFilesToBeCompiled.size() != other.OtherFilesToBeCompiled.size() ||
+        IncludePaths.size() != other.IncludePaths.size() ||
         Dependencies.size() != other.Dependencies.size() ||
         Defines.size() != other.Defines.size() ||
         Setup.size() != other.Setup.size() ||
@@ -407,6 +436,15 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
     {
         if( other.OtherFilesToBeCompiled.count(it.first) == 0 || 
             !other.OtherFilesToBeCompiled.at(it.first).Equals(it.second))
+        {
+            return false;
+        }
+    }
+
+    for(const auto& it : IncludePaths)
+    {
+        if( other.IncludePaths.count(it.first) == 0 || 
+            !other.IncludePaths.at(it.first).Equals(it.second))
         {
             return false;
         }
