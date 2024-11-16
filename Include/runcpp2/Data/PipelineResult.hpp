@@ -1,0 +1,25 @@
+#ifndef RUNCPP2_PIPELINE_RESULT_HPP
+#define RUNCPP2_PIPELINE_RESULT_HPP
+
+namespace runcpp2
+{
+    enum class PipelineResult
+    {
+        UNEXPECTED_FAILURE,
+        SUCCESS,
+        EMPTY_PROFILES,
+        INVALID_SCRIPT_PATH,
+        INVALID_CONFIG_PATH,
+        INVALID_BUILD_DIR,
+        INVALID_SCRIPT_INFO,
+        NO_AVAILABLE_PROFILE,
+        DEPENDENCIES_FAILED,
+        COMPILE_LINK_FAILED,
+        INVALID_PROFILE,
+        RUN_SCRIPT_FAILED,
+        INVALID_OPTION,
+        COUNT
+    };
+}
+
+#endif

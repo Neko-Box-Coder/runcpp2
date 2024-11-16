@@ -18,14 +18,14 @@ namespace runcpp2
         #endif
         
         private:
-            const ghc::filesystem::path ConfigDirectory;
+            ghc::filesystem::path ConfigDirectory;
             
             std::unordered_map<std::string, std::string> Mappings;
             std::unordered_map<std::string, std::string> ReverseMappings;
             
             
-            const ghc::filesystem::path BuildDirectory;
-            const ghc::filesystem::path MappingsFile;
+            ghc::filesystem::path BuildDirectory;
+            ghc::filesystem::path MappingsFile;
             bool Initialized;
             
             bool ParseMappings(const std::string& mappingsContent);
@@ -34,6 +34,7 @@ namespace runcpp2
         public:
             BuildsManager(const ghc::filesystem::path& configDirectory);
             BuildsManager(const BuildsManager& other);
+            BuildsManager& operator=(const BuildsManager& other);
             ~BuildsManager();
         
             bool Initialize();
