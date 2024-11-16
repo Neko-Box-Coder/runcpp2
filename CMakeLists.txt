@@ -129,7 +129,7 @@ add_library(runcpp2 STATIC
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ProfilesCommands.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ProfilesFlagsOverride.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ScriptInfo.cpp"
-                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ProfilesCompilesFiles.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ProfilesProcessPaths.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/FilesTypesInfo.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/StageInfo.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ProfilesDefines.cpp"

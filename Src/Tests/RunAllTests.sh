@@ -19,7 +19,7 @@ runTest ./FlagsOverrideInfoTest
 runTest ./DependencySourceTest
 runTest ./ProfilesCommandsTest
 runTest ./FilesToCopyInfoTest
-runTest ./ProfilesCompilesFilesTest
+runTest ./ProfilesProcessPathsTest
 runTest ./ProfilesDefinesTest
 runTest ./DependencyLinkPropertyTest
 runTest ./FilesTypesInfoTest

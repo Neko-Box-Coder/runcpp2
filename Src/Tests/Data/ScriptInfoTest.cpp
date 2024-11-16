@@ -157,7 +157,7 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             const std::vector<ghc::filesystem::path>& msvcCompileFiles = 
-                scriptInfo.OtherFilesToBeCompiled.at("Windows").CompilesFiles.at("MSVC");
+                scriptInfo.OtherFilesToBeCompiled.at("Windows").Paths.at("MSVC");
         );
         ssTEST_OUTPUT_ASSERT("MSVC files count", msvcCompileFiles.size() == 2);
         ssTEST_OUTPUT_ASSERT("MSVC first file", msvcCompileFiles.at(0) == "src/extra.cpp");
@@ -166,7 +166,7 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             const std::vector<ghc::filesystem::path>& msvcIncludeFiles = 
-                scriptInfo.IncludePaths.at("Windows").CompilesFiles.at("MSVC");
+                scriptInfo.IncludePaths.at("Windows").Paths.at("MSVC");
         );
         ssTEST_OUTPUT_ASSERT("IncludePaths count", msvcIncludeFiles.size() == 1);
         ssTEST_OUTPUT_ASSERT("IncludePaths first path", msvcIncludeFiles.at(0) == "include");

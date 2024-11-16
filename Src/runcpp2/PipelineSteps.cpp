@@ -540,9 +540,9 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
             const Data::ProfilesFlagsOverride* currentCompileFlags = 
                 runcpp2::GetValueFromPlatformMap(scriptInfo.OverrideCompileFlags);
             
-            const Data::ProfilesCompilesFiles* lastCompileFiles = 
+            const Data::ProfilesProcessPaths* lastCompileFiles = 
                 runcpp2::GetValueFromPlatformMap(lastInfo->OtherFilesToBeCompiled);
-            const Data::ProfilesCompilesFiles* currentCompileFiles = 
+            const Data::ProfilesProcessPaths* currentCompileFiles = 
                 runcpp2::GetValueFromPlatformMap(scriptInfo.OtherFilesToBeCompiled);
             
             const Data::ProfilesDefines* lastDefines = 
@@ -925,7 +925,7 @@ bool runcpp2::GatherSourceFiles(const ghc::filesystem::path& absoluteScriptPath,
     outSourcePaths.clear();
     outSourcePaths.push_back(absoluteScriptPath);
     
-    const Data::ProfilesCompilesFiles* compileFiles = 
+    const Data::ProfilesProcessPaths* compileFiles = 
         GetValueFromPlatformMap(scriptInfo.OtherFilesToBeCompiled);
     
     if(compileFiles == nullptr)
@@ -941,7 +941,7 @@ bool runcpp2::GatherSourceFiles(const ghc::filesystem::path& absoluteScriptPath,
     }
     
     const std::vector<ghc::filesystem::path>* profileCompileFiles = 
-        GetValueFromProfileMap(currentProfile, compileFiles->CompilesFiles);
+        GetValueFromProfileMap(currentProfile, compileFiles->Paths);
         
     if(!profileCompileFiles)
     {
@@ -1013,7 +1013,7 @@ bool runcpp2::GatherIncludePaths(   const ghc::filesystem::path& scriptDirectory
     }
 
     //Get include paths from script
-    const Data::ProfilesCompilesFiles* includePaths = 
+    const Data::ProfilesProcessPaths* includePaths = 
         GetValueFromPlatformMap(scriptInfo.IncludePaths);
     
     outIncludePaths.push_back(scriptDirectory);
@@ -1021,7 +1021,7 @@ bool runcpp2::GatherIncludePaths(   const ghc::filesystem::path& scriptDirectory
     if(includePaths != nullptr)
     {
         const std::vector<ghc::filesystem::path>* profileIncludePaths = 
-            GetValueFromProfileMap(currentProfile, includePaths->CompilesFiles);
+            GetValueFromProfileMap(currentProfile, includePaths->Paths);
             
         if(profileIncludePaths != nullptr)
         {
