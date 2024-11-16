@@ -239,6 +239,70 @@ void runcpp2::SetLogLevel(const std::string& logLevel)
 }
 
 runcpp2::PipelineResult 
+runcpp2::GetLatestSourceWriteTime(  const std::string& scriptPath,
+                                    const std::vector<Data::Profile>& profiles,
+                                    const std::string& configPreferredProfile,
+                                    const Data::ScriptInfo& scriptInfo,
+                                    int64_t& outWriteTime)
+{
+    INTERNAL_RUNCPP2_SAFE_START();
+    ssLOG_FUNC_DEBUG();
+
+    //Validate inputs and get paths
+    ghc::filesystem::path absoluteScriptPath;
+    ghc::filesystem::path scriptDirectory;
+    std::string scriptName;
+    
+    PipelineResult result = ValidateInputs( scriptPath, 
+                                            profiles, 
+                                            absoluteScriptPath,
+                                            scriptDirectory,
+                                            scriptName);
+    if(result != PipelineResult::SUCCESS)
+        return result;
+
+    std::error_code e;
+    if(!ghc::filesystem::exists(absoluteScriptPath, e))
+    {
+        ssLOG_ERROR("Script path " << absoluteScriptPath << " doesn't exist");
+        return PipelineResult::INVALID_SCRIPT_PATH;
+    }
+
+    outWriteTime = std::chrono::duration_cast<std::chrono::seconds>(
+        ghc::filesystem::last_write_time(absoluteScriptPath, e).time_since_epoch()).count();
+
+    std::vector<ghc::filesystem::path> sourceFiles;
+    if(GatherSourceFiles(   absoluteScriptPath, 
+                            scriptInfo, 
+                            profiles.at(GetPreferredProfileIndex(   scriptPath,
+                                                                    scriptInfo,
+                                                                    profiles,
+                                                                    configPreferredProfile)), 
+                            sourceFiles))
+    {
+        for(const ghc::filesystem::path& sourcePath : sourceFiles)
+        {
+            if(ghc::filesystem::exists(sourcePath, e))
+            {
+                ghc::filesystem::file_time_type currentWriteTime = 
+                    ghc::filesystem::last_write_time(sourcePath, e);
+                
+                using namespace std::chrono;
+                int64_t currentWriteTimeCount = 
+                    duration_cast<seconds>(currentWriteTime.time_since_epoch()).count();
+                
+                if(currentWriteTimeCount > outWriteTime)
+                    outWriteTime = currentWriteTimeCount;
+            }
+        }
+    }
+
+    return PipelineResult::SUCCESS;
+
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
+}
+
+runcpp2::PipelineResult 
 runcpp2::StartPipeline( const std::string& scriptPath, 
                         const std::vector<Data::Profile>& profiles,
                         const std::string& configPreferredProfile,
@@ -349,7 +413,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         if(result != PipelineResult::SUCCESS)
             return result;
         
-        if(recompileNeeded || !changedDependencies.empty() || relinkNeeded)
+        if(!lastScriptInfo || recompileNeeded || !changedDependencies.empty() || relinkNeeded)
             outScriptInfo = scriptInfo;
         
         std::vector<std::string> gatheredBinariesPaths;
@@ -473,6 +537,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 {
                     return PipelineResult::COMPILE_LINK_FAILED;
                 }
+                
+                return PipelineResult::SUCCESS;
             }
             else if(!CompileAndLinkScript(  buildDir,
                                             absoluteScriptPath,

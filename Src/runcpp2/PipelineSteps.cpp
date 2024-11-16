@@ -604,8 +604,8 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
     }
 
     std::vector<ghc::filesystem::path> lastIncludePaths;
-    if(lastScriptInfo && !GatherIncludePaths(   scriptDirectory,
-                                                *lastScriptInfo,
+    if(lastInfo && !GatherIncludePaths(   scriptDirectory,
+                                                *lastInfo,
                                                 profile,
                                                 {}, // Empty dependencies
                                                 lastIncludePaths))
