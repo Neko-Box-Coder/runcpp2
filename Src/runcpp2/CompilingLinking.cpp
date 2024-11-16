@@ -69,6 +69,7 @@ namespace
     bool CompileScript( const ghc::filesystem::path& buildDir,
                         const ghc::filesystem::path& scriptPath,
                         const std::vector<ghc::filesystem::path>& sourceFiles,
+                        const std::vector<ghc::filesystem::path>& includePaths,
                         const runcpp2::Data::ScriptInfo& scriptInfo,
                         const std::vector<runcpp2::Data::DependencyInfo*>& availableDependencies,
                         const runcpp2::Data::Profile& profile,
@@ -100,18 +101,11 @@ namespace
             substitutionMapTemplate["{CompileFlags}"] = {compileFlags};
         }
         
-        //Include Directories
+        //Add script and dependency include paths
+        for(const ghc::filesystem::path& includePath : includePaths)
         {
-            for(int i = 0; i < availableDependencies.size(); ++i)
-            {
-                for(int j = 0; j < availableDependencies.at(i)->AbsoluteIncludePaths.size(); ++j)
-                {
-                    const std::string& currentIncludePath = 
-                        availableDependencies.at(i)->AbsoluteIncludePaths.at(j);
-                    
-                    substitutionMapTemplate["{IncludeDirectoryPath}"].push_back(currentIncludePath);
-                }
-            }
+            std::string processedInclude = runcpp2::ProcessPath(includePath.string());
+            substitutionMapTemplate["{IncludeDirectoryPath}"].push_back(processedInclude);
         }
         
         // Add defines
@@ -643,6 +637,7 @@ bool runcpp2::CompileScriptOnly(const ghc::filesystem::path& buildDir,
                                 const ghc::filesystem::path& scriptPath,
                                 const std::vector<ghc::filesystem::path>& sourceFiles,
                                 const std::vector<bool>& sourceHasCache,
+                                const std::vector<ghc::filesystem::path>& includePaths,
                                 const Data::ScriptInfo& scriptInfo,
                                 const std::vector<Data::DependencyInfo*>& availableDependencies,
                                 const Data::Profile& profile,
@@ -667,6 +662,7 @@ bool runcpp2::CompileScriptOnly(const ghc::filesystem::path& buildDir,
     if(!CompileScript(  buildDir,
                         scriptPath,
                         sourceFilesNeededToCompile, 
+                        includePaths,
                         scriptInfo, 
                         availableDependencies, 
                         profile, 
@@ -685,6 +681,7 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
                                     const std::string& outputName,
                                     const std::vector<ghc::filesystem::path>& sourceFiles,
                                     const std::vector<bool>& sourceHasCache,
+                                    const std::vector<ghc::filesystem::path>& includePaths,
                                     const Data::ScriptInfo& scriptInfo,
                                     const std::vector<Data::DependencyInfo*>& availableDependencies,
                                     const Data::Profile& profile,
@@ -711,6 +708,7 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
     if(!CompileScript(  buildDir,
                         scriptPath,
                         sourceFilesNeededToCompile, 
+                        includePaths,
                         scriptInfo, 
                         availableDependencies, 
                         profile, 
