@@ -25,6 +25,12 @@ namespace runcpp2
 
     void SetLogLevel(const std::string& logLevel);
 
+    PipelineResult GetLatestSourceWriteTime(const std::string& scriptPath,
+                                            const std::vector<Data::Profile>& profiles,
+                                            const std::string& configPreferredProfile,
+                                            const Data::ScriptInfo& scriptInfo,
+                                            int64_t& outWriteTime);
+
     PipelineResult StartPipeline(   const std::string& scriptPath, 
                                     const std::vector<Data::Profile>& profiles,
                                     const std::string& configPreferredProfile,

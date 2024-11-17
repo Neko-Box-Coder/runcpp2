@@ -344,7 +344,7 @@ int main(int argc, char* argv[])
             ssLOG_ERROR("Failed reset user config");
             return -1;
         }
-        ssLOG_BASE("User config reset successful");
+        ssLOG_LINE("User config reset successful");
         return 0;
     }
     
@@ -355,7 +355,7 @@ int main(int argc, char* argv[])
             return -1;
         else
         {
-            ssLOG_BASE("Script template generated");
+            ssLOG_LINE("Script template generated");
             return 0;
         }
     }
@@ -415,12 +415,37 @@ int main(int argc, char* argv[])
             return -1;
         }
         
-        ghc::filesystem::file_time_type lastScriptWriteTime {};
+        int64_t lastSourceWriteTime = 0;
+        runcpp2::Data::ScriptInfo* lastParsedScriptInfo = nullptr;
+        
         while(true)
         {
-            runcpp2::Data::ScriptInfo* lastParsedScriptInfo = nullptr;
+            bool needsRunning = false;
+            int64_t currentWriteTime = 0;
             
-            if(ghc::filesystem::last_write_time(script, e) > lastScriptWriteTime)
+            runcpp2::PipelineResult result = 
+                runcpp2::GetLatestSourceWriteTime(  script,
+                                                    profiles,
+                                                    preferredProfile,
+                                                    lastParsedScriptInfo ? 
+                                                        *lastParsedScriptInfo : 
+                                                        runcpp2::Data::ScriptInfo(),
+                                                    currentWriteTime);
+
+            if(result != runcpp2::PipelineResult::SUCCESS)
+            {
+                ssLOG_ERROR("Failed to get latest source write time");
+                return -1;
+            }
+            
+            if(currentWriteTime > lastSourceWriteTime)
+            {
+                ssLOG_INFO("Source files have changed");
+                needsRunning = true;
+                lastSourceWriteTime = currentWriteTime;
+            }
+
+            if(needsRunning)
             {
                 int result = 0;
     
@@ -453,16 +478,36 @@ int main(int argc, char* argv[])
                     case runcpp2::PipelineResult::INVALID_PROFILE:
                     case runcpp2::PipelineResult::RUN_SCRIPT_FAILED:
                     case runcpp2::PipelineResult::INVALID_OPTION:
-                        ssLOG_BASE("Watching...");
+                        ssLOG_LINE("Watching...");
                         break;
                     case runcpp2::PipelineResult::SUCCESS:
-                        ssLOG_BASE("No error. Watching...");
+                        ssLOG_LINE("No error. Watching...");
                         break;
                 }
+                
+                //Upate the timestamp if we managed to parse the script info for the first time
+                if( !lastParsedScriptInfo && 
+                    pipelineResult != runcpp2::PipelineResult::INVALID_SCRIPT_INFO)
+                {
+                    runcpp2::PipelineResult result = 
+                        runcpp2::GetLatestSourceWriteTime(  script,
+                                                            profiles,
+                                                            preferredProfile,
+                                                            parsedScriptInfo,
+                                                            currentWriteTime);
+
+                    if(result != runcpp2::PipelineResult::SUCCESS)
+                    {
+                        ssLOG_ERROR("Failed to get latest source write time");
+                        return -1;
+                    }
+                    
+                    lastSourceWriteTime = currentWriteTime;
+                }
+                
+                lastParsedScriptInfo = &parsedScriptInfo;
             }
             
-            lastScriptWriteTime = ghc::filesystem::last_write_time(script, e);
-            lastParsedScriptInfo = &parsedScriptInfo;
             std::this_thread::sleep_for(std::chrono::seconds(5));
         }
     }
@@ -487,7 +532,7 @@ int main(int argc, char* argv[])
     }
     
     if(currentOptions.count(runcpp2::CmdOptions::CLEANUP) > 0)
-        ssLOG_BASE("Cleanup successful");
+        ssLOG_LINE("Cleanup successful");
     
     return result;
 }
