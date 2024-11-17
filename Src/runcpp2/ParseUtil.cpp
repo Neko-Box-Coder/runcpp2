@@ -358,3 +358,29 @@ std::string runcpp2::GetEscapedYAMLString(const std::string& input)
     output += "\"";
     return output;
 }
+
+bool runcpp2::ParseIncludes(const std::string& line, std::string& outIncludePath)
+{
+    //Skip if not an include line
+    if(line.find("#include") == std::string::npos)
+        return false;
+
+    size_t firstQuote = line.find('\"');
+    size_t firstBracket = line.find('<');
+    
+    //Skip if no valid include format found
+    if(firstQuote == std::string::npos && firstBracket == std::string::npos)
+        return false;
+
+    bool isQuoted = firstQuote != std::string::npos && 
+                    (firstBracket == std::string::npos || firstQuote < firstBracket);
+
+    size_t start = isQuoted ? firstQuote + 1 : firstBracket + 1;
+    size_t end = line.find(isQuoted ? '\"' : '>', start);
+    
+    if(end == std::string::npos)
+        return false;
+
+    outIncludePath = line.substr(start, end - start);
+    return true;
+}

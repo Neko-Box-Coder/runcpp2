@@ -11,6 +11,8 @@
 #include "ghc/filesystem.hpp"
 #include "dylib.hpp"
 
+#include <queue>
+
 namespace
 {
     bool RunCompiledScript( const ghc::filesystem::path& executable,
@@ -412,7 +414,8 @@ runcpp2::InitializeBuildDirectory(  const ghc::filesystem::path& configDir,
                                     const ghc::filesystem::path& absoluteScriptPath,
                                     bool useLocalBuildDir,
                                     BuildsManager& outBuildsManager,
-                                    ghc::filesystem::path& outBuildDir)
+                                    ghc::filesystem::path& outBuildDir,
+                                    IncludeManager& outIncludeManager)
 {
     //Create build directory
     ghc::filesystem::path buildDirPath = useLocalBuildDir ?
@@ -444,6 +447,13 @@ runcpp2::InitializeBuildDirectory(  const ghc::filesystem::path& configDir,
     if(!createdBuildDir)
     {
         ssLOG_FATAL("Failed to create local build directory for: " << absoluteScriptPath);
+        return PipelineResult::INVALID_BUILD_DIR;
+    }
+
+    outIncludeManager = IncludeManager();
+    if(!outIncludeManager.Initialize(outBuildDir))
+    {
+        ssLOG_FATAL("Failed to initialize include manager");
         return PipelineResult::INVALID_BUILD_DIR;
     }
 
@@ -1067,4 +1077,84 @@ bool runcpp2::GatherIncludePaths(   const ghc::filesystem::path& scriptDirectory
     }
     
     return true;
+}
+
+bool runcpp2::GatherFilesIncludes(  const std::vector<ghc::filesystem::path>& files,
+                                    const std::vector<ghc::filesystem::path>& includePaths,
+                                    SourceIncludeMap& outSourceIncludes)
+{
+    INTERNAL_RUNCPP2_SAFE_START();
+    ssLOG_FUNC_DEBUG();
+    
+    outSourceIncludes.clear();
+    std::unordered_set<std::string> visitedFiles;
+    
+    for(const ghc::filesystem::path& file : files)
+    {
+        std::vector<ghc::filesystem::path>& currentIncludes = outSourceIncludes[file.string()];
+        std::queue<ghc::filesystem::path> filesToProcess;
+        filesToProcess.push(file);
+        
+        while(!filesToProcess.empty())
+        {
+            ghc::filesystem::path currentFile = filesToProcess.front();
+            filesToProcess.pop();
+            
+            if(visitedFiles.count(currentFile.string()) > 0)
+                continue;
+
+            visitedFiles.insert(currentFile.string());
+            
+            std::ifstream fileStream(currentFile);
+            if(!fileStream.is_open())
+            {
+                ssLOG_ERROR("Failed to open file: " << currentFile);
+                return false;
+            }
+            
+            std::string line;
+            while(std::getline(fileStream, line))
+            {
+                std::string includePath;
+                if(!ParseIncludes(line, includePath))
+                    continue;
+                    
+                ghc::filesystem::path resolvedInclude;
+                bool found = false;
+                
+                //For quoted includes, first check relative to source file
+                if(line.find('\"') != std::string::npos)
+                {
+                    resolvedInclude = currentFile.parent_path() / includePath;
+                    std::error_code ec;
+                    if(ghc::filesystem::exists(resolvedInclude, ec))
+                        found = true;
+                }
+                
+                //Search in include paths if not found
+                if(!found)
+                {
+                    for(const ghc::filesystem::path& searchPath : includePaths)
+                    {
+                        resolvedInclude = searchPath / includePath;
+                        std::error_code ec;
+                        if(ghc::filesystem::exists(resolvedInclude, ec))
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if(found)
+                {
+                    currentIncludes.push_back(resolvedInclude);
+                    filesToProcess.push(resolvedInclude);
+                }
+            }
+        }
+    }
+    
+    return true;
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
