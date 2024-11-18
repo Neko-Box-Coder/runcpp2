@@ -110,11 +110,16 @@ namespace runcpp2
         INTERNAL_RUNCPP2_SAFE_START();
         ssLOG_FUNC_DEBUG();
         
+        ssLOG_DEBUG("Checking includes for " << sourceFile.string());
+        
         std::error_code e;
         ghc::filesystem::file_time_type sourceTime = ghc::filesystem::last_write_time(sourceFile, e);
         
         if(sourceTime > recordTime)
+        {
+            ssLOG_DEBUG("Source file newer than include record");
             return true;
+        }
         
         for(const ghc::filesystem::path& include : includes)
         {
@@ -123,11 +128,17 @@ namespace runcpp2
                 ghc::filesystem::file_time_type includeTime = 
                     ghc::filesystem::last_write_time(include, e);
                 if(includeTime > recordTime)
+                {
+                    ssLOG_DEBUG("Include time for " << include.string() << 
+                                " is newer than record time");
                     return true;
+                }
             }
         }
         
+        ssLOG_DEBUG("No update needed for " << sourceFile.string());
         return false;
+        
         INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(true);
     }
     

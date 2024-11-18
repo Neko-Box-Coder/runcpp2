@@ -37,7 +37,7 @@ namespace
                             std::vector<ghc::filesystem::path>& outCachedObjectsFiles,
                             ghc::filesystem::file_time_type& outFinalObjectWriteTime)
     {
-        ssLOG_FUNC_DEBUG();
+        ssLOG_FUNC_INFO();
         
         outHasCache.clear();
         outHasCache = std::vector<bool>(sourceFiles.size(), false);
@@ -108,6 +108,8 @@ namespace
                     
                     if(needsGather)
                     {
+                        ssLOG_DEBUG("Needs to update include record for " << 
+                                    sourceFiles.at(i).string());
                         sourcesNeedGathering.push_back(sourceFiles.at(i));
                         useCache = false;
                     }
@@ -115,10 +117,12 @@ namespace
             
                 if(useCache)
                 {
-                    ssLOG_DEBUG("Using cache for " << sourceFiles.at(i).string());
+                    ssLOG_INFO("Using cache for " << sourceFiles.at(i).string());
                     outHasCache.at(i) = true;
                     outCachedObjectsFiles.push_back(currentObjectFilePath);
                 }
+                else
+                    ssLOG_INFO("Cache invalidated for " << sourceFiles.at(i).string());
                 
                 if(lastObjectWriteTime > outFinalObjectWriteTime)
                     outFinalObjectWriteTime = lastObjectWriteTime;
@@ -132,6 +136,7 @@ namespace
         
         for(auto it = sourcesIncludes.cbegin(); it != sourcesIncludes.cend(); ++it)
         {
+            ssLOG_DEBUG("Updating include record for " << it->first);
             if(!includeManager.WriteIncludeRecord(  ghc::filesystem::path(it->first),
                                                     it->second))
             {
@@ -305,7 +310,7 @@ runcpp2::CheckSourcesNeedUpdate(    const std::string& scriptPath,
                                     bool& outNeedsUpdate)
 {
     INTERNAL_RUNCPP2_SAFE_START();
-    ssLOG_FUNC_DEBUG();
+    ssLOG_FUNC_INFO();
 
     //Validate inputs and get paths
     ghc::filesystem::path absoluteScriptPath;
@@ -345,6 +350,9 @@ runcpp2::CheckSourcesNeedUpdate(    const std::string& scriptPath,
     if(!GatherSourceFiles(absoluteScriptPath, scriptInfo, currentProfile, sourceFiles))
         return PipelineResult::UNEXPECTED_FAILURE;
 
+    for(int i = 0; i < sourceFiles.size(); ++i)
+        ssLOG_DEBUG("sourceFiles.at(i).string(): " << sourceFiles.at(i).string());
+
     //Get include paths
     std::vector<ghc::filesystem::path> includePaths;
     if(!GatherIncludePaths(scriptDirectory, scriptInfo, currentProfile, {}, includePaths))
@@ -352,6 +360,9 @@ runcpp2::CheckSourcesNeedUpdate(    const std::string& scriptPath,
         ssLOG_ERROR("Failed to gather include paths");
         return PipelineResult::UNEXPECTED_FAILURE;
     }
+    
+    for(int i = 0; i < includePaths.size(); ++i)
+        ssLOG_DEBUG("includePaths.at(i).string(): " << includePaths.at(i).string());
 
     for(int i = 0; i < sourceFiles.size(); ++i)
     {
@@ -390,7 +401,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                         int& returnStatus)
 {
     INTERNAL_RUNCPP2_SAFE_START();
-    ssLOG_FUNC_DEBUG();
+    ssLOG_FUNC_INFO();
 
     //Validate inputs and get paths
     ghc::filesystem::path absoluteScriptPath;
