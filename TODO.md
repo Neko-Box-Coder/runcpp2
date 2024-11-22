@@ -1,6 +1,7 @@
 TODO:
 - Allow runcpp2 to be library
 - Ability to compile runcpp2 as single cpp
+- Ability to skip DefaultPlatform and DefaultProfile
 - Async compile
 - Check last run is shared lib or executable. Reset cache when necessary if different type
 - Handle escape characters at the end

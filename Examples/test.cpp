@@ -63,8 +63,8 @@ Dependencies:
 -   Name: ssLogger
     Platforms: [Windows, Linux, MacOS]
     Source:
-        Type: Git
-        Value: "https://github.com/Neko-Box-Coder/ssLogger.git"
+        Git:
+            URL: "https://github.com/Neko-Box-Coder/ssLogger.git"
     LibraryType: Shared
     IncludePaths: ["Include"]
     LinkProperties:
@@ -91,8 +91,8 @@ Dependencies:
 -   Name: System2.cpp
     Platforms: [DefaultPlatform]
     Source:
-        Type: Git
-        Value: "https://github.com/Neko-Box-Coder/System2.cpp.git"
+        Git:
+            URL: "https://github.com/Neko-Box-Coder/System2.cpp.git"
     LibraryType: Header
     IncludePaths: [".", "./External/System2"]
     Setup:
