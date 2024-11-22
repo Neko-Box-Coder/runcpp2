@@ -90,8 +90,8 @@ int main(int argc, char** argv)
                     -   MSVC
                     -   GCC
                     Source:
-                        Type: Git
-                        Value: https://github.com/user/mylib.git
+                        Git:
+                            URL: https://github.com/user/mylib.git
                     LibraryType: Shared
                     IncludePaths:
                     -   include

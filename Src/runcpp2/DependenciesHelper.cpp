@@ -29,47 +29,37 @@ namespace
             }
             else
             {
-                static_assert((int)runcpp2::Data::DependencySourceType::COUNT == 2, "");
-                
-                switch(dependencies.at(i)->Source.Type)
+                if(mpark::get_if<runcpp2::Data::GitSource>(&(dependencies.at(i)->Source.Source)))
                 {
-                    case runcpp2::Data::DependencySourceType::GIT:
-                    {
-                        std::string gitCloneCommand = 
-                            "git clone " + dependencies.at(i)->Source.Value;
-                        
-                        ssLOG_INFO( "Running git clone command: " << gitCloneCommand << " in " << 
-                                    buildDir.string());
-                        
-                        int returnCode = 0;
-                        std::string output;
-                        if(!runcpp2::RunCommandAndGetOutput(gitCloneCommand, 
-                                                            output, 
-                                                            returnCode,
-                                                            buildDir.string()))
-                        {
-                            ssLOG_ERROR("Failed to run git clone with result: " << returnCode);
-                            ssLOG_ERROR("Output: \n" << output);
-                            return false;
-                        }
-                        else
-                            ssLOG_INFO("Output: \n" << output);
-                        
-                        break;
-                    }
+                    const runcpp2::Data::GitSource* git = 
+                        mpark::get_if<runcpp2::Data::GitSource>(&(dependencies.at(i)->Source.Source));
                     
-                    case runcpp2::Data::DependencySourceType::LOCAL:
-                    {
-                        std::string sourcePath = dependenciesSourcesPaths.at(i);
-                        std::string destinationPath = dependenciesCopiesPaths.at(i);
-                        
-                        //Copy the folder
-                        ghc::filesystem::copy(destinationPath, sourcePath, _);
-                        break;
-                    }
+                    std::string gitCloneCommand = "git clone " + git->URL;
                     
-                    case runcpp2::Data::DependencySourceType::COUNT:
+                    ssLOG_INFO("Running git clone command: " << gitCloneCommand << " in " << 
+                                buildDir.string());
+                    
+                    int returnCode = 0;
+                    std::string output;
+                    if(!runcpp2::RunCommandAndGetOutput(gitCloneCommand, 
+                                                        output, 
+                                                        returnCode,
+                                                        buildDir.string()))
+                    {
+                        ssLOG_ERROR("Failed to run git clone with result: " << returnCode);
+                        ssLOG_ERROR("Output: \n" << output);
                         return false;
+                    }
+                    else
+                        ssLOG_INFO("Output: \n" << output);
+                }
+                else if(mpark::get_if<runcpp2::Data::LocalSource>(&(dependencies.at(i)->Source.Source)))
+                {                    
+                    std::string sourcePath = dependenciesSourcesPaths.at(i);
+                    std::string destinationPath = dependenciesCopiesPaths.at(i);
+                    
+                    //Copy the folder
+                    ghc::filesystem::copy(destinationPath, sourcePath, _);
                 }
                 
                 outPrePopulated.push_back(false);
@@ -265,62 +255,56 @@ bool runcpp2::GetDependenciesPaths( const std::vector<Data::DependencyInfo*>& av
     
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
-        const Data::DependencySource& currentSource = availableDependencies.at(i)->Source;
-        
-        static_assert((int)Data::DependencySourceType::COUNT == 2, "");
-        
-        switch(currentSource.Type)
+        const runcpp2::Data::DependencySource& currentSource = availableDependencies.at(i)->Source;
+
+        if(mpark::get_if<runcpp2::Data::GitSource>(&currentSource.Source))
         {
-            case Data::DependencySourceType::GIT:
-            {
-                size_t lastSlashFoundIndex = currentSource.Value.find_last_of("/");
-                size_t lastDotGitFoundIndex = currentSource.Value.find_last_of(".git");
-                
-                if( lastSlashFoundIndex == std::string::npos || 
-                    lastDotGitFoundIndex == std::string::npos ||
-                    lastDotGitFoundIndex < lastSlashFoundIndex)
-                {
-                    ssLOG_ERROR("Invalid git url: " << currentSource.Value);
-                    return false;
-                }
-                else
-                {
-                    std::string gitRepoName = 
-                                                    //+1 for / to not include it
-                        currentSource.Value.substr( lastSlashFoundIndex + 1, 
-                                                    //-1 for slash
-                                                    lastDotGitFoundIndex - 1 -
-                                                    //-(size - 1) for .git
-                                                    (std::string(".git").size() - 1) -
-                                                    lastSlashFoundIndex);
-                    
-                    outCopiesPaths.push_back(buildDir / gitRepoName);
-                    outSourcesPaths.push_back("");
-                }
-                break;
-            }
+            const runcpp2::Data::GitSource* git = 
+                mpark::get_if<runcpp2::Data::GitSource>(&currentSource.Source);
             
-            case Data::DependencySourceType::LOCAL:
-            {
-                std::string localDepDirectoryName;
-                std::string curPath = currentSource.Value;
-                
-                if(curPath.back() == '/')
-                    curPath.pop_back();
-                
-                localDepDirectoryName = ghc::filesystem::path(curPath).filename().string();
-                outCopiesPaths.push_back(buildDir / localDepDirectoryName);
-                
-                if(ghc::filesystem::path(curPath).is_relative())
-                    outSourcesPaths.push_back(scriptDirectory / currentSource.Value);
-                else
-                    outSourcesPaths.push_back(currentSource.Value);
-                
-                break;
-            }
+            size_t lastSlashFoundIndex = git->URL.find_last_of("/");
+            size_t lastDotGitFoundIndex = git->URL.find_last_of(".git");
             
-            case Data::DependencySourceType::COUNT:
+            if( lastSlashFoundIndex == std::string::npos || 
+                lastDotGitFoundIndex == std::string::npos ||
+                lastDotGitFoundIndex < lastSlashFoundIndex)
+            {
+                ssLOG_ERROR("Invalid git url: " << git->URL);
                 return false;
+            }
+            else
+            {
+                std::string gitRepoName = 
+                                    //+1 for / to not include it
+                    git->URL.substr(lastSlashFoundIndex + 1, 
+                                    //-1 for slash
+                                    lastDotGitFoundIndex - 1 - 
+                                    //-(size - 1) for .git
+                                    (std::string(".git").size() - 1) -
+                                    lastSlashFoundIndex);
+                
+                outCopiesPaths.push_back(buildDir / gitRepoName);
+                outSourcesPaths.push_back("");
+            }
+        }
+        else if(mpark::get_if<runcpp2::Data::LocalSource>(&currentSource.Source))
+        {
+            const runcpp2::Data::LocalSource* local = 
+                mpark::get_if<runcpp2::Data::LocalSource>(&currentSource.Source);
+            
+            std::string localDepDirectoryName;
+            std::string curPath = local->Path;
+            
+            if(curPath.back() == '/')
+                curPath.pop_back();
+            
+            localDepDirectoryName = ghc::filesystem::path(curPath).filename().string();
+            outCopiesPaths.push_back(buildDir / localDepDirectoryName);
+            
+            if(ghc::filesystem::path(curPath).is_relative())
+                outSourcesPaths.push_back(scriptDirectory / local->Path);
+            else
+                outSourcesPaths.push_back(local->Path);
         }
     }
     

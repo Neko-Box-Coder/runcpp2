@@ -19,8 +19,8 @@ int main(int argc, char** argv)
                 -   Windows
                 -   Unix
                 Source:
-                    Type: Git
-                    Value: https://github.com/user/mylibrary.git
+                    Git:
+                        URL: https://github.com/user/mylibrary.git
                 LibraryType: Shared
                 IncludePaths:
                 -   include
@@ -101,12 +101,10 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT("Include paths count", dependencyInfo.IncludePaths.size() == 2);
         
         //Verify Source
-        ssTEST_OUTPUT_ASSERT(   "Source type", 
-                                dependencyInfo.Source.Type == 
-                                runcpp2::Data::DependencySourceType::GIT);
-        ssTEST_OUTPUT_ASSERT(   "Source value", 
-                                dependencyInfo.Source.Value == 
-                                "https://github.com/user/mylibrary.git");
+        const runcpp2::Data::GitSource* git = 
+            mpark::get_if<runcpp2::Data::GitSource>(&dependencyInfo.Source.Source);
+        ssTEST_OUTPUT_ASSERT("Should be Git source", git != nullptr);
+        ssTEST_OUTPUT_ASSERT("URL", git->URL == "https://github.com/user/mylibrary.git");
         
         //Verify Link Properties
         ssTEST_OUTPUT_SETUP

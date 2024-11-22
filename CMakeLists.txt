@@ -69,6 +69,7 @@ add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/rapidyaml")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/filesystem")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/System2")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/dylib")
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/variant")
 
 # Copy cfgpath.h
 configure_file( "${CMAKE_CURRENT_LIST_DIR}/External/cfgpath/cfgpath.h" 
@@ -124,6 +125,8 @@ add_library(runcpp2 STATIC
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencyInfo.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencyLinkProperty.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencySource.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/GitSource.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/LocalSource.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/FileProperties.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/FlagsOverrideInfo.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ProfilesCommands.cpp"
@@ -150,7 +153,7 @@ add_library(runcpp2 STATIC
 
 target_include_directories(runcpp2 PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
 target_link_libraries(runcpp2 PRIVATE ssLogger System2 CppOverride dylib)
-target_link_libraries(runcpp2 PUBLIC ghc_filesystem ryml::ryml)
+target_link_libraries(runcpp2 PUBLIC ghc_filesystem ryml::ryml mpark_variant)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(STANDARD_COMPILE_FLAGS "/utf-8;/W1;/DGHC_WIN_DISABLE_WSTRING_STORAGE_TYPE=1")

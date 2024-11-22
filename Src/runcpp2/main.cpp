@@ -328,8 +328,8 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    // Check if the version flag is present
-    if (currentOptions.count(runcpp2::CmdOptions::VERSION))
+    //Check if the version flag is present
+    if(currentOptions.count(runcpp2::CmdOptions::VERSION))
     {
         ssLOG_BASE("runcpp2 version " << RUNCPP2_VERSION);
         return 0;
