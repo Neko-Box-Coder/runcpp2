@@ -4,6 +4,13 @@
 
 #include <fstream>
 
+#if INTERNAL_RUNCPP2_UNIT_TESTS
+    #include "Tests/IncludeManager/MockComponents.hpp"
+#else
+    #define CO_NO_OVERRIDE 1
+    #include "CppOverride.hpp"
+#endif
+
 namespace runcpp2
 {
     bool IncludeManager::Initialize(const ghc::filesystem::path& buildDir)
@@ -51,6 +58,7 @@ namespace runcpp2
         for(const ghc::filesystem::path& include : includes)
             recordFile << include.string() << "\n";
         
+        recordFile.close();
         return true;
         INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
     }
@@ -125,6 +133,8 @@ namespace runcpp2
     
     ghc::filesystem::path IncludeManager::GetRecordPath(const ghc::filesystem::path& sourceFile) const
     {
+        CO_OVERRIDE_MEMBER_IMPL(OverrideInstance, ghc::filesystem::path, (sourceFile));
+        
         std::size_t pathHash = std::hash<std::string>{}(sourceFile.string());
         return IncludeRecordDir / (std::to_string(pathHash) + ".Includes");
     }

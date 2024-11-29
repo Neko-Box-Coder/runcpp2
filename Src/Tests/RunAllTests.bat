@@ -38,6 +38,7 @@ GOTO :FINAL
 
 :FINAL
 CALL :RUN_TEST "%~dp0\%MODE%BuildsManagerTest.exe"
+CALL :RUN_TEST "%~dp0\%MODE%IncludeManagerTest.exe"
 CALL :RUN_TEST "%~dp0\%MODE%FilePropertiesTest.exe"
 CALL :RUN_TEST "%~dp0\%MODE%FlagsOverrideInfoTest.exe"
 CALL :RUN_TEST "%~dp0\%MODE%DependencySourceTest.exe"

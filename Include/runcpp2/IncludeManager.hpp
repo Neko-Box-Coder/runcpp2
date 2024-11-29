@@ -5,6 +5,10 @@
 #include <unordered_map>
 #include <vector>
 
+#if INTERNAL_RUNCPP2_UNIT_TESTS
+    class IncludeManagerAccessor;
+#endif
+
 namespace runcpp2
 {
     class IncludeManager
@@ -27,10 +31,14 @@ namespace runcpp2
                             const ghc::filesystem::file_time_type& recordTime) const;
         
     private:
+        #if INTERNAL_RUNCPP2_UNIT_TESTS
+            friend class ::IncludeManagerAccessor;
+        #endif
+        
         ghc::filesystem::path GetRecordPath(const ghc::filesystem::path& sourceFile) const;
         
         ghc::filesystem::path IncludeRecordDir;
     };
 }
 
-#endif 
+#endif
