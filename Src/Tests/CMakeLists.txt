@@ -18,7 +18,7 @@ target_compile_definitions(IncludeManagerTest PRIVATE INTERNAL_RUNCPP2_UNIT_TEST
 function(create_data_test TEST_NAME)
     add_executable("${TEST_NAME}" "${CMAKE_CURRENT_LIST_DIR}/Data/${TEST_NAME}.cpp")
     target_compile_options("${TEST_NAME}" PRIVATE "${STANDARD_COMPILE_FLAGS}")
-    target_compile_definitions("${TEST_NAME}" PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=1)
+    target_compile_definitions("${TEST_NAME}" PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=1 TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES=1)
     target_link_libraries("${TEST_NAME}" PUBLIC runcpp2 ssTest)
     
 endfunction()

@@ -40,6 +40,13 @@ namespace runcpp2
                                     const std::vector<std::string>& dependenciesCopiesPaths,
                                     const Data::Profile& profile,
                                     std::vector<std::string>& outBinariesPaths);
+
+    bool HandleImport(  Data::DependencyInfo& dependency,
+                        const ghc::filesystem::path& basePath);
+
+    bool ResolveImports(Data::ScriptInfo& scriptInfo,
+                        const ghc::filesystem::path& scriptPath,
+                        const ghc::filesystem::path& buildDir);
 }
 
 #endif

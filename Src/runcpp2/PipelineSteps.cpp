@@ -310,11 +310,14 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
     ssLOG_FUNC_INFO();
     INTERNAL_RUNCPP2_SAFE_START();
 
+    //TODO: Record last script info write time. Use last script info if possible to reduce disk io
+
     //Check if there's script info as yaml file instead
     std::error_code e;
     std::string parsableInfo;
     std::ifstream inputFile;
-    std::string dedicatedYamlLoc = ProcessPath(scriptDirectory.string() +"/" + scriptName + ".yaml");
+    ghc::filesystem::path dedicatedYamlLoc = 
+        scriptDirectory / ghc::filesystem::path(scriptName + ".yaml");
     
     if(ghc::filesystem::exists(dedicatedYamlLoc, e))
     {
@@ -481,6 +484,26 @@ runcpp2::InitializeBuildDirectory(  const ghc::filesystem::path& configDir,
 }
 
 runcpp2::PipelineResult 
+runcpp2::ResolveScriptImports(  Data::ScriptInfo& scriptInfo,
+                                const ghc::filesystem::path& scriptPath,
+                                const ghc::filesystem::path& buildDir)
+{
+    ssLOG_FUNC_INFO();
+    INTERNAL_RUNCPP2_SAFE_START();
+
+    //Resolve all the script info imports first before evaluating it
+    if(!ResolveImports(scriptInfo, scriptPath, buildDir))
+    {
+        ssLOG_ERROR("Failed to resolve imports");
+        return PipelineResult::UNEXPECTED_FAILURE;
+    }
+    
+    return PipelineResult::SUCCESS;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
+}
+
+runcpp2::PipelineResult 
 runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
                                 const Data::ScriptInfo& scriptInfo,
                                 const Data::Profile& profile,
@@ -492,7 +515,7 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
 {
     ssLOG_FUNC_INFO();
     INTERNAL_RUNCPP2_SAFE_START();
-    
+
     ghc::filesystem::path lastScriptInfoFilePath = buildDir / "LastScriptInfo.yaml";
     Data::ScriptInfo lastScriptInfoFromDisk;
 

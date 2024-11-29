@@ -123,12 +123,18 @@ Dependencies:
     
     # The source of getting the dependency (Git, Local)
     Source:
-        # Git: Dependency exists in a git server, and needs to be cloned
+        # (Optional) Import dependency configuration from a YAML file
+        # For Git source: Path is relative to the git repository root
+        # For Local source: Path is relative to the script directory.
+        # If neither source exists, local source with root script directory is assumed.
+        # ImportPath: "config/dependency.yaml"
+        
+        # Git: Dependency or import YAML file exists in a git server, and needs to be cloned.
         Git:
             # Git repository URL
             URL: "https://github.com/MyUser/MyLibrary.git"
         
-        # Local: Dependency exists in local filesystem
+        # Local: Dependency or import YAML file exists in local filesystem
         # Local:
         #     # Path to the library directory
         #     Path: "./libs/LocalLibrary"

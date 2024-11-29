@@ -7,6 +7,19 @@ bool runcpp2::Data::DependencySource::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
     INTERNAL_RUNCPP2_SAFE_START();
     
+    if(ExistAndHasChild(node, "ImportPath"))
+    {
+        std::string importPathStr;
+        node["ImportPath"] >> importPathStr;
+        ImportPath = importPathStr;
+        
+        if(ImportPath.is_absolute())
+        {
+            ssLOG_ERROR("DependencySource: ImportPath must be relative: " << ImportPath.string());
+            return false;
+        }
+    }
+    
     if(ExistAndHasChild(node, "Git"))
     {
         if(ExistAndHasChild(node, "Local"))
@@ -37,6 +50,15 @@ bool runcpp2::Data::DependencySource::ParseYAML_Node(ryml::ConstNodeRef& node)
         Source = localSource;
         return true;
     }
+    //If no source is found, we need to check if it's an imported source. 
+    //If so, we assume it's a local source with path "./"
+    else if(!ImportPath.empty())
+    {
+        LocalSource localSource;
+        localSource.Path = "./";
+        Source = localSource;
+        return true;
+    }
     
     ssLOG_ERROR("DependencySource: Neither Git nor Local source found");
     return false;
@@ -46,23 +68,33 @@ bool runcpp2::Data::DependencySource::ParseYAML_Node(ryml::ConstNodeRef& node)
 
 std::string runcpp2::Data::DependencySource::ToString(std::string indentation) const
 {   
+    std::string out;
+    if(!ImportPath.empty())
+        out += indentation + "ImportPath: " + GetEscapedYAMLString(ImportPath.string()) + "\n";
+    
     if(mpark::get_if<GitSource>(&Source))
     {
         const GitSource* git = mpark::get_if<GitSource>(&Source);
-        return git->ToString(indentation);
+        out += git->ToString(indentation);
     }
     else if(mpark::get_if<LocalSource>(&Source))
     {
         const LocalSource* local = mpark::get_if<LocalSource>(&Source);
-        return local->ToString(indentation);
+        out += local->ToString(indentation);
     }
-    
-    ssLOG_ERROR("Invalid DependencySource type");
-    return "";
+    else
+    {
+        ssLOG_ERROR("Invalid DependencySource type");
+        return "";
+    }
+    return out;
 }
 
 bool runcpp2::Data::DependencySource::Equals(const DependencySource& other) const
 {
+    if(ImportPath != other.ImportPath)
+        return false;
+        
     if(mpark::get_if<GitSource>(&Source))
     {
         if(mpark::get_if<GitSource>(&other.Source))
