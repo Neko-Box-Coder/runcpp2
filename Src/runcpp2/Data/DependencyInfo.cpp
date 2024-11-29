@@ -6,7 +6,33 @@
 bool runcpp2::Data::DependencyInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
     INTERNAL_RUNCPP2_SAFE_START();
-    
+
+    //If import is needed, we only need to parse the Source section
+    do
+    {
+        if(!ExistAndHasChild(node, "Source"))
+        {
+            ssLOG_ERROR("DependencyInfo: Missing Source");
+            return false;
+        }
+
+        ryml::ConstNodeRef sourceNode = node["Source"];
+
+        if(!ExistAndHasChild(sourceNode, "ImportPath"))
+            break;
+
+        if(!Source.ParseYAML_Node(sourceNode))
+        {
+            ssLOG_ERROR("DependencyInfo: Failed to parse Source");
+            return false;
+        }
+
+        ssLOG_DEBUG("DependencyInfo: Importing from " << Source.ImportPath.string());
+        ssLOG_DEBUG("Skipping the rest of the DependencyInfo");
+        return true;
+    }
+    while(false);
+
     std::vector<NodeRequirement> requirements =
     {
         NodeRequirement("Name", ryml::NodeType_e::KEYVAL, true, false),

@@ -89,16 +89,20 @@ Dependencies:
             -  "./Include/ssLogger/ssLog.hpp"
 
 -   Name: System2.cpp
-    Platforms: [DefaultPlatform]
     Source:
-        Git:
-            URL: "https://github.com/Neko-Box-Coder/System2.cpp.git"
-    LibraryType: Header
-    IncludePaths: [".", "./External/System2"]
-    Setup:
-        DefaultPlatform:
-            DefaultProfile:
-            -   "git submodule update --init --recursive"
+        ImportPath: "./TestImport.yaml"
+
+# -   Name: System2.cpp
+#     Platforms: [DefaultPlatform]
+#     Source:
+#         Git:
+#             URL: "https://github.com/Neko-Box-Coder/System2.cpp.git"
+#     LibraryType: Header
+#     IncludePaths: [".", "./External/System2"]
+#     Setup:
+#         DefaultPlatform:
+#             DefaultProfile:
+#             -   "git submodule update --init --recursive"
 */
 
 

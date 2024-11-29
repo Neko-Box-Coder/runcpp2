@@ -273,6 +273,8 @@ bool runcpp2::GetParsableInfo(const std::string& contentToParse, std::string& ou
 bool runcpp2::ResolveYAML_Stream(   ryml::Tree& rootTree, 
                                     ryml::ConstNodeRef& outRootNode)
 {
+    ssLOG_FUNC_DEBUG();
+    
     INTERNAL_RUNCPP2_SAFE_START();
     
     //Resolve the merge keys in the yaml first
@@ -313,6 +315,8 @@ bool runcpp2::ExistAndHasChild( const ryml::ConstNodeRef& node,
                                 bool nullable)
 {
     ssLOG_FUNC_DEBUG();
+    
+    INTERNAL_RUNCPP2_SAFE_START();
 
     if(node.num_children() > 0 && node.has_child(childName.c_str()))
     {
@@ -326,6 +330,8 @@ bool runcpp2::ExistAndHasChild( const ryml::ConstNodeRef& node,
     }
     
     return false;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 std::string runcpp2::GetValue(ryml::ConstNodeRef node)

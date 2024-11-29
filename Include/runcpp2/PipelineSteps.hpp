@@ -54,6 +54,10 @@ namespace runcpp2
                                 BuildsManager& outBuildsManager,
                                 ghc::filesystem::path& outBuildDir,
                                 IncludeManager& outIncludeManager);
+
+    PipelineResult ResolveScriptImports(Data::ScriptInfo& scriptInfo,
+                                        const ghc::filesystem::path& scriptPath,
+                                        const ghc::filesystem::path& buildDir);
     
     PipelineResult CheckScriptInfoChanges(  const ghc::filesystem::path& buildDir,
                                             const Data::ScriptInfo& scriptInfo,

@@ -486,6 +486,11 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                     buildsManager);
         }
         
+        //Resolve imports
+        result = ResolveScriptImports(scriptInfo, absoluteScriptPath, buildDir);
+        if(result != PipelineResult::SUCCESS)
+            return result;
+        
         //Check if script info has changed if provided
         bool recompileNeeded = false;
         bool relinkNeeded = false;
