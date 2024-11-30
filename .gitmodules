@@ -25,3 +25,6 @@
 [submodule "CppOverride"]
 	path = External/CppOverride
 	url = https://github.com/Neko-Box-Coder/CppOverride.git
+[submodule "variant"]
+	path = External/variant
+	url = https://github.com/mpark/variant.git

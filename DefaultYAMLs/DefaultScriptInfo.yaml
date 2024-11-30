@@ -124,12 +124,16 @@ Dependencies:
     # The source of getting the dependency (Git, Local)
     Source:
         # Git: Dependency exists in a git server, and needs to be cloned
-        # Local: Dependency exists in local filesystem
-        Type: Git
+        Git:
+            # Git repository URL
+            URL: "https://github.com/MyUser/MyLibrary.git"
         
-        # Git URL for Git type, path to a directory for Local type
-        Value: "https://github.com/MyUser/MyLibrary.git"
-    
+        # Local: Dependency exists in local filesystem
+        # Local:
+        #     # Path to the library directory
+        #     Path: "./libs/LocalLibrary"
+
+
     # Library Type (Static, Object, Shared, Header)
     LibraryType: Static
     

@@ -1,10 +1,10 @@
 #ifndef RUNCPP2_DATA_DEPENDENCY_SOURCE_HPP
 #define RUNCPP2_DATA_DEPENDENCY_SOURCE_HPP
 
-#include "runcpp2/Data/DependencySourceType.hpp"
+#include "runcpp2/Data/GitSource.hpp"
+#include "runcpp2/Data/LocalSource.hpp"
 #include "runcpp2/YamlLib.hpp"
-
-#include <string>
+#include "mpark/variant.hpp"
 
 namespace runcpp2
 {
@@ -13,8 +13,7 @@ namespace runcpp2
         class DependencySource
         {
             public:
-                DependencySourceType Type;
-                std::string Value;
+                mpark::variant<GitSource, LocalSource> Source;
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;

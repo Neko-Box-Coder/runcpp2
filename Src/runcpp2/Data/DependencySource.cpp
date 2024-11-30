@@ -7,53 +7,91 @@ bool runcpp2::Data::DependencySource::ParseYAML_Node(ryml::ConstNodeRef& node)
 {
     INTERNAL_RUNCPP2_SAFE_START();
     
-    std::vector<NodeRequirement> requirements =
+    if(ExistAndHasChild(node, "Git"))
     {
-        NodeRequirement("Type", ryml::NodeType_e::KEYVAL, true, false),
-        NodeRequirement("Value", ryml::NodeType_e::KEYVAL, true, false)
-    };
-    
-    if(!CheckNodeRequirements(node, requirements))
+        if(ExistAndHasChild(node, "Local"))
+        {
+            ssLOG_ERROR("DependencySource: Both Git and Local sources found");
+            return false;
+        }
+        
+        GitSource gitSource;
+        ryml::ConstNodeRef gitNode = node["Git"];
+        if(!gitSource.ParseYAML_Node(gitNode))
+            return false;
+        Source = gitSource;
+        return true;
+    }
+    else if(ExistAndHasChild(node, "Local"))
     {
-        ssLOG_ERROR("DependencySource: Failed to meet requirements");
-        return false;
+        if(ExistAndHasChild(node, "Git"))
+        {
+            ssLOG_ERROR("DependencySource: Both Git and Local sources found");
+            return false;
+        }
+        
+        LocalSource localSource;
+        ryml::ConstNodeRef localNode = node["Local"];
+        if(!localSource.ParseYAML_Node(localNode))
+            return false;
+        Source = localSource;
+        return true;
     }
     
-    static_assert((int)DependencySourceType::COUNT == 2, "");
-    
-    if(node["Type"].val() == "Git")
-        Type = DependencySourceType::GIT;
-    else if(node["Type"].val() == "Local")
-        Type = DependencySourceType::LOCAL;
-    else
-    {
-        ssLOG_ERROR("DependencySource: Type is invalid");
-        return false;
-    }
-    
-    node["Value"] >> Value;
-    return true;
+    ssLOG_ERROR("DependencySource: Neither Git nor Local source found");
+    return false;
     
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 std::string runcpp2::Data::DependencySource::ToString(std::string indentation) const
-{
-    std::string out;
+{   
+    if(mpark::get_if<GitSource>(&Source))
+    {
+        const GitSource* git = mpark::get_if<GitSource>(&Source);
+        return git->ToString(indentation);
+    }
+    else if(mpark::get_if<LocalSource>(&Source))
+    {
+        const LocalSource* local = mpark::get_if<LocalSource>(&Source);
+        return local->ToString(indentation);
+    }
     
-    static_assert((int)DependencySourceType::COUNT == 2, "");
-    
-    if(Type == DependencySourceType::GIT)
-        out += indentation + "Type: Git\n";
-    else if(Type == DependencySourceType::LOCAL)
-        out += indentation + "Type: Local\n";
-    
-    out += indentation + "Value: " + GetEscapedYAMLString(Value) + "\n";
-    
-    return out;
+    ssLOG_ERROR("Invalid DependencySource type");
+    return "";
 }
 
 bool runcpp2::Data::DependencySource::Equals(const DependencySource& other) const
 {
-    return Type == other.Type && Value == other.Value;
+    if(mpark::get_if<GitSource>(&Source))
+    {
+        if(mpark::get_if<GitSource>(&other.Source))
+        {
+            const GitSource* git = mpark::get_if<GitSource>(&Source);
+            const GitSource* otherGit = mpark::get_if<GitSource>(&other.Source);
+            return git->Equals(*otherGit);
+        }
+        else
+        {
+            ssLOG_ERROR("Invalid DependencySource type");
+            return false;
+        }
+    }
+    else if(mpark::get_if<LocalSource>(&Source))
+    {
+        if(mpark::get_if<LocalSource>(&other.Source))
+        {
+            const LocalSource* local = mpark::get_if<LocalSource>(&Source);
+            const LocalSource* otherLocal = mpark::get_if<LocalSource>(&other.Source);
+            return local->Equals(*otherLocal);
+        }
+        else
+        {
+            ssLOG_ERROR("Invalid DependencySource type");
+            return false;
+        }
+    }
+    
+    ssLOG_ERROR("Invalid DependencySource type");
+    return false;
 }
