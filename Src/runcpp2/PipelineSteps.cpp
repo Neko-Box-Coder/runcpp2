@@ -180,7 +180,8 @@ bool runcpp2::CopyFiles(const ghc::filesystem::path& destDir,
                         const std::vector<std::string>& filePaths,
                         std::vector<std::string>& outCopiedPaths)
 {
-    ssLOG_FUNC_DEBUG();
+    ssLOG_FUNC_INFO();
+    INTERNAL_RUNCPP2_SAFE_START();
     
     std::error_code e;
     for (const std::string& srcPath : filePaths)
@@ -213,6 +214,8 @@ bool runcpp2::CopyFiles(const ghc::filesystem::path& destDir,
     }
     
     return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 runcpp2::PipelineResult 
@@ -221,6 +224,9 @@ runcpp2::RunProfileCommands(const Data::ProfilesCommands* commands,
                             const std::string& workingDir,
                             const std::string& commandType)
 {
+    ssLOG_FUNC_INFO();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     if(commands != nullptr)
     {
         const std::vector<std::string>* commandSteps = 
@@ -246,6 +252,8 @@ runcpp2::RunProfileCommands(const Data::ProfilesCommands* commands,
         }
     }
     return PipelineResult::SUCCESS;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
 }
 
 runcpp2::PipelineResult runcpp2::ValidateInputs(const std::string& scriptPath, 
@@ -254,6 +262,7 @@ runcpp2::PipelineResult runcpp2::ValidateInputs(const std::string& scriptPath,
                                                 ghc::filesystem::path& outScriptDirectory,
                                                 std::string& outScriptName)
 {
+    ssLOG_FUNC_INFO();
     INTERNAL_RUNCPP2_SAFE_START();
     
     if(profiles.empty())
@@ -298,6 +307,7 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
                                     const Data::ScriptInfo* lastScriptInfo,
                                     Data::ScriptInfo& outScriptInfo)
 {
+    ssLOG_FUNC_INFO();
     INTERNAL_RUNCPP2_SAFE_START();
 
     //Check if there's script info as yaml file instead
@@ -360,6 +370,9 @@ runcpp2::PipelineResult runcpp2::HandleCleanup( const Data::ScriptInfo& scriptIn
                                                 const ghc::filesystem::path& absoluteScriptPath,
                                                 BuildsManager& buildsManager)
 {
+    ssLOG_FUNC_INFO();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     const Data::ProfilesCommands* cleanupCommands = 
         runcpp2::GetValueFromPlatformMap(scriptInfo.Cleanup);
             
@@ -407,6 +420,8 @@ runcpp2::PipelineResult runcpp2::HandleCleanup( const Data::ScriptInfo& scriptIn
         return PipelineResult::UNEXPECTED_FAILURE;
     }
     return PipelineResult::SUCCESS;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
 }
 
 runcpp2::PipelineResult 
@@ -417,6 +432,9 @@ runcpp2::InitializeBuildDirectory(  const ghc::filesystem::path& configDir,
                                     ghc::filesystem::path& outBuildDir,
                                     IncludeManager& outIncludeManager)
 {
+    ssLOG_FUNC_INFO();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     //Create build directory
     ghc::filesystem::path buildDirPath = useLocalBuildDir ?
                                         ghc::filesystem::current_path() / ".runcpp2" :
@@ -458,6 +476,8 @@ runcpp2::InitializeBuildDirectory(  const ghc::filesystem::path& configDir,
     }
 
     return PipelineResult::SUCCESS;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
 }
 
 runcpp2::PipelineResult 
@@ -470,6 +490,9 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
                                 bool& outRelinkNeeded,
                                 std::vector<std::string>& outChangedDependencies)
 {
+    ssLOG_FUNC_INFO();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     ghc::filesystem::path lastScriptInfoFilePath = buildDir / "LastScriptInfo.yaml";
     Data::ScriptInfo lastScriptInfoFromDisk;
 
@@ -631,6 +654,8 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
     }
 
     return PipelineResult::SUCCESS;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
 }
 
 runcpp2::PipelineResult 
@@ -643,6 +668,9 @@ runcpp2::ProcessDependencies(   Data::ScriptInfo& scriptInfo,
                                 std::vector<Data::DependencyInfo*>& outAvailableDependencies,
                                 std::vector<std::string>& outGatheredBinariesPaths)
 {
+    ssLOG_FUNC_INFO();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
     {
         if(IsDependencyAvailableForThisPlatform(scriptInfo.Dependencies.at(i)))
@@ -730,6 +758,8 @@ runcpp2::ProcessDependencies(   Data::ScriptInfo& scriptInfo,
     }
 
     return PipelineResult::SUCCESS;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
 }
 
 void runcpp2::SeparateDependencyFiles(  const Data::FilesTypesInfo& filesTypes,
@@ -737,6 +767,9 @@ void runcpp2::SeparateDependencyFiles(  const Data::FilesTypesInfo& filesTypes,
                                         std::vector<std::string>& outLinkFilesPaths,
                                         std::vector<std::string>& outFilesToCopyPaths)
 {
+    ssLOG_FUNC_INFO();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     std::unordered_set<std::string> linkExtensions;
 
     //Populate the set of link extensions
@@ -777,12 +810,16 @@ void runcpp2::SeparateDependencyFiles(  const Data::FilesTypesInfo& filesTypes,
     ssLOG_INFO("Files to copy:");
     for(int i = 0; i < outFilesToCopyPaths.size(); ++i)
         ssLOG_INFO("  " << outFilesToCopyPaths[i]);
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(void());
 }
 
 runcpp2::PipelineResult runcpp2::HandlePreBuild(const Data::ScriptInfo& scriptInfo,
                                                 const Data::Profile& profile,
                                                 const ghc::filesystem::path& buildDir)
 {
+    ssLOG_FUNC_INFO();
+    
     const Data::ProfilesCommands* preBuildCommands = 
         runcpp2::GetValueFromPlatformMap(scriptInfo.PreBuild);
     
@@ -793,6 +830,8 @@ runcpp2::PipelineResult runcpp2::HandlePostBuild(   const Data::ScriptInfo& scri
                                                     const Data::Profile& profile,
                                                     const ghc::filesystem::path& buildDir)
 {
+    ssLOG_FUNC_INFO();
+    
     const Data::ProfilesCommands* postBuildCommands = 
         GetValueFromPlatformMap(scriptInfo.PostBuild);
     
@@ -807,6 +846,9 @@ runcpp2::RunCompiledOutput( const ghc::filesystem::path& target,
                             const std::unordered_map<CmdOptions, std::string>& currentOptions,
                             int& returnStatus)
 {
+    ssLOG_FUNC_INFO();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     //Prepare run arguments
     std::vector<std::string> finalRunArgs;
     finalRunArgs.push_back(target.string());
@@ -837,6 +879,8 @@ runcpp2::RunCompiledOutput( const ghc::filesystem::path& target,
     }
     
     return PipelineResult::SUCCESS;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
 }
 
 runcpp2::PipelineResult 
@@ -847,6 +891,9 @@ runcpp2::HandleBuildOutput( const ghc::filesystem::path& target,
                             const std::string& buildOutputDir,
                             const std::unordered_map<CmdOptions, std::string>& currentOptions)
 {
+    ssLOG_FUNC_INFO();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     //Copy the output file
     std::vector<std::string> filesToCopy = filesToCopyPaths;
     filesToCopy.push_back(target);
@@ -869,6 +916,8 @@ runcpp2::HandleBuildOutput( const ghc::filesystem::path& target,
     
     ssLOG_BASE("Build completed. Files copied to " << buildOutputDir);
     return PipelineResult::SUCCESS;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
 }
 
 runcpp2::PipelineResult 
@@ -878,6 +927,9 @@ runcpp2::GetTargetPath( const ghc::filesystem::path& buildDir,
                         const std::unordered_map<CmdOptions, std::string>& currentOptions,
                         ghc::filesystem::path& outTarget)
 {
+    ssLOG_FUNC_INFO();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     std::string exeExt = "";
     #ifdef _WIN32
         exeExt = ".exe";
@@ -913,6 +965,8 @@ runcpp2::GetTargetPath( const ghc::filesystem::path& buildDir,
     }
 
     return PipelineResult::SUCCESS;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
 }
 
 bool runcpp2::GatherSourceFiles(const ghc::filesystem::path& absoluteScriptPath, 
@@ -920,6 +974,9 @@ bool runcpp2::GatherSourceFiles(const ghc::filesystem::path& absoluteScriptPath,
                                 const Data::Profile& currentProfile,
                                 std::vector<ghc::filesystem::path>& outSourcePaths)
 {
+    ssLOG_FUNC_INFO();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     if(!currentProfile.FileExtensions.count(absoluteScriptPath.extension()))
     {
         ssLOG_ERROR("File extension of script doesn't match profile");
@@ -1005,6 +1062,8 @@ bool runcpp2::GatherSourceFiles(const ghc::filesystem::path& absoluteScriptPath,
     }
     
     return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 bool runcpp2::GatherIncludePaths(   const ghc::filesystem::path& scriptDirectory, 
@@ -1013,7 +1072,9 @@ bool runcpp2::GatherIncludePaths(   const ghc::filesystem::path& scriptDirectory
                                     const std::vector<Data::DependencyInfo*>& dependencies,
                                     std::vector<ghc::filesystem::path>& outIncludePaths)
 {
-    ssLOG_FUNC_DEBUG();
+    ssLOG_FUNC_INFO();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
     outIncludePaths.clear();
     
     if(!scriptDirectory.is_absolute())
@@ -1077,20 +1138,24 @@ bool runcpp2::GatherIncludePaths(   const ghc::filesystem::path& scriptDirectory
     }
     
     return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
 bool runcpp2::GatherFilesIncludes(  const std::vector<ghc::filesystem::path>& files,
                                     const std::vector<ghc::filesystem::path>& includePaths,
                                     SourceIncludeMap& outSourceIncludes)
 {
+    ssLOG_FUNC_INFO();
     INTERNAL_RUNCPP2_SAFE_START();
-    ssLOG_FUNC_DEBUG();
     
     outSourceIncludes.clear();
     std::unordered_set<std::string> visitedFiles;
     
     for(const ghc::filesystem::path& file : files)
     {
+        ssLOG_INFO("Gathering includes for " << file.string());
+        
         std::vector<ghc::filesystem::path>& currentIncludes = outSourceIncludes[file.string()];
         std::queue<ghc::filesystem::path> filesToProcess;
         filesToProcess.push(file);
@@ -1148,6 +1213,7 @@ bool runcpp2::GatherFilesIncludes(  const std::vector<ghc::filesystem::path>& fi
                 
                 if(found)
                 {
+                    ssLOG_INFO("Found include file: " << resolvedInclude.string());
                     currentIncludes.push_back(resolvedInclude);
                     filesToProcess.push(resolvedInclude);
                 }
