@@ -14,6 +14,7 @@ function runTest()
 }
 
 runTest ./BuildsManagerTest
+runTest ./IncludeManagerTest
 runTest ./FilePropertiesTest
 runTest ./FlagsOverrideInfoTest
 runTest ./DependencySourceTest

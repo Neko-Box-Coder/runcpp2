@@ -8,11 +8,13 @@
 #include "runcpp2/Data/CmdOptions.hpp"
 
 #include "runcpp2/BuildsManager.hpp"
+#include "runcpp2/IncludeManager.hpp"
 
 #include "ghc/filesystem.hpp"
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace runcpp2
 {
@@ -50,7 +52,8 @@ namespace runcpp2
                                 const ghc::filesystem::path& absoluteScriptPath,
                                 bool useLocalBuildDir,
                                 BuildsManager& outBuildsManager,
-                                ghc::filesystem::path& outBuildDir);
+                                ghc::filesystem::path& outBuildDir,
+                                IncludeManager& outIncludeManager);
     
     PipelineResult CheckScriptInfoChanges(  const ghc::filesystem::path& buildDir,
                                             const Data::ScriptInfo& scriptInfo,
@@ -116,6 +119,12 @@ namespace runcpp2
                             const Data::Profile& currentProfile,
                             const std::vector<Data::DependencyInfo*>& dependencies,
                             std::vector<ghc::filesystem::path>& outIncludePaths);
+
+    using SourceIncludeMap = std::unordered_map<std::string, std::vector<ghc::filesystem::path>>;
+    
+    bool GatherFilesIncludes(   const std::vector<ghc::filesystem::path>& files,
+                                const std::vector<ghc::filesystem::path>& includePaths,
+                                SourceIncludeMap& outSourceIncludes);
 }
 
 

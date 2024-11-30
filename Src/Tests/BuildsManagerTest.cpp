@@ -379,7 +379,8 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT(   "CreateBuildMapping should succeed",
                                 buildsManager->CreateBuildMapping(scriptsPaths.at(2)), true);
         ssTEST_OUTPUT_ASSERT(   "Hash script path", hashResult->LastStatusSucceed());
-        ssLOG_DEBUG("hashResult->GetStatusCount(): " << hashResult->GetStatusCount());
+        
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED(hashResult->GetStatusCount());
         
         ssTEST_OUTPUT_ASSERT(   "New build mapping doesn't exist", 
                                 newMappedBuildPathExistsResult->LastStatusSucceed());

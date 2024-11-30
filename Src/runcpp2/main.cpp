@@ -415,40 +415,38 @@ int main(int argc, char* argv[])
             return -1;
         }
         
-        int64_t lastSourceWriteTime = 0;
         runcpp2::Data::ScriptInfo* lastParsedScriptInfo = nullptr;
+        bool needsRunning = true;  //First run always needs running
         
         while(true)
         {
-            bool needsRunning = false;
-            int64_t currentWriteTime = 0;
-            
-            runcpp2::PipelineResult result = 
-                runcpp2::GetLatestSourceWriteTime(  script,
+            //Check if sources need update
+            bool needsUpdate = false;
+            if(!needsRunning)  //Skip check on first run
+            {
+                if(runcpp2::CheckSourcesNeedUpdate(script,
                                                     profiles,
                                                     preferredProfile,
                                                     lastParsedScriptInfo ? 
                                                         *lastParsedScriptInfo : 
-                                                        runcpp2::Data::ScriptInfo(),
-                                                    currentWriteTime);
-
-            if(result != runcpp2::PipelineResult::SUCCESS)
-            {
-                ssLOG_ERROR("Failed to get latest source write time");
-                return -1;
-            }
-            
-            if(currentWriteTime > lastSourceWriteTime)
-            {
-                ssLOG_INFO("Source files have changed");
-                needsRunning = true;
-                lastSourceWriteTime = currentWriteTime;
+                                                        parsedScriptInfo,
+                                                    currentOptions,
+                                                    needsUpdate) != runcpp2::PipelineResult::SUCCESS)
+                {
+                    ssLOG_ERROR("Failed to check if sources need update");
+                    return -1;
+                }
+                
+                if(needsUpdate)
+                {
+                    ssLOG_INFO("Source files have changed");
+                    needsRunning = true;
+                }
             }
 
             if(needsRunning)
             {
                 int result = 0;
-    
                 runcpp2::PipelineResult pipelineResult = 
                     runcpp2::StartPipeline( script, 
                                             profiles, 
@@ -485,29 +483,10 @@ int main(int argc, char* argv[])
                         break;
                 }
                 
-                //Upate the timestamp if we managed to parse the script info for the first time
-                if( !lastParsedScriptInfo && 
-                    pipelineResult != runcpp2::PipelineResult::INVALID_SCRIPT_INFO)
-                {
-                    runcpp2::PipelineResult result = 
-                        runcpp2::GetLatestSourceWriteTime(  script,
-                                                            profiles,
-                                                            preferredProfile,
-                                                            parsedScriptInfo,
-                                                            currentWriteTime);
-
-                    if(result != runcpp2::PipelineResult::SUCCESS)
-                    {
-                        ssLOG_ERROR("Failed to get latest source write time");
-                        return -1;
-                    }
-                    
-                    lastSourceWriteTime = currentWriteTime;
-                }
-                
                 lastParsedScriptInfo = &parsedScriptInfo;
+                needsRunning = false;
             }
-            
+
             std::this_thread::sleep_for(std::chrono::seconds(5));
         }
     }

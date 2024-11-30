@@ -1,7 +1,7 @@
 TODO:
-- Track include files for compiling
 - Allow runcpp2 to be library
 - Ability to compile runcpp2 as single cpp
+- Async compile
 
 - Handle escape characters at the end
     - To avoid situation like this:

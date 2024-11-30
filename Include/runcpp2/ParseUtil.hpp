@@ -36,6 +36,8 @@ namespace runcpp2
     std::string GetValue(ryml::ConstNodeRef node);
     std::string GetKey(ryml::ConstNodeRef node);
     std::string GetEscapedYAMLString(const std::string& input);
+    
+    bool ParseIncludes(const std::string& line, std::string& outIncludePath);
 }
 
 #endif

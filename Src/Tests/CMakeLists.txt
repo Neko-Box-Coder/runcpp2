@@ -6,9 +6,14 @@ target_include_directories(BuildsManagerTest PRIVATE "${CMAKE_CURRENT_LIST_DIR}/
 target_compile_options(BuildsManagerTest PRIVATE "${STANDARD_COMPILE_FLAGS}")
 target_link_libraries(BuildsManagerTest PRIVATE ghc_filesystem CppOverride ssTest ssLogger)
 target_compile_definitions(BuildsManagerTest PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=1)
-# set_target_properties(BuildsManagerTest PROPERTIES  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
-#                                                     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
-#                                                     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests")
+
+add_executable(IncludeManagerTest "${CMAKE_CURRENT_LIST_DIR}/../runcpp2/IncludeManager.cpp"
+                                 "${CMAKE_CURRENT_LIST_DIR}/IncludeManagerTest.cpp")
+
+target_include_directories(IncludeManagerTest PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../../Include")
+target_compile_options(IncludeManagerTest PRIVATE "${STANDARD_COMPILE_FLAGS}")
+target_link_libraries(IncludeManagerTest PRIVATE ghc_filesystem CppOverride ssTest ssLogger)
+target_compile_definitions(IncludeManagerTest PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=1)
 
 function(create_data_test TEST_NAME)
     add_executable("${TEST_NAME}" "${CMAKE_CURRENT_LIST_DIR}/Data/${TEST_NAME}.cpp")
