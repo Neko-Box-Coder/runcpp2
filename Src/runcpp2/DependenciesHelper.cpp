@@ -1,69 +1,175 @@
 #include "runcpp2/DependenciesHelper.hpp"
-#include "ghc/filesystem.hpp"
 #include "runcpp2/PlatformUtil.hpp"
 #include "runcpp2/StringUtil.hpp"
+#include "runcpp2/ParseUtil.hpp"
+
+#include "ghc/filesystem.hpp"
 #include "ssLogger/ssLog.hpp"
 
 #include <unordered_set>
 
 namespace
 {
+    bool GetDependencyPath( const runcpp2::Data::DependencyInfo& dependency,
+                            const ghc::filesystem::path& scriptPath,
+                            const ghc::filesystem::path& buildDir,
+                            ghc::filesystem::path& outCopyPath,
+                            ghc::filesystem::path& outSourcePath)
+    {
+        ssLOG_FUNC_DEBUG();
+
+        ghc::filesystem::path scriptDirectory = scriptPath.parent_path();
+        
+        const runcpp2::Data::DependencySource& currentSource = dependency.Source;
+
+        if(mpark::get_if<runcpp2::Data::GitSource>(&currentSource.Source))
+        {
+            const runcpp2::Data::GitSource* git = 
+                mpark::get_if<runcpp2::Data::GitSource>(&currentSource.Source);
+            
+            size_t lastSlashFoundIndex = git->URL.find_last_of("/");
+            size_t lastDotGitFoundIndex = git->URL.find_last_of(".git");
+            
+            if( lastSlashFoundIndex == std::string::npos || 
+                lastDotGitFoundIndex == std::string::npos ||
+                lastDotGitFoundIndex < lastSlashFoundIndex)
+            {
+                ssLOG_ERROR("Invalid git url: " << git->URL);
+                return false;
+            }
+            else
+            {
+                std::string gitRepoName = 
+                                    //+1 for / to not include it
+                    git->URL.substr(lastSlashFoundIndex + 1, 
+                                    //-1 for slash
+                                    lastDotGitFoundIndex - 1 - 
+                                    //-(size - 1) for .git
+                                    (std::string(".git").size() - 1) -
+                                    lastSlashFoundIndex);
+                
+                outCopyPath = (buildDir / gitRepoName);
+                outSourcePath.clear();
+            }
+        }
+        else if(mpark::get_if<runcpp2::Data::LocalSource>(&currentSource.Source))
+        {
+            const runcpp2::Data::LocalSource* local = 
+                mpark::get_if<runcpp2::Data::LocalSource>(&currentSource.Source);
+            
+            std::string localDepDirectoryName;
+            std::string curPath = local->Path;
+            
+            if(curPath.back() == '/')
+                curPath.pop_back();
+            
+            if(!ghc::filesystem::is_directory(curPath))
+            {
+                ssLOG_ERROR("Local dependency path is not a directory: " << curPath);
+                return false;
+            }
+
+            localDepDirectoryName = ghc::filesystem::path(curPath).filename().string();
+            
+            if(ghc::filesystem::path(curPath).is_relative())
+                outSourcePath = (scriptDirectory / local->Path);
+            else
+                outSourcePath = (local->Path);
+
+            
+            if(currentSource.ImportPath.empty())
+                outCopyPath = (buildDir / localDepDirectoryName);
+            else
+                outCopyPath = outSourcePath;
+        }
+        
+        return true;
+    }
+    
+    bool PopulateLocalDependency(   const runcpp2::Data::DependencyInfo& dependency,
+                                    const ghc::filesystem::path& copyPath,
+                                    const ghc::filesystem::path& sourcePath,
+                                    const ghc::filesystem::path& buildDir,
+                                    bool& outPrePopulated)
+    {
+        std::error_code e;
+        
+        if(ghc::filesystem::exists(copyPath, e))
+        {
+            if(!ghc::filesystem::is_directory(copyPath, e))
+            {
+                ssLOG_ERROR("Dependency path is a file: " << copyPath.string());
+                ssLOG_ERROR("It should be a folder instead");
+                return false;
+            }
+            outPrePopulated = true;
+            return true;
+        }
+        else
+        {
+            if(mpark::get_if<runcpp2::Data::GitSource>(&(dependency.Source.Source)))
+            {
+                const runcpp2::Data::GitSource* git = 
+                    mpark::get_if<runcpp2::Data::GitSource>(&(dependency.Source.Source));
+                
+                std::string gitCloneCommand = "git clone " + git->URL;
+                
+                ssLOG_INFO("Running git clone command: " << gitCloneCommand << " in " << 
+                            buildDir.string());
+                
+                int returnCode = 0;
+                std::string output;
+                if(!runcpp2::RunCommandAndGetOutput(gitCloneCommand, 
+                                                    output, 
+                                                    returnCode,
+                                                    buildDir.string()))
+                {
+                    ssLOG_ERROR("Failed to run git clone with result: " << returnCode);
+                    ssLOG_ERROR("Output: \n" << output);
+                    return false;
+                }
+                else
+                    ssLOG_INFO("Output: \n" << output);
+            }
+            else if(mpark::get_if<runcpp2::Data::LocalSource>(&(dependency.Source.Source)))
+            {
+                //We don't need to copy the local directory if we just need the import file
+                if(dependency.Source.ImportPath.empty())
+                    ghc::filesystem::copy(copyPath, sourcePath, e);
+            }
+            
+            outPrePopulated = false;
+            return true;
+        }
+    }
+    
     bool PopulateLocalDependencies( const std::vector<runcpp2::Data::DependencyInfo*>& dependencies,
                                     const std::vector<std::string>& dependenciesCopiesPaths,
                                     const std::vector<std::string>& dependenciesSourcesPaths,
                                     const ghc::filesystem::path& buildDir,
                                     std::vector<bool>& outPrePopulated)
     {
-        std::error_code _;
+        outPrePopulated.resize(dependencies.size());
+        
         for(int i = 0; i < dependencies.size(); ++i)
         {
-            if(ghc::filesystem::exists(dependenciesCopiesPaths.at(i), _))
+            if(!dependencies.at(i)->Source.ImportPath.empty())
             {
-                if(!ghc::filesystem::is_directory(dependenciesCopiesPaths.at(i), _))
-                {
-                    ssLOG_ERROR("Dependency path is a file: " << dependenciesCopiesPaths.at(i));
-                    ssLOG_ERROR("It should be a folder instead");
-                    return false;
-                }
-                outPrePopulated.push_back(true);
+                ssLOG_ERROR("Dependency import not resolved before populating.");
+                return false;
             }
-            else
+            
+            bool prePopulated = false;
+            if(!PopulateLocalDependency(*dependencies.at(i),
+                                        ghc::filesystem::path(dependenciesCopiesPaths.at(i)),
+                                        ghc::filesystem::path(dependenciesSourcesPaths.at(i)),
+                                        buildDir,
+                                        prePopulated))
             {
-                if(mpark::get_if<runcpp2::Data::GitSource>(&(dependencies.at(i)->Source.Source)))
-                {
-                    const runcpp2::Data::GitSource* git = 
-                        mpark::get_if<runcpp2::Data::GitSource>(&(dependencies.at(i)->Source.Source));
-                    
-                    std::string gitCloneCommand = "git clone " + git->URL;
-                    
-                    ssLOG_INFO("Running git clone command: " << gitCloneCommand << " in " << 
-                                buildDir.string());
-                    
-                    int returnCode = 0;
-                    std::string output;
-                    if(!runcpp2::RunCommandAndGetOutput(gitCloneCommand, 
-                                                        output, 
-                                                        returnCode,
-                                                        buildDir.string()))
-                    {
-                        ssLOG_ERROR("Failed to run git clone with result: " << returnCode);
-                        ssLOG_ERROR("Output: \n" << output);
-                        return false;
-                    }
-                    else
-                        ssLOG_INFO("Output: \n" << output);
-                }
-                else if(mpark::get_if<runcpp2::Data::LocalSource>(&(dependencies.at(i)->Source.Source)))
-                {                    
-                    std::string sourcePath = dependenciesSourcesPaths.at(i);
-                    std::string destinationPath = dependenciesCopiesPaths.at(i);
-                    
-                    //Copy the folder
-                    ghc::filesystem::copy(destinationPath, sourcePath, _);
-                }
-                
-                outPrePopulated.push_back(false);
+                return false;
             }
+            
+            outPrePopulated.at(i) = prePopulated;
         }
         
         return true;
@@ -251,61 +357,22 @@ bool runcpp2::GetDependenciesPaths( const std::vector<Data::DependencyInfo*>& av
 {
     ssLOG_FUNC_DEBUG();
 
-    ghc::filesystem::path scriptDirectory = scriptPath.parent_path();
-    
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
-        const runcpp2::Data::DependencySource& currentSource = availableDependencies.at(i)->Source;
+        ghc::filesystem::path currentCopyPath;
+        ghc::filesystem::path currentSourcePath;
+        
+        if(!GetDependencyPath(  *availableDependencies.at(i),
+                                scriptPath,
+                                buildDir,
+                                currentCopyPath,
+                                currentSourcePath))
+        {
+            return false;
+        }
 
-        if(mpark::get_if<runcpp2::Data::GitSource>(&currentSource.Source))
-        {
-            const runcpp2::Data::GitSource* git = 
-                mpark::get_if<runcpp2::Data::GitSource>(&currentSource.Source);
-            
-            size_t lastSlashFoundIndex = git->URL.find_last_of("/");
-            size_t lastDotGitFoundIndex = git->URL.find_last_of(".git");
-            
-            if( lastSlashFoundIndex == std::string::npos || 
-                lastDotGitFoundIndex == std::string::npos ||
-                lastDotGitFoundIndex < lastSlashFoundIndex)
-            {
-                ssLOG_ERROR("Invalid git url: " << git->URL);
-                return false;
-            }
-            else
-            {
-                std::string gitRepoName = 
-                                    //+1 for / to not include it
-                    git->URL.substr(lastSlashFoundIndex + 1, 
-                                    //-1 for slash
-                                    lastDotGitFoundIndex - 1 - 
-                                    //-(size - 1) for .git
-                                    (std::string(".git").size() - 1) -
-                                    lastSlashFoundIndex);
-                
-                outCopiesPaths.push_back(buildDir / gitRepoName);
-                outSourcesPaths.push_back("");
-            }
-        }
-        else if(mpark::get_if<runcpp2::Data::LocalSource>(&currentSource.Source))
-        {
-            const runcpp2::Data::LocalSource* local = 
-                mpark::get_if<runcpp2::Data::LocalSource>(&currentSource.Source);
-            
-            std::string localDepDirectoryName;
-            std::string curPath = local->Path;
-            
-            if(curPath.back() == '/')
-                curPath.pop_back();
-            
-            localDepDirectoryName = ghc::filesystem::path(curPath).filename().string();
-            outCopiesPaths.push_back(buildDir / localDepDirectoryName);
-            
-            if(ghc::filesystem::path(curPath).is_relative())
-                outSourcesPaths.push_back(scriptDirectory / local->Path);
-            else
-                outSourcesPaths.push_back(local->Path);
-        }
+        outCopiesPaths.push_back(currentCopyPath.string());
+        outSourcesPaths.push_back(currentSourcePath.string());
     }
     
     return true;
@@ -500,6 +567,9 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                                             const Data::Profile& profile,
                                             std::vector<std::string>& outBinariesPaths)
 {
+    ssLOG_FUNC_DEBUG();
+
+    
     std::unordered_set<std::string> binariesPathsSet;
     for(int i = 0; i < outBinariesPaths.size(); ++i)
         binariesPathsSet.insert(outBinariesPaths[i]);
@@ -710,3 +780,132 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
     
     return true;
 }
+
+
+bool runcpp2::HandleImport( Data::DependencyInfo& dependency,
+                            const ghc::filesystem::path& basePath)
+{
+    ssLOG_FUNC_DEBUG();
+    
+    if(dependency.Source.ImportPath.empty())
+        return true;
+
+    const std::string fullPath = (basePath / dependency.Source.ImportPath).string();
+    std::error_code ec;
+    if(!ghc::filesystem::exists(fullPath, ec))
+    {
+        ssLOG_ERROR("Import file not found: " << fullPath);
+        return false;
+    }
+
+    if(ghc::filesystem::is_directory(fullPath))
+    {
+        ssLOG_ERROR("Import path is a directory: " << fullPath);
+        return false;
+    }
+
+    //Parse the YAML file
+    ryml::ConstNodeRef resolvedTree;
+    ryml::Tree importedTree;
+    std::string content;
+    {
+        std::ifstream file(fullPath);
+        if(!file.is_open())
+        {
+            ssLOG_ERROR("Failed to open import file: " << fullPath);
+            return false;
+        }
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        content = buffer.str();
+
+        importedTree = ryml::parse_in_place(c4::to_substr(content));
+        
+        if(!runcpp2::ResolveYAML_Stream(importedTree, resolvedTree))
+            return false;
+    }
+
+    //Store the imported sources as copies for traciblity if needed
+    std::vector<std::shared_ptr<Data::DependencySource>> previouslyImportedSources;
+    {
+        std::shared_ptr<Data::DependencySource> currentImportSource = 
+            std::make_shared<Data::DependencySource>(dependency.Source);
+
+        previouslyImportedSources = dependency.Source.ImportedSources;
+        
+        dependency.Source.ImportedSources.clear();
+        currentImportSource->ImportedSources.clear();
+        
+        previouslyImportedSources.push_back(currentImportSource);
+    }
+    
+    //Reset the current dependency before we parse the import dependency
+    dependency = Data::DependencyInfo();
+    
+    //Parse the imported dependency
+    if(!dependency.ParseYAML_Node(resolvedTree))
+    {
+        ssLOG_ERROR("Failed to parse imported dependency: " << fullPath);
+        
+        //Print the list of imported sources
+        for(int i = 0; i < previouslyImportedSources.size(); ++i)
+        {
+            ssLOG_ERROR("Imported source[" << i << "]: " << 
+                        previouslyImportedSources.at(i)->ImportPath.string());
+        }
+
+        return false;
+    }
+
+    dependency.Source.ImportedSources = previouslyImportedSources;
+    return true;
+}
+
+bool runcpp2::ResolveImports(   Data::ScriptInfo& scriptInfo,
+                                const ghc::filesystem::path& scriptPath,
+                                const ghc::filesystem::path& buildDir)
+{
+    ssLOG_FUNC_INFO();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
+    //For each dependency, check if import path exists
+    //for(Data::DependencyInfo& dependency : scriptInfo.Dependencies)
+    for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+    {
+        Data::DependencyInfo& dependency = scriptInfo.Dependencies.at(i);
+        
+        //Check if import path exists
+        Data::DependencySource& source = dependency.Source;
+        if(source.ImportPath.empty())
+            continue;
+    
+        if(!source.ImportPath.is_relative())
+        {
+            ssLOG_ERROR("Import path is not relative: " << source.ImportPath.string());
+            return false;
+        }
+
+        ghc::filesystem::path copyPath;
+        ghc::filesystem::path sourcePath;
+        
+        if(!GetDependencyPath(dependency, scriptPath, buildDir, copyPath, sourcePath))
+            return false;
+
+        bool prePopulated = false;
+        if(!PopulateLocalDependency(dependency, copyPath, sourcePath, buildDir, prePopulated))
+            return false;
+        
+        //Parse the import file
+        if(!HandleImport(dependency, copyPath))
+            return false;
+
+        //Check do we still have import path in the dependency. If so, we need to parse it again
+        if(!dependency.Source.ImportPath.empty())
+            --i;
+    }
+
+    return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
