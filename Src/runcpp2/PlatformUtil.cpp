@@ -113,7 +113,7 @@ bool runcpp2::RunCommandAndGetOutput(   const std::string& command,
     }
     while(sys2Result == SYSTEM2_RESULT_READ_NOT_FINISHED);
     
-    sys2Result = System2GetCommandReturnValueSync(&commandInfo, &outReturnCode);
+    sys2Result = System2GetCommandReturnValueSync(&commandInfo, &outReturnCode, false);
     if(sys2Result != SYSTEM2_RESULT_SUCCESS)
     {
         ssLOG_ERROR("System2GetCommandReturnValueSync failed with result: " << sys2Result);
