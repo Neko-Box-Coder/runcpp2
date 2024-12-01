@@ -43,7 +43,7 @@ namespace
             return false;
         }
         
-        result = System2GetCommandReturnValueSync(&runCommandInfo, &returnStatus);
+        result = System2GetCommandReturnValueSync(&runCommandInfo, &returnStatus, false);
         if(result != SYSTEM2_RESULT_SUCCESS)
         {
             ssLOG_ERROR("System2GetCommandReturnValueSync failed with result: " << result);
