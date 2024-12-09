@@ -304,7 +304,6 @@ runcpp2::PipelineResult
 runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptPath,
                                     const ghc::filesystem::path& scriptDirectory,
                                     const std::string& scriptName,
-                                    const Data::ScriptInfo* lastScriptInfo,
                                     Data::ScriptInfo& outScriptInfo)
 {
     ssLOG_FUNC_INFO();
@@ -357,8 +356,8 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
     
     if(!parsableInfo.empty())
     {
-        ssLOG_INFO("Parsed script info YAML:");
-        ssLOG_INFO("\n" << outScriptInfo.ToString(""));
+        ssLOG_DEBUG("Parsed script info YAML:");
+        ssLOG_DEBUG("\n" << outScriptInfo.ToString(""));
     }
 
     return PipelineResult::SUCCESS;
@@ -507,7 +506,7 @@ runcpp2::PipelineResult
 runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
                                 const Data::ScriptInfo& scriptInfo,
                                 const Data::Profile& profile,
-                                const ghc::filesystem::path& scriptDirectory,
+                                const ghc::filesystem::path& absoluteScriptPath,
                                 const Data::ScriptInfo* lastScriptInfo,
                                 bool& outRecompileNeeded,
                                 bool& outRelinkNeeded,
@@ -516,6 +515,7 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
     ssLOG_FUNC_INFO();
     INTERNAL_RUNCPP2_SAFE_START();
 
+    const ghc::filesystem::path scriptDirectory = absoluteScriptPath.parent_path();
     ghc::filesystem::path lastScriptInfoFilePath = buildDir / "LastScriptInfo.yaml";
     Data::ScriptInfo lastScriptInfoFromDisk;
 
@@ -540,7 +540,7 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
     
     //Compare script info in memory or from disk
     const Data::ScriptInfo* lastInfo = lastScriptInfo;
-    if(lastScriptInfo == nullptr && ghc::filesystem::exists(lastScriptInfoFilePath, e))
+    if(lastInfo == nullptr && ghc::filesystem::exists(lastScriptInfoFilePath, e))
     {
         ssLOG_DEBUG("Last script info file exists: " << lastScriptInfoFilePath);
         std::ifstream lastScriptInfoFile;
@@ -548,10 +548,37 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
         std::stringstream lastScriptInfoBuffer;
         lastScriptInfoBuffer << lastScriptInfoFile.rdbuf();
         
-        if(ParseScriptInfo(lastScriptInfoBuffer.str(), lastScriptInfoFromDisk))
+        int currentThreadTargetLevel = ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL();
+        ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_NONE);
+        
+        do
+        {
+            {
+                bool result = ParseScriptInfo(lastScriptInfoBuffer.str(), lastScriptInfoFromDisk);
+                if(!result)
+                    break;
+            }
+            
+            //Resolve imports for last script info
+            runcpp2::PipelineResult result = ResolveScriptImports(  lastScriptInfoFromDisk, 
+                                                                    absoluteScriptPath, 
+                                                                    buildDir);
+            if(result != PipelineResult::SUCCESS)
+                break;
+            
             lastInfo = &lastScriptInfoFromDisk;
+        }
+        while(false);
+        
+        ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(currentThreadTargetLevel);
+        
+        if(lastInfo != nullptr)
+            ssLOG_INFO("Last script info parsed");
+        else
+            ssLOG_INFO("Failed to parse last script info");
     }
     
+    //Check if the cached script info has changed
     if(lastInfo != nullptr)
     {
         //Check link flags
@@ -626,6 +653,9 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
                     !lastDefines->Equals(*currentDefines)
                 );
         }
+        
+        if(outRecompileNeeded || outRelinkNeeded)
+            ssLOG_INFO("Last script info is out of date, recompiling or relinking...");
     }
     else
         outRecompileNeeded = true;
@@ -647,27 +677,22 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
         ssLOG_DEBUG("Wrote current script info to " << lastScriptInfoFilePath.string());
     }
 
+    if(!lastInfo)
+        return PipelineResult::SUCCESS;
+
     //Check if include paths have changed
     std::vector<ghc::filesystem::path> currentIncludePaths;
-    if(!GatherIncludePaths( scriptDirectory, 
-                            scriptInfo, 
-                            profile, 
-                            {}, //Empty dependencies since we're just comparing paths
-                            currentIncludePaths))
+    if(!GatherIncludePaths(scriptDirectory, scriptInfo, profile, {}, currentIncludePaths))
     {
         ssLOG_ERROR("Failed to gather current include paths");
         return PipelineResult::UNEXPECTED_FAILURE;
     }
 
     std::vector<ghc::filesystem::path> lastIncludePaths;
-    if(lastScriptInfo && !GatherIncludePaths(   scriptDirectory,
-                                                *lastScriptInfo,
-                                                profile,
-                                                {}, // Empty dependencies
-                                                lastIncludePaths))
+    if(!GatherIncludePaths(scriptDirectory, *lastInfo, profile, {}, lastIncludePaths))
     {
-        ssLOG_ERROR("Failed to gather last include paths");
-        return PipelineResult::UNEXPECTED_FAILURE;
+        ssLOG_WARNING("Failed to gather last include paths");
+        return PipelineResult::SUCCESS;
     }
 
     if(currentIncludePaths != lastIncludePaths)
@@ -675,6 +700,8 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
         ssLOG_INFO("Include paths have changed");
         outRecompileNeeded = true;
     }
+    else if(!outRecompileNeeded && !outRelinkNeeded)
+        ssLOG_INFO("Using script info cache");
 
     return PipelineResult::SUCCESS;
     
@@ -1236,7 +1263,7 @@ bool runcpp2::GatherFilesIncludes(  const std::vector<ghc::filesystem::path>& fi
                 
                 if(found)
                 {
-                    ssLOG_INFO("Found include file: " << resolvedInclude.string());
+                    ssLOG_DEBUG("Found include file: " << resolvedInclude.string());
                     currentIncludes.push_back(resolvedInclude);
                     filesToProcess.push(resolvedInclude);
                 }
