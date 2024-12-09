@@ -204,7 +204,7 @@ namespace
                 ghc::filesystem::file_time_type lastExecutableWriteTime = 
                     ghc::filesystem::last_write_time(exeToCopy, e);
                 
-                if(lastExecutableWriteTime > currentFinalObjectWriteTime)
+                if(lastExecutableWriteTime >= currentFinalObjectWriteTime)
                 {
                     ssLOG_INFO("Using output cache");
                     outOutputCache = true;
@@ -257,7 +257,7 @@ namespace
                 ghc::filesystem::file_time_type lastSharedLibWriteTime = 
                     ghc::filesystem::last_write_time(sharedLibBuild, e);
                 
-                if(lastSharedLibWriteTime > currentFinalObjectWriteTime)
+                if(lastSharedLibWriteTime >= currentFinalObjectWriteTime)
                 {
                     ssLOG_INFO("Using output cache");
                     outOutputCache = true;
@@ -425,7 +425,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
     result = ParseAndValidateScriptInfo(absoluteScriptPath,
                                         scriptDirectory,
                                         scriptName,
-                                        lastScriptInfo,
                                         scriptInfo);
     
     if(result != PipelineResult::SUCCESS)
@@ -499,7 +498,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         result = CheckScriptInfoChanges(buildDir, 
                                         scriptInfo, 
                                         profiles.at(profileIndex), 
-                                        scriptDirectory, 
+                                        absoluteScriptPath,
                                         lastScriptInfo, 
                                         recompileNeeded, 
                                         relinkNeeded, 
