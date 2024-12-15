@@ -123,16 +123,20 @@ namespace runcpp2
         
         for(const ghc::filesystem::path& include : includes)
         {
-            if(ghc::filesystem::exists(include, e))
+            if(!ghc::filesystem::exists(include, e))
             {
-                ghc::filesystem::file_time_type includeTime = 
-                    ghc::filesystem::last_write_time(include, e);
-                if(includeTime > recordTime)
-                {
-                    ssLOG_DEBUG("Include time for " << include.string() << 
-                                " is newer than record time");
-                    return true;
-                }
+                ssLOG_DEBUG("Include file does not exist: " << include.string());
+                return true;
+            }
+            
+            ghc::filesystem::file_time_type includeTime = 
+                ghc::filesystem::last_write_time(include, e);
+            
+            if(includeTime > recordTime)
+            {
+                ssLOG_DEBUG("Include time for " << include.string() << 
+                            " is newer than record time");
+                return true;
             }
         }
         

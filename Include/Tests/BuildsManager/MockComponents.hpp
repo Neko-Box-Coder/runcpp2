@@ -1,6 +1,9 @@
 #ifndef RUNCPP2_UNIT_TESTS_BUILDS_MANAGER_MOCK_COMPONENTS_HPP
 #define RUNCPP2_UNIT_TESTS_BUILDS_MANAGER_MOCK_COMPONENTS_HPP
 
+#if !defined(NOMINMAX)
+    #define NOMINMAX 1
+#endif
 #include "ghc/filesystem.hpp"
 
 #include "CppOverride.hpp"

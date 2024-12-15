@@ -306,7 +306,8 @@ runcpp2::CheckSourcesNeedUpdate(    const std::string& scriptPath,
                                     const std::vector<Data::Profile>& profiles,
                                     const std::string& configPreferredProfile,
                                     const Data::ScriptInfo& scriptInfo,
-                                    const std::unordered_map<CmdOptions, std::string>& currentOptions,
+                                    const std::unordered_map<   CmdOptions, 
+                                                                std::string>& currentOptions,
                                     bool& outNeedsUpdate)
 {
     INTERNAL_RUNCPP2_SAFE_START();
@@ -324,6 +325,30 @@ runcpp2::CheckSourcesNeedUpdate(    const std::string& scriptPath,
                                             scriptName);
     if(result != PipelineResult::SUCCESS)
         return result;
+
+    //First check if script info file has changed
+    std::error_code e;
+    ghc::filesystem::path dedicatedYamlLoc = 
+        scriptDirectory / ghc::filesystem::path(scriptName + ".yaml");
+    
+    ghc::filesystem::file_time_type currentWriteTime;
+    if(ghc::filesystem::exists(dedicatedYamlLoc, e))
+        currentWriteTime = ghc::filesystem::last_write_time(dedicatedYamlLoc, e);
+    else
+        currentWriteTime = ghc::filesystem::last_write_time(absoluteScriptPath, e);
+
+    if(e)
+    {
+        ssLOG_ERROR("Failed to get write time for script info");
+        return PipelineResult::UNEXPECTED_FAILURE;
+    }
+
+    //If script info file is newer than last check, we need to update
+    if(currentWriteTime > scriptInfo.LastWriteTime)
+    {
+        outNeedsUpdate = true;
+        return PipelineResult::SUCCESS;
+    }
 
     //Initialize BuildsManager and IncludeManager
     ghc::filesystem::path configDir = GetConfigFilePath();
@@ -506,7 +531,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         if(result != PipelineResult::SUCCESS)
             return result;
         
-        if(!lastScriptInfo || recompileNeeded || !changedDependencies.empty() || relinkNeeded)
+        //if(!lastScriptInfo || recompileNeeded || !changedDependencies.empty() || relinkNeeded)
             outScriptInfo = scriptInfo;
         
         std::vector<std::string> gatheredBinariesPaths;

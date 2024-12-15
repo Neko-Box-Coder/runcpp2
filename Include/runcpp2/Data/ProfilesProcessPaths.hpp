@@ -5,7 +5,9 @@
 
 #include "runcpp2/YamlLib.hpp"
 
-#define NOMINMAX 1
+#if !defined(NOMINMAX)
+    #define NOMINMAX 1
+#endif
 #include "ghc/filesystem.hpp"
 
 #include <unordered_map>

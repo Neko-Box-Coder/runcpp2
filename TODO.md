@@ -15,7 +15,6 @@ TODO:
     - Add branch/tag option for git
     - Add initialize submodule option for git
 - Use System2 subprocess if no prepend commands to be safer
-- Record last script info write time for `ParseAndValidateScriptInfo()`
 - Migrate to libyaml
 - Add wildcard support for filenames and extensions
 - Add tests and examples (On Windows as well)
