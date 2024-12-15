@@ -29,7 +29,8 @@ namespace runcpp2
                                             const std::vector<Data::Profile>& profiles,
                                             const std::string& configPreferredProfile,
                                             const Data::ScriptInfo& scriptInfo,
-                                            const std::unordered_map<CmdOptions, std::string>& currentOptions,
+                                            const std::unordered_map<   CmdOptions, 
+                                                                        std::string>& currentOptions,
                                             bool& outNeedsUpdate);
 
     PipelineResult StartPipeline(   const std::string& scriptPath, 

@@ -309,8 +309,6 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
     ssLOG_FUNC_INFO();
     INTERNAL_RUNCPP2_SAFE_START();
 
-    //TODO: Record last script info write time. Use last script info if possible to reduce disk io
-
     //Check if there's script info as yaml file instead
     std::error_code e;
     std::string parsableInfo;
@@ -320,6 +318,14 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
     
     if(ghc::filesystem::exists(dedicatedYamlLoc, e))
     {
+        //Record write time for yaml file
+        outScriptInfo.LastWriteTime = ghc::filesystem::last_write_time(dedicatedYamlLoc, e);
+        if(e)
+        {
+            ssLOG_ERROR("Failed to get last write time for: " << dedicatedYamlLoc);
+            return PipelineResult::INVALID_SCRIPT_INFO;
+        }
+
         inputFile.open(dedicatedYamlLoc);
         std::stringstream buffer;
         buffer << inputFile.rdbuf();
@@ -327,6 +333,14 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
     }
     else
     {
+        //Record write time for script file
+        outScriptInfo.LastWriteTime = ghc::filesystem::last_write_time(absoluteScriptPath, e);
+        if(e)
+        {
+            ssLOG_ERROR("Failed to get last write time for: " << absoluteScriptPath);
+            return PipelineResult::INVALID_SCRIPT_INFO;
+        }
+
         inputFile.open(absoluteScriptPath);
         
         if (!inputFile)
@@ -1192,7 +1206,7 @@ bool runcpp2::GatherIncludePaths(   const ghc::filesystem::path& scriptDirectory
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
-bool runcpp2::GatherFilesIncludes(  const std::vector<ghc::filesystem::path>& files,
+bool runcpp2::GatherFilesIncludes(  const std::vector<ghc::filesystem::path>& sourceFiles,
                                     const std::vector<ghc::filesystem::path>& includePaths,
                                     SourceIncludeMap& outSourceIncludes)
 {
@@ -1202,13 +1216,13 @@ bool runcpp2::GatherFilesIncludes(  const std::vector<ghc::filesystem::path>& fi
     outSourceIncludes.clear();
     std::unordered_set<std::string> visitedFiles;
     
-    for(const ghc::filesystem::path& file : files)
+    for(const ghc::filesystem::path& source : sourceFiles)
     {
-        ssLOG_INFO("Gathering includes for " << file.string());
+        ssLOG_INFO("Gathering includes for " << source.string());
         
-        std::vector<ghc::filesystem::path>& currentIncludes = outSourceIncludes[file.string()];
+        std::vector<ghc::filesystem::path>& currentIncludes = outSourceIncludes[source.string()];
         std::queue<ghc::filesystem::path> filesToProcess;
-        filesToProcess.push(file);
+        filesToProcess.push(source);
         
         while(!filesToProcess.empty())
         {

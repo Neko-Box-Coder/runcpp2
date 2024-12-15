@@ -7,6 +7,7 @@
 #include "runcpp2/Data/ProfilesProcessPaths.hpp"
 #include "runcpp2/Data/ProfilesDefines.hpp"
 #include "runcpp2/Data/ProfilesCommands.hpp"
+#include "ghc/filesystem.hpp"
 
 #include <string>
 #include <vector>
@@ -38,7 +39,11 @@ namespace runcpp2
                 std::unordered_map<PlatformName, ProfilesCommands> PostBuild;
                 std::unordered_map<PlatformName, ProfilesCommands> Cleanup;
                 
+                //Internal tracking
                 bool Populated = false;
+                
+                ghc::filesystem::file_time_type LastWriteTime = 
+                    ghc::filesystem::file_time_type::min();
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;
