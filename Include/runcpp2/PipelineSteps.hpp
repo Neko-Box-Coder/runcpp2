@@ -10,6 +10,9 @@
 #include "runcpp2/BuildsManager.hpp"
 #include "runcpp2/IncludeManager.hpp"
 
+#if !defined(NOMINMAX)
+    #define NOMINMAX 1
+#endif
 #include "ghc/filesystem.hpp"
 
 #include <string>
@@ -129,6 +132,5 @@ namespace runcpp2
                                 const std::vector<ghc::filesystem::path>& includePaths,
                                 SourceIncludeMap& outSourceIncludes);
 }
-
 
 #endif

@@ -4,6 +4,10 @@
 #include "runcpp2/Data/Profile.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
 
+#if !defined(NOMINMAX)
+    #define NOMINMAX 1
+#endif
+
 #include "ghc/filesystem.hpp"
 
 #include <string>

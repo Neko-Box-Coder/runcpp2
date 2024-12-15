@@ -1,6 +1,10 @@
 #ifndef RUNCPP2_INCLUDE_MANAGER_HPP
 #define RUNCPP2_INCLUDE_MANAGER_HPP
 
+#if !defined(NOMINMAX)
+    #define NOMINMAX 1
+#endif
+
 #include "ghc/filesystem.hpp"
 #include <unordered_map>
 #include <vector>

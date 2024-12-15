@@ -3,6 +3,11 @@
 
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/Data/Profile.hpp"
+
+#if !defined(NOMINMAX)
+    #define NOMINMAX 1
+#endif
+
 #include "System2.h"
 
 #include <cstdint>
