@@ -6,6 +6,10 @@
 
 #include "ghc/filesystem.hpp"
 
+#if defined(_WIN32)
+    #include <conio.h>
+#endif
+
 
 //TODO: Merge long and short options into a single structure
 int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& longOptionsMap,
@@ -446,6 +450,13 @@ int main(int argc, char* argv[])
 
             if(needsRunning)
             {
+                //Clear the screen
+                #if defined(_WIN32)
+                    clrscr();
+                #else
+                    std::cout << u8"\033[2J\033[1;1H";
+                #endif
+                
                 int result = 0;
                 runcpp2::PipelineResult pipelineResult = 
                     runcpp2::StartPipeline( script, 
