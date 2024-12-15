@@ -711,7 +711,6 @@ int main(int argc, char** argv)
             //Setup timestamps
             const auto recordTime = ghc::filesystem::file_time_type::clock::now();
             const auto sourceTime = recordTime - std::chrono::seconds(1);
-            const auto includeTime = recordTime + std::chrono::seconds(1);
             
             //Mock source file time
             std::shared_ptr<OverrideResult> sourceTimeResult = CreateOverrideResult();
@@ -736,8 +735,6 @@ int main(int argc, char** argv)
             CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
                                 .WhenCalledWith<const ghc::filesystem::path&, 
                                                 CO_ANY_TYPE>(includePaths[1], CO_ANY)
-                                .Returns<bool>(true)
-                                .Times(1)
                                 .AssignResult(include2ExistsResult);
             
             //Mock second include file time
@@ -745,8 +742,6 @@ int main(int argc, char** argv)
             CO_SETUP_OVERRIDE   (OverrideInstance, Mock_last_write_time)
                                 .WhenCalledWith<const ghc::filesystem::path&, 
                                                 CO_ANY_TYPE>(includePaths[1], CO_ANY)
-                                .Returns<ghc::filesystem::file_time_type>(includeTime)
-                                .Times(1)
                                 .AssignResult(include2TimeResult);
             
             std::vector<ghc::filesystem::path> includes = { includePaths[0], includePaths[1] };
@@ -759,10 +754,10 @@ int main(int argc, char** argv)
                                 sourceTimeResult->GetSucceedCount(), 1);
         ssTEST_OUTPUT_ASSERT(   "First include exists should be checked",
                                 include1ExistsResult->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT(   "Second include exists should be checked",
-                                include2ExistsResult->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT(   "Second include time should be checked",
-                                include2TimeResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT(   "Second include exists should not be checked",
+                                include2ExistsResult->GetStatusCount(), 0);
+        ssTEST_OUTPUT_ASSERT(   "Second include time should not be checked",
+                                include2TimeResult->GetStatusCount(), 0);
     };
     
     ssTEST("GetRecordPath Should Generate Valid And Unique Paths")
