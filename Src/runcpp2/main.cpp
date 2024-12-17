@@ -6,7 +6,6 @@
 
 #include "ghc/filesystem.hpp"
 
-
 //TODO: Merge long and short options into a single structure
 int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& longOptionsMap,
                 const std::unordered_map<std::string, const runcpp2::OptionInfo&>& shortOptionsMap,
@@ -446,6 +445,17 @@ int main(int argc, char* argv[])
 
             if(needsRunning)
             {
+                //Clear the screen
+                if(ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL() <= ssLOG_LEVEL_WARNING)
+                {
+                    #if defined(_WIN32)
+                        system("cls");
+                    #else
+                        //https://stackoverflow.com/a/53925508
+                        std::cout << "\033c";
+                    #endif
+                }
+                
                 int result = 0;
                 runcpp2::PipelineResult pipelineResult = 
                     runcpp2::StartPipeline( script, 
