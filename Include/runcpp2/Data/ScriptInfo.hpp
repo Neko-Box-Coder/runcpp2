@@ -1,12 +1,17 @@
 #ifndef RUNCPP2_DATA_SCRIPT_INFO_HPP
 #define RUNCPP2_DATA_SCRIPT_INFO_HPP
 
+
 #include "runcpp2/Data/DependencyInfo.hpp"
 #include "runcpp2/Data/ProfilesFlagsOverride.hpp"
-#include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/Data/ProfilesProcessPaths.hpp"
 #include "runcpp2/Data/ProfilesDefines.hpp"
 #include "runcpp2/Data/ProfilesCommands.hpp"
+
+#if !defined(NOMINMAX)
+    #define NOMINMAX 1
+#endif
+
 #include "ghc/filesystem.hpp"
 
 #include <string>
