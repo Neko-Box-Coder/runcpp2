@@ -10,6 +10,9 @@
 #include "runcpp2/BuildsManager.hpp"
 #include "runcpp2/IncludeManager.hpp"
 
+#if !defined(NOMINMAX)
+    #define NOMINMAX 1
+#endif
 #include "ghc/filesystem.hpp"
 
 #include <string>
@@ -125,10 +128,9 @@ namespace runcpp2
 
     using SourceIncludeMap = std::unordered_map<std::string, std::vector<ghc::filesystem::path>>;
     
-    bool GatherFilesIncludes(   const std::vector<ghc::filesystem::path>& files,
+    bool GatherFilesIncludes(   const std::vector<ghc::filesystem::path>& sourceFiles,
                                 const std::vector<ghc::filesystem::path>& includePaths,
                                 SourceIncludeMap& outSourceIncludes);
 }
-
 
 #endif

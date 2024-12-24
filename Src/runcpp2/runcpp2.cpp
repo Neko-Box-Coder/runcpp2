@@ -306,7 +306,8 @@ runcpp2::CheckSourcesNeedUpdate(    const std::string& scriptPath,
                                     const std::vector<Data::Profile>& profiles,
                                     const std::string& configPreferredProfile,
                                     const Data::ScriptInfo& scriptInfo,
-                                    const std::unordered_map<CmdOptions, std::string>& currentOptions,
+                                    const std::unordered_map<   CmdOptions, 
+                                                                std::string>& currentOptions,
                                     bool& outNeedsUpdate)
 {
     INTERNAL_RUNCPP2_SAFE_START();
@@ -325,8 +326,39 @@ runcpp2::CheckSourcesNeedUpdate(    const std::string& scriptPath,
     if(result != PipelineResult::SUCCESS)
         return result;
 
+    //First check if script info file has changed
+    std::error_code e;
+    ghc::filesystem::path dedicatedYamlLoc = 
+        scriptDirectory / ghc::filesystem::path(scriptName + ".yaml");
+    
+    ghc::filesystem::file_time_type currentWriteTime;
+    if(ghc::filesystem::exists(dedicatedYamlLoc, e))
+        currentWriteTime = ghc::filesystem::last_write_time(dedicatedYamlLoc, e);
+    else
+        currentWriteTime = ghc::filesystem::last_write_time(absoluteScriptPath, e);
+
+    if(e)
+    {
+        ssLOG_ERROR("Failed to get write time for script info");
+        return PipelineResult::UNEXPECTED_FAILURE;
+    }
+
+    //If script info file is newer than last check, we need to update
+    if(currentWriteTime > scriptInfo.LastWriteTime)
+    {
+        outNeedsUpdate = true;
+        return PipelineResult::SUCCESS;
+    }
+
     //Initialize BuildsManager and IncludeManager
     ghc::filesystem::path configDir = GetConfigFilePath();
+    configDir = configDir.parent_path();
+    if(!ghc::filesystem::is_directory(configDir, e))
+    {
+        ssLOG_FATAL("Unexpected path for config directory: " << configDir.string());
+        return PipelineResult::INVALID_CONFIG_PATH;
+    }
+    
     ghc::filesystem::path buildDir;
     BuildsManager buildsManager("/tmp");
     IncludeManager includeManager;
@@ -506,7 +538,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         if(result != PipelineResult::SUCCESS)
             return result;
         
-        if(!lastScriptInfo || recompileNeeded || !changedDependencies.empty() || relinkNeeded)
+        //if(!lastScriptInfo || recompileNeeded || !changedDependencies.empty() || relinkNeeded)
             outScriptInfo = scriptInfo;
         
         std::vector<std::string> gatheredBinariesPaths;
@@ -556,27 +588,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         ghc::filesystem::file_time_type finalObjectWriteTime;
         
         if(currentOptions.count(runcpp2::CmdOptions::RESET_CACHE) > 0 || recompileNeeded)
-        {
             sourceHasCache = std::vector<bool>(sourceFiles.size(), false);
-            
-            //Update the include records
-            {
-                runcpp2::SourceIncludeMap sourcesIncludes;
-                if(!runcpp2::GatherFilesIncludes(sourceFiles, includePaths, sourcesIncludes))
-                    return PipelineResult::UNEXPECTED_FAILURE;
-                
-                for(auto it = sourcesIncludes.cbegin(); it != sourcesIncludes.cend(); ++it)
-                {
-                    ssLOG_DEBUG("Updating include record for " << it->first);
-                    if(!includeManager.WriteIncludeRecord(  ghc::filesystem::path(it->first),
-                                                            it->second))
-                    {
-                        ssLOG_ERROR("Failed to write include record for " << it->first);
-                        return PipelineResult::UNEXPECTED_FAILURE;
-                    }
-                }
-            }
-        }
         else if(!HasCompiledCache(  absoluteScriptPath,
                                     sourceFiles, 
                                     buildDir, 
@@ -589,6 +601,34 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         {
             //TODO: Maybee add a pipeline result for this?
             return PipelineResult::UNEXPECTED_FAILURE;
+        }
+        
+        //Update the include records
+        {
+            runcpp2::SourceIncludeMap sourcesIncludes;
+            if(!runcpp2::GatherFilesIncludes(sourceFiles, includePaths, sourcesIncludes))
+                return PipelineResult::UNEXPECTED_FAILURE;
+            
+            for(int i = 0; i < sourceFiles.size(); ++i)
+            {
+                ssLOG_DEBUG("Updating include record for " << sourceFiles.at(i).string());
+                if(!sourceHasCache.at(i))
+                {
+                    if(sourcesIncludes.count(sourceFiles.at(i)) == 0)
+                    {
+                        ssLOG_WARNING("Includes not gathered for " << sourceFiles.at(i).string());
+                        continue;
+                    }
+                    
+                    if(!includeManager.WriteIncludeRecord(  sourceFiles.at(i),
+                                                            sourcesIncludes.at(sourceFiles.at(i))))
+                    {
+                        ssLOG_ERROR("Failed to write include record for " << 
+                                    sourceFiles.at(i).string());
+                        return PipelineResult::UNEXPECTED_FAILURE;
+                    }
+                }
+            }
         }
         
         std::vector<std::string> linkFilesPaths;
