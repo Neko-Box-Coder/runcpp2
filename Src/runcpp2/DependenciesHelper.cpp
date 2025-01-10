@@ -151,6 +151,7 @@ namespace
     {
         outPrePopulated.resize(dependencies.size());
         
+        //TODO(NOW): Multi-thread?
         for(int i = 0; i < dependencies.size(); ++i)
         {
             if(!dependencies.at(i)->Source.ImportPath.empty())
@@ -508,6 +509,7 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
         return false;
     }
     
+    //TODO(NOW): Multi-thread?
     //Run setup steps
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
@@ -543,6 +545,7 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
     if(!scriptInfo.Populated)
         return true;
 
+    //TODO(NOW): Multi-thread?
     //Run build steps
     for(int i = 0; i < availableDependencies.size(); ++i)
     {

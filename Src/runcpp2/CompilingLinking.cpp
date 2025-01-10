@@ -136,6 +136,8 @@ namespace
         std::unordered_map<std::string, std::vector<std::string>> substitutionMap;
         substitutionMap = substitutionMapTemplate;
         
+        //TODO(NOW): Compile async
+        
         for(int i = 0; i < sourceFiles.size(); ++i)
         {
             std::error_code e;
