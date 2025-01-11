@@ -1,0 +1,24 @@
+
+
+.md-header__button.md-logo {
+    // margin-top: 0;
+    // margin-bottom: 0;
+    // margin-right: 0;
+    // padding-right: 0;
+    // padding-top: 0;
+    // padding-bottom: 0;
+    width: 5rem;
+}
+
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+    width: 100%;
+    height: auto;
+    overflow: hidden;
+    //height: 50%;
+    //width: 100%;
+    //min-width: 3rem;
+    //display: block;
+    //margin-left: auto;
+    //margin-right: auto;
+}
