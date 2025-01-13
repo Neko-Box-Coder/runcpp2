@@ -137,6 +137,7 @@ add_library(runcpp2 STATIC
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/StageInfo.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ProfilesDefines.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/FilesToCopyInfo.cpp"
+                        "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/BuildTypeHelper.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/ProfileHelper.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/CompilingLinking.cpp"
                         "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/ConfigParsing.cpp"

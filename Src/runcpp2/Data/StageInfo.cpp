@@ -314,6 +314,7 @@ bool runcpp2::Data::StageInfo::PerformSubstituions( const SubstitutionMap& subst
 
 bool runcpp2::Data::StageInfo::ConstructCommand(const SubstitutionMap& substitutionMap, 
                                                 bool isExecutable,
+                                                BuildType buildType,
                                                 std::string& outCommand) const
 {
     ssLOG_FUNC_DEBUG();
@@ -321,7 +322,7 @@ bool runcpp2::Data::StageInfo::ConstructCommand(const SubstitutionMap& substitut
     const std::unordered_map<PlatformName, OutputTypeInfo>& currentOutputTypeMap = 
         isExecutable ? 
         OutputTypes.Executable :
-        OutputTypes.Shared;
+        (buildType == BuildType::STATIC ? OutputTypes.Static : OutputTypes.Shared);
 
     if(!runcpp2::HasValueFromPlatformMap(currentOutputTypeMap))
     {

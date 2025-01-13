@@ -448,7 +448,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
     if(result != PipelineResult::SUCCESS)
         return result;
 
-    //Rest of the original function remains the same...
     ghc::filesystem::path configDir = GetConfigFilePath();
     ghc::filesystem::path buildDir;
 
@@ -728,7 +727,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         result = GetTargetPath( buildDir, 
                                 scriptName, 
                                 profiles.at(profileIndex), 
-                                currentOptions, 
+                                currentOptions,
+                                scriptInfo,
                                 target);
             
         if(result != PipelineResult::SUCCESS)

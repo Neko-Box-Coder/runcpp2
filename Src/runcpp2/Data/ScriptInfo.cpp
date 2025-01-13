@@ -13,6 +13,7 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     {
         NodeRequirement("PassScriptPath", ryml::NodeType_e::KEYVAL, false, true),
         NodeRequirement("Language", ryml::NodeType_e::KEYVAL, false, true),
+        NodeRequirement("BuildType", ryml::NodeType_e::KEYVAL, false, true),
         NodeRequirement("RequiredProfiles", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("OverrideCompileFlags", ryml::NodeType_e::MAP, false, true),
         NodeRequirement("OverrideLinkFlags", ryml::NodeType_e::MAP, false, true),
@@ -52,6 +53,18 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
     
     if(ExistAndHasChild(node, "Language"))
         node["Language"] >> Language;
+    
+    if(ExistAndHasChild(node, "BuildType"))
+    {
+        std::string typeStr = GetValue(node["BuildType"]);
+        BuildType buildType = StringToBuildType(typeStr);
+        if(buildType == BuildType::COUNT)
+        {
+            ssLOG_ERROR("ScriptInfo: Invalid build type: " << typeStr);
+            return false;
+        }
+        CurrentBuildType = buildType;
+    }
     
     if(ExistAndHasChild(node, "RequiredProfiles"))
     {
@@ -263,6 +276,8 @@ std::string runcpp2::Data::ScriptInfo::ToString(std::string indentation) const
     if(!Language.empty())
         out += indentation + "Language: " + GetEscapedYAMLString(Language) + "\n";
     
+    out += indentation + "BuildType: " + BuildTypeToString(CurrentBuildType) + "\n";
+    
     if(!RequiredProfiles.empty())
     {
         out += indentation + "RequiredProfiles:\n";
@@ -389,6 +404,7 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
 {
     if( Language != other.Language || 
         PassScriptPath != other.PassScriptPath ||
+        CurrentBuildType != other.CurrentBuildType ||
         RequiredProfiles.size() != other.RequiredProfiles.size() ||
         OverrideCompileFlags.size() != other.OverrideCompileFlags.size() ||
         OverrideLinkFlags.size() != other.OverrideLinkFlags.size() ||

@@ -2,6 +2,7 @@
 #define RUNCPP2_DATA_STAGE_INFO_HPP
 
 #include "runcpp2/Data/ParseCommon.hpp"
+#include "runcpp2/Data/BuildType.hpp"
 #include "runcpp2/YamlLib.hpp"
 
 #include <vector>
@@ -55,6 +56,7 @@ namespace runcpp2
                 
                 bool ConstructCommand(  const SubstitutionMap& substitutionMap, 
                                         bool isExecutable,
+                                        BuildType buildType,
                                         std::string& outCommand) const;
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef& node, std::string outputTypeKeyName);

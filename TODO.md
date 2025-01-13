@@ -1,5 +1,6 @@
 TODO:
 - Allow runcpp2 to be library
+- Add the ability to specify different profiles for different source files
 - Ability to compile runcpp2 as single cpp
 - Ability to skip DefaultPlatform and DefaultProfile
 - Async compile
