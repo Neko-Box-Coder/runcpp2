@@ -5,6 +5,7 @@
 #include "runcpp2/CompilingLinking.hpp"
 #include "runcpp2/ConfigParsing.hpp"
 #include "runcpp2/PlatformUtil.hpp"
+#include "runcpp2/Data/BuildTypeHelper.hpp"
 #include "ssLogger/ssLog.hpp"
 #include "ghc/filesystem.hpp"
 
@@ -151,6 +152,7 @@ namespace
     bool HasOutputCache(    const std::vector<bool>& sourceHasCache,
                             const ghc::filesystem::path& buildDir,
                             const runcpp2::Data::Profile& currentProfile,
+                            const runcpp2::Data::ScriptInfo& scriptInfo,
                             bool buildExecutable,
                             const std::string& scriptName,
                             const std::string& exeExt,
@@ -228,34 +230,32 @@ namespace
         }
         else
         {
-            //Check if there's any existing shared library build that is newer than the script
-            const std::string* targetSharedLibExt = 
-                runcpp2::GetValueFromPlatformMap(currentProfile .FilesTypes
-                                                                .SharedLibraryFile
-                                                                .Extension);
+            // Get the correct file properties based on build type
+            const runcpp2::Data::FileProperties* fileProps = 
+                runcpp2::Data::BuildTypeHelper::GetOutputFileProperties(
+                    currentProfile.FilesTypes, scriptInfo.CurrentBuildType, false);
             
-            const std::string* targetSharedLibPrefix =
-                runcpp2::GetValueFromPlatformMap(currentProfile .FilesTypes
-                                                                .SharedLibraryFile
-                                                                .Prefix);
+            const std::string* targetPrefix = runcpp2::GetValueFromPlatformMap(fileProps->Prefix);
+            const std::string* targetExt = runcpp2::GetValueFromPlatformMap(fileProps->Extension);
             
-            if(targetSharedLibExt == nullptr || targetSharedLibPrefix == nullptr)
+            if(targetExt == nullptr || targetPrefix == nullptr)
             {
-                ssLOG_ERROR("Shared library extension or prefix not found in compiler profile");
+                ssLOG_ERROR("File extension or prefix not found in compiler profile for build type " 
+                           << runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));
                 outOutputCache = false;
                 return false;
             }
             
-            ghc::filesystem::path sharedLibBuild = buildDir / *targetSharedLibPrefix;
-            sharedLibBuild.concat(scriptName).concat(*targetSharedLibExt);
+            ghc::filesystem::path outputBuild = buildDir / *targetPrefix;
+            outputBuild.concat(scriptName).concat(*targetExt);
             
-            ssLOG_INFO("Trying to use output cache: " << sharedLibBuild.string());
+            ssLOG_INFO("Trying to use output cache: " << outputBuild.string());
             
-            if( ghc::filesystem::exists(sharedLibBuild, e) && 
-                ghc::filesystem::file_size(sharedLibBuild, e) > 0)
+            if( ghc::filesystem::exists(outputBuild, e) && 
+                ghc::filesystem::file_size(outputBuild, e) > 0)
             {
                 ghc::filesystem::file_time_type lastSharedLibWriteTime = 
-                    ghc::filesystem::last_write_time(sharedLibBuild, e);
+                    ghc::filesystem::last_write_time(outputBuild, e);
                 
                 if(lastSharedLibWriteTime >= currentFinalObjectWriteTime)
                 {
@@ -273,7 +273,7 @@ namespace
                 }
             }
             else
-                ssLOG_INFO(sharedLibBuild.string() << " doesn't exist");
+                ssLOG_INFO(outputBuild.string() << " doesn't exist");
             
             ssLOG_INFO("Not using output cache");
             outOutputCache = false;
@@ -668,7 +668,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         bool outputCache = false;
         if(!HasOutputCache( sourceHasCache, 
                             buildDir, 
-                            profiles.at(profileIndex), 
+                            profiles.at(profileIndex),
+                            scriptInfo,
                             currentOptions.count(CmdOptions::EXECUTABLE) > 0,
                             scriptName,
                             exeExt,
