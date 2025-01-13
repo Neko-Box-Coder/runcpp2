@@ -24,7 +24,7 @@ namespace
         
         if(!runcpp2::HasValueFromPlatformMap(overrideFlags))
         {
-            ssLOG_INFO("No override flags found for current platform");
+            ssLOG_DEBUG("No override flags found for current platform");
             return;
         }
         
@@ -36,7 +36,7 @@ namespace
         
         if(!profileFlagsOverride)
         {
-            ssLOG_INFO("No override flags found for current profile");
+            ssLOG_DEBUG("No override flags found for current profile");
             return;
         }
         
@@ -77,7 +77,7 @@ namespace
                         bool compileAsExecutable,
                         std::vector<ghc::filesystem::path>& outObjectsFilesPaths)
     {
-        ssLOG_FUNC_DEBUG();
+        ssLOG_FUNC_INFO();
         
         outObjectsFilesPaths.clear();
         
@@ -319,7 +319,7 @@ namespace
                     bool linkAsExecutable,
                     const std::string& exeExt)
     {
-        ssLOG_FUNC_DEBUG();
+        ssLOG_FUNC_INFO();
         const runcpp2::Data::StageInfo::OutputTypeInfo* currentOutputTypeInfo = nullptr;
         
         if(linkAsExecutable)
