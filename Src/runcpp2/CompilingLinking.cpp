@@ -10,6 +10,9 @@
 #include "System2.h"
 #include "ghc/filesystem.hpp"
 
+#include <mutex>
+#include <condition_variable>
+
 namespace
 {
     using OverrideFlags = 
@@ -75,7 +78,8 @@ namespace
                         const std::vector<runcpp2::Data::DependencyInfo*>& availableDependencies,
                         const runcpp2::Data::Profile& profile,
                         bool compileAsExecutable,
-                        std::vector<ghc::filesystem::path>& outObjectsFilesPaths)
+                        std::vector<ghc::filesystem::path>& outObjectsFilesPaths,
+                        const int maxThreads)
     {
         ssLOG_FUNC_INFO();
         
@@ -141,9 +145,18 @@ namespace
         
         //NOTE: Needs to use vector<int> because vector<bool> is a special case where it is 
         //  represented as bits instead.
-        std::vector<int> runResults(sourceFiles.size(), 0);
+        std::vector<bool> runResults(sourceFiles.size(), false);
+        int doneCount = 0;
+        std::mutex resultMutex;
+        std::condition_variable resultCV;
+        
+        //Cache logs for worker threads
+        ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS();
         
         //Compile async
+        int startIndex = 0;
+        int endIndex = 0;
+        
         for(int i = 0; i < sourceFiles.size(); ++i)
         {
             std::error_code e;
@@ -156,7 +169,10 @@ namespace
             {
                 ssLOG_ERROR("Failed to get relative path for " << currentSource);
                 ssLOG_ERROR("Failed with error: " << e.message());
+                
+                std::unique_lock<std::mutex> lk(resultMutex);
                 runResults.at(i) = false;
+                ++doneCount;
                 continue;
             }
             
@@ -191,7 +207,10 @@ namespace
                 {
                     ssLOG_ERROR("Failed to create directory structure for " << outputFilePath);
                     ssLOG_ERROR("Failed with error: " << e.message());
+                    
+                    std::unique_lock<std::mutex> lk(resultMutex);
                     runResults.at(i) = false;
+                    ++doneCount;
                     continue;
                 }
                 
@@ -209,17 +228,19 @@ namespace
                 //Compile the source
                 [
                     i,
-                    &runResults,
                     &profile,
                     &currentOutputTypeInfo,
                     substitutionMap,
                     &buildDir,
                     compileAsExecutable,
-                    &scriptInfo
+                    &scriptInfo,
+                    
+                    &runResults,
+                    &doneCount,
+                    &resultMutex,
+                    &resultCV
                 ]()
                 {
-                    std::error_code e;
-                    
                     //Getting PreRun command
                     std::string preRun =    
                         runcpp2::HasValueFromPlatformMap(profile.Compiler.PreRun) ?
@@ -233,7 +254,11 @@ namespace
                         if(!profile.Compiler.PerformSubstituions(substitutionMap, setupStep))
                         {
                             ssLOG_ERROR("Failed to substitute \"" << setupStep << "\"");
+                            
+                            std::unique_lock<std::mutex> lk(resultMutex);
                             runResults.at(i) = false;
+                            ++doneCount;
+                            resultCV.notify_one();
                             return;
                         }
                         
@@ -252,7 +277,11 @@ namespace
                             ssLOG_ERROR("Setup command \"" << setupStep << "\" failed");
                             ssLOG_ERROR("Failed with result " << setupResult);
                             ssLOG_ERROR("Failed with output: \n" << setupOutput);
+                            
+                            std::unique_lock<std::mutex> lk(resultMutex);
                             runResults.at(i) = false;
+                            ++doneCount;
+                            resultCV.notify_one();
                             return;
                         }
                     }
@@ -267,7 +296,11 @@ namespace
                                                             runPartSubstitutedCommand))
                     {
                         ssLOG_ERROR("Failed to construct compile command");
+                        
+                        std::unique_lock<std::mutex> lk(resultMutex);
                         runResults.at(i) = false;
+                        ++doneCount;
+                        resultCV.notify_one();
                         return;
                     }
                     
@@ -289,7 +322,11 @@ namespace
                     {
                         ssLOG_ERROR("Compile command failed with result " << resultCode);
                         ssLOG_ERROR("Compile output: \n" << commandOutput);
+                        
+                        std::unique_lock<std::mutex> lk(resultMutex);
                         runResults.at(i) = false;
+                        ++doneCount;
+                        resultCV.notify_one();
                         return;
                     }
                     else
@@ -314,7 +351,11 @@ namespace
                         {
                             ssLOG_ERROR("Compile command failed with result " << resultCode);
                             ssLOG_ERROR("Compile output: \n" << commandOutput);
+                            
+                            std::unique_lock<std::mutex> lk(resultMutex);
                             runResults.at(i) = false;
+                            ++doneCount;
+                            resultCV.notify_one();
                             return;
                         }
                         else
@@ -336,7 +377,11 @@ namespace
                         if(!profile.Compiler.PerformSubstituions(substitutionMap, cleanupStep))
                         {
                             ssLOG_ERROR("Failed to substitute \"" << cleanupStep << "\"");
+                            
+                            std::unique_lock<std::mutex> lk(resultMutex);
                             runResults.at(i) = false;
+                            ++doneCount;
+                            resultCV.notify_one();
                             return;
                         }
                         
@@ -355,17 +400,58 @@ namespace
                             ssLOG_ERROR("Cleanup command \"" << cleanupStep << "\" failed");
                             ssLOG_ERROR("Failed with result " << cleanupResult);
                             ssLOG_ERROR("Failed with output: \n" << cleanupOutput);
+                            
+                            std::unique_lock<std::mutex> lk(resultMutex);
                             runResults.at(i) = false;
+                            ++doneCount;
+                            resultCV.notify_one();
                             return;
                         }
                     }
                     
+                    std::unique_lock<std::mutex> lk(resultMutex);
                     runResults.at(i) = true;
+                    resultCV.notify_one();
                 }
             ); //compileActions.emplace_back
-        }
         
-        //TODO(NOW): Evaluate the compile results
+            //Evaluate the compile results for each batch for compilations
+            if(i - startIndex >= maxThreads || i == sourceFiles.size() - 1)
+            {
+                std::unique_lock<std::mutex> lk(resultMutex);
+                resultCV.wait_for
+                (
+                    lk, 
+                    std::chrono::seconds(maxThreads)
+                    [&doneCount, &sourceFiles, &startIndex, &maxThreads]()
+                    { 
+                        return  doneCount - startIndex >= maxThreads || 
+                                doneCount == sourceFiles.size();
+                    }
+                );
+                
+                ssLOG_OUTPUT_ALL_CACHE_GROUPED();
+                
+                //Check if all threads have finished the work
+                if(doneCount - startIndex < maxThreads && doneCount != sourceFiles.size())
+                {
+                    ssLOG_ERROR("Compilation workers timed out...");
+                    return false;
+                }
+                
+                //Check if all the compilations are successful or not
+                for(int j = 0; j < runResults.size(); ++j)
+                {
+                    if(!runResults.at(j + startIndex))
+                        return false;
+                }
+                
+                //Update the start index
+                startIndex = i + 1;
+            }
+            
+        }
+        ssLOG_OUTPUT_ALL_CACHE_GROUPED();
         
         return true;
     }
@@ -733,7 +819,8 @@ bool runcpp2::CompileScriptOnly(const ghc::filesystem::path& buildDir,
                                 const Data::ScriptInfo& scriptInfo,
                                 const std::vector<Data::DependencyInfo*>& availableDependencies,
                                 const Data::Profile& profile,
-                                bool buildExecutable)
+                                bool buildExecutable,
+                                const int maxThreads)
 {
     if(!RunGlobalSteps(buildDir, profile.Setup))
     {
@@ -759,7 +846,8 @@ bool runcpp2::CompileScriptOnly(const ghc::filesystem::path& buildDir,
                         availableDependencies, 
                         profile, 
                         buildExecutable, 
-                        objectsFilesPaths))
+                        objectsFilesPaths,
+                        maxThreads))
     {
         ssLOG_ERROR("CompileScript failed");
         if(!RunGlobalSteps(buildDir, profile.Cleanup))
@@ -787,7 +875,8 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
                                     const Data::Profile& profile,
                                     const std::vector<std::string>& compiledObjectsPaths,
                                     bool buildExecutable,
-                                    const std::string exeExt)
+                                    const std::string exeExt,
+                                    const int maxThreads)
 {
     if(!RunGlobalSteps(buildDir, profile.Setup))
     {
@@ -813,7 +902,8 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
                         availableDependencies, 
                         profile, 
                         buildExecutable, 
-                        objectsFilesPaths))
+                        objectsFilesPaths,
+                        maxThreads))
     {
         ssLOG_ERROR("CompileScript failed");
         if(!RunGlobalSteps(buildDir, profile.Cleanup))

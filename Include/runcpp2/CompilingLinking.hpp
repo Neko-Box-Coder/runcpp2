@@ -22,7 +22,8 @@ namespace runcpp2
                             const Data::ScriptInfo& scriptInfo,
                             const std::vector<Data::DependencyInfo*>& availableDependencies,
                             const Data::Profile& profile,
-                            bool buildExecutable);
+                            bool buildExecutable,
+                            const int maxThreads);
     
     //TODO: Convert string paths to filesystem paths
     bool CompileAndLinkScript(  const ghc::filesystem::path& buildDir,
@@ -36,7 +37,8 @@ namespace runcpp2
                                 const Data::Profile& profile,
                                 const std::vector<std::string>& compiledObjectsPaths,
                                 bool buildExecutable,
-                                const std::string exeExt);
+                                const std::string exeExt,
+                                const int maxThreads);
 }
 
 #endif

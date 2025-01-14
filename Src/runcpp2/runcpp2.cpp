@@ -681,6 +681,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             //return PipelineResult::UNEXPECTED_FAILURE;
         }
         
+        const int tempMaxThreads = 16;
+        
         if(!outputCache || relinkNeeded)
         {
             for(int i = 0; i < cachedObjectsFiles.size(); ++i)
@@ -696,7 +698,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                         scriptInfo,
                                         availableDependencies,
                                         profiles.at(profileIndex),
-                                        currentOptions.count(CmdOptions::EXECUTABLE) > 0))
+                                        currentOptions.count(CmdOptions::EXECUTABLE) > 0,
+                                        tempMaxThreads))
                 {
                     return PipelineResult::COMPILE_LINK_FAILED;
                 }
@@ -714,7 +717,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                             profiles.at(profileIndex),
                                             linkFilesPaths,
                                             currentOptions.count(CmdOptions::EXECUTABLE) > 0,
-                                            exeExt))
+                                            exeExt,
+                                            tempMaxThreads))
             {
                 ssLOG_ERROR("Failed to compile or link script");
                 return PipelineResult::COMPILE_LINK_FAILED;
