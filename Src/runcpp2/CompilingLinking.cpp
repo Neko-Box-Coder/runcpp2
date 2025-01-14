@@ -136,11 +136,17 @@ namespace
         std::unordered_map<std::string, std::vector<std::string>> substitutionMap;
         substitutionMap = substitutionMapTemplate;
         
-        //TODO(NOW): Compile async
+        std::vector<std::thread> compileActions;
         
+        //NOTE: Needs to use vector<int> because vector<bool> is a special case where it is 
+        //  represented as bits instead.
+        std::vector<int> runResults(sourceFiles.size(), 0);
+        
+        //Compile async
         for(int i = 0; i < sourceFiles.size(); ++i)
         {
             std::error_code e;
+            
             ghc::filesystem::path currentSource = sourceFiles.at(i);
             ghc::filesystem::path relativeSourcePath = 
                 ghc::filesystem::relative(currentSource, scriptPath.parent_path(), e);
@@ -149,7 +155,8 @@ namespace
             {
                 ssLOG_ERROR("Failed to get relative path for " << currentSource);
                 ssLOG_ERROR("Failed with error: " << e.message());
-                return false;
+                runResults.at(i) = false;
+                continue;
             }
             
             //TODO: Maybe do ProcessPath on all the .string()?
@@ -163,6 +170,7 @@ namespace
                 substitutionMap["{InputFileDirectory}"] = {sourceDirectory};
                 substitutionMap["{InputFilePath}"] = {currentSource.string()};
             }
+            
             //Output File
             {
                 std::string objectFileExt = 
@@ -182,7 +190,8 @@ namespace
                 {
                     ssLOG_ERROR("Failed to create directory structure for " << outputFilePath);
                     ssLOG_ERROR("Failed with error: " << e.message());
-                    return false;
+                    runResults.at(i) = false;
+                    continue;
                 }
                 
                 substitutionMap["{OutputFileName}"] = {sourceName};
@@ -194,117 +203,141 @@ namespace
                 outObjectsFilesPaths.push_back(outputFilePath);
             }
             
-            //Compile the source
-            {
-                //Getting PreRun command
-                std::string preRun =    
-                    runcpp2::HasValueFromPlatformMap(profile.Compiler.PreRun) ?
-                    *runcpp2::GetValueFromPlatformMap(profile.Compiler.PreRun) : "";
-                
-                //Run setup first if any
-                for(int j = 0; j < currentOutputTypeInfo->Setup.size(); ++j)
+            compileActions.emplace_back
+            (
+                //Compile the source
+                [
+                    i,
+                    &runResults,
+                    &profile,
+                    &currentOutputTypeInfo,
+                    substitutionMap,
+                    &buildDir,
+                    compileAsExecutable
+                ]()
                 {
-                    std::string setupStep = currentOutputTypeInfo->Setup.at(j);
+                    std::error_code e;
                     
-                    if(!profile.Compiler.PerformSubstituions(substitutionMap, setupStep))
+                    //Getting PreRun command
+                    std::string preRun =    
+                        runcpp2::HasValueFromPlatformMap(profile.Compiler.PreRun) ?
+                        *runcpp2::GetValueFromPlatformMap(profile.Compiler.PreRun) : "";
+                    
+                    //Run setup first if any
+                    for(int j = 0; j < currentOutputTypeInfo->Setup.size(); ++j)
                     {
-                        ssLOG_ERROR("Failed to substitute \"" << setupStep << "\"");
-                        return false;
+                        std::string setupStep = currentOutputTypeInfo->Setup.at(j);
+                        
+                        if(!profile.Compiler.PerformSubstituions(substitutionMap, setupStep))
+                        {
+                            ssLOG_ERROR("Failed to substitute \"" << setupStep << "\"");
+                            runResults.at(i) = false;
+                            return;
+                        }
+                        
+                        if(!preRun.empty())
+                            setupStep = preRun + " && " + setupStep;
+                        
+                        std::string setupOutput;
+                        int setupResult;
+                        
+                        if( !runcpp2::RunCommandAndGetOutput(   setupStep, 
+                                                                setupOutput, 
+                                                                setupResult,
+                                                                buildDir.string()) || 
+                            setupResult != 0)
+                        {
+                            ssLOG_ERROR("Setup command \"" << setupStep << "\" failed");
+                            ssLOG_ERROR("Failed with result " << setupResult);
+                            ssLOG_ERROR("Failed with output: \n" << setupOutput);
+                            runResults.at(i) = false;
+                            return;
+                        }
                     }
                     
-                    if(!preRun.empty())
-                        setupStep = preRun + " && " + setupStep;
+                    std::string compileCommand;
                     
-                    std::string setupOutput;
-                    int setupResult;
-                    
-                    if( !runcpp2::RunCommandAndGetOutput(   setupStep, 
-                                                            setupOutput, 
-                                                            setupResult,
-                                                            buildDir.string()) || 
-                        setupResult != 0)
+                    //Construct the compile command
                     {
-                        ssLOG_ERROR("Setup command \"" << setupStep << "\" failed");
-                        ssLOG_ERROR("Failed with result " << setupResult);
-                        ssLOG_ERROR("Failed with output: \n" << setupOutput);
-                        return false;
-                    }
-                }
-                
-                std::string compileCommand;
-                
-                //Construct the compile command
-                {
-                    std::string runPartSubstitutedCommand;
-                    if(!profile.Compiler.ConstructCommand(  substitutionMap, 
-                                                            compileAsExecutable,
-                                                            runPartSubstitutedCommand))
-                    {
-                        return false;
-                    }
-                    
-                    if(!preRun.empty())
-                        compileCommand = preRun + " && " + runPartSubstitutedCommand;
-                    else
-                        compileCommand = runPartSubstitutedCommand;
-                    
-                    ssLOG_INFO( "running compile command: " << compileCommand <<
-                                 " in " << buildDir.string());
-                    
-                    std::string commandOutput;
-                    int resultCode = 0;
-                    if( !runcpp2::RunCommandAndGetOutput(   compileCommand, 
-                                                            commandOutput, 
-                                                            resultCode,
-                                                            buildDir.string()) || 
-                        resultCode != 0)
-                    {
-                        ssLOG_ERROR("Compile command failed with result " << resultCode);
-                        ssLOG_ERROR("Compile output: \n" << commandOutput);
-                        return false;
-                    }
-                    else
-                    {
-                        //TODO: Make this configurable
-                        //Attempt to capture warnings
-                        if(commandOutput.find(" warning") != std::string::npos)
-                            ssLOG_WARNING("Warning detected:\n" << commandOutput);
+                        std::string runPartSubstitutedCommand;
+                        if(!profile.Compiler.ConstructCommand(  substitutionMap, 
+                                                                compileAsExecutable,
+                                                                runPartSubstitutedCommand))
+                        {
+                            runResults.at(i) = false;
+                            return;
+                        }
+                        
+                        if(!preRun.empty())
+                            compileCommand = preRun + " && " + runPartSubstitutedCommand;
                         else
-                            ssLOG_INFO("Compile output:\n" << commandOutput);
+                            compileCommand = runPartSubstitutedCommand;
+                        
+                        ssLOG_INFO( "running compile command: " << compileCommand <<
+                                     " in " << buildDir.string());
+                        
+                        std::string commandOutput;
+                        int resultCode = 0;
+                        if( !runcpp2::RunCommandAndGetOutput(   compileCommand, 
+                                                                commandOutput, 
+                                                                resultCode,
+                                                                buildDir.string()) || 
+                            resultCode != 0)
+                        {
+                            ssLOG_ERROR("Compile command failed with result " << resultCode);
+                            ssLOG_ERROR("Compile output: \n" << commandOutput);
+                            runResults.at(i) = false;
+                            return;
+                        }
+                        else
+                        {
+                            //TODO: Make this configurable
+                            //Attempt to capture warnings
+                            if(commandOutput.find(" warning") != std::string::npos)
+                                ssLOG_WARNING("Warning detected:\n" << commandOutput);
+                            else
+                                ssLOG_INFO("Compile output:\n" << commandOutput);
+                        }
                     }
-                }
-                
-                //Run cleanup if any
-                for(int j = 0; j < currentOutputTypeInfo->Cleanup.size(); ++j)
-                {
-                    std::string cleanupStep = currentOutputTypeInfo->Cleanup.at(j);
                     
-                    if(!profile.Compiler.PerformSubstituions(substitutionMap, cleanupStep))
+                    //Run cleanup if any
+                    for(int j = 0; j < currentOutputTypeInfo->Cleanup.size(); ++j)
                     {
-                        ssLOG_ERROR("Failed to substitute \"" << cleanupStep << "\"");
-                        return false;
+                        std::string cleanupStep = currentOutputTypeInfo->Cleanup.at(j);
+                        
+                        if(!profile.Compiler.PerformSubstituions(substitutionMap, cleanupStep))
+                        {
+                            ssLOG_ERROR("Failed to substitute \"" << cleanupStep << "\"");
+                            runResults.at(i) = false;
+                            return;
+                        }
+                        
+                        if(!preRun.empty())
+                            cleanupStep = preRun + " && " + cleanupStep;
+                        
+                        std::string cleanupOutput;
+                        int cleanupResult;
+                        
+                        if( !runcpp2::RunCommandAndGetOutput(   cleanupStep, 
+                                                                cleanupOutput, 
+                                                                cleanupResult,
+                                                                buildDir.string()) || 
+                            cleanupResult != 0)
+                        {
+                            ssLOG_ERROR("Cleanup command \"" << cleanupStep << "\" failed");
+                            ssLOG_ERROR("Failed with result " << cleanupResult);
+                            ssLOG_ERROR("Failed with output: \n" << cleanupOutput);
+                            runResults.at(i) = false;
+                            return;
+                        }
                     }
                     
-                    if(!preRun.empty())
-                        cleanupStep = preRun + " && " + cleanupStep;
-                    
-                    std::string cleanupOutput;
-                    int cleanupResult;
-                    
-                    if( !runcpp2::RunCommandAndGetOutput(   cleanupStep, 
-                                                            cleanupOutput, 
-                                                            cleanupResult,
-                                                            buildDir.string()) || 
-                        cleanupResult != 0)
-                    {
-                        ssLOG_ERROR("Cleanup command \"" << cleanupStep << "\" failed");
-                        ssLOG_ERROR("Failed with result " << cleanupResult);
-                        ssLOG_ERROR("Failed with output: \n" << cleanupOutput);
-                        return false;
-                    }
+                    runResults.at(i) = true;
                 }
-            }
+            ); //compileActions.emplace_back
         }
+        
+        //TODO(NOW): Evaluate the compile results
         
         return true;
     }
@@ -672,6 +705,14 @@ bool runcpp2::CompileScriptOnly(const ghc::filesystem::path& buildDir,
                         objectsFilesPaths))
     {
         ssLOG_ERROR("CompileScript failed");
+        if(!RunGlobalSteps(buildDir, profile.Cleanup))
+            ssLOG_ERROR("Failed to run profile global cleanup steps");
+        return false;
+    }
+    
+    if(!RunGlobalSteps(buildDir, profile.Cleanup))
+    {
+        ssLOG_ERROR("Failed to run profile global cleanup steps");
         return false;
     }
     
@@ -718,6 +759,8 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
                         objectsFilesPaths))
     {
         ssLOG_ERROR("CompileScript failed");
+        if(!RunGlobalSteps(buildDir, profile.Cleanup))
+            ssLOG_ERROR("Failed to run profile global cleanup steps");
         return false;
     }
     
@@ -758,12 +801,8 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
                     exeExt))
     {
         ssLOG_ERROR("LinkScript failed");
-        return false;
-    }
-    
-    if(!RunGlobalSteps(buildDir, profile.Cleanup))
-    {
-        ssLOG_ERROR("Failed to run profile global cleanup steps");
+        if(!RunGlobalSteps(buildDir, profile.Cleanup))
+            ssLOG_ERROR("Failed to run profile global cleanup steps");
         return false;
     }
     
