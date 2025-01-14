@@ -1,24 +1,38 @@
-# NOTE: All command substitutions are passed directly to the shell. 
-#       Be cautious when using user-provided input in your build commands to avoid potential security risks.
+# This is the template for specifying build settings.
+# Many of the settings are passed directly to the shell.
+# Be cautious when using user-provided input in your build commands to avoid potential security risks.
+# Output from commands such as Setup or Cleanup won't be shown unless log level is set to info.
+# If the default is not mentioned for a setting, it will be empty.
 
-# NOTE: All the options here are defaulted to empty. 
-#       You can uncomment different sections to set what you want.
+# Each of the platform dependent settings can be listed under
+# - DefaultPlatform
+# - Windows
+# - Linux
+# - MacOS
+# - Unix
 
-# (Optional) Whether to pass the script path as the second parameter when running
+# You can find all the profiles in your config folder. 
+# This can be found by running `runcpp2 --show-config-path`. 
+# Specifying "DefaultProfile" in the profile name will allow any profiles 
+#   and use the user's preferred one.
+
+# (Optional) Whether to pass the script path as the second parameter when running. Default is false
 PassScriptPath: false
 
-# # (Optional) Language of the script
+# (Optional) Language of the script. Default is determined by file extension
 Language: "c++"
 
-# (Optional) Preferred profiles for the script for each platform.
-#            Profiles are listed in user config file,
-#            which can be retreived by running `runcpp2 --show-config-path`
-#            Each of the platform dependent settings can be listed under
-#            - Default
-#            - Windows
-#            - Linux
-#            - MacOS
-#            - Unix
+# (Optional) The type of output to build. Default is Executable
+# Supported types:
+# - Executable: Build as executable that can be run
+# - Static: Build as static library (.lib/.a)
+# - Shared: Build as shared library (.dll/.so)
+# - Objects: Only compile to object files without linking
+BuildType: Executable
+
+# TODO: Rename this
+# (Optional) Allowed profiles for the script for each platform.
+#            Any profiles will be used if none is specified for the platform. 
 RequiredProfiles: 
     Windows: ["g++"]
     Linux: ["g++"]
@@ -28,7 +42,7 @@ RequiredProfiles:
 OverrideCompileFlags:
     # Target Platform
     DefaultPlatform:
-        # Profile with the respective flags to override. ("DefaultProfile" for any profile)
+        # Profile with the respective flags to override
         "g++":
             # (Optional) Flags to be removed from the default compile flags, separated by space
             Remove: ""
@@ -40,7 +54,7 @@ OverrideCompileFlags:
 OverrideLinkFlags:
     # Target Platform
     DefaultPlatform:
-        # Profile with the respective flags to override ("DefaultProfile" for any profile)
+        # Profile with the respective flags to override
         "g++":
             # (Optional) Flags to be removed from the default link flags, separated by space
             Remove: ""
@@ -59,35 +73,35 @@ OtherFilesToBeCompiled:
 
 # (Optional) Include paths (relative to script file path) for each platform and profile
 IncludePaths:
-    # Target Platform (DefaultPlatform, Windows, Linux, MacOS, or Unix)
+    # Target Platform
     DefaultPlatform:
-        # Target Profile (e.g., "g++", "clang++", "msvc", or "DefaultProfile" for any profile)
+        # Target Profile
         DefaultProfile:
         -   "./include"
         -   "./src/include"
 
 # (Optional) Define cross-compiler defines for each platform and profile.
-# Defines can be specified as just a name or as a name-value pair.
+#            Defines can be specified as just a name or as a name-value pair.
 Defines:
-    # Target Platform (DefaultPlatform, Windows, Linux, MacOS, or Unix)
+    # Target Platform
     DefaultPlatform:
-        # Profile name (e.g., "g++", "clang++", "msvc", or "DefaultProfile" for any profile)
+        # Profile name
         DefaultProfile:
         -   "EXAMPLE_DEFINE"              # Define without a value
         -   "VERSION_MAJOR=1"             # Define with a value
 
 # (Optional) Setup commands are run once before the script is first built.
-# These commands are run at the script's location when no build directory exists.
+#            These commands are run at the script's location when no build directory exists.
 Setup:
-    # Target Platform (DefaultPlatform, Windows, Linux, MacOS, or Unix)
+    # Target Platform
     DefaultPlatform:
-        # Profile name (e.g., "g++", "clang++", "msvc", or "DefaultProfile" for any profile)
+        # Profile name
         DefaultProfile:
         # List of setup commands
         -   "echo Setting up script..."
 
 # (Optional) PreBuild commands are run before each build.
-# These commands are run in the build directory before compilation starts.
+#            These commands are run in the build directory before compilation starts.
 PreBuild:
     # Target Platform
     DefaultPlatform:
@@ -96,7 +110,7 @@ PreBuild:
         -   "echo Starting build..."
 
 # (Optional) PostBuild commands are run after each successful build.
-# These commands are run in the output directory where binaries are located.
+#            These commands are run in the output directory where binaries are located.
 PostBuild:
     # Target Platform
     DefaultPlatform:
@@ -105,7 +119,7 @@ PostBuild:
         -   "echo Build completed..."
 
 # (Optional) Cleanup commands are run when using the --cleanup option.
-# These commands are run at the script's location before the build directory is removed.
+#            These commands are run at the script's location before the build directory is removed.
 Cleanup:
     # Target Platform
     DefaultPlatform:
@@ -121,23 +135,26 @@ Dependencies:
     # Supported platforms of the dependency
     Platforms: [Windows, Linux, MacOS]
     
-    # The source of getting the dependency (Git, Local)
+    # Where to get and copy the dependency (Git, Local)
+    # Either Git or Local can exist, not both
     Source:
-        # (Optional) Import dependency configuration from a YAML file
-        # For Git source: Path is relative to the git repository root
-        # For Local source: Path is relative to the script directory.
-        # If neither source exists, local source with root script directory is assumed.
-        # ImportPath: "config/dependency.yaml"
+        # (Optional) Import dependency configuration from a YAML file if this field exists
+        #            All other fields (Name, Platforms, etc...) are not needed if this field exists
+        #            For Git source: Path is relative to the git repository root
+        #            For Local source: Path is relative to the script directory.
+        #            If neither source exists, local source with root script directory is assumed.
+        ImportPath: "config/dependency.yaml"
         
-        # Git: Dependency or import YAML file exists in a git server, and needs to be cloned.
+        # Dependency or import YAML file exists in a git server, and needs to be cloned to build directory
         Git:
             # Git repository URL
             URL: "https://github.com/MyUser/MyLibrary.git"
         
-        # Local: Dependency or import YAML file exists in local filesystem
-        # Local:
-        #     # Path to the library directory
-        #     Path: "./libs/LocalLibrary"
+        # Dependency or import YAML file exists in local filesystem directory, 
+        #   and needs to be copied to build directory
+        Local:
+            # Path to the library directory
+            Path: "./libs/LocalLibrary"
 
 
     # Library Type (Static, Object, Shared, Header)
@@ -158,7 +175,7 @@ Dependencies:
                 SearchLibraryNames: ["MyLibrary"]
                 
                 # (Optional) The library names to be excluded from being searched.
-                # Works the same as SearchLibraryNames but will NOT be linked instead
+                #            Works the same as SearchLibraryNames but will NOT be linked instead
                 ExcludeLibraryNames: []
                 
                 # The path (relative to the dependency folder) to be searched for the dependency binaries
@@ -182,7 +199,7 @@ Dependencies:
     Build:
         # Target Platform
         DefaultPlatform:
-            # Target Profile ("DefaultProfile" for any profile)
+            # Target Profile
             "g++":
             -   "cd build && cmake .."
             -   "cd build && cmake --build ."
@@ -190,15 +207,17 @@ Dependencies:
     # (Optional) Cleanup commands are run when the reset option is present. Normally nothing needs
     #            to be done since the dependency folder will be removed automatically.
     Cleanup:
+        # Target Platform
         Linux:
+            # Target Profile
             "g++":
             -   "sudo apt purge MyLibrary"
 
     # (Optional) Files to be copied to next to output binary for each platform and profile
     FilesToCopy:
-        # Target Platform (DefaultPlatform, Windows, Linux, MacOS, or Unix)
+        # Target Platform
         DefaultPlatform:
-            # Profile name (e.g., "g++", "clang++", "msvc", or "DefaultProfile" for any profile)
+            # Profile name
             DefaultProfile:
             # List of files to copy (relative to the dependency folder)
             -  "assets/textures/sprite.png"

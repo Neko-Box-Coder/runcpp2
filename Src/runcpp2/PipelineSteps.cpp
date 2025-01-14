@@ -5,6 +5,7 @@
 #include "runcpp2/DependenciesHelper.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/PlatformUtil.hpp"
+#include "runcpp2/Data/BuildTypeHelper.hpp"
 
 #include "System2.h"
 #include "ssLogger/ssLog.hpp"
@@ -173,8 +174,29 @@ namespace
 
         INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
     }
-}
 
+    bool GetOutputFileInfo( const ghc::filesystem::path& buildDir,
+                             const runcpp2::Data::ScriptInfo& scriptInfo,
+                             const runcpp2::Data::Profile& currentProfile,
+                             const std::string& scriptName,
+                             bool asExecutable,
+                             ghc::filesystem::path& outOutputPath)
+    {
+        if(!runcpp2::Data::BuildTypeHelper::GetOutputPath(  buildDir, 
+                                                             scriptName,
+                                                             currentProfile,
+                                                             scriptInfo.CurrentBuildType,
+                                                             asExecutable,
+                                                             outOutputPath))
+        {
+            ssLOG_ERROR("Extension or prefix not found in compiler profile for build type: " << 
+                        runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));
+            return false;
+        }
+
+        return true;
+    }
+}
 
 bool runcpp2::CopyFiles(const ghc::filesystem::path& destDir,
                         const std::vector<std::string>& filePaths,
@@ -912,6 +934,13 @@ runcpp2::RunCompiledOutput( const ghc::filesystem::path& target,
 {
     ssLOG_FUNC_INFO();
     INTERNAL_RUNCPP2_SAFE_START();
+
+    //Skip running if not executable
+    if(scriptInfo.CurrentBuildType != Data::BuildType::EXECUTABLE)
+    {
+        ssLOG_INFO("Skipping run - output is not executable");
+        return PipelineResult::SUCCESS;
+    }
     
     //Prepare run arguments
     std::vector<std::string> finalRunArgs;
@@ -989,37 +1018,34 @@ runcpp2::GetTargetPath( const ghc::filesystem::path& buildDir,
                         const std::string& scriptName,
                         const Data::Profile& profile,
                         const std::unordered_map<CmdOptions, std::string>& currentOptions,
+                        const Data::ScriptInfo& scriptInfo,
                         ghc::filesystem::path& outTarget)
 {
     ssLOG_FUNC_INFO();
     INTERNAL_RUNCPP2_SAFE_START();
     
-    std::string exeExt = "";
-    #ifdef _WIN32
-        exeExt = ".exe";
-    #endif
-    
     std::error_code _;
     outTarget = buildDir;
-    
-    const std::string* targetSharedLibExt = 
-        runcpp2::GetValueFromPlatformMap(profile.FilesTypes.SharedLibraryFile.Extension);
-    
-    const std::string* targetSharedLibPrefix =
-        runcpp2::GetValueFromPlatformMap(profile.FilesTypes.SharedLibraryFile.Prefix);
-    
-    if(currentOptions.find(CmdOptions::EXECUTABLE) != currentOptions.end())
-        outTarget = (outTarget / scriptName).concat(exeExt);
-    else
-    {
-        if(targetSharedLibExt == nullptr || targetSharedLibPrefix == nullptr)
-        {
-            ssLOG_ERROR("Shared library extension or prefix not found in compiler profile");
-            return PipelineResult::INVALID_PROFILE;
-        }
 
-        outTarget = (outTarget / *targetSharedLibPrefix).concat(scriptName)
-                                                        .concat(*targetSharedLibExt);
+    //Validate executable option against build type
+    if( currentOptions.count(CmdOptions::EXECUTABLE) > 0 && 
+        scriptInfo.CurrentBuildType != Data::BuildType::EXECUTABLE)
+    {
+        ssLOG_ERROR("Cannot run as executable - script is configured for " << 
+                    Data::BuildTypeToString(scriptInfo.CurrentBuildType) << 
+                    " output. Please remove --executable flag or change build type to Executable");
+        return PipelineResult::INVALID_OPTION;
+    }
+
+    //Use GetOutputFileInfo to get the target path
+    if(!GetOutputFileInfo(  buildDir, 
+                            scriptInfo, 
+                            profile,
+                            scriptName,
+                            currentOptions.count(CmdOptions::EXECUTABLE) > 0,
+                            outTarget))
+    {
+        return PipelineResult::INVALID_SCRIPT_INFO;
     }
     
     if(!ghc::filesystem::exists(outTarget, _))

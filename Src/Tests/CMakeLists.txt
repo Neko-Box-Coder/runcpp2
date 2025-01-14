@@ -35,6 +35,7 @@ create_data_test(FilesTypesInfoTest)
 create_data_test(ProfilesFlagsOverrideTest)
 create_data_test(StageInfoTest)
 create_data_test(DependencyInfoTest)
+create_data_test(BuildTypeTest)
 create_data_test(ScriptInfoTest)
 create_data_test(ProfileTest)
 

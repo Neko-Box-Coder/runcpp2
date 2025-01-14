@@ -53,6 +53,7 @@ CALL :RUN_TEST "%~dp0\%MODE%StageInfoTest.exe"
 CALL :RUN_TEST "%~dp0\%MODE%DependencyInfoTest.exe"
 CALL :RUN_TEST "%~dp0\%MODE%ScriptInfoTest.exe"
 CALL :RUN_TEST "%~dp0\%MODE%ProfileTest.exe"
+CALL :RUN_TEST "%~dp0\%MODE%BuildTypeTest.exe"
 
 EXIT 0
 

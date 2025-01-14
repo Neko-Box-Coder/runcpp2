@@ -7,6 +7,7 @@
 #include "runcpp2/Data/ProfilesProcessPaths.hpp"
 #include "runcpp2/Data/ProfilesDefines.hpp"
 #include "runcpp2/Data/ProfilesCommands.hpp"
+#include "runcpp2/Data/BuildType.hpp"
 
 #if !defined(NOMINMAX)
     #define NOMINMAX 1
@@ -27,6 +28,7 @@ namespace runcpp2
             public:
                 std::string Language;
                 bool PassScriptPath = false;
+                BuildType CurrentBuildType = BuildType::EXECUTABLE;
                 std::unordered_map<PlatformName, std::vector<ProfileName>> RequiredProfiles;
                 
                 std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideCompileFlags;
