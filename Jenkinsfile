@@ -255,6 +255,16 @@ pipeline
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "--log-level info ../Examples/test.cpp"
                     }
+                    {
+                        cleanWs()
+                        bash "ls -lah"
+                        unstash 'linux_build'
+                        bash "ls -lah"
+                        bash "ls -lah ./Build/Src/Tests"
+                        bash    "cd ./Build && ./runcpp2 -l -b" + 
+                                "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
+                                "--log-level info ../Examples/test_static.cpp"
+                    }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
                 
@@ -285,6 +295,15 @@ pipeline
                         bat "cd .\\Build\\Debug && .\\runcpp2.exe -l " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
                             "--log-level info ..\\..\\Examples\\test.cpp"
+                    }
+                    {
+                        cleanWs()
+                        bat 'dir'
+                        unstash 'windows_build'
+                        bat 'dir'
+                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l -b" + 
+                            "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
+                            "--log-level info ..\\..\\Examples\\test_static.cpp"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
