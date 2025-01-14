@@ -81,10 +81,50 @@ namespace
         
         outObjectsFilesPaths.clear();
         
-        const runcpp2::Data::StageInfo::OutputTypeInfo* currentOutputTypeInfo = 
-            compileAsExecutable ? 
-            runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.Executable) :
-            runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.Shared);
+        using OutputTypeInfo = runcpp2::Data::StageInfo::OutputTypeInfo;
+        OutputTypeInfo* tempOutputInfo = nullptr;
+        static_assert(  static_cast<int>(runcpp2::Data::BuildType::COUNT) == 4, 
+                        "Add new type to be processed");
+        switch(scriptInfo.CurrentBuildType)
+        {
+            case runcpp2::Data::BuildType::STATIC:
+                tempOutputInfo = const_cast<OutputTypeInfo*>
+                (
+                    runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.Static)
+                );
+                break;
+            case runcpp2::Data::BuildType::SHARED:
+                tempOutputInfo = const_cast<OutputTypeInfo*>
+                (
+                    runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.Shared)
+                );
+                break;
+            case runcpp2::Data::BuildType::EXECUTABLE:
+                if(compileAsExecutable)
+                {
+                    tempOutputInfo = const_cast<OutputTypeInfo*>
+                    (
+                        runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.Executable)
+                    );
+                }
+                else
+                {
+                    
+                    tempOutputInfo = const_cast<OutputTypeInfo*>
+                    (
+                        runcpp2::GetValueFromPlatformMap(profile.Compiler
+                                                                .OutputTypes
+                                                                .ExecutableShared)
+                    );
+                }
+                break;
+            default:
+                ssLOG_ERROR("Unsupported build type for compiling: " << 
+                            runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));
+                return false;
+        }
+        
+        const OutputTypeInfo* currentOutputTypeInfo = tempOutputInfo;
         
         if(currentOutputTypeInfo == nullptr)
         {
@@ -336,9 +376,14 @@ namespace
                         runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.Static);
                     break;
                 case runcpp2::Data::BuildType::SHARED:
-                case runcpp2::Data::BuildType::EXECUTABLE:
                     currentOutputTypeInfo = 
                         runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.Shared);
+                    break;
+                case runcpp2::Data::BuildType::EXECUTABLE:
+                    currentOutputTypeInfo = 
+                        runcpp2::GetValueFromPlatformMap(profile.Linker
+                                                                .OutputTypes
+                                                                .ExecutableShared);
                     break;
                 default:
                     ssLOG_ERROR("Unsupported build type for linking: " << 

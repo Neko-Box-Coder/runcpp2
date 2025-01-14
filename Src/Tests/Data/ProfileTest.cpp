@@ -69,6 +69,17 @@ int main(int argc, char** argv)
                                 CommandPart: " -I\"{IncludeDirectoryPath}\""
                             -   Type: Once
                                 CommandPart: " \"{InputFilePath}\" -o \"{OutputFilePath}\""
+                    ExecutableShared:
+                        DefaultPlatform:
+                            Flags: "-std=c++17 -Wall -g -fpic"
+                            Executable: "g++"
+                            RunParts:
+                            -   Type: Once
+                                CommandPart: "{Executable} -c {CompileFlags}"
+                            -   Type: Repeats
+                                CommandPart: " -I\"{IncludeDirectoryPath}\""
+                            -   Type: Once
+                                CommandPart: " \"{InputFilePath}\" -o \"{OutputFilePath}\""
                     Static:
                         DefaultPlatform:
                             Flags: "-std=c++17 -Wall -g"
@@ -110,6 +121,13 @@ int main(int argc, char** argv)
                             -   Type: Once
                                 CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
                     Shared:
+                        Unix:
+                            Flags: "-shared -Wl,-rpath,\\$ORIGIN"
+                            Executable: "g++"
+                            RunParts:
+                            -   Type: Once
+                                CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+                    ExecutableShared:
                         Unix:
                             Flags: "-shared -Wl,-rpath,\\$ORIGIN"
                             Executable: "g++"
@@ -196,6 +214,22 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT(   "Compiler Executable RunParts size", 
                                 executableCompile.RunParts.size() == 3);
         
+        //Verify Compiler ExecutableShared
+        ssTEST_OUTPUT_SETUP
+        (
+            const auto& executableSharedCompile = 
+                profile.Compiler.OutputTypes.ExecutableShared.at("DefaultPlatform");
+        );
+        ssTEST_OUTPUT_ASSERT(   "Compiler ExecutableShared flags", 
+                                executableSharedCompile.Flags, 
+                                "-std=c++17 -Wall -g -fpic");
+        ssTEST_OUTPUT_ASSERT(   "Compiler ExecutableShared executable", 
+                                executableSharedCompile.Executable, 
+                                "g++");
+        ssTEST_OUTPUT_ASSERT(   "Compiler ExecutableShared RunParts size", 
+                                executableSharedCompile.RunParts.size(), 
+                                3);
+        
         //Verify Linker
         ssTEST_OUTPUT_ASSERT(   "Linker CheckExistence DefaultPlatform", 
                                 profile.Linker.CheckExistence.at("DefaultPlatform") == "g++ -v");
@@ -209,6 +243,22 @@ int main(int argc, char** argv)
                                 executableLink.Executable == "g++");
         ssTEST_OUTPUT_ASSERT(   "Linker Executable RunParts size", 
                                 executableLink.RunParts.size() == 1);
+        
+        //Verify Linker ExecutableShared
+        ssTEST_OUTPUT_SETUP
+        (
+            const auto& executableSharedLink = 
+                profile.Linker.OutputTypes.ExecutableShared.at("Unix");
+        );
+        ssTEST_OUTPUT_ASSERT(   "Linker ExecutableShared flags", 
+                                executableSharedLink.Flags, 
+                                "-shared -Wl,-rpath,\\$ORIGIN");
+        ssTEST_OUTPUT_ASSERT(   "Linker ExecutableShared executable", 
+                                executableSharedLink.Executable, 
+                                "g++");
+        ssTEST_OUTPUT_ASSERT(   "Linker ExecutableShared RunParts size", 
+                                executableSharedLink.RunParts.size(), 
+                                1);
         
         //Test ToString() and Equals()
         ssTEST_OUTPUT_EXECUTION

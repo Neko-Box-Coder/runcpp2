@@ -45,6 +45,7 @@ namespace runcpp2
                 struct 
                 {
                     std::unordered_map<PlatformName, OutputTypeInfo> Executable;
+                    std::unordered_map<PlatformName, OutputTypeInfo> ExecutableShared;
                     std::unordered_map<PlatformName, OutputTypeInfo> Static;
                     std::unordered_map<PlatformName, OutputTypeInfo> Shared;
                 } OutputTypes;

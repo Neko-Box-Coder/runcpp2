@@ -172,6 +172,13 @@ Profiles:
                     # (Optional) The commands to run in **shell** AFTER compiling
                     #            This is run inside the .runcpp2 directory where the build happens.
                     # Cleanup: []
+            ExecutableShared:
+                DefaultPlatform:
+                    Flags: "-std=c++17 -Wall -g -fpic"
+                    Executable: "g++"
+                    RunParts: *g++_CompileRunParts
+                    # Setup: []
+                    # Cleanup: []
             Static:
                 DefaultPlatform:
                     Flags: "-std=c++17 -Wall -g"
@@ -227,14 +234,15 @@ Profiles:
         # {OutputFilePath}:             (Similar to previous)
         LinkTypes:
             Executable:
-                Unix:
+                DefaultPlatform:
                     Flags: "-Wl,-rpath,\\$ORIGIN"
                     Executable: "g++"
                     RunParts: *g++_LinkRunParts
                     # Setup: []
                     # Cleanup: []
-                Windows:
-                    Flags: "-Wl,-rpath,\\$ORIGIN"
+            ExecutableShared:
+                DefaultPlatform:
+                    Flags: "-shared -Wl,-rpath,\\$ORIGIN"
                     Executable: "g++"
                     RunParts: *g++_LinkRunParts
                     # Setup: []
@@ -247,13 +255,7 @@ Profiles:
                     # Setup: []
                     # Cleanup: []
             Shared:
-                Unix:
-                    Flags: "-shared -Wl,-rpath,\\$ORIGIN"
-                    Executable: "g++"
-                    RunParts: *g++_LinkRunParts
-                    # Setup: []
-                    # Cleanup: []
-                Windows:
+                DefaultPlatform:
                     Flags: "-shared -Wl,-rpath,\\$ORIGIN"
                     Executable: "g++"
                     RunParts: *g++_LinkRunParts
@@ -286,6 +288,11 @@ Profiles:
                     <<: *MSVC_CompileFlags
                     Executable: "CL.exe"
                     RunParts: *vs2022_v17+_CompileRunParts
+            ExecutableShared:
+                Windows:
+                    <<: *MSVC_CompileFlags
+                    Executable: "CL.exe"
+                    RunParts: *vs2022_v17+_CompileRunParts
             Static:
                 Windows:
                     <<: *MSVC_CompileFlags
@@ -296,7 +303,6 @@ Profiles:
                     <<: *MSVC_CompileFlags
                     Executable: "CL.exe"
                     RunParts: *vs2022_v17+_CompileRunParts
-    # Specify the linker settings
     Linker:
         PreRun: 
             Windows: ".\\prerun.bat"
@@ -310,12 +316,7 @@ Profiles:
                         oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /manifest:embed /SUBSYSTEM:CONSOLE
                     Executable: "link.exe"
                     RunParts: *vs2022_v17+_LinkRunParts
-            Static:
-                Windows:
-                    Flags: "/NOLOGO"
-                    Executable: "lib.exe"
-                    RunParts: *vs2022_v17+_LinkRunParts
-            Shared:
+            ExecutableShared:
                 Windows:
                     Flags: >-
                         /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib
@@ -329,3 +330,17 @@ Profiles:
                         CommandPart: " \"{LinkFilePath}\""
                     Setup: [ "echo EXPORTS > .\\temp.def", "echo.   main @1 >> .\\temp.def" ]
                     Cleanup: [ "del .\\temp.def" ]
+            Static:
+                Windows:
+                    Flags: "/NOLOGO"
+                    Executable: "lib.exe"
+                    RunParts: *vs2022_v17+_LinkRunParts
+            Shared:
+                Windows:
+                    Flags: >-
+                        /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib
+                        oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /manifest:embed /SUBSYSTEM:CONSOLE
+                        /DLL
+                    Executable: "link.exe"
+                    RunParts: *vs2022_v17+_LinkRunParts
+
