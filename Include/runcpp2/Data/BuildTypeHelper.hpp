@@ -21,8 +21,8 @@ namespace runcpp2
             bool GetOutputPath( const ghc::filesystem::path& buildDir,
                                 const std::string& scriptName,
                                 const Profile& profile,
-                                BuildType buildType,
-                                bool asExecutable,
+                                const BuildType buildType,
+                                const bool asExecutable,
                                 ghc::filesystem::path& outPath);
         }
     }

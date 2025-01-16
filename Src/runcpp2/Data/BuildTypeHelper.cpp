@@ -13,6 +13,7 @@ namespace runcpp2
         if(buildType == BuildType::EXECUTABLE && asExecutable)
             return nullptr;
 
+        static_assert(static_cast<int>(BuildType::COUNT) == 4, "Update This");
         switch(buildType)
         {
             case BuildType::EXECUTABLE:
@@ -35,8 +36,8 @@ namespace runcpp2
     bool Data::BuildTypeHelper::GetOutputPath(const ghc::filesystem::path& buildDir,
                                               const std::string& scriptName,
                                               const Profile& profile,
-                                              BuildType buildType,
-                                              bool asExecutable,
+                                              const BuildType buildType,
+                                              const bool asExecutable,
                                               ghc::filesystem::path& outPath)
     {
         //For executable build type with executable flag, use platform-specific extension
@@ -50,8 +51,9 @@ namespace runcpp2
             return true;
         }
 
-        const FileProperties* fileTypeInfo = 
-            GetOutputFileProperties(profile.FilesTypes, buildType, asExecutable);
+        const FileProperties* fileTypeInfo = GetOutputFileProperties(   profile.FilesTypes, 
+                                                                        buildType, 
+                                                                        asExecutable);
         if(!fileTypeInfo)
             return false;
 

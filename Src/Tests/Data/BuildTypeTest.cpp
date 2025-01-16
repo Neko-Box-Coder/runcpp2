@@ -86,8 +86,11 @@ int main(int argc, char** argv)
             runcpp2::Data::FilesTypesInfo filesTypes;
         );
 
-        ssTEST_OUTPUT_ASSERT("Static build type",
-            BuildTypeHelper::GetOutputFileProperties(filesTypes, BuildType::STATIC, false) == &filesTypes.StaticLinkFile);
+        ssTEST_OUTPUT_ASSERT(   "Static build type",
+                                BuildTypeHelper::GetOutputFileProperties(   filesTypes, 
+                                                                            BuildType::STATIC, 
+                                                                            false), 
+                                &filesTypes.StaticLinkFile);
     };
     
     ssTEST_END_TEST_GROUP();

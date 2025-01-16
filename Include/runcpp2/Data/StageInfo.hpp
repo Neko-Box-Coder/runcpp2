@@ -56,8 +56,8 @@ namespace runcpp2
                                             std::string& inOutSubstitutedString) const;
                 
                 bool ConstructCommand(  const SubstitutionMap& substitutionMap, 
-                                        bool isExecutable,
-                                        BuildType buildType,
+                                        const bool isExecutable,
+                                        const BuildType buildType,
                                         std::string& outCommand) const;
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef& node, std::string outputTypeKeyName);

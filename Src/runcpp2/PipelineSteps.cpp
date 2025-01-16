@@ -176,18 +176,18 @@ namespace
     }
 
     bool GetOutputFileInfo( const ghc::filesystem::path& buildDir,
-                             const runcpp2::Data::ScriptInfo& scriptInfo,
-                             const runcpp2::Data::Profile& currentProfile,
-                             const std::string& scriptName,
-                             bool asExecutable,
-                             ghc::filesystem::path& outOutputPath)
+                            const runcpp2::Data::ScriptInfo& scriptInfo,
+                            const runcpp2::Data::Profile& currentProfile,
+                            const std::string& scriptName,
+                            const bool asExecutable,
+                            ghc::filesystem::path& outOutputPath)
     {
         if(!runcpp2::Data::BuildTypeHelper::GetOutputPath(  buildDir, 
-                                                             scriptName,
-                                                             currentProfile,
-                                                             scriptInfo.CurrentBuildType,
-                                                             asExecutable,
-                                                             outOutputPath))
+                                                            scriptName,
+                                                            currentProfile,
+                                                            scriptInfo.CurrentBuildType,
+                                                            asExecutable,
+                                                            outOutputPath))
         {
             ssLOG_ERROR("Extension or prefix not found in compiler profile for build type: " << 
                         runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));

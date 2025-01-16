@@ -313,8 +313,8 @@ bool runcpp2::Data::StageInfo::PerformSubstituions( const SubstitutionMap& subst
 }
 
 bool runcpp2::Data::StageInfo::ConstructCommand(const SubstitutionMap& substitutionMap, 
-                                                bool isExecutable,
-                                                BuildType buildType,
+                                                const bool isExecutable,
+                                                const BuildType buildType,
                                                 std::string& outCommand) const
 {
     ssLOG_FUNC_DEBUG();   
