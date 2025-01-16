@@ -347,6 +347,7 @@ int main(int argc, char* argv[])
         return 0;
     }
     
+    //TODO: Rename this to build template
     //Generate script info template
     if(currentOptions.count(runcpp2::CmdOptions::SCRIPT_TEMPLATE))
     {
@@ -423,7 +424,7 @@ int main(int argc, char* argv[])
             bool needsUpdate = false;
             if(!needsRunning)  //Skip check on first run
             {
-                if(runcpp2::CheckSourcesNeedUpdate(script,
+                if(runcpp2::CheckSourcesNeedUpdate( script,
                                                     profiles,
                                                     preferredProfile,
                                                     lastParsedScriptInfo ? 

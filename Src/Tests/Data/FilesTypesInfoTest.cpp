@@ -26,14 +26,14 @@ int main(int argc, char** argv)
                         MSVC: ""
                         GCC: lib
                     Extension:
-                        MSVC: .dll
+                        MSVC: .lib
                         GCC: .so
                 SharedLibraryFile:
                     Prefix:
                         MSVC: ""
                         GCC: lib
                     Extension:
-                        MSVC: .lib
+                        MSVC: .dll
                         GCC: .so
                 StaticLinkFile:
                     Prefix:
@@ -75,7 +75,7 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT(   "GCC shared prefix", 
                                 filesTypesInfo.SharedLinkFile.Prefix.at("GCC") == "lib");
         ssTEST_OUTPUT_ASSERT(   "MSVC shared extension", 
-                                filesTypesInfo.SharedLinkFile.Extension.at("MSVC") == ".dll");
+                                filesTypesInfo.SharedLinkFile.Extension.at("MSVC") == ".lib");
         
         //Verify parsed values for StaticLinkFile
         ssTEST_OUTPUT_ASSERT(   "GCC static prefix", 

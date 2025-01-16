@@ -29,3 +29,4 @@ runTest ./StageInfoTest
 runTest ./DependencyInfoTest
 runTest ./ScriptInfoTest
 runTest ./ProfileTest
+runTest ./BuildTypeTest

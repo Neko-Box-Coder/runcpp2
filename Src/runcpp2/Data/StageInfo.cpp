@@ -313,16 +313,27 @@ bool runcpp2::Data::StageInfo::PerformSubstituions( const SubstitutionMap& subst
 }
 
 bool runcpp2::Data::StageInfo::ConstructCommand(const SubstitutionMap& substitutionMap, 
-                                                bool isExecutable,
+                                                const bool isExecutable,
+                                                const BuildType buildType,
                                                 std::string& outCommand) const
 {
-    ssLOG_FUNC_DEBUG();
-
+    ssLOG_FUNC_DEBUG();   
+    
+    
+    static_assert(static_cast<int>(BuildType::COUNT) == 4, "Add new type to be processed");
     const std::unordered_map<PlatformName, OutputTypeInfo>& currentOutputTypeMap = 
         isExecutable ? 
         OutputTypes.Executable :
-        OutputTypes.Shared;
-
+        (
+            buildType == BuildType::STATIC ? 
+            OutputTypes.Static : 
+            (
+                buildType == BuildType::EXECUTABLE ? 
+                OutputTypes.ExecutableShared : 
+                OutputTypes.Shared
+            )
+        );
+    
     if(!runcpp2::HasValueFromPlatformMap(currentOutputTypeMap))
     {
         ssLOG_ERROR("Failed to find RunParts for current platform");
@@ -512,6 +523,7 @@ bool runcpp2::Data::StageInfo::ParseYAML_Node(  ryml::ConstNodeRef& node,
         std::vector<NodeRequirement> outputTypeRequirements =
         {
             NodeRequirement("Executable", ryml::NodeType_e::MAP, true, false),
+            NodeRequirement("ExecutableShared", ryml::NodeType_e::MAP, true, false),
             NodeRequirement("Static", ryml::NodeType_e::MAP, true, false),
             NodeRequirement("Shared", ryml::NodeType_e::MAP, true, false)
         };
@@ -534,6 +546,14 @@ bool runcpp2::Data::StageInfo::ParseYAML_Node(  ryml::ConstNodeRef& node,
         ryml::ConstNodeRef executableNode = outputTypeNode["Executable"];
         if(!ParseOutputTypes(executableNode, outputTypeInfoRequirements, OutputTypes.Executable))
             return false;
+        
+        ryml::ConstNodeRef executableSharedNode = outputTypeNode["ExecutableShared"];
+        if(!ParseOutputTypes(   executableSharedNode, 
+                                outputTypeInfoRequirements, 
+                                OutputTypes.ExecutableShared))
+        {
+            return false;
+        }
         
         ryml::ConstNodeRef staticNode = outputTypeNode["Static"];
         if(!ParseOutputTypes(staticNode, outputTypeInfoRequirements, OutputTypes.Static))
@@ -571,6 +591,9 @@ std::string runcpp2::Data::StageInfo::ToString( std::string indentation,
     
     out += indentation + "    Executable: \n";
     OutputTypeInfoMapToString(indentation + "    ", OutputTypes.Executable, out);
+    
+    out += indentation + "    ExecutableShared: \n";
+    OutputTypeInfoMapToString(indentation + "    ", OutputTypes.ExecutableShared, out);
     
     out += indentation + "    Static: \n";
     OutputTypeInfoMapToString(indentation + "    ", OutputTypes.Static, out);
@@ -643,6 +666,7 @@ bool runcpp2::Data::StageInfo::Equals(const StageInfo& other) const
         };
 
     if( !compareOutputTypeInfoMaps(OutputTypes.Executable, other.OutputTypes.Executable) ||
+        !compareOutputTypeInfoMaps(OutputTypes.ExecutableShared, other.OutputTypes.ExecutableShared) ||
         !compareOutputTypeInfoMaps(OutputTypes.Static, other.OutputTypes.Static) ||
         !compareOutputTypeInfoMaps(OutputTypes.Shared, other.OutputTypes.Shared))
     {

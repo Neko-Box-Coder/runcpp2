@@ -16,6 +16,7 @@ int main(int argc, char** argv)
             const char* yamlStr = R"(
                 Language: C++
                 PassScriptPath: true
+                BuildType: Static
                 RequiredProfiles:
                     Windows: [MSVC]
                     Unix: [GCC]
@@ -121,6 +122,8 @@ int main(int argc, char** argv)
         //Verify basic fields
         ssTEST_OUTPUT_ASSERT("Language", scriptInfo.Language == "C++");
         ssTEST_OUTPUT_ASSERT("PassScriptPath", scriptInfo.PassScriptPath == true);
+        ssTEST_OUTPUT_ASSERT(   "BuildType", 
+                                scriptInfo.CurrentBuildType == runcpp2::Data::BuildType::STATIC);
         
         //Verify RequiredProfiles
         ssTEST_OUTPUT_ASSERT(   "Windows profiles count", 

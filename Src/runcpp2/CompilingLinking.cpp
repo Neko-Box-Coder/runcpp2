@@ -4,6 +4,7 @@
 #include "runcpp2/StringUtil.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
 #include "runcpp2/Data/DependencyLibraryType.hpp"
+#include "runcpp2/Data/BuildTypeHelper.hpp"
 
 #include "ssLogger/ssLog.hpp"
 #include "System2.h"
@@ -23,7 +24,7 @@ namespace
         
         if(!runcpp2::HasValueFromPlatformMap(overrideFlags))
         {
-            ssLOG_INFO("No override flags found for current platform");
+            ssLOG_DEBUG("No override flags found for current platform");
             return;
         }
         
@@ -35,7 +36,7 @@ namespace
         
         if(!profileFlagsOverride)
         {
-            ssLOG_INFO("No override flags found for current profile");
+            ssLOG_DEBUG("No override flags found for current profile");
             return;
         }
         
@@ -76,14 +77,54 @@ namespace
                         bool compileAsExecutable,
                         std::vector<ghc::filesystem::path>& outObjectsFilesPaths)
     {
-        ssLOG_FUNC_DEBUG();
+        ssLOG_FUNC_INFO();
         
         outObjectsFilesPaths.clear();
         
-        const runcpp2::Data::StageInfo::OutputTypeInfo* currentOutputTypeInfo = 
-            compileAsExecutable ? 
-            runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.Executable) :
-            runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.Shared);
+        using OutputTypeInfo = runcpp2::Data::StageInfo::OutputTypeInfo;
+        OutputTypeInfo* tempOutputInfo = nullptr;
+        static_assert(  static_cast<int>(runcpp2::Data::BuildType::COUNT) == 4, 
+                        "Add new type to be processed");
+        switch(scriptInfo.CurrentBuildType)
+        {
+            case runcpp2::Data::BuildType::STATIC:
+                tempOutputInfo = const_cast<OutputTypeInfo*>
+                (
+                    runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.Static)
+                );
+                break;
+            case runcpp2::Data::BuildType::SHARED:
+                tempOutputInfo = const_cast<OutputTypeInfo*>
+                (
+                    runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.Shared)
+                );
+                break;
+            case runcpp2::Data::BuildType::EXECUTABLE:
+                if(compileAsExecutable)
+                {
+                    tempOutputInfo = const_cast<OutputTypeInfo*>
+                    (
+                        runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.Executable)
+                    );
+                }
+                else
+                {
+                    
+                    tempOutputInfo = const_cast<OutputTypeInfo*>
+                    (
+                        runcpp2::GetValueFromPlatformMap(profile.Compiler
+                                                                .OutputTypes
+                                                                .ExecutableShared)
+                    );
+                }
+                break;
+            default:
+                ssLOG_ERROR("Unsupported build type for compiling: " << 
+                            runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));
+                return false;
+        }
+        
+        const OutputTypeInfo* currentOutputTypeInfo = tempOutputInfo;
         
         if(currentOutputTypeInfo == nullptr)
         {
@@ -236,8 +277,10 @@ namespace
                     std::string runPartSubstitutedCommand;
                     if(!profile.Compiler.ConstructCommand(  substitutionMap, 
                                                             compileAsExecutable,
+                                                            scriptInfo.CurrentBuildType,
                                                             runPartSubstitutedCommand))
                     {
+                        ssLOG_ERROR("Failed to construct compile command");
                         return false;
                     }
                     
@@ -316,11 +359,38 @@ namespace
                     bool linkAsExecutable,
                     const std::string& exeExt)
     {
-        ssLOG_FUNC_DEBUG();
-        const runcpp2::Data::StageInfo::OutputTypeInfo* currentOutputTypeInfo = 
-            linkAsExecutable ? 
-            runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.Executable) :
-            runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.Shared);
+        ssLOG_FUNC_INFO();
+        const runcpp2::Data::StageInfo::OutputTypeInfo* currentOutputTypeInfo = nullptr;
+        
+        if(linkAsExecutable)
+            currentOutputTypeInfo = runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.Executable);
+        else
+        {
+            //Only use BuildType for non-executable builds
+            static_assert(static_cast<int>(runcpp2::Data::BuildType::COUNT) == 4, 
+                          "Add new type to be processed");
+            switch(scriptInfo.CurrentBuildType) 
+            {
+                case runcpp2::Data::BuildType::STATIC:
+                    currentOutputTypeInfo = 
+                        runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.Static);
+                    break;
+                case runcpp2::Data::BuildType::SHARED:
+                    currentOutputTypeInfo = 
+                        runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.Shared);
+                    break;
+                case runcpp2::Data::BuildType::EXECUTABLE:
+                    currentOutputTypeInfo = 
+                        runcpp2::GetValueFromPlatformMap(profile.Linker
+                                                                .OutputTypes
+                                                                .ExecutableShared);
+                    break;
+                default:
+                    ssLOG_ERROR("Unsupported build type for linking: " << 
+                                runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));
+                    return false;
+            }
+        }
         
         if(currentOutputTypeInfo == nullptr)
         {
@@ -348,24 +418,29 @@ namespace
         
         //Output File
         {
-            const std::string sharedLibPrefix =
-                *runcpp2::GetValueFromPlatformMap(profile.FilesTypes.SharedLinkFile.Prefix);
-            const std::string sharedLibExtension =
-                    *runcpp2::GetValueFromPlatformMap(profile   .FilesTypes
-                                                                .SharedLibraryFile
-                                                                .Extension);
-            
-            std::string outputFile =    linkAsExecutable ?
-                                        outputName + exeExt :
-                                        sharedLibPrefix + outputName + sharedLibExtension;
+            std::string outputFile;
+            const std::string* extension = nullptr;
+            if(linkAsExecutable) 
+            {
+                outputFile = outputName + exeExt;
+                extension = &exeExt;
+            } 
+            else 
+            {
+                const runcpp2::Data::FileProperties* fileProps = 
+                    runcpp2::Data::BuildTypeHelper::GetOutputFileProperties(profile.FilesTypes, 
+                                                                            scriptInfo.CurrentBuildType, 
+                                                                            false);
+                
+                const std::string* prefix = runcpp2::GetValueFromPlatformMap(fileProps->Prefix);
+                extension = runcpp2::GetValueFromPlatformMap(fileProps->Extension);
+                outputFile = *prefix + outputName + *extension;
+            }
             
             outputFile = runcpp2::ProcessPath( (buildDir / outputFile).string() );
         
             substitutionMap["{OutputFileName}"] = {outputName};
-            substitutionMap["{OutputFileExtension}"] = 
-            {
-                (linkAsExecutable ? exeExt : sharedLibExtension)
-            };
+            substitutionMap["{OutputFileExtension}"] = {(linkAsExecutable ? exeExt : *extension)};
             substitutionMap["{OutputFileDirectory}"] = {buildDir.string()};
             substitutionMap["{OutputFilePath}"] = {outputFile};
         }
@@ -535,8 +610,10 @@ namespace
                 std::string runPartSubstitutedCommand;
                 if(!profile.Linker.ConstructCommand(substitutionMap, 
                                                     linkAsExecutable,
+                                                    scriptInfo.CurrentBuildType,
                                                     runPartSubstitutedCommand))
                 {
+                    ssLOG_ERROR("Failed to construct link command");
                     return false;
                 }
                 
@@ -722,6 +799,14 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
     //Add compiled object files
     for(int i = 0; i < compiledObjectsPaths.size(); ++i)
         objectsFilesPaths.push_back(compiledObjectsPaths.at(i));
+
+    //Skip linking if build type doesn't need it
+    if(!Data::BuildTypeHelper::NeedsLinking(scriptInfo.CurrentBuildType))
+    {
+        ssLOG_INFO( "Skipping linking - build type is " << 
+                    Data::BuildTypeToString(scriptInfo.CurrentBuildType));
+        return true;
+    }
     
     std::string dependenciesLinkFlags;
     

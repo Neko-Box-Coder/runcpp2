@@ -210,7 +210,7 @@ namespace
                                 const std::string& dependenciesCopiedDirectory,
                                 bool required)
     {
-        ssLOG_FUNC_DEBUG();
+        ssLOG_FUNC_INFO();
         
         if(steps.empty())
             return true;
@@ -485,7 +485,7 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
                                         const std::vector<std::string>& dependenciesLocalCopiesPaths,
                                         const std::vector<std::string>& dependenciesSourcePaths)
 {
-    ssLOG_FUNC_DEBUG();
+    ssLOG_FUNC_INFO();
 
     //If the script info is not populated (i.e. empty script info), don't do anything
     if(!scriptInfo.Populated)
@@ -537,7 +537,7 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
                                 const std::vector<Data::DependencyInfo*>& availableDependencies,
                                 const std::vector<std::string>& dependenciesLocalCopiesPaths)
 {
-    ssLOG_FUNC_DEBUG();
+    ssLOG_FUNC_INFO();
 
     //If the script info is not populated (i.e. empty script info), don't do anything
     if(!scriptInfo.Populated)

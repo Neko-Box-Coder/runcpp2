@@ -16,7 +16,7 @@ namespace
                             std::vector<runcpp2::Data::Profile>& outProfiles,
                             std::string& outPreferredProfile)
     {
-        ssLOG_FUNC_DEBUG();
+        ssLOG_FUNC_INFO();
         
         INTERNAL_RUNCPP2_SAFE_START();
         
