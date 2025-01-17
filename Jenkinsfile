@@ -261,7 +261,7 @@ pipeline
                         unstash 'linux_build'
                         bash "ls -lah"
                         bash "ls -lah ./Build/Src/Tests"
-                        bash    "cd ./Build && ./runcpp2 -l -b" + 
+                        bash    "cd ./Build && ./runcpp2 -l -b " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "--log-level info ../Examples/test_static.cpp"
                     }
@@ -301,7 +301,7 @@ pipeline
                         bat 'dir'
                         unstash 'windows_build'
                         bat 'dir'
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l -b" + 
+                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l -b " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
                             "--log-level info ..\\..\\Examples\\test_static.cpp"
                     }
