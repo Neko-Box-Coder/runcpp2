@@ -196,18 +196,24 @@ Profiles:
                     Executable: "g++"
                     RunParts: *g++_CompileRunParts
                     ExpectedOutputFiles: *g++_CompileExpectedOutputFiles
+                    # Setup: []
+                    # Cleanup: []
             Static:
                 DefaultPlatform:
                     Flags: "-std=c++17 -Wall -g"
                     Executable: "g++"
                     RunParts: *g++_CompileRunParts
                     ExpectedOutputFiles: *g++_CompileExpectedOutputFiles
+                    # Setup: []
+                    # Cleanup: []
             Shared:
                 DefaultPlatform:
                     Flags: "-std=c++17 -Wall -g -fpic"
                     Executable: "g++"
                     RunParts: *g++_CompileRunParts
                     ExpectedOutputFiles: *g++_CompileExpectedOutputFiles
+                    # Setup: []
+                    # Cleanup: []
     
     # Specify the linker settings
     Linker:
@@ -264,6 +270,8 @@ Profiles:
                     -   Type: Repeats
                         CommandPart: " \"{LinkFilePath}\""
                     ExpectedOutputFiles: ["{OutputFileDirectory}{/}{OutputFileName}"]
+                    # Setup: []
+                    # Cleanup: []
                 Windows:
                     Flags: "-Wl,-rpath,\\$ORIGIN"
                     Executable: "g++"
@@ -273,6 +281,8 @@ Profiles:
                     -   Type: Repeats
                         CommandPart: " \"{LinkFilePath}\""
                     ExpectedOutputFiles: ["{OutputFileDirectory}{/}{OutputFileName}.exe"]
+                    # Setup: []
+                    # Cleanup: []
             ExecutableShared:
                 DefaultPlatform:
                     Flags: "-shared -Wl,-rpath,\\$ORIGIN"
@@ -283,6 +293,8 @@ Profiles:
                     -   Type: Repeats
                         CommandPart: " \"{LinkFilePath}\""
                     ExpectedOutputFiles: ["{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}"]
+                    # Setup: []
+                    # Cleanup: []
             Static:
                 DefaultPlatform:
                     Flags: ""
@@ -293,6 +305,8 @@ Profiles:
                     -   Type: Repeats
                         CommandPart: " \"{LinkFilePath}\""
                     ExpectedOutputFiles: ["{OutputFileDirectory}{/}{StaticLinkFile.Prefix}{OutputFileName}{StaticLinkFile.Extension}"]
+                    # Setup: []
+                    # Cleanup: []
             Shared:
                 DefaultPlatform:
                     Flags: "-shared -Wl,-rpath,\\$ORIGIN"
@@ -303,6 +317,8 @@ Profiles:
                     -   Type: Repeats
                         CommandPart: " \"{LinkFilePath}\""
                     ExpectedOutputFiles: ["{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}"]
+                    # Setup: []
+                    # Cleanup: []
 
 # https://learn.microsoft.com/en-us/cpp/overview/compiler-versions?view=msvc-170
 -   Name: "vs2022_v17+"
