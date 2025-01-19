@@ -58,13 +58,13 @@ namespace runcpp2
         return buildType != BuildType::OBJECTS;
     }
 
-    bool Data::BuildTypeHelper::GetPossibleOutputPaths(const ghc::filesystem::path& buildDir,
-                                              const std::string& scriptName,
-                                              const Profile& profile,
-                                              const BuildType buildType,
-                                              const bool asExecutable,
-                                              std::vector<ghc::filesystem::path>& outPaths,
-                                              std::vector<bool>& outIsRunnable)
+    bool Data::BuildTypeHelper::GetPossibleOutputPaths( const ghc::filesystem::path& buildDir,
+                                                        const std::string& scriptName,
+                                                        const Profile& profile,
+                                                        const BuildType buildType,
+                                                        const bool asExecutable,
+                                                        std::vector<ghc::filesystem::path>& outPaths,
+                                                        std::vector<bool>& outIsRunnable)
     {
         outPaths.clear();
         outIsRunnable.clear();
