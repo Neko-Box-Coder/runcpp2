@@ -40,6 +40,7 @@ namespace runcpp2
                     std::vector<std::string> Setup;
                     std::vector<std::string> Cleanup;
                     std::vector<RunPart> RunParts;
+                    std::vector<std::string> ExpectedOutputFiles;
                 };
                 
                 struct 
@@ -52,6 +53,7 @@ namespace runcpp2
                 
                 using SubstitutionMap = std::unordered_map<std::string, std::vector<std::string>>;
                 
+                //TODO: Make this static function?
                 bool PerformSubstituions(   const SubstitutionMap& substitutionMap, 
                                             std::string& inOutSubstitutedString) const;
                 

@@ -254,8 +254,12 @@ pipeline
                         bash    "cd ./Build && ./runcpp2 -l " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "--log-level info ../Examples/test.cpp"
-                    }
-                    {
+                        bash    "cd ./Build && ./runcpp2 -l -b " + 
+                                "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
+                                "--log-level info ../Examples/test.cpp"
+                        bash "ls -lah ./Build"
+                        
+                        
                         cleanWs()
                         bash "ls -lah"
                         unstash 'linux_build'
@@ -264,6 +268,7 @@ pipeline
                         bash    "cd ./Build && ./runcpp2 -l -b " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "--log-level info ../Examples/test_static.cpp"
+                        bash "ls -lah ./Build"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
@@ -295,8 +300,12 @@ pipeline
                         bat "cd .\\Build\\Debug && .\\runcpp2.exe -l " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
                             "--log-level info ..\\..\\Examples\\test.cpp"
-                    }
-                    {
+                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l -b " + 
+                            "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
+                            "--log-level info ..\\..\\Examples\\test.cpp"
+                        bat "dir .\\Build\\Debug"
+                        
+                        
                         cleanWs()
                         bat 'dir'
                         unstash 'windows_build'
@@ -304,6 +313,7 @@ pipeline
                         bat "cd .\\Build\\Debug && .\\runcpp2.exe -l -b " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
                             "--log-level info ..\\..\\Examples\\test_static.cpp"
+                        bat "dir .\\Build\\Debug"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }

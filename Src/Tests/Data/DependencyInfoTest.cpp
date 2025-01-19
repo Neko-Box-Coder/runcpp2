@@ -13,6 +13,7 @@ int main(int argc, char** argv)
     {
         ssTEST_OUTPUT_SETUP
         (
+            //NOTE: This is just a test YAML for validating parsing, don't use it for actual config
             const char* yamlStr = R"(
                 Name: MyLibrary
                 Platforms:
