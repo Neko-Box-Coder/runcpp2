@@ -9,9 +9,9 @@ int main(int argc, char** argv)
     
     ssTEST_INIT_TEST_GROUP();
     
-    //NOTE: This is just a test YAML for validating parsing, don't use it for actual config
     ssTEST("Profile Should Parse Valid YAML")
     {
+        //NOTE: This is just a test YAML for validating parsing, don't use it for actual config
         const char* yamlStr = R"(
             Name: "g++"
             NameAliases: ["mingw"]
