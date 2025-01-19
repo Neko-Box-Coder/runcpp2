@@ -237,6 +237,7 @@ namespace
                 ssLOG_INFO(outputPath.string() << " doesn't exist");
         }
         
+        //TODO: Parsing ExpectedOutputFiles in the profile to see cache is valid or not
         //NOTE: We don't know which ones are optionals, at least for now. 
         //      If there's nothing, there's no cache for sure. 
         //      If there's something, it's very likely we have it cached. 

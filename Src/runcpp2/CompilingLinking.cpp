@@ -243,6 +243,16 @@ namespace
                 substitutionMap["{OutputFileDirectory}"] = 
                     {runcpp2::ProcessPath( (buildDir / relativeSourcePath.parent_path()).string() )};
                 
+                if(!runcpp2::HasValueFromPlatformMap(profile.FilesTypes.ObjectLinkFile.Extension))
+                {
+                    ssLOG_ERROR("profile " << profile.Name << " missing extension for " <<
+                                "object link file");
+                    return false;
+                }
+                
+                std::string objectExt = 
+                    *runcpp2::GetValueFromPlatformMap(profile.FilesTypes.ObjectLinkFile.Extension);
+                
                 for(int j = 0; j < currentOutputTypeInfo->ExpectedOutputFiles.size(); ++j)
                 {
                     std::string currentPath = currentOutputTypeInfo->ExpectedOutputFiles.at(j);
@@ -252,7 +262,6 @@ namespace
                         return false;
                     }
                     
-                    outObjectsFilesPaths.push_back(currentPath);
                     auto path = ghc::filesystem::path(currentPath);
                     ghc::filesystem::create_directories(path.parent_path(), e);
                     if(e)
@@ -261,6 +270,15 @@ namespace
                         ssLOG_ERROR("Failed with error: " << e.message());
                         return false;
                     }
+                    
+                    if(path.extension() != objectExt)
+                    {
+                        ssLOG_DEBUG("Skipping " << currentPath << " for being added for linking");
+                        continue;
+                    }
+                    
+                    outObjectsFilesPaths.push_back(currentPath);
+                    //TODO: Check if the current path exists after performing the compilation
                 }
             }
             
