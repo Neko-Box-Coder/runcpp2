@@ -35,8 +35,7 @@ namespace runcpp2
                                 const std::vector<Data::DependencyInfo*>& availableDependencies,
                                 const Data::Profile& profile,
                                 const std::vector<std::string>& compiledObjectsPaths,
-                                bool buildExecutable,
-                                const std::string exeExt);
+                                bool buildExecutable);
 }
 
 #endif

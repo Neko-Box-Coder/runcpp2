@@ -11,6 +11,7 @@ int main(int argc, char** argv)
     
     ssTEST("StageInfo Should Parse Valid YAML")
     {
+        //NOTE: This is just a test YAML for validating parsing, don't use it for actual config
         const char* yamlStr = R"(
             PreRun:
                 GCC: source env.sh
@@ -25,36 +26,40 @@ int main(int argc, char** argv)
                         Cleanup: ["rm -rf build"]
                         RunParts:
                         -   Type: Once
-                            CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+                            CommandPart: "{Executable} {LinkFlags} -o \"{OutputFileName}\""
                         -   Type: Repeats
                             CommandPart: " \"{LinkFilePath}\""
+                        ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
                 ExecutableShared:
                     Unix:
                         Flags: "-shared -Wl,-rpath,\\$ORIGIN"
                         Executable: "g++"
                         RunParts:
                         -   Type: Once
-                            CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+                            CommandPart: "{Executable} {LinkFlags} -o \"{OutputFileName}\""
                         -   Type: Repeats
                             CommandPart: " \"{LinkFilePath}\""
+                        ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
                 Static:
                     Unix:
                         Flags: "-Wl,-rpath,\\$ORIGIN"
                         Executable: "g++"
                         RunParts:
                         -   Type: Once
-                            CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+                            CommandPart: "{Executable} {LinkFlags} -o \"{OutputFileName}\""
                         -   Type: Repeats
                             CommandPart: " \"{LinkFilePath}\""
+                        ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
                 Shared:
                     Unix:
                         Flags: "-Wl,-rpath,\\$ORIGIN"
                         Executable: "g++"
                         RunParts: 
                         -   Type: Once
-                            CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+                            CommandPart: "{Executable} {LinkFlags} -o \"{OutputFileName}\""
                         -   Type: Repeats
                             CommandPart: " \"{LinkFilePath}\""
+                        ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
         )";
         
         ssTEST_OUTPUT_SETUP
@@ -91,6 +96,11 @@ int main(int argc, char** argv)
                                 runcpp2::Data::StageInfo::RunPart::RunType::ONCE);
         ssTEST_OUTPUT_ASSERT(   "Unix Executable second run command", 
                                 unixInfo.RunParts.at(1).CommandPart, " \"{LinkFilePath}\"");
+        ssTEST_OUTPUT_ASSERT(   "Unix Executable ExpectedOutputFiles count", 
+                                unixInfo.ExpectedOutputFiles.size(), 2);
+        ssTEST_OUTPUT_ASSERT(   "Unix Executable first ExpectedOutputFiles", 
+                                unixInfo.ExpectedOutputFiles.front(), 
+                                "TestOutputFile");
         
         //Verify Unix OutputTypeInfo for ExecutableShared
         ssTEST_OUTPUT_SETUP
@@ -112,6 +122,11 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT(   "Unix ExecutableShared second run command", 
                                 unixExecSharedInfo.RunParts.at(1).CommandPart, 
                                 " \"{LinkFilePath}\"");
+        ssTEST_OUTPUT_ASSERT(   "Unix ExecutableShared ExpectedOutputFiles count", 
+                                unixExecSharedInfo.ExpectedOutputFiles.size(), 2);
+        ssTEST_OUTPUT_ASSERT(   "Unix ExecutableShared first ExpectedOutputFiles", 
+                                unixExecSharedInfo.ExpectedOutputFiles.front(), 
+                                "TestOutputFile");
         
         //Test ToString() and Equals()
         ssTEST_OUTPUT_EXECUTION
@@ -166,7 +181,28 @@ int main(int argc, char** argv)
                         RunParts:
                         -   Type: Once
                             CommandPart: "{Executable} {LinkFlags}"
+                        ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
                 # Missing ExecutableShared section
+                Static:
+                    Unix:
+                        Flags: "-Wl,-rpath,\\$ORIGIN"
+                        Executable: "g++"
+                        RunParts:
+                        -   Type: Once
+                            CommandPart: "{Executable} {LinkFlags} -o \"{OutputFileName}\""
+                        -   Type: Repeats
+                            CommandPart: " \"{LinkFilePath}\""
+                        ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
+                Shared:
+                    Unix:
+                        Flags: "-Wl,-rpath,\\$ORIGIN"
+                        Executable: "g++"
+                        RunParts: 
+                        -   Type: Once
+                            CommandPart: "{Executable} {LinkFlags} -o \"{OutputFileName}\""
+                        -   Type: Repeats
+                            CommandPart: " \"{LinkFilePath}\""
+                        ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
         )";
         
         ssTEST_OUTPUT_SETUP

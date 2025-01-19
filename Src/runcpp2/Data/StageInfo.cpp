@@ -70,7 +70,7 @@ namespace
                 {
                     ssLOG_WARNING(  "Invalid RunPart type " << currentType << " at index " << j << 
                                     " for " << platformName);
-                    ssLOG_INFO("Defaulting to Once");
+                    ssLOG_DEBUG("Defaulting to Once");
                     outInfos[platformName].RunParts.back().Type = StageInfo::RunPart::RunType::ONCE;
                 }
                 
@@ -92,6 +92,14 @@ namespace
                 ryml::ConstNodeRef cleanupNode = currentPlatformNode["Cleanup"];
                 for(int j = 0; j < cleanupNode.num_children(); ++j)
                     outInfos[platformName].Cleanup.push_back(GetValue(cleanupNode[j]));
+            }
+            
+            //ExpectedOutputFiles
+            ryml::ConstNodeRef expectedOutputFilesNode = currentPlatformNode["ExpectedOutputFiles"];
+            for(int j = 0; j < expectedOutputFilesNode.num_children(); ++j)
+            {
+                outInfos[platformName]  .ExpectedOutputFiles
+                                        .push_back(GetValue(expectedOutputFilesNode[j]));
             }
         }
         
@@ -131,6 +139,13 @@ namespace
                 
                 outString +=    indentation + "            CommandPart: " + 
                                 GetEscapedYAMLString(it->second.RunParts.at(i).CommandPart) + "\n";
+            }
+            
+            outString += indentation + "        ExpectedOutputFiles: \n";
+            for(int i = 0; i < it->second.ExpectedOutputFiles.size(); ++i)
+            {
+                outString +=    indentation + "        -   " + 
+                                GetEscapedYAMLString(it->second.ExpectedOutputFiles.at(i)) + "\n";
             }
             
             if(!it->second.Setup.empty())
@@ -540,9 +555,10 @@ bool runcpp2::Data::StageInfo::ParseYAML_Node(  ryml::ConstNodeRef& node,
             NodeRequirement("Executable", ryml::NodeType_e::KEYVAL, true, false),
             NodeRequirement("RunParts", ryml::NodeType_e::SEQ, true, false),
             NodeRequirement("Setup", ryml::NodeType_e::SEQ, false, false),
-            NodeRequirement("Cleanup", ryml::NodeType_e::SEQ, false, false)
-        };
+            NodeRequirement("Cleanup", ryml::NodeType_e::SEQ, false, false),
+            NodeRequirement("ExpectedOutputFiles", ryml::NodeType_e::SEQ, true, false),
 
+        };
         ryml::ConstNodeRef executableNode = outputTypeNode["Executable"];
         if(!ParseOutputTypes(executableNode, outputTypeInfoRequirements, OutputTypes.Executable))
             return false;

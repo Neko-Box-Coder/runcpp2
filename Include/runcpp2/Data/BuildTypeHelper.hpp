@@ -12,18 +12,15 @@ namespace runcpp2
     {
         namespace BuildTypeHelper
         {
-            const FileProperties* GetOutputFileProperties(  const FilesTypesInfo& filesTypes,
-                                                            BuildType buildType,
-                                                            bool asExecutable);
-            
             bool NeedsLinking(BuildType buildType);
             
-            bool GetOutputPath( const ghc::filesystem::path& buildDir,
-                                const std::string& scriptName,
-                                const Profile& profile,
-                                const BuildType buildType,
-                                const bool asExecutable,
-                                ghc::filesystem::path& outPath);
+            bool GetPossibleOutputPaths(const ghc::filesystem::path& buildDir,
+                                        const std::string& scriptName,
+                                        const Profile& profile,
+                                        const BuildType buildType,
+                                        const bool asExecutable,
+                                        std::vector<ghc::filesystem::path>& outPaths,
+                                        std::vector<bool>& outIsRunnable);
         }
     }
 }

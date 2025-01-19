@@ -155,7 +155,6 @@ namespace
                             const runcpp2::Data::ScriptInfo& scriptInfo,
                             bool buildExecutable,
                             const std::string& scriptName,
-                            const std::string& exeExt,
                             const std::vector<std::string>& copiedBinariesPaths,
                             const ghc::filesystem::file_time_type& finalObjectWriteTime,
                             bool& outOutputCache)
@@ -192,93 +191,65 @@ namespace
         }
         
         //Check if output is cached
-        if(buildExecutable)
+        std::vector<ghc::filesystem::path> outputPaths;
+        std::vector<bool> runnable;
+        
+        if(!runcpp2::Data::BuildTypeHelper::GetPossibleOutputPaths( buildDir,
+                                                                    scriptName,
+                                                                    currentProfile,
+                                                                    scriptInfo.CurrentBuildType,
+                                                                    buildExecutable,
+                                                                    outputPaths,
+                                                                    runnable))
         {
-            ghc::filesystem::path exeToCopy = buildDir / scriptName;
-            exeToCopy.concat(exeExt);
-            
-            ssLOG_INFO("Trying to use output cache: " << exeToCopy.string());
-            
-            //If the executable already exists, check if it's newer than the script
-            if( ghc::filesystem::exists(exeToCopy, e) && 
-                ghc::filesystem::file_size(exeToCopy, e) > 0)
-            {
-                ghc::filesystem::file_time_type lastExecutableWriteTime = 
-                    ghc::filesystem::last_write_time(exeToCopy, e);
-                
-                if(lastExecutableWriteTime >= currentFinalObjectWriteTime)
-                {
-                    ssLOG_INFO("Using output cache");
-                    outOutputCache = true;
-                    return true;
-                }
-                else
-                {
-                    ssLOG_INFO("Link binaries have more recent write time");
-                    ssLOG_DEBUG("lastExecutableWriteTime: " << 
-                                lastExecutableWriteTime.time_since_epoch().count());
-                    ssLOG_DEBUG("currentFinalObjectWriteTime: " << 
-                                currentFinalObjectWriteTime.time_since_epoch().count());
-                }
-            }
-            else
-                ssLOG_INFO(exeToCopy.string() << " doesn't exist");
-            
-            ssLOG_INFO("Not using output cache");
-            outOutputCache = false;
-            return true;
+            return false;
         }
-        else
+        
+        int existCount = 0;
+        for(const ghc::filesystem::path& outputPath : outputPaths)
         {
-            // Get the correct file properties based on build type
-            const runcpp2::Data::FileProperties* fileProps = 
-                runcpp2::Data::BuildTypeHelper::GetOutputFileProperties(
-                    currentProfile.FilesTypes, scriptInfo.CurrentBuildType, false);
+            ssLOG_INFO("Trying to use output cache: " << outputPath.string());
             
-            const std::string* targetPrefix = runcpp2::GetValueFromPlatformMap(fileProps->Prefix);
-            const std::string* targetExt = runcpp2::GetValueFromPlatformMap(fileProps->Extension);
-            
-            if(targetExt == nullptr || targetPrefix == nullptr)
+            if( ghc::filesystem::exists(outputPath, e) && 
+                ghc::filesystem::file_size(outputPath, e) > 0)
             {
-                ssLOG_ERROR("File extension or prefix not found in compiler profile for build type " 
-                           << runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));
-                outOutputCache = false;
-                return false;
-            }
-            
-            ghc::filesystem::path outputBuild = buildDir / *targetPrefix;
-            outputBuild.concat(scriptName).concat(*targetExt);
-            
-            ssLOG_INFO("Trying to use output cache: " << outputBuild.string());
-            
-            if( ghc::filesystem::exists(outputBuild, e) && 
-                ghc::filesystem::file_size(outputBuild, e) > 0)
-            {
+                ++existCount;
                 ghc::filesystem::file_time_type lastSharedLibWriteTime = 
-                    ghc::filesystem::last_write_time(outputBuild, e);
+                    ghc::filesystem::last_write_time(outputPath, e);
                 
                 if(lastSharedLibWriteTime >= currentFinalObjectWriteTime)
                 {
-                    ssLOG_INFO("Using output cache");
-                    outOutputCache = true;
-                    return true;
+                    ssLOG_INFO("Using output cache for " << outputPath.string());
+                    continue;
                 }
                 else
                 {
-                    ssLOG_INFO("Link binaries have more recent write time");
+                    ssLOG_INFO("Object files have more recent write time");
                     ssLOG_DEBUG("lastSharedLibWriteTime: " << 
                                 lastSharedLibWriteTime.time_since_epoch().count());
                     ssLOG_DEBUG("currentFinalObjectWriteTime: " << 
                                 currentFinalObjectWriteTime.time_since_epoch().count());
+                    outOutputCache = false;
+                    return true;
                 }
             }
             else
-                ssLOG_INFO(outputBuild.string() << " doesn't exist");
-            
-            ssLOG_INFO("Not using output cache");
+                ssLOG_INFO(outputPath.string() << " doesn't exist");
+        }
+        
+        //NOTE: We don't know which ones are optionals, at least for now. 
+        //      If there's nothing, there's no cache for sure. 
+        //      If there's something, it's very likely we have it cached. 
+        //      Dumb logic, I know, but it works for now.
+        if(existCount == 0)
+        {
             outOutputCache = false;
             return true;
         }
+        
+        ssLOG_INFO("Using output cache");
+        outOutputCache = true;
+        return true;
     }
 }
 
@@ -598,7 +569,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                     cachedObjectsFiles,
                                     finalObjectWriteTime))
         {
-            //TODO: Maybee add a pipeline result for this?
+            //TODO: Maybe add a pipeline result for this?
             return PipelineResult::UNEXPECTED_FAILURE;
         }
         
@@ -659,11 +630,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         if(result != PipelineResult::SUCCESS)
             return result;
 
-        std::string exeExt = "";
-        #ifdef _WIN32
-            exeExt = ".exe";
-        #endif
-
         //Compiling/Linking
         bool outputCache = false;
         if(!HasOutputCache( sourceHasCache, 
@@ -672,7 +638,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                             scriptInfo,
                             currentOptions.count(CmdOptions::EXECUTABLE) > 0,
                             scriptName,
-                            exeExt,
                             linkFilesPaths,
                             finalObjectWriteTime,
                             outputCache))
@@ -713,8 +678,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                             availableDependencies,
                                             profiles.at(profileIndex),
                                             linkFilesPaths,
-                                            currentOptions.count(CmdOptions::EXECUTABLE) > 0,
-                                            exeExt))
+                                            currentOptions.count(CmdOptions::EXECUTABLE) > 0))
             {
                 ssLOG_ERROR("Failed to compile or link script");
                 return PipelineResult::COMPILE_LINK_FAILED;
@@ -724,17 +688,24 @@ runcpp2::StartPipeline( const std::string& scriptPath,
 
     //Run the compiled file at script directory
     {
-        ghc::filesystem::path target;
-        result = GetTargetPath( buildDir, 
-                                scriptName, 
-                                profiles.at(profileIndex), 
-                                currentOptions,
-                                scriptInfo,
-                                target);
+        std::vector<ghc::filesystem::path> targets;
+        ghc::filesystem::path runnableTarget;
+        
+        // Only get runnable target if we're not in build-only mode
+        ghc::filesystem::path* runnableTargetPtr = 
+            (currentOptions.count(CmdOptions::BUILD) == 0) ? &runnableTarget : nullptr;
+        
+        result = GetBuiltTargetPaths(   buildDir, 
+                                        scriptName, 
+                                        profiles.at(profileIndex), 
+                                        currentOptions,
+                                        scriptInfo,
+                                        targets,
+                                        runnableTargetPtr);
             
         if(result != PipelineResult::SUCCESS)
             return result;
-        
+
         if(currentOptions.count(CmdOptions::BUILD) == 0)
         {
             //Move copying to before post build
@@ -755,7 +726,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 return PipelineResult::SUCCESS;
             
             ssLOG_INFO("Running script...");
-            return RunCompiledOutput(   target, 
+            return RunCompiledOutput(   runnableTarget,
                                         absoluteScriptPath, 
                                         scriptInfo, 
                                         runArgs, 
@@ -764,7 +735,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         }
         else
         {
-            return HandleBuildOutput(   target, 
+            return HandleBuildOutput(   targets,
                                         filesToCopyPaths, 
                                         scriptInfo, 
                                         profiles.at(profileIndex), 

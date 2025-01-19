@@ -22,7 +22,7 @@ namespace
                             int& returnStatus)
     {
         INTERNAL_RUNCPP2_SAFE_START();
-        ssLOG_FUNC_DEBUG();
+        ssLOG_FUNC_INFO();
         
         std::vector<const char*> args;
         for(size_t i = 0; i < runArgs.size(); ++i)
@@ -61,7 +61,7 @@ namespace
                                 int& returnStatus)
     {
         INTERNAL_RUNCPP2_SAFE_START();
-        ssLOG_FUNC_DEBUG();
+        ssLOG_FUNC_INFO();
         
         std::error_code _;
         if(!ghc::filesystem::exists(compiledSharedLibPath, _))
@@ -75,6 +75,8 @@ namespace
         
         try
         {
+             ssLOG_INFO("Trying to run shared library: " << compiledSharedLibPath.string());
+             
              //TODO: We might want to use unicode instead for the path
              #if defined(_WIN32)
                 std::string sharedLibDir = compiledSharedLibPath.parent_path().string();
@@ -173,28 +175,6 @@ namespace
         return true;
 
         INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
-    }
-
-    bool GetOutputFileInfo( const ghc::filesystem::path& buildDir,
-                            const runcpp2::Data::ScriptInfo& scriptInfo,
-                            const runcpp2::Data::Profile& currentProfile,
-                            const std::string& scriptName,
-                            const bool asExecutable,
-                            ghc::filesystem::path& outOutputPath)
-    {
-        if(!runcpp2::Data::BuildTypeHelper::GetOutputPath(  buildDir, 
-                                                            scriptName,
-                                                            currentProfile,
-                                                            scriptInfo.CurrentBuildType,
-                                                            asExecutable,
-                                                            outOutputPath))
-        {
-            ssLOG_ERROR("Extension or prefix not found in compiler profile for build type: " << 
-                        runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));
-            return false;
-        }
-
-        return true;
     }
 }
 
@@ -942,6 +922,13 @@ runcpp2::RunCompiledOutput( const ghc::filesystem::path& target,
         return PipelineResult::SUCCESS;
     }
     
+    std::error_code e;
+    if(target.empty() || !ghc::filesystem::exists(target, e))
+    {
+        ssLOG_ERROR("Failed to find the compiled file to run");
+        return PipelineResult::COMPILE_LINK_FAILED;
+    }
+    
     //Prepare run arguments
     std::vector<std::string> finalRunArgs;
     finalRunArgs.push_back(target.string());
@@ -977,7 +964,7 @@ runcpp2::RunCompiledOutput( const ghc::filesystem::path& target,
 }
 
 runcpp2::PipelineResult 
-runcpp2::HandleBuildOutput( const ghc::filesystem::path& target,
+runcpp2::HandleBuildOutput( const std::vector<ghc::filesystem::path>& targets,
                             const std::vector<std::string>& filesToCopyPaths,
                             const Data::ScriptInfo& scriptInfo,
                             const Data::Profile& profile,
@@ -987,9 +974,16 @@ runcpp2::HandleBuildOutput( const ghc::filesystem::path& target,
     ssLOG_FUNC_INFO();
     INTERNAL_RUNCPP2_SAFE_START();
     
-    //Copy the output file
+    if(targets.empty())
+    {
+        ssLOG_WARNING("No target files found");
+        return PipelineResult::SUCCESS;
+    }
+    
+    //Copy all output files and dependency files
     std::vector<std::string> filesToCopy = filesToCopyPaths;
-    filesToCopy.push_back(target);
+    for(const ghc::filesystem::path& target : targets)
+        filesToCopy.push_back(target.string());
     
     std::vector<std::string> copiedPaths;
     if(!CopyFiles(buildOutputDir, filesToCopy, copiedPaths))
@@ -1014,18 +1008,19 @@ runcpp2::HandleBuildOutput( const ghc::filesystem::path& target,
 }
 
 runcpp2::PipelineResult 
-runcpp2::GetTargetPath( const ghc::filesystem::path& buildDir,
-                        const std::string& scriptName,
-                        const Data::Profile& profile,
-                        const std::unordered_map<CmdOptions, std::string>& currentOptions,
-                        const Data::ScriptInfo& scriptInfo,
-                        ghc::filesystem::path& outTarget)
+runcpp2::GetBuiltTargetPaths(   const ghc::filesystem::path& buildDir,
+                                const std::string& scriptName,
+                                const Data::Profile& profile,
+                                const std::unordered_map<CmdOptions, std::string>& currentOptions,
+                                const Data::ScriptInfo& scriptInfo,
+                                std::vector<ghc::filesystem::path>& outTargets,
+                                ghc::filesystem::path* outRunnableTarget)
 {
     ssLOG_FUNC_INFO();
     INTERNAL_RUNCPP2_SAFE_START();
     
     std::error_code _;
-    outTarget = buildDir;
+    outTargets.clear();
 
     //Validate executable option against build type
     if( currentOptions.count(CmdOptions::EXECUTABLE) > 0 && 
@@ -1037,21 +1032,44 @@ runcpp2::GetTargetPath( const ghc::filesystem::path& buildDir,
         return PipelineResult::INVALID_OPTION;
     }
 
-    //Use GetOutputFileInfo to get the target path
-    if(!GetOutputFileInfo(  buildDir, 
-                            scriptInfo, 
-                            profile,
-                            scriptName,
-                            currentOptions.count(CmdOptions::EXECUTABLE) > 0,
-                            outTarget))
+    //Get all target paths
+    std::vector<bool> isRunnable;
+    if(!Data::BuildTypeHelper::GetPossibleOutputPaths(  buildDir, 
+                                                        scriptName,
+                                                        profile,
+                                                        scriptInfo.CurrentBuildType,
+                                                        currentOptions.count(CmdOptions::EXECUTABLE) > 0,
+                                                        outTargets,
+                                                        isRunnable))
     {
+        ssLOG_ERROR("Extension or prefix not found in compiler profile for build type: " << 
+                    runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));
+        
         return PipelineResult::INVALID_SCRIPT_INFO;
     }
     
-    if(!ghc::filesystem::exists(outTarget, _))
+    //Verify all targets exist
+    for(const ghc::filesystem::path& target : outTargets)
     {
-        ssLOG_ERROR("Failed to find the compiled file: " << outTarget.string());
-        return PipelineResult::COMPILE_LINK_FAILED;
+        if(!ghc::filesystem::exists(target, _))
+        {
+            ssLOG_WARNING("Failed to find the compiled file: " << target.string());
+            continue;
+            //return PipelineResult::COMPILE_LINK_FAILED;
+        }
+    }
+
+    //If requested, find the runnable target
+    if(outRunnableTarget != nullptr)
+    {
+        for(size_t i = 0; i < outTargets.size(); ++i)
+        {
+            if(isRunnable.at(i))
+            {
+                *outRunnableTarget = outTargets.at(i);
+                break;
+            }
+        }
     }
 
     return PipelineResult::SUCCESS;

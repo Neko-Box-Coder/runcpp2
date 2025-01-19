@@ -9,6 +9,7 @@ int main(int argc, char** argv)
     
     ssTEST_INIT_TEST_GROUP();
     
+    //NOTE: This is just a test YAML for validating parsing, don't use it for actual config
     ssTEST("Profile Should Parse Valid YAML")
     {
         const char* yamlStr = R"(
@@ -69,6 +70,7 @@ int main(int argc, char** argv)
                                 CommandPart: " -I\"{IncludeDirectoryPath}\""
                             -   Type: Once
                                 CommandPart: " \"{InputFilePath}\" -o \"{OutputFilePath}\""
+                            ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
                     ExecutableShared:
                         DefaultPlatform:
                             Flags: "-std=c++17 -Wall -g -fpic"
@@ -80,6 +82,7 @@ int main(int argc, char** argv)
                                 CommandPart: " -I\"{IncludeDirectoryPath}\""
                             -   Type: Once
                                 CommandPart: " \"{InputFilePath}\" -o \"{OutputFilePath}\""
+                            ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
                     Static:
                         DefaultPlatform:
                             Flags: "-std=c++17 -Wall -g"
@@ -87,6 +90,7 @@ int main(int argc, char** argv)
                             RunParts:
                             -   Type: Once
                                 CommandPart: "{Executable} -c {CompileFlags}"
+                            ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
                     Shared:
                         DefaultPlatform:
                             Flags: "-std=c++17 -Wall -g -fpic"
@@ -94,6 +98,7 @@ int main(int argc, char** argv)
                             RunParts:
                             -   Type: Once
                                 CommandPart: "{Executable} -c {CompileFlags}"
+                            ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
             Linker:
                 PreRun:
                     DefaultPlatform: ""
@@ -107,12 +112,14 @@ int main(int argc, char** argv)
                             RunParts:
                             -   Type: Once
                                 CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+                            ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
                         Windows:
                             Flags: "-Wl,-rpath,\\$ORIGIN"
                             Executable: "g++"
                             RunParts:
                             -   Type: Once
                                 CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+                            ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
                     Static:
                         DefaultPlatform:
                             Flags: ""
@@ -120,6 +127,7 @@ int main(int argc, char** argv)
                             RunParts:
                             -   Type: Once
                                 CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+                            ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
                     Shared:
                         Unix:
                             Flags: "-shared -Wl,-rpath,\\$ORIGIN"
@@ -127,6 +135,7 @@ int main(int argc, char** argv)
                             RunParts:
                             -   Type: Once
                                 CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+                            ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
                     ExecutableShared:
                         Unix:
                             Flags: "-shared -Wl,-rpath,\\$ORIGIN"
@@ -134,6 +143,7 @@ int main(int argc, char** argv)
                             RunParts:
                             -   Type: Once
                                 CommandPart: "{Executable} {LinkFlags} -o \"{OutputFilePath}\""
+                            ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
         )";
         
         ssTEST_OUTPUT_SETUP
@@ -208,11 +218,17 @@ int main(int argc, char** argv)
             const auto& executableCompile = profile.Compiler.OutputTypes.Executable.at("DefaultPlatform");
         );
         ssTEST_OUTPUT_ASSERT(   "Compiler Executable flags", 
-                                executableCompile.Flags == "-std=c++17 -Wall -g");
+                                executableCompile.Flags, 
+                                "-std=c++17 -Wall -g");
         ssTEST_OUTPUT_ASSERT(   "Compiler Executable executable", 
-                                executableCompile.Executable == "g++");
+                                executableCompile.Executable, 
+                                "g++");
         ssTEST_OUTPUT_ASSERT(   "Compiler Executable RunParts size", 
-                                executableCompile.RunParts.size() == 3);
+                                executableCompile.RunParts.size(), 
+                                3);
+        ssTEST_OUTPUT_ASSERT(   "Compiler Executable ExpectedOutputFiles size", 
+                                executableCompile.ExpectedOutputFiles.size(), 
+                                2);
         
         //Verify Compiler ExecutableShared
         ssTEST_OUTPUT_SETUP
@@ -229,6 +245,9 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT(   "Compiler ExecutableShared RunParts size", 
                                 executableSharedCompile.RunParts.size(), 
                                 3);
+        ssTEST_OUTPUT_ASSERT(   "Compiler ExecutableShared ExpectedOutputFiles size", 
+                                executableSharedCompile.ExpectedOutputFiles.size(), 
+                                2);
         
         //Verify Linker
         ssTEST_OUTPUT_ASSERT(   "Linker CheckExistence DefaultPlatform", 
@@ -243,6 +262,9 @@ int main(int argc, char** argv)
                                 executableLink.Executable == "g++");
         ssTEST_OUTPUT_ASSERT(   "Linker Executable RunParts size", 
                                 executableLink.RunParts.size() == 1);
+        ssTEST_OUTPUT_ASSERT(   "Linker Executable ExpectedOutputFiles size", 
+                                executableLink.ExpectedOutputFiles.size(), 
+                                2);
         
         //Verify Linker ExecutableShared
         ssTEST_OUTPUT_SETUP
@@ -259,6 +281,9 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT(   "Linker ExecutableShared RunParts size", 
                                 executableSharedLink.RunParts.size(), 
                                 1);
+        ssTEST_OUTPUT_ASSERT(   "Linker ExecutableShared ExpectedOutputFiles size", 
+                                executableSharedLink.ExpectedOutputFiles.size(), 
+                                2);
         
         //Test ToString() and Equals()
         ssTEST_OUTPUT_EXECUTION

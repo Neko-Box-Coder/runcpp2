@@ -1,69 +1,113 @@
 #include "runcpp2/Data/BuildTypeHelper.hpp"
 #include "runcpp2/PlatformUtil.hpp"
 
-namespace runcpp2
-{
-    const Data::FileProperties* 
-    Data::BuildTypeHelper::GetOutputFileProperties( const FilesTypesInfo& filesTypes,
-                                                    BuildType buildType,
-                                                    bool asExecutable)
-    {
-        //For executable build type with executable flag, 
-        //  return null as it uses platform-specific handling
-        if(buildType == BuildType::EXECUTABLE && asExecutable)
-            return nullptr;
+#include "ssLogger/ssLog.hpp"
 
+namespace
+{
+    using namespace runcpp2::Data;
+    
+    std::vector<const FileProperties*> 
+    GetOutputFileProperties(const FilesTypesInfo& filesTypes,
+                            BuildType buildType,
+                            bool asExecutable)
+    {
+        std::vector<const FileProperties*> properties;
+        
         static_assert(static_cast<int>(BuildType::COUNT) == 4, "Update This");
         switch(buildType)
         {
             case BuildType::EXECUTABLE:
+                if(!asExecutable)
+                {
+                    //For shared executable, need both library and link files
+                    properties.push_back(&filesTypes.SharedLibraryFile);
+                    properties.push_back(&filesTypes.SharedLinkFile);
+                }
+                else
+                {
+                    //NOTE: Currently this is a special case and handled outside
+                    //TODO: Handle it as config
+                }
+                break;
+                
             case BuildType::SHARED:
-                return &filesTypes.SharedLibraryFile;
+                //For shared libraries, need both library and link files
+                properties.push_back(&filesTypes.SharedLibraryFile);
+                properties.push_back(&filesTypes.SharedLinkFile);
+                break;
+                
             case BuildType::STATIC:
-                return &filesTypes.StaticLinkFile;
+                properties.push_back(&filesTypes.StaticLinkFile);
+                break;
+                
             case BuildType::OBJECTS:
-                return &filesTypes.ObjectLinkFile;
-            default:
-                return nullptr;
+                properties.push_back(&filesTypes.ObjectLinkFile);
+                break;
         }
+        
+        properties.push_back(&filesTypes.DebugSymbolFile);
+        return properties;
     }
+}
 
+namespace runcpp2
+{
     bool Data::BuildTypeHelper::NeedsLinking(BuildType buildType)
     {
         return buildType != BuildType::OBJECTS;
     }
 
-    bool Data::BuildTypeHelper::GetOutputPath(const ghc::filesystem::path& buildDir,
+    bool Data::BuildTypeHelper::GetPossibleOutputPaths(const ghc::filesystem::path& buildDir,
                                               const std::string& scriptName,
                                               const Profile& profile,
                                               const BuildType buildType,
                                               const bool asExecutable,
-                                              ghc::filesystem::path& outPath)
+                                              std::vector<ghc::filesystem::path>& outPaths,
+                                              std::vector<bool>& outIsRunnable)
     {
+        outPaths.clear();
+        outIsRunnable.clear();
+        
         //For executable build type with executable flag, use platform-specific extension
         if(buildType == BuildType::EXECUTABLE && asExecutable)
         {
             #ifdef _WIN32
-                outPath = buildDir / (scriptName + ".exe");
+                outPaths.push_back(buildDir / (scriptName + ".exe"));
             #else
-                outPath = buildDir / scriptName;
+                outPaths.push_back(buildDir / scriptName);
             #endif
-            return true;
+            outIsRunnable.push_back(true);
         }
 
-        const FileProperties* fileTypeInfo = GetOutputFileProperties(   profile.FilesTypes, 
-                                                                        buildType, 
-                                                                        asExecutable);
-        if(!fileTypeInfo)
-            return false;
+        //Get all relevant file properties
+        std::vector<const FileProperties*> fileProperties = 
+            GetOutputFileProperties(profile.FilesTypes, buildType, asExecutable);
+        
+        //Generate paths for each file type
+        for(const FileProperties* fileTypeInfo : fileProperties)
+        {
+            if(!fileTypeInfo)
+            {
+                ssLOG_ERROR("fileProperties should not contain nullptr");
+                return false;
+            }
+            
+            const std::string* targetExt = runcpp2::GetValueFromPlatformMap(fileTypeInfo->Extension);
+            const std::string* targetPrefix = runcpp2::GetValueFromPlatformMap(fileTypeInfo->Prefix);
 
-        const std::string* targetExt = runcpp2::GetValueFromPlatformMap(fileTypeInfo->Extension);
-        const std::string* targetPrefix = runcpp2::GetValueFromPlatformMap(fileTypeInfo->Prefix);
+            if(targetExt == nullptr || targetPrefix == nullptr)
+                continue;
 
-        if(targetExt == nullptr || targetPrefix == nullptr)
-            return false;
+            if(targetExt->empty() && targetPrefix->empty())
+                continue;
 
-        outPath = buildDir / (*targetPrefix + scriptName + *targetExt);
-        return true;
+            outPaths.push_back(buildDir / (*targetPrefix + scriptName + *targetExt));
+            
+            //Only SharedLibraryFile is runnable for non-direct executables
+            outIsRunnable.push_back(fileTypeInfo == &profile.FilesTypes.SharedLibraryFile);
+        }
+
+        return !outPaths.empty();
     }
 } 

@@ -59,12 +59,44 @@ namespace
                 continue;
             }
             
-            ssLOG_WARNING(  "Flag to remove not found: " << currentFlagToRemove);
+            ssLOG_WARNING("Flag to remove not found: " << currentFlagToRemove);
         }
         
         runcpp2::TrimRight(inOutFlags);
         inOutFlags += " " + profileFlagsOverride->Append;
         runcpp2::TrimRight(inOutFlags);
+    }
+    
+    bool 
+    PopulateFilesTypesMap(  const runcpp2::Data::FilesTypesInfo& fileTypesInfo,
+                            std::unordered_map< std::string, 
+                                                std::vector<std::string>>& outSubstitutionMap)
+    {
+        ssLOG_FUNC_DEBUG();
+        
+        #define INTERNAL_STR(a) #a
+        #define INTERNAL_COMPOSE(a, b) a b
+        #define INTERNAL_ADD_TO_MAP(target) \
+            outSubstitutionMap[ "{" INTERNAL_COMPOSE(INTERNAL_STR, (target)) "}" ] = \
+                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. target) }
+
+        INTERNAL_ADD_TO_MAP(SharedLibraryFile.Prefix);
+        INTERNAL_ADD_TO_MAP(SharedLinkFile.Prefix);
+        INTERNAL_ADD_TO_MAP(StaticLinkFile.Prefix);
+        INTERNAL_ADD_TO_MAP(ObjectLinkFile.Prefix);
+        INTERNAL_ADD_TO_MAP(DebugSymbolFile.Prefix);
+        
+        INTERNAL_ADD_TO_MAP(SharedLibraryFile.Extension);
+        INTERNAL_ADD_TO_MAP(SharedLinkFile.Extension);
+        INTERNAL_ADD_TO_MAP(StaticLinkFile.Extension);
+        INTERNAL_ADD_TO_MAP(ObjectLinkFile.Extension);
+        INTERNAL_ADD_TO_MAP(DebugSymbolFile.Extension);
+        
+        #undef INTERNAL_STR
+        #undef INTERNAL_COMPOSE
+        #undef INTERNAL_ADD_TO_MAP
+        
+        return true;
     }
     
     bool CompileScript( const ghc::filesystem::path& buildDir,
@@ -109,7 +141,6 @@ namespace
                 }
                 else
                 {
-                    
                     tempOutputInfo = const_cast<OutputTypeInfo*>
                     (
                         runcpp2::GetValueFromPlatformMap(profile.Compiler
@@ -149,7 +180,7 @@ namespace
             substitutionMapTemplate["{IncludeDirectoryPath}"].push_back(processedInclude);
         }
         
-        // Add defines
+        //Add defines
         if(runcpp2::HasValueFromPlatformMap(scriptInfo.Defines))
         {
             const runcpp2::Data::ProfilesDefines& platformDefines = 
@@ -173,6 +204,11 @@ namespace
                 }
             }
         }
+        
+        if(!PopulateFilesTypesMap(profile.FilesTypes, substitutionMapTemplate))
+            return false;
+        
+        substitutionMapTemplate["{/}"] = {runcpp2::ProcessPath("/")};
         
         std::unordered_map<std::string, std::vector<std::string>> substitutionMap;
         substitutionMap = substitutionMapTemplate;
@@ -204,33 +240,28 @@ namespace
             }
             //Output File
             {
-                std::string objectFileExt = 
-                    *runcpp2::GetValueFromPlatformMap(profile.FilesTypes.ObjectLinkFile.Extension);
-                
-                if(objectFileExt.empty())
-                    ssLOG_WARNING("Object file extension is empty");
-                
-                ghc::filesystem::path outputFilePath =  buildDir / 
-                                                        relativeSourcePath.parent_path() / 
-                                                        sourceName;
-                outputFilePath.concat(objectFileExt);
-                
-                // Create the directory structure if it doesn't exist
-                ghc::filesystem::create_directories(outputFilePath.parent_path(), e);
-                if(e)
-                {
-                    ssLOG_ERROR("Failed to create directory structure for " << outputFilePath);
-                    ssLOG_ERROR("Failed with error: " << e.message());
-                    return false;
-                }
-                
-                substitutionMap["{OutputFileName}"] = {sourceName};
-                substitutionMap["{OutputFileExtension}"] = {objectFileExt};
                 substitutionMap["{OutputFileDirectory}"] = 
-                    {runcpp2::ProcessPath(outputFilePath.parent_path().string())};
-                substitutionMap["{OutputFilePath}"] = 
-                    {runcpp2::ProcessPath(outputFilePath.string())};
-                outObjectsFilesPaths.push_back(outputFilePath);
+                    {runcpp2::ProcessPath( (buildDir / relativeSourcePath.parent_path()).string() )};
+                
+                for(int j = 0; j < currentOutputTypeInfo->ExpectedOutputFiles.size(); ++j)
+                {
+                    std::string currentPath = currentOutputTypeInfo->ExpectedOutputFiles.at(j);
+                    if(!profile.Compiler.PerformSubstituions(substitutionMap, currentPath))
+                    {
+                        ssLOG_ERROR("Failed to substitute \"" << currentPath << "\"");
+                        return false;
+                    }
+                    
+                    outObjectsFilesPaths.push_back(currentPath);
+                    auto path = ghc::filesystem::path(currentPath);
+                    ghc::filesystem::create_directories(path.parent_path(), e);
+                    if(e)
+                    {
+                        ssLOG_ERROR("Failed to create directory structure for " << currentPath);
+                        ssLOG_ERROR("Failed with error: " << e.message());
+                        return false;
+                    }
+                }
             }
             
             //Compile the source
@@ -356,8 +387,7 @@ namespace
                     const std::string& additionalLinkFlags,
                     const runcpp2::Data::Profile& profile,
                     const std::vector<ghc::filesystem::path>& objectsFilesPaths,
-                    bool linkAsExecutable,
-                    const std::string& exeExt)
+                    bool linkAsExecutable)
     {
         ssLOG_FUNC_INFO();
         const runcpp2::Data::StageInfo::OutputTypeInfo* currentOutputTypeInfo = nullptr;
@@ -417,33 +447,13 @@ namespace
         }
         
         //Output File
-        {
-            std::string outputFile;
-            const std::string* extension = nullptr;
-            if(linkAsExecutable) 
-            {
-                outputFile = outputName + exeExt;
-                extension = &exeExt;
-            } 
-            else 
-            {
-                const runcpp2::Data::FileProperties* fileProps = 
-                    runcpp2::Data::BuildTypeHelper::GetOutputFileProperties(profile.FilesTypes, 
-                                                                            scriptInfo.CurrentBuildType, 
-                                                                            false);
-                
-                const std::string* prefix = runcpp2::GetValueFromPlatformMap(fileProps->Prefix);
-                extension = runcpp2::GetValueFromPlatformMap(fileProps->Extension);
-                outputFile = *prefix + outputName + *extension;
-            }
-            
-            outputFile = runcpp2::ProcessPath( (buildDir / outputFile).string() );
+        substitutionMap["{OutputFileName}"] = {outputName};
+        substitutionMap["{OutputFileDirectory}"] = {buildDir.string()};
         
-            substitutionMap["{OutputFileName}"] = {outputName};
-            substitutionMap["{OutputFileExtension}"] = {(linkAsExecutable ? exeExt : *extension)};
-            substitutionMap["{OutputFileDirectory}"] = {buildDir.string()};
-            substitutionMap["{OutputFilePath}"] = {outputFile};
-        }
+        if(!PopulateFilesTypesMap(profile.FilesTypes, substitutionMap))
+            return false;
+        
+        substitutionMap["{/}"] = {runcpp2::ProcessPath("/")};
         
         //Link Files
         {
@@ -565,6 +575,21 @@ namespace
                 }
             }
         }
+        
+        //Use ExpectedOutputFiles?
+        #if 0
+            for(int i = 0; i < currentOutputTypeInfo->ExpectedOutputFiles.size(); ++i)
+            {
+                std::string currentPath = currentOutputTypeInfo->ExpectedOutputFiles.at(i);
+                if(!profile.Linker.PerformSubstituions(substitutionMap, currentPath))
+                {
+                    ssLOG_ERROR("Failed to substitute \"" << currentPath << "\"");
+                    return false;
+                }
+                
+                outObjectsFilesPaths.push_back(currentPath);
+            }
+        #endif
         
         //Link the script
         {
@@ -763,8 +788,7 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
                                     const std::vector<Data::DependencyInfo*>& availableDependencies,
                                     const Data::Profile& profile,
                                     const std::vector<std::string>& compiledObjectsPaths,
-                                    bool buildExecutable,
-                                    const std::string exeExt)
+                                    bool buildExecutable)
 {
     if(!RunGlobalSteps(buildDir, profile.Setup))
     {
@@ -837,8 +861,7 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
                     dependenciesLinkFlags,
                     profile,
                     objectsFilesPaths, 
-                    buildExecutable,
-                    exeExt))
+                    buildExecutable))
     {
         ssLOG_ERROR("LinkScript failed");
         return false;

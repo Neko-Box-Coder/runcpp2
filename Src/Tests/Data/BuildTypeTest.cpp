@@ -66,31 +66,24 @@ int main(int argc, char** argv)
 
         ssTEST_OUTPUT_EXECUTION
         (
-            ghc::filesystem::path outPath;
-            bool result = runcpp2::Data::BuildTypeHelper::GetOutputPath(
-                buildDir, scriptName, profile, runcpp2::Data::BuildType::STATIC, false, outPath);
+            std::vector<ghc::filesystem::path> outTargets;
+            std::vector<bool> outIsRunnable;
+            bool result = BuildTypeHelper::GetPossibleOutputPaths(  buildDir, 
+                                                                    scriptName, 
+                                                                    profile, 
+                                                                    BuildType::STATIC, 
+                                                                    false, 
+                                                                    outTargets, 
+                                                                    outIsRunnable);
         );
 
         ssTEST_OUTPUT_ASSERT("GetOutputPath should succeed", result == true);
+        ssTEST_OUTPUT_ASSERT("GetOutputPath should return a single target", outTargets.size() == 1);
         #ifdef _WIN32
-            ssTEST_OUTPUT_ASSERT("Static library path", outPath, "build/test.lib");
+            ssTEST_OUTPUT_ASSERT("Static library path", outTargets.at(0), "build/test.lib");
         #else
-            ssTEST_OUTPUT_ASSERT("Static library path", outPath, "build/libtest.a");
+            ssTEST_OUTPUT_ASSERT("Static library path", outTargets.at(0), "build/libtest.a");
         #endif
-    };
-    
-    ssTEST("BuildType Should Map To Correct File Types")
-    {
-        ssTEST_OUTPUT_SETUP
-        (
-            runcpp2::Data::FilesTypesInfo filesTypes;
-        );
-
-        ssTEST_OUTPUT_ASSERT(   "Static build type",
-                                BuildTypeHelper::GetOutputFileProperties(   filesTypes, 
-                                                                            BuildType::STATIC, 
-                                                                            false), 
-                                &filesTypes.StaticLinkFile);
     };
     
     ssTEST_END_TEST_GROUP();
