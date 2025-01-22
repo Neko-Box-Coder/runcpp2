@@ -791,10 +791,9 @@ All paths are relative to the script file's location.</p>
 <p class="admonition-title">Note</p>
 <p>This is different from other build systems like CMake where it will use the c compiler for c 
 files and the c++ compiler for c++ files. </p>
-<p>If you need the same behavior, you will need to create a script file for building the c files
-as if it is a standalone library first</p>
-<details class="example">
-<summary>Example</summary>
+<details class="todo">
+<summary>Todo</summary>
+<p>If you need the same behavior, you will need to create a script file for building the c files as if it is a standalone library first</p>
 <div class="language-text highlight"><span class="filename">Project Structure</span><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>project/
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>├── main.cpp
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>├── main.yaml
@@ -823,10 +822,10 @@ as if it is a standalone library first</p>
 </span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;utils.h&quot;</span>
 </span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="kt">int</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
 </span></code></pre></div>
-<div class="admonition todo">
-<p class="admonition-title">Todo</p>
+<details class="todo">
+<summary>Todo</summary>
 <p>If the original utils.c or math.c is modified, the build will not be triggered. Have the option to use symlink for the contents of the local directory.</p>
-</div>
+</details>
 <div class="language-yaml highlight"><span class="filename">main.yaml</span><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">Dependencies</span><span class="p">:</span>
 </span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;utils&quot;</span>
 </span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="nt">Source</span><span class="p">:</span>

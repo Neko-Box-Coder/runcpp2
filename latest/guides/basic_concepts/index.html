@@ -688,7 +688,10 @@ represent different compilers toolchains and their configurations.</p>
 <li>MacOS</li>
 <li>Unix (applies to Linux and MacOS)</li>
 </ul>
-<p>Custom platforms are currently <strong>not supported</strong> but planned for the future.</p>
+<details class="todo">
+<summary>Todo</summary>
+<p>Custom platforms</p>
+</details>
 <h3 id="default-profiles">Default Profiles</h3>
 <p>The default user configuration includes two compiler profiles:</p>
 <ul>
@@ -736,8 +739,8 @@ represent different compilers toolchains and their configurations.</p>
 When using g++, only <code>-O2</code> will be used.
 When using any other profile, only <code>-Wall</code> will be used, not <code>-Wall -O2</code>.</p>
 </div>
-<details>
-<summary>Skipping DefaultPlatform and DefaultProfile <strong>(WIP)</strong></summary>
+<details class="todo">
+<summary>Todo</summary>
 <p>If you have a setting that <strong>only</strong> has DefaultPlatform and DefaultProfile, you can directly 
 specify the settings without listing it under DefaultPlatform and DefaultProfile.</p>
 <p>For example:
