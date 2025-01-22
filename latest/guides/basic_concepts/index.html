@@ -651,7 +651,8 @@
 
 <h1 id="basic-concepts">Basic Concepts</h1>
 <h2 id="script-file">Script File</h2>
-<p>A script file is your entry point source file (typically a .cpp file) that runcpp2 uses to build with the settings specified either:</p>
+<p>A script file is your entry point source file (typically a .cpp file) that runcpp2 uses to build 
+with the settings specified either:</p>
 <ul>
 <li>
 <p>As inline comments in the source file:
@@ -670,12 +671,15 @@
 </span></code></pre></div></p>
 </li>
 </ul>
-<p>The name of the final output will be the name of the script file, therefore a script file will always have a 1 to 1 relationship with the linker output, even if multiple sources are specified in the script file build settings. </p>
+<p>The name of the final output will be the name of the script file, therefore a script file will 
+always have a 1 to 1 relationship with the linker output, even if multiple sources are specified in 
+the script file build settings. </p>
 <p>You can use any of your source files as a script file, or a dedicated .cpp file for building.</p>
 <hr />
 <h2 id="platforms-and-profiles">Platforms And Profiles</h2>
 <p>runcpp2 uses platforms and profiles to organize build settings. </p>
-<p>Platforms represent different host operating systems (not the target platform), while profiles represent different compilers toolchains and their configurations.</p>
+<p>Platforms represent different host operating systems (not the target platform), while profiles 
+represent different compilers toolchains and their configurations.</p>
 <h3 id="list-of-platforms">List Of Platforms</h3>
 <p>runcpp2 supports the following platforms:</p>
 <ul>
@@ -688,7 +692,7 @@
 <h3 id="default-profiles">Default Profiles</h3>
 <p>The default user configuration includes two compiler profiles:</p>
 <ul>
-<li><strong>g++</strong>: GNU C++ compiler (with alias "mingw")</li>
+<li><strong>g++</strong>: GNU c++ compiler (with alias "mingw")</li>
 <li><strong>vs2022_v17+</strong>: Visual Studio 2022 compiler (with aliases "msvc1930+", "msvc")</li>
 </ul>
 <h3 id="specifying-platformprofile-dependent-settings">Specifying Platform/Profile Dependent Settings</h3>
@@ -706,7 +710,7 @@
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="nt">Windows</span><span class="p">:</span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">            </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O2&quot;</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">            </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O2</span><span class="nv"> </span><span class="s">-Wall&quot;</span>
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="s">&quot;msvc&quot;</span><span class="p p-Indicator">:</span>
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">            </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/O2&quot;</span>
 </span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="nt">Linux</span><span class="p">:</span>
@@ -723,17 +727,19 @@
 <p class="admonition-title">Important</p>
 <p>DefaultPlatform and DefaultProfile settings are not additive. For example:
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="nt">DefaultProfile</span><span class="p">:</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wall&quot;</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">    </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">        </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O2&quot;</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="nt">DefaultProfile</span><span class="p">:</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">            </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wall&quot;</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">        </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">            </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O2&quot;</span>
 </span></code></pre></div>
 When using g++, only <code>-O2</code> will be used.
-When using any other profile, only <code>-Wall</code> will be used.</p>
+When using any other profile, only <code>-Wall</code> will be used, not <code>-Wall -O2</code>.</p>
 </div>
-<details class="wip skipping defaultplatform and defaultprofile">
-<summary>Wip</summary>
-<p>If you have a setting that <strong>only</strong> has DefaultPlatform and DefaultProfile, you can directly specify the settings without listing it under DefaultPlatform and DefaultProfile.</p>
+<details>
+<summary>Skipping DefaultPlatform and DefaultProfile <strong>(WIP)</strong></summary>
+<p>If you have a setting that <strong>only</strong> has DefaultPlatform and DefaultProfile, you can directly 
+specify the settings without listing it under DefaultPlatform and DefaultProfile.</p>
 <p>For example:
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wall&quot;</span>
