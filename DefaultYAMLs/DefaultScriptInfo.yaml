@@ -141,7 +141,7 @@ Dependencies:
         # (Optional) Import dependency configuration from a YAML file if this field exists
         #            All other fields (Name, Platforms, etc...) are not needed if this field exists
         #            For Git source: Path is relative to the git repository root
-        #            For Local source: Path is relative to the script directory.
+        #            For Local source: Path is relative to the path specified under `Local`
         #            If neither source exists, local source with root script directory is assumed.
         ImportPath: "config/dependency.yaml"
         

@@ -50,7 +50,7 @@ Resources/embed.exe
 
 # Natural Docs cache data
 DocsGeneration/ND_Config/Working\ Data
-docs/
+# docs/
 
 # Language server files
 .cache/

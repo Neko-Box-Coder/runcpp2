@@ -1,6 +1,9 @@
 TODO:
 - Allow runcpp2 to be library
-- Add the ability to specify different profiles for different source files
+- Add the ability to specify different profiles(?)/defines for different source files
+- Add the ability to use symlinks for local dependency
+- Add the ability to append defines coming from the dependencies
+- Add the ability for user to specify custom substitution options which applies to all fields
 - Ability to compile runcpp2 as single cpp
 - Ability to skip DefaultPlatform and DefaultProfile
 - Async compile
@@ -26,3 +29,6 @@ TODO:
 - Add version for user config and prompt for update
 - Output compile_command.json
 - Allow Languages to override FileExtensions in compiler profile (?)
+
+
+
