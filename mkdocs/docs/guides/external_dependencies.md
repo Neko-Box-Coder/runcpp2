@@ -47,6 +47,8 @@ This is configured under the `Source` section. We currently support 2 sources:
         Source:
             Local:
                 Path: "./libs/LocalLibrary"
+                # Optional, defaults to "Auto". Can be one of: Auto, Symlink, Hardlink, Copy
+                CopyMode: "Auto"
         LibraryType: Static
         IncludePaths:
         -   "include/LocalLibrary"

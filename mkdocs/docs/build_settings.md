@@ -190,6 +190,15 @@
                         - Optional: `false`
                         - Default: None
                         - Description: The path to the local dependency.
+                    - `CopyMode`
+                        - Type: `enum string`, can be one of the following:
+                            - `Auto`
+                            - `Symlink`
+                            - `Hardlink`
+                            - `Copy`
+                        - Optional: `true`
+                        - Default: `Auto`
+                        - Description: The mode to use when copying files to the build directory.
     - `LibraryType`
         - Type: `enum string`, can be one of the following:
             - `Static`
@@ -410,7 +419,14 @@ Dependencies:
         Local:
             # Path to the library directory
             Path: "./libs/LocalLibrary"
-
+            
+            # (Optional) How to handle copying files to build directory
+            # Values:
+            #   - "Auto" (default): Try symlink first, then hardlink, then copy as fallback
+            #   - "Symlink": Create symbolic links only, fail if not possible
+            #   - "Hardlink": Create hard links only, fail if not possible
+            #   - "Copy": Copy files to build directory
+            CopyMode: "Auto"
 
     # Library Type (Static, Object, Shared, Header)
     LibraryType: Static

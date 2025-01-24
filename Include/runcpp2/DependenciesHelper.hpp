@@ -51,6 +51,14 @@ namespace runcpp2
     bool ResolveImports(Data::ScriptInfo& scriptInfo,
                         const ghc::filesystem::path& scriptPath,
                         const ghc::filesystem::path& buildDir);
+
+    bool SyncLocalDependency(   const Data::DependencyInfo& dependency,
+                                const ghc::filesystem::path& sourcePath,
+                                const ghc::filesystem::path& copyPath);
+
+    bool SyncLocalDependencies( const std::vector<Data::DependencyInfo*>& dependencies,
+                                const std::vector<std::string>& dependenciesSourcePaths,
+                                const std::vector<std::string>& dependenciesCopiesPaths);
 }
 
 #endif

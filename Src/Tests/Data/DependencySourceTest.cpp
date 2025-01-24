@@ -83,6 +83,8 @@ int main(int argc, char** argv)
             mpark::get_if<runcpp2::Data::LocalSource>(&dependencySource.Source);
         ssTEST_OUTPUT_ASSERT("Should be Local source", local != nullptr);
         ssTEST_OUTPUT_ASSERT("Path", local->Path == "../external/mylib");
+        ssTEST_OUTPUT_ASSERT(   "Default CopyMode", 
+                                local->CopyMode == runcpp2::Data::LocalCopyMode::Auto);
         
         //Test ToString() and Equals()
         ssTEST_OUTPUT_EXECUTION
@@ -97,6 +99,92 @@ int main(int argc, char** argv)
         
         ssTEST_OUTPUT_ASSERT(   "Parsed output should equal original", 
                                 dependencySource.Equals(parsedOutput));
+    };
+    
+    ssTEST("DependencySource Should Parse Local Source With CopyMode")
+    {
+        const std::vector<std::pair<std::string, 
+                                    runcpp2::Data::LocalCopyMode>> testCases = 
+        {
+            {"Auto", runcpp2::Data::LocalCopyMode::Auto},
+            {"Symlink", runcpp2::Data::LocalCopyMode::Symlink},
+            {"Hardlink", runcpp2::Data::LocalCopyMode::Hardlink},
+            {"Copy", runcpp2::Data::LocalCopyMode::Copy}
+        };
+
+        for(const std::pair<std::string, 
+                            runcpp2::Data::LocalCopyMode>& testCase : testCases)
+        {
+            ssTEST_OUTPUT("Test Copy Mode: " << testCase.first);
+            ssTEST_OUTPUT_SETUP
+            (
+                std::string yamlStr = R"(
+                    Local:
+                        Path: ../external/mylib
+                        CopyMode: )" + testCase.first;
+                
+                ryml::Tree tree = ryml::parse_in_arena(c4::to_csubstr(yamlStr));
+                ryml::ConstNodeRef root = tree.rootref();
+                runcpp2::Data::DependencySource dependencySource;
+            );
+            
+            ssTEST_OUTPUT_EXECUTION
+            (
+                ryml::ConstNodeRef nodeRef = root;
+                bool parseResult = dependencySource.ParseYAML_Node(nodeRef);
+            );
+            
+            ssTEST_OUTPUT_ASSERT("ParseYAML_Node should succeed", parseResult);
+            
+            const runcpp2::Data::LocalSource* local = 
+                mpark::get_if<runcpp2::Data::LocalSource>(&dependencySource.Source);
+            ssTEST_OUTPUT_ASSERT("Should be Local source", local != nullptr);
+
+            if(!local)
+                return;
+
+            ssTEST_OUTPUT_ASSERT("Path", local->Path, "../external/mylib");
+            ssTEST_OUTPUT_ASSERT("CopyMode", local->CopyMode == testCase.second);
+
+            //Test ToString() and Equals()
+            ssTEST_OUTPUT_EXECUTION
+            (
+                std::string yamlOutput = dependencySource.ToString("");
+                ryml::Tree outputTree = ryml::parse_in_arena(ryml::to_csubstr(yamlOutput));
+                
+                runcpp2::Data::DependencySource parsedOutput;
+                nodeRef = outputTree.rootref();
+                parsedOutput.ParseYAML_Node(nodeRef);
+            );
+            
+            ssTEST_OUTPUT_ASSERT(   "Parsed output should equal original", 
+                                    dependencySource.Equals(parsedOutput));
+        }
+    };
+
+    ssTEST("DependencySource Should Handle Invalid CopyMode")
+    {
+        ssTEST_OUTPUT_SETUP
+        (
+            const char* yamlStr = R"(
+                Local:
+                    Path: ../external/mylib
+                    CopyMode: InvalidMode
+            )";
+            
+            ryml::Tree tree = ryml::parse_in_arena(c4::to_csubstr(yamlStr));
+            ryml::ConstNodeRef root = tree.rootref();
+            
+            runcpp2::Data::DependencySource dependencySource;
+        );
+        
+        ssTEST_OUTPUT_EXECUTION
+        (
+            ryml::ConstNodeRef nodeRef = root;
+            bool parseResult = dependencySource.ParseYAML_Node(nodeRef);
+        );
+        
+        ssTEST_OUTPUT_ASSERT("ParseYAML_Node should fail", !parseResult);
     };
     
     ssTEST_END_TEST_GROUP();
