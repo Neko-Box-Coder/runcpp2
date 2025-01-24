@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://neko-box-coder.github.io/runcpp2/0.2.0/</loc>
+         <lastmod>2025-01-24</lastmod>
+    </url>
+    <url>
+         <loc>https://neko-box-coder.github.io/runcpp2/0.2.0/build_settings/</loc>
+         <lastmod>2025-01-24</lastmod>
+    </url>
+    <url>
+         <loc>https://neko-box-coder.github.io/runcpp2/0.2.0/program_manual/</loc>
+         <lastmod>2025-01-24</lastmod>
+    </url>
+    <url>
+         <loc>https://neko-box-coder.github.io/runcpp2/0.2.0/user_config/</loc>
+         <lastmod>2025-01-24</lastmod>
+    </url>
+    <url>
+         <loc>https://neko-box-coder.github.io/runcpp2/0.2.0/guides/basic_concepts/</loc>
+         <lastmod>2025-01-24</lastmod>
+    </url>
+    <url>
+         <loc>https://neko-box-coder.github.io/runcpp2/0.2.0/guides/building_project_sources/</loc>
+         <lastmod>2025-01-24</lastmod>
+    </url>
+    <url>
+         <loc>https://neko-box-coder.github.io/runcpp2/0.2.0/guides/external_dependencies/</loc>
+         <lastmod>2025-01-24</lastmod>
+    </url>
+    <url>
+         <loc>https://neko-box-coder.github.io/runcpp2/0.2.0/guides/scriptable_pipeline/</loc>
+         <lastmod>2025-01-24</lastmod>
+    </url>
+</urlset>
