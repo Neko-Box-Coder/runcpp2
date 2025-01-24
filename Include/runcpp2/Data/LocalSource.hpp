@@ -8,10 +8,20 @@ namespace runcpp2
 {
     namespace Data
     {
+        enum class LocalCopyMode
+        {
+            Auto,
+            Symlink,
+            Hardlink,
+            Copy,
+            Count
+        };
+
         class LocalSource
         {
             public:
                 std::string Path;
+                LocalCopyMode CopyMode = LocalCopyMode::Auto;
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;

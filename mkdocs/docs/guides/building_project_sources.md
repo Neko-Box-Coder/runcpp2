@@ -123,7 +123,7 @@ When building a project with a mixture of c and c++ files, the same profile will
     This is different from other build systems like CMake where it will use the c compiler for c 
     files and the c++ compiler for c++ files. 
     
-    ??? TODO
+    ??? example
         If you need the same behavior, you will need to create a script file for building the c files as if it is a standalone library first
         
         ```text title="Project Structure"
@@ -157,9 +157,6 @@ When building a project with a mixture of c and c++ files, the same profile will
         #include "utils.h"
         int add(int a, int b) { return a + b; }
         ```
-
-        ??? TODO 
-            If the original utils.c or math.c is modified, the build will not be triggered. Have the option to use symlink for the contents of the local directory.
         
         ```yaml title="main.yaml"
         Dependencies:

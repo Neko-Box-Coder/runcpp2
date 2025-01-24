@@ -16,7 +16,7 @@ namespace
                             ghc::filesystem::path& outCopyPath,
                             ghc::filesystem::path& outSourcePath)
     {
-        ssLOG_FUNC_DEBUG();
+        ssLOG_FUNC_INFO();
 
         ghc::filesystem::path scriptDirectory = scriptPath.parent_path();
         
@@ -63,12 +63,6 @@ namespace
             if(curPath.back() == '/')
                 curPath.pop_back();
             
-            if(!ghc::filesystem::is_directory(curPath))
-            {
-                ssLOG_ERROR("Local dependency path is not a directory: " << curPath);
-                return false;
-            }
-
             localDepDirectoryName = ghc::filesystem::path(curPath).filename().string();
             
             if(ghc::filesystem::path(curPath).is_relative())
@@ -76,7 +70,12 @@ namespace
             else
                 outSourcePath = (local->Path);
 
-            
+            if(!ghc::filesystem::is_directory(outSourcePath))
+            {
+                ssLOG_ERROR("Local dependency path is not a directory: " << outSourcePath);
+                return false;
+            }
+
             if(currentSource.ImportPath.empty())
                 outCopyPath = (buildDir / localDepDirectoryName);
             else
@@ -92,6 +91,8 @@ namespace
                                     const ghc::filesystem::path& buildDir,
                                     bool& outPrePopulated)
     {
+        ssLOG_FUNC_DEBUG();
+        
         std::error_code e;
         
         if(ghc::filesystem::exists(copyPath, e))
@@ -133,9 +134,12 @@ namespace
             }
             else if(mpark::get_if<runcpp2::Data::LocalSource>(&(dependency.Source.Source)))
             {
-                //We don't need to copy the local directory if we just need the import file
-                if(dependency.Source.ImportPath.empty())
-                    ghc::filesystem::copy(copyPath, sourcePath, e);
+                //Copy/link local directory if it doesn't have any import path
+                if( dependency.Source.ImportPath.empty() &&
+                    !runcpp2::SyncLocalDependency(dependency, sourcePath, copyPath))
+                {
+                        return false;
+                }
             }
             
             outPrePopulated = false;
@@ -149,6 +153,8 @@ namespace
                                     const ghc::filesystem::path& buildDir,
                                     std::vector<bool>& outPrePopulated)
     {
+        ssLOG_FUNC_INFO();
+        
         outPrePopulated.resize(dependencies.size());
         
         for(int i = 0; i < dependencies.size(); ++i)
@@ -355,7 +361,7 @@ bool runcpp2::GetDependenciesPaths( const std::vector<Data::DependencyInfo*>& av
                                     const ghc::filesystem::path& scriptPath,
                                     const ghc::filesystem::path& buildDir)
 {
-    ssLOG_FUNC_DEBUG();
+    ssLOG_FUNC_INFO();
 
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
@@ -907,5 +913,196 @@ bool runcpp2::ResolveImports(   Data::ScriptInfo& scriptInfo,
     return true;
     
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::SyncLocalDependency(  const Data::DependencyInfo& dependency,
+                                    const ghc::filesystem::path& sourcePath,
+                                    const ghc::filesystem::path& copyPath)
+{
+    ssLOG_FUNC_DEBUG();
+    std::error_code ec;
+
+    //Only sync if it's a local dependency
+    const Data::LocalSource* local = mpark::get_if<Data::LocalSource>(&dependency.Source.Source);
+    if(!local)
+    {
+        ssLOG_DEBUG("Not a local dependency, skipping sync");
+        return true;
+    }
+
+    //Fail if source path doesn't exist
+    if(!ghc::filesystem::exists(sourcePath, ec))
+    {
+        ssLOG_ERROR("Source path does not exist: " << sourcePath.string());
+        return false;
+    }
+
+    //Create target directory if it doesn't exist
+    if(!ghc::filesystem::exists(copyPath, ec))
+    {
+        if(!ghc::filesystem::create_directory(copyPath, ec))
+        {
+            ssLOG_ERROR("Failed to create directory " << copyPath.string() << ": " << ec.message());
+            return false;
+        }
+    }
+
+    //Get list of files in source
+    std::unordered_set<std::string> sourceFiles;
+    for(const ghc::filesystem::directory_entry& entry : 
+        ghc::filesystem::directory_iterator(sourcePath, ec))
+    {
+        sourceFiles.insert(entry.path().filename().string());
+    }
+
+    //First pass: Check existing files in target
+    for(const ghc::filesystem::directory_entry& entry : 
+        ghc::filesystem::directory_iterator(copyPath, ec))
+    {
+        const ghc::filesystem::path& targetPath = entry.path();
+        const ghc::filesystem::path& srcPath = sourcePath / targetPath.filename();
+        bool needsUpdate = false;
+
+        //Check if this is a symlink
+        if(ghc::filesystem::is_symlink(targetPath, ec))
+        {
+            //Verify if symlink is valid
+            if(!ghc::filesystem::exists(targetPath, ec))
+            {
+                ssLOG_DEBUG("Found invalid symlink, removing: " << targetPath.string());
+                ghc::filesystem::remove(targetPath, ec);
+                needsUpdate = true;
+            }
+        }
+
+        //If file exists in source, check if it needs update
+        if(ghc::filesystem::exists(srcPath, ec))
+        {
+            if(!needsUpdate)
+            {
+                ghc::filesystem::file_time_type srcTime = 
+                    ghc::filesystem::last_write_time(srcPath, ec);
+                ghc::filesystem::file_time_type dstTime = 
+                    ghc::filesystem::last_write_time(targetPath, ec);
+                needsUpdate = (srcTime > dstTime);
+            }
+
+            if(needsUpdate)
+            {
+                ssLOG_DEBUG("Updating: " << targetPath.string());
+                ghc::filesystem::remove(targetPath, ec);
+                
+                switch(local->CopyMode)
+                {
+                    case Data::LocalCopyMode::Auto:
+                        ghc::filesystem::create_symlink(srcPath, targetPath, ec);
+                        if(ec)
+                        {
+                            ssLOG_DEBUG("Symlink failed: " << ec.message());
+                            ec.clear();
+                            ghc::filesystem::create_hard_link(srcPath, targetPath, ec);
+                            if(ec)
+                            {
+                                ssLOG_DEBUG("Hardlink failed: " << ec.message());
+                                ec.clear();
+                                ghc::filesystem::copy(srcPath, targetPath, ec);
+                            }
+                        }
+                        break;
+
+                    case Data::LocalCopyMode::Symlink:
+                        ghc::filesystem::create_symlink(srcPath, targetPath, ec);
+                        break;
+
+                    case Data::LocalCopyMode::Hardlink:
+                        ghc::filesystem::create_hard_link(srcPath, targetPath, ec);
+                        break;
+
+                    case Data::LocalCopyMode::Copy:
+                        ghc::filesystem::copy(srcPath, targetPath, ec);
+                        break;
+                }
+
+                if(ec)
+                {
+                    ssLOG_ERROR("Failed to update target: " << ec.message());
+                    return false;
+                }
+            }
+            sourceFiles.erase(targetPath.filename().string());
+        }
+        else
+        {
+            //File no longer exists in source, remove it
+            ssLOG_DEBUG("Removing file that no longer exists in source: " << targetPath.string());
+            ghc::filesystem::remove(targetPath, ec);
+        }
+    }
+
+    //Second pass: Add any new files from source
+    for(const std::string& filename : sourceFiles)
+    {
+        const ghc::filesystem::path& srcPath = sourcePath / filename;
+        const ghc::filesystem::path& targetPath = copyPath / filename;
+        
+        ssLOG_DEBUG("Adding new file: " << targetPath.string());
+        
+        switch(local->CopyMode)
+        {
+            case Data::LocalCopyMode::Auto:
+                ghc::filesystem::create_symlink(srcPath, targetPath, ec);
+                if(ec)
+                {
+                    ssLOG_DEBUG("Symlink failed: " << ec.message());
+                    ec.clear();
+                    ghc::filesystem::create_hard_link(srcPath, targetPath, ec);
+                    if(ec)
+                    {
+                        ssLOG_DEBUG("Hardlink failed: " << ec.message());
+                        ec.clear();
+                        ghc::filesystem::copy(srcPath, targetPath, ec);
+                    }
+                }
+                break;
+
+            case Data::LocalCopyMode::Symlink:
+                ghc::filesystem::create_symlink(srcPath, targetPath, ec);
+                break;
+
+            case Data::LocalCopyMode::Hardlink:
+                ghc::filesystem::create_hard_link(srcPath, targetPath, ec);
+                break;
+
+            case Data::LocalCopyMode::Copy:
+                ghc::filesystem::copy(srcPath, targetPath, ec);
+                break;
+        }
+
+        if(ec)
+        {
+            ssLOG_ERROR("Failed to add new file: " << ec.message());
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool runcpp2::SyncLocalDependencies(const std::vector<Data::DependencyInfo*>& dependencies,
+                                    const std::vector<std::string>& dependenciesSourcePaths,
+                                    const std::vector<std::string>& dependenciesCopiesPaths)
+{
+    ssLOG_FUNC_DEBUG();
+    for(size_t i = 0; i < dependencies.size(); ++i)
+    {
+        if(!SyncLocalDependency(*dependencies.at(i),
+                                ghc::filesystem::path(dependenciesSourcePaths.at(i)),
+                                ghc::filesystem::path(dependenciesCopiesPaths.at(i))))
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 

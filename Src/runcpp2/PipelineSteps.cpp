@@ -802,6 +802,15 @@ runcpp2::ProcessDependencies(   Data::ScriptInfo& scriptInfo,
         return PipelineResult::DEPENDENCIES_FAILED;
     }
 
+    //Sync local dependencies before building
+    if(!SyncLocalDependencies(  outAvailableDependencies,
+                                dependenciesSourcePaths,
+                                dependenciesLocalCopiesPaths))
+    {
+        ssLOG_ERROR("Failed to sync local dependencies");
+        return PipelineResult::DEPENDENCIES_FAILED;
+    }
+
     if(currentOptions.count(CmdOptions::BUILD_SOURCE_ONLY) == 0)
     {
         if(!BuildDependencies(  profile,
