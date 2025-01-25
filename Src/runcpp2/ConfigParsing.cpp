@@ -181,7 +181,7 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles,
 {
     INTERNAL_RUNCPP2_SAFE_START();
 
-    ssLOG_FUNC_DEBUG();
+    ssLOG_FUNC_INFO();
     
     std::string configPath = !customConfigPath.empty() ? customConfigPath : GetConfigFilePath();
     if(configPath.empty())

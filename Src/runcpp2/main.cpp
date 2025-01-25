@@ -320,6 +320,8 @@ int main(int argc, char* argv[])
         }
     }
     
+    ssLOG_FUNC_INFO();
+    
     //Show user config path
     if(currentOptions.count(runcpp2::CmdOptions::SHOW_USER_CONFIG))
     {
