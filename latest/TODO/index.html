@@ -8,13 +8,11 @@
       
       
       
-        <link rel="canonical" href="https://neko-box-coder.github.io/runcpp2/latest/program_manual/">
+        <link rel="canonical" href="https://neko-box-coder.github.io/runcpp2/latest/TODO/">
       
       
-        <link rel="prev" href="../guides/scriptable_pipeline/">
+        <link rel="prev" href="../user_config/">
       
-      
-        <link rel="next" href="../build_settings/">
       
       
       <link rel="icon" href="../favicon.png">
@@ -22,7 +20,7 @@
     
     
       
-        <title>Program Manual - runcpp2</title>
+        <title>Roadmap - runcpp2</title>
       
     
     
@@ -76,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#program-manual" class="md-skip">
+        <a href="#roadmap" class="md-skip">
           Skip to content
         </a>
       
@@ -115,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Program Manual
+              Roadmap
             
           </span>
         </div>
@@ -237,11 +235,9 @@
         
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../program_manual/" class="md-tabs__link">
         
   
     
@@ -290,9 +286,11 @@
         
   
   
+    
   
-    <li class="md-tabs__item">
-      <a href="../TODO/" class="md-tabs__link">
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
         
   
     
@@ -501,30 +499,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Program Manual
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../program_manual/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -533,44 +511,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      Usage
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#options" class="md-nav__link">
-    <span class="md-ellipsis">
-      Options
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -619,10 +559,30 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../TODO/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Roadmap
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -631,6 +591,44 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#planned" class="md-nav__link">
+    <span class="md-ellipsis">
+      Planned
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#not-planned-yet" class="md-nav__link">
+    <span class="md-ellipsis">
+      Not planned yet
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -650,31 +648,54 @@
                   
 
 
-<h1 id="program-manual">Program Manual</h1>
-<h2 id="usage">Usage</h2>
-<p><code class="language-shell highlight">runcpp2<span class="w"> </span><span class="o">[</span>options<span class="o">]</span><span class="w"> </span><span class="o">[</span>input_file<span class="o">]</span></code></p>
-<h2 id="options">Options</h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Run/Build:
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  -b,  --[b]uild                          Build the script and copy output files to the working directory
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  -w,  --[w]atch                          Watch script changes and output any compiling errors
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  -l,  --[l]ocal                          Build in the current working directory under .runcpp2 directory
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  -e,  --[e]xecutable                     Runs as executable instead of shared library
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  -c,  --[c]onfig &lt;file&gt;                  Use specified config file instead of default
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>  -t,  --create-script-[t]emplate &lt;file&gt;  Creates/prepend runcpp2 script info template
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  -s,  --build-[s]ource-only              (Re)Builds source files only without building dependencies.
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>                                          The previous built binaries will be used for dependencies.
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>                                          Requires dependencies to be built already.
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>Reset/Cleanup:
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>  -rc, --[r]eset-[c]ache                  Deletes compiled source files cache only
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>  -ru, --[r]eset-[u]ser-config            Replace current user config with the default one
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>  -rd, --[r]eset-[d]ependencies &lt;names&gt;   Reset dependencies (comma-separated names, or &quot;all&quot; for all)
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>  -cu, --[c]lean[u]p                      Run cleanup commands and remove build directory
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>Settings:
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>  -sc, --[s]how-[c]onfig-path             Show where runcpp2 is reading the config from
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>  -v,  --[v]ersion                        Show the version of runcpp2
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>  -h,  --[h]elp                           Show this help message
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>       --log-level &lt;level&gt;                Sets the log level (Normal, Info, Debug) for runcpp2.
-</span></code></pre></div>
+<h1 id="roadmap">Roadmap</h1>
+<h2 id="planned">Planned</h2>
+<ul>
+<li>Ability to skip DefaultPlatform and DefaultProfile</li>
+<li>More git options<ul>
+<li>Add branch/tag option for git</li>
+<li>Add initialize submodule option for git</li>
+</ul>
+</li>
+<li>Allow runcpp2 to be library for scriptable pipeline</li>
+<li>Async/Multi-thread compile and dependencies processing</li>
+<li>Smoother CMake support by reading cmake target properties (https://stackoverflow.com/a/56738858/23479578)</li>
+<li>Add the ability for user to specify custom substitution options which applies to all fields</li>
+<li>Add the ability to append defines coming from the dependencies</li>
+<li>Check last run is shared lib or executable. Reset cache when necessary if different type</li>
+<li>Add ability to reference local YAML for user config</li>
+<li>Add version for user config and prompt for update</li>
+<li>Add wildcard support for filenames and extensions (Files Globbing)</li>
+</ul>
+<h2 id="not-planned-yet">Not planned yet</h2>
+<ul>
+<li>Add the ability to specify different profiles(?)/defines for different source files</li>
+<li>Ability to compile runcpp2 as single cpp</li>
+<li>Handle escape characters at the end<ul>
+<li>To avoid situation like this:<ul>
+<li>Substitution string: -I "{path}"</li>
+<li>Substitution value: .\</li>
+<li>Substituted string: -I ".\"<ul>
+<li>Where the path contains escape character which escaped the wrapping quotes</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Use <csignal> to handle potential segfaults</li>
+<li>Use System2 subprocess if no prepend commands to be safer</li>
+<li>Migrate to libyaml</li>
+<li>Add tests and examples (On Windows as well)</li>
+<li>Make SearchLibraryNames and SearchDirectories optional (?)</li>
+<li>Add cache limit</li>
+<li>Add system source type for dependencies</li>
+<li>Output compile_command.json</li>
+<li>Allow Languages to override FileExtensions in compiler profile (?)</li>
+<li>Custom Platform</li>
+<li>Ability to specify custom run commands</li>
+<li></li>
+</ul>
 
 
 
