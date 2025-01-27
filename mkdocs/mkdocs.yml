@@ -37,6 +37,7 @@ nav:
     -   program_manual.md
     -   build_settings.md
     -   user_config.md
+    -   TODO.md
 
 extra_css: [extra.css]
 markdown_extensions:
