@@ -501,13 +501,14 @@ runcpp2::InitializeBuildDirectory(  const ghc::filesystem::path& configDir,
 runcpp2::PipelineResult 
 runcpp2::ResolveScriptImports(  Data::ScriptInfo& scriptInfo,
                                 const ghc::filesystem::path& scriptPath,
-                                const ghc::filesystem::path& buildDir)
+                                const ghc::filesystem::path& buildDir,
+                                const int maxThreads)
 {
     ssLOG_FUNC_INFO();
     INTERNAL_RUNCPP2_SAFE_START();
 
     //Resolve all the script info imports first before evaluating it
-    if(!ResolveImports(scriptInfo, scriptPath, buildDir))
+    if(!ResolveImports(scriptInfo, scriptPath, buildDir, maxThreads))
     {
         ssLOG_ERROR("Failed to resolve imports");
         return PipelineResult::UNEXPECTED_FAILURE;
@@ -524,6 +525,7 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
                                 const Data::Profile& profile,
                                 const ghc::filesystem::path& absoluteScriptPath,
                                 const Data::ScriptInfo* lastScriptInfo,
+                                const int maxThreads,
                                 bool& outRecompileNeeded,
                                 bool& outRelinkNeeded,
                                 std::vector<std::string>& outChangedDependencies)
@@ -578,7 +580,8 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
             //Resolve imports for last script info
             runcpp2::PipelineResult result = ResolveScriptImports(  lastScriptInfoFromDisk, 
                                                                     absoluteScriptPath, 
-                                                                    buildDir);
+                                                                    buildDir,
+                                                                    maxThreads);
             if(result != PipelineResult::SUCCESS)
                 break;
             

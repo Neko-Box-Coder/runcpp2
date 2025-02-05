@@ -157,6 +157,14 @@ namespace
         
         outPrePopulated.resize(dependencies.size());
         
+        //std::vector<std::thread> compileActions;
+        //std::vector<bool> runResults(sourceFiles.size(), false);
+        //int doneCount = 0;
+        //std::mutex resultMutex;
+        //std::condition_variable resultCV;
+        
+        
+        //TODO(NOW): Multi-thread?
         for(int i = 0; i < dependencies.size(); ++i)
         {
             if(!dependencies.at(i)->Source.ImportPath.empty())
@@ -514,6 +522,7 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
         return false;
     }
     
+    //TODO(NOW): Multi-thread?
     //Run setup steps
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
@@ -549,6 +558,7 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
     if(!scriptInfo.Populated)
         return true;
 
+    //TODO(NOW): Multi-thread?
     //Run build steps
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
@@ -869,13 +879,29 @@ bool runcpp2::HandleImport( Data::DependencyInfo& dependency,
 
 bool runcpp2::ResolveImports(   Data::ScriptInfo& scriptInfo,
                                 const ghc::filesystem::path& scriptPath,
-                                const ghc::filesystem::path& buildDir)
+                                const ghc::filesystem::path& buildDir,
+                                const int maxThreads)
 {
     ssLOG_FUNC_INFO();
     INTERNAL_RUNCPP2_SAFE_START();
     
+    //TODO(NOW): Multi-thread this
+    
+    
+    //std::vector<std::thread> importActions;
+    //std::vector<bool> dispatched(scriptInfo.Dependencies.size(), false);
+    //std::vector<bool> runResults(scriptInfo.Dependencies.size(), false);
+    //int doneCount = 0;
+    //std::mutex resultMutex;
+    //std::condition_variable resultCV;
+    (void)maxThreads;
+    
+    
+    
+    
+    
+    
     //For each dependency, check if import path exists
-    //for(Data::DependencyInfo& dependency : scriptInfo.Dependencies)
     for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
     {
         Data::DependencyInfo& dependency = scriptInfo.Dependencies.at(i);
@@ -884,6 +910,10 @@ bool runcpp2::ResolveImports(   Data::ScriptInfo& scriptInfo,
         Data::DependencySource& source = dependency.Source;
         if(source.ImportPath.empty())
             continue;
+    
+    
+    
+    
     
         if(!source.ImportPath.is_relative())
         {
@@ -909,6 +939,44 @@ bool runcpp2::ResolveImports(   Data::ScriptInfo& scriptInfo,
         if(!dependency.Source.ImportPath.empty())
             --i;
     }
+    
+    
+    //Evaluate the compile results for each batch for compilations
+            
+            //if(i - startIndex >= maxThreads || i == sourceFiles.size() - 1)
+            //{
+            //    std::unique_lock<std::mutex> lk(resultMutex);
+            //    resultCV.wait_for
+            //    (
+            //        lk, 
+            //        std::chrono::seconds(maxThreads)
+            //        [&doneCount, &sourceFiles, &startIndex, &maxThreads]()
+            //        { 
+            //            return  doneCount - startIndex >= maxThreads || 
+            //                    doneCount == sourceFiles.size();
+            //        }
+            //    );
+            //    
+            //    ssLOG_OUTPUT_ALL_CACHE_GROUPED();
+            //    
+            //    //Check if all threads have finished the work
+            //    if(doneCount - startIndex < maxThreads && doneCount != sourceFiles.size())
+            //    {
+            //        ssLOG_ERROR("Compilation workers timed out...");
+            //        return false;
+            //    }
+            //    
+            //    //Check if all the compilations are successful or not
+            //    for(int j = 0; j < runResults.size(); ++j)
+            //    {
+            //        if(!runResults.at(j + startIndex))
+            //            return false;
+            //    }
+            //    
+            //    //Update the start index
+            //    startIndex = i + 1;
+            //}
+    
 
     return true;
     

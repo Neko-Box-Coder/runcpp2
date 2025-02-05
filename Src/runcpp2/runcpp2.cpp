@@ -464,6 +464,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
     //Parsing the script, setting up dependencies, compiling and linking
     std::vector<std::string> filesToCopyPaths;
     {
+        const int tempMaxThreads = 16;
+        
         BuildsManager buildsManager("/tmp");
         IncludeManager includeManager;
         PipelineResult result = 
@@ -489,7 +491,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         }
         
         //Resolve imports
-        result = ResolveScriptImports(scriptInfo, absoluteScriptPath, buildDir);
+        result = ResolveScriptImports(scriptInfo, absoluteScriptPath, buildDir, tempMaxThreads);
         if(result != PipelineResult::SUCCESS)
             return result;
         
@@ -503,6 +505,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                         profiles.at(profileIndex), 
                                         absoluteScriptPath,
                                         lastScriptInfo, 
+                                        tempMaxThreads,
                                         recompileNeeded, 
                                         relinkNeeded, 
                                         changedDependencies);
@@ -662,7 +665,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                         scriptInfo,
                                         availableDependencies,
                                         profiles.at(profileIndex),
-                                        currentOptions.count(CmdOptions::EXECUTABLE) > 0))
+                                        currentOptions.count(CmdOptions::EXECUTABLE) > 0,
+                                        tempMaxThreads))
                 {
                     return PipelineResult::COMPILE_LINK_FAILED;
                 }
@@ -679,7 +683,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                             availableDependencies,
                                             profiles.at(profileIndex),
                                             linkFilesPaths,
-                                            currentOptions.count(CmdOptions::EXECUTABLE) > 0))
+                                            currentOptions.count(CmdOptions::EXECUTABLE) > 0,
+                                            tempMaxThreads))
             {
                 ssLOG_ERROR("Failed to compile or link script");
                 return PipelineResult::COMPILE_LINK_FAILED;

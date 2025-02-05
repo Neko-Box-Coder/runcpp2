@@ -50,7 +50,8 @@ namespace runcpp2
 
     bool ResolveImports(Data::ScriptInfo& scriptInfo,
                         const ghc::filesystem::path& scriptPath,
-                        const ghc::filesystem::path& buildDir);
+                        const ghc::filesystem::path& buildDir,
+                        const int maxThreads);
 
     bool SyncLocalDependency(   const Data::DependencyInfo& dependency,
                                 const ghc::filesystem::path& sourcePath,

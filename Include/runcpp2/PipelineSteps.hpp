@@ -59,13 +59,15 @@ namespace runcpp2
 
     PipelineResult ResolveScriptImports(Data::ScriptInfo& scriptInfo,
                                         const ghc::filesystem::path& scriptPath,
-                                        const ghc::filesystem::path& buildDir);
+                                        const ghc::filesystem::path& buildDir,
+                                        const int maxThreads);
     
     PipelineResult CheckScriptInfoChanges(  const ghc::filesystem::path& buildDir,
                                             const Data::ScriptInfo& scriptInfo,
                                             const Data::Profile& profile,
                                             const ghc::filesystem::path& absoluteScriptPath,
                                             const Data::ScriptInfo* lastScriptInfo,
+                                            const int maxThreads,
                                             bool& outRecompileNeeded,
                                             bool& outRelinkNeeded,
                                             std::vector<std::string>& outChangedDependencies);
