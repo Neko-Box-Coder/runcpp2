@@ -12,10 +12,6 @@
 
 #include <future>
 #include <chrono>
-//#include <mutex>
-//#include <condition_variable>
-
-
 
 namespace
 {
@@ -74,10 +70,9 @@ namespace
         runcpp2::TrimRight(inOutFlags);
     }
     
-    bool 
-    PopulateFilesTypesMap(  const runcpp2::Data::FilesTypesInfo& fileTypesInfo,
-                            std::unordered_map< std::string, 
-                                                std::vector<std::string>>& outSubstitutionMap)
+    bool PopulateFilesTypesMap( const runcpp2::Data::FilesTypesInfo& fileTypesInfo,
+                                std::unordered_map< std::string, 
+                                                    std::vector<std::string>>& outSubstitutionMap)
     {
         ssLOG_FUNC_DEBUG();
         
@@ -454,12 +449,6 @@ namespace
                         actionStatus == std::future_status::ready)
                     {
                         result = actions.at(j).get();
-                    }
-                    else
-                    {
-                        ssLOG_ERROR("Failed to construct actions for importing");
-                        ssLOG_OUTPUT_ALL_CACHE_GROUPED();
-                        return false;
                     }
                     
                     if(!result)

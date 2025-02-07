@@ -501,14 +501,13 @@ runcpp2::InitializeBuildDirectory(  const ghc::filesystem::path& configDir,
 runcpp2::PipelineResult 
 runcpp2::ResolveScriptImports(  Data::ScriptInfo& scriptInfo,
                                 const ghc::filesystem::path& scriptPath,
-                                const ghc::filesystem::path& buildDir,
-                                const int maxThreads)
+                                const ghc::filesystem::path& buildDir)
 {
     ssLOG_FUNC_INFO();
     INTERNAL_RUNCPP2_SAFE_START();
 
     //Resolve all the script info imports first before evaluating it
-    if(!ResolveImports(scriptInfo, scriptPath, buildDir, maxThreads))
+    if(!ResolveImports(scriptInfo, scriptPath, buildDir))
     {
         ssLOG_ERROR("Failed to resolve imports");
         return PipelineResult::UNEXPECTED_FAILURE;
@@ -580,8 +579,7 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
             //Resolve imports for last script info
             runcpp2::PipelineResult result = ResolveScriptImports(  lastScriptInfoFromDisk, 
                                                                     absoluteScriptPath, 
-                                                                    buildDir,
-                                                                    maxThreads);
+                                                                    buildDir);
             if(result != PipelineResult::SUCCESS)
                 break;
             
@@ -734,6 +732,7 @@ runcpp2::ProcessDependencies(   Data::ScriptInfo& scriptInfo,
                                 const ghc::filesystem::path& buildDir,
                                 const std::unordered_map<CmdOptions, std::string>& currentOptions,
                                 const std::vector<std::string>& changedDependencies,
+                                const int maxThreads,
                                 std::vector<Data::DependencyInfo*>& outAvailableDependencies,
                                 std::vector<std::string>& outGatheredBinariesPaths)
 {
@@ -799,7 +798,8 @@ runcpp2::ProcessDependencies(   Data::ScriptInfo& scriptInfo,
                                     scriptInfo, 
                                     outAvailableDependencies,
                                     dependenciesLocalCopiesPaths,
-                                    dependenciesSourcePaths))
+                                    dependenciesSourcePaths,
+                                    maxThreads))
     {
         ssLOG_ERROR("Failed to setup script dependencies");
         return PipelineResult::DEPENDENCIES_FAILED;
@@ -819,7 +819,8 @@ runcpp2::ProcessDependencies(   Data::ScriptInfo& scriptInfo,
         if(!BuildDependencies(  profile,
                                 scriptInfo,
                                 outAvailableDependencies, 
-                                dependenciesLocalCopiesPaths))
+                                dependenciesLocalCopiesPaths,
+                                maxThreads))
         {
             ssLOG_ERROR("Failed to build script dependencies");
             return PipelineResult::DEPENDENCIES_FAILED;

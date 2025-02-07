@@ -491,7 +491,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         }
         
         //Resolve imports
-        result = ResolveScriptImports(scriptInfo, absoluteScriptPath, buildDir, tempMaxThreads);
+        result = ResolveScriptImports(scriptInfo, absoluteScriptPath, buildDir);
         if(result != PipelineResult::SUCCESS)
             return result;
         
@@ -525,6 +525,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                         buildDir,
                                         currentOptions,
                                         changedDependencies,
+                                        tempMaxThreads,
                                         availableDependencies,
                                         gatheredBinariesPaths);
             

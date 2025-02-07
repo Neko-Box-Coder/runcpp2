@@ -157,6 +157,7 @@ target_link_libraries(runcpp2 PRIVATE ssLogger System2 CppOverride dylib)
 target_link_libraries(runcpp2 PUBLIC ghc_filesystem ryml::ryml mpark_variant)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    # TODO: Try to change to /Wall
     set(STANDARD_COMPILE_FLAGS "/utf-8;/W1;/DGHC_WIN_DISABLE_WSTRING_STORAGE_TYPE=1")
 else()
     set(STANDARD_COMPILE_FLAGS  "-Wall"

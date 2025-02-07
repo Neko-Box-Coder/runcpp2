@@ -7,6 +7,8 @@
 #include "ssLogger/ssLog.hpp"
 
 #include <unordered_set>
+#include <future>
+#include <chrono>
 
 namespace
 {
@@ -157,14 +159,6 @@ namespace
         
         outPrePopulated.resize(dependencies.size());
         
-        //std::vector<std::thread> compileActions;
-        //std::vector<bool> runResults(sourceFiles.size(), false);
-        //int doneCount = 0;
-        //std::mutex resultMutex;
-        //std::condition_variable resultCV;
-        
-        
-        //TODO(NOW): Multi-thread?
         for(int i = 0; i < dependencies.size(); ++i)
         {
             if(!dependencies.at(i)->Source.ImportPath.empty())
@@ -497,7 +491,8 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
                                         const Data::ScriptInfo& scriptInfo,
                                         std::vector<Data::DependencyInfo*>& availableDependencies,
                                         const std::vector<std::string>& dependenciesLocalCopiesPaths,
-                                        const std::vector<std::string>& dependenciesSourcePaths)
+                                        const std::vector<std::string>& dependenciesSourcePaths,
+                                        const int maxThreads)
 {
     ssLOG_FUNC_INFO();
 
@@ -518,11 +513,13 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
     }
     
     if(!PopulateAbsoluteIncludePaths(availableDependencies, dependenciesLocalCopiesPaths))
-    {
         return false;
-    }
     
-    //TODO(NOW): Multi-thread?
+    std::vector<std::future<bool>> actions;
+    
+    //Cache logs for worker threads
+    ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS();
+    
     //Run setup steps
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
@@ -533,47 +530,135 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
             continue;
         }
         
-        ssLOG_INFO("Running setup commands for " << availableDependencies.at(i)->Name);
-        if(!RunDependenciesSteps(   profile, 
-                                    availableDependencies.at(i)->Setup, 
-                                    dependenciesLocalCopiesPaths.at(i),
-                                    true))
+        actions.emplace_back
+        (
+            std::async
+            (
+                std::launch::async,
+                [i, &profile, &availableDependencies, &dependenciesLocalCopiesPaths]()
+                {
+                    ssLOG_INFO("Running setup commands for " << availableDependencies.at(i)->Name);
+                    if(!RunDependenciesSteps(   profile, 
+                                                availableDependencies.at(i)->Setup, 
+                                                dependenciesLocalCopiesPaths.at(i),
+                                                true))
+                    {
+                        ssLOG_ERROR("Failed to setup dependency " << 
+                                    availableDependencies.at(i)->Name);
+                        return false;
+                    }
+                    return true;
+                }
+            )
+        );
+        
+        //Evaluate the setup results for each batch
+        if(actions.size() >= maxThreads || i == availableDependencies.size() - 1)
         {
-            ssLOG_ERROR("Failed to setup dependency " << availableDependencies.at(i)->Name);
-            return false;
+            std::chrono::system_clock::time_point deadline = 
+                std::chrono::system_clock::now() + std::chrono::seconds(maxThreads);
+            
+            for(int j = 0; j < actions.size(); ++j)
+            {
+                if(!actions.at(j).valid())
+                {
+                    ssLOG_ERROR("Failed to construct actions for setup");
+                    ssLOG_OUTPUT_ALL_CACHE_GROUPED();
+                    return false;
+                }
+                
+                std::future_status actionStatus = actions.at(j).wait_until(deadline);
+                if(actionStatus == std::future_status::ready)
+                {
+                    if(!actions.at(j).get())
+                    {
+                        ssLOG_ERROR("Setup failed for dependencies");
+                        ssLOG_OUTPUT_ALL_CACHE_GROUPED();
+                        return false;
+                    }
+                }
+            }
+            actions.clear();
         }
     }
-
+    
+    ssLOG_OUTPUT_ALL_CACHE_GROUPED();
     return true;
 }
 
 bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
                                 const Data::ScriptInfo& scriptInfo,
                                 const std::vector<Data::DependencyInfo*>& availableDependencies,
-                                const std::vector<std::string>& dependenciesLocalCopiesPaths)
+                                const std::vector<std::string>& dependenciesLocalCopiesPaths,
+                                const int maxThreads)
 {
     ssLOG_FUNC_INFO();
 
     //If the script info is not populated (i.e. empty script info), don't do anything
     if(!scriptInfo.Populated)
         return true;
-
-    //TODO(NOW): Multi-thread?
+    
+    std::vector<std::future<bool>> actions;
+    
+    //Cache logs for worker threads
+    ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS();
+    
     //Run build steps
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
         ssLOG_INFO("Running build commands for " << availableDependencies.at(i)->Name);
         
-        if(!RunDependenciesSteps(   profile, 
-                                    availableDependencies.at(i)->Build, 
-                                    dependenciesLocalCopiesPaths.at(i),
-                                    true))
+        actions.emplace_back
+        (
+            std::async
+            (
+                std::launch::async,
+                [i, &profile, &availableDependencies, &dependenciesLocalCopiesPaths]()
+                {
+                    if(!RunDependenciesSteps(   profile, 
+                                                availableDependencies.at(i)->Build, 
+                                                dependenciesLocalCopiesPaths.at(i),
+                                                true))
+                    {
+                        ssLOG_ERROR("Failed to build dependency " << availableDependencies.at(i)->Name);
+                        return false;
+                    }
+                    return true;
+                }
+            )
+        );
+        
+        //Evaluate the setup results for each batch
+        if(actions.size() >= maxThreads || i == availableDependencies.size() - 1)
         {
-            ssLOG_ERROR("Failed to build dependency " << availableDependencies.at(i)->Name);
-            return false;
+            std::chrono::system_clock::time_point deadline = 
+                std::chrono::system_clock::now() + std::chrono::seconds(maxThreads);
+            
+            for(int j = 0; j < actions.size(); ++j)
+            {
+                if(!actions.at(j).valid())
+                {
+                    ssLOG_ERROR("Failed to construct actions for building dependencies");
+                    ssLOG_OUTPUT_ALL_CACHE_GROUPED();
+                    return false;
+                }
+                
+                std::future_status actionStatus = actions.at(j).wait_until(deadline);
+                if(actionStatus == std::future_status::ready)
+                {
+                    if(!actions.at(j).get())
+                    {
+                        ssLOG_ERROR("Build failed for dependencies");
+                        ssLOG_OUTPUT_ALL_CACHE_GROUPED();
+                        return false;
+                    }
+                }
+            }
+            actions.clear();
         }
     }
 
+    ssLOG_OUTPUT_ALL_CACHE_GROUPED();
     return true;
 }
 
@@ -879,27 +964,10 @@ bool runcpp2::HandleImport( Data::DependencyInfo& dependency,
 
 bool runcpp2::ResolveImports(   Data::ScriptInfo& scriptInfo,
                                 const ghc::filesystem::path& scriptPath,
-                                const ghc::filesystem::path& buildDir,
-                                const int maxThreads)
+                                const ghc::filesystem::path& buildDir)
 {
     ssLOG_FUNC_INFO();
     INTERNAL_RUNCPP2_SAFE_START();
-    
-    //TODO(NOW): Multi-thread this
-    
-    
-    //std::vector<std::thread> importActions;
-    //std::vector<bool> dispatched(scriptInfo.Dependencies.size(), false);
-    //std::vector<bool> runResults(scriptInfo.Dependencies.size(), false);
-    //int doneCount = 0;
-    //std::mutex resultMutex;
-    //std::condition_variable resultCV;
-    (void)maxThreads;
-    
-    
-    
-    
-    
     
     //For each dependency, check if import path exists
     for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
@@ -910,11 +978,7 @@ bool runcpp2::ResolveImports(   Data::ScriptInfo& scriptInfo,
         Data::DependencySource& source = dependency.Source;
         if(source.ImportPath.empty())
             continue;
-    
-    
-    
-    
-    
+        
         if(!source.ImportPath.is_relative())
         {
             ssLOG_ERROR("Import path is not relative: " << source.ImportPath.string());
@@ -939,44 +1003,6 @@ bool runcpp2::ResolveImports(   Data::ScriptInfo& scriptInfo,
         if(!dependency.Source.ImportPath.empty())
             --i;
     }
-    
-    
-    //Evaluate the compile results for each batch for compilations
-            
-            //if(i - startIndex >= maxThreads || i == sourceFiles.size() - 1)
-            //{
-            //    std::unique_lock<std::mutex> lk(resultMutex);
-            //    resultCV.wait_for
-            //    (
-            //        lk, 
-            //        std::chrono::seconds(maxThreads)
-            //        [&doneCount, &sourceFiles, &startIndex, &maxThreads]()
-            //        { 
-            //            return  doneCount - startIndex >= maxThreads || 
-            //                    doneCount == sourceFiles.size();
-            //        }
-            //    );
-            //    
-            //    ssLOG_OUTPUT_ALL_CACHE_GROUPED();
-            //    
-            //    //Check if all threads have finished the work
-            //    if(doneCount - startIndex < maxThreads && doneCount != sourceFiles.size())
-            //    {
-            //        ssLOG_ERROR("Compilation workers timed out...");
-            //        return false;
-            //    }
-            //    
-            //    //Check if all the compilations are successful or not
-            //    for(int j = 0; j < runResults.size(); ++j)
-            //    {
-            //        if(!runResults.at(j + startIndex))
-            //            return false;
-            //    }
-            //    
-            //    //Update the start index
-            //    startIndex = i + 1;
-            //}
-    
 
     return true;
     
