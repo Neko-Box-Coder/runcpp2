@@ -519,6 +519,7 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
     
     //Cache logs for worker threads
     ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS();
+    int logLevel = ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL();
     
     //Run setup steps
     for(int i = 0; i < availableDependencies.size(); ++i)
@@ -535,8 +536,10 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
             std::async
             (
                 std::launch::async,
-                [i, &profile, &availableDependencies, &dependenciesLocalCopiesPaths]()
+                [i, &profile, &availableDependencies, &dependenciesLocalCopiesPaths, logLevel]()
                 {
+                    ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(logLevel);
+                    
                     ssLOG_INFO("Running setup commands for " << availableDependencies.at(i)->Name);
                     if(!RunDependenciesSteps(   profile, 
                                                 availableDependencies.at(i)->Setup, 
@@ -559,7 +562,6 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
                 std::chrono::system_clock::now() + std::chrono::seconds(maxThreads < 8 ? 
                                                                         8 : 
                                                                         maxThreads);
-            
             for(int j = 0; j < actions.size(); ++j)
             {
                 if(!actions.at(j).valid())
@@ -604,6 +606,7 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
     
     //Cache logs for worker threads
     ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS();
+    int logLevel = ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL();
     
     //Run build steps
     for(int i = 0; i < availableDependencies.size(); ++i)
@@ -615,8 +618,10 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
             std::async
             (
                 std::launch::async,
-                [i, &profile, &availableDependencies, &dependenciesLocalCopiesPaths]()
+                [i, &profile, &availableDependencies, &dependenciesLocalCopiesPaths, logLevel]()
                 {
+                    ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(logLevel);
+                    
                     if(!RunDependenciesSteps(   profile, 
                                                 availableDependencies.at(i)->Build, 
                                                 dependenciesLocalCopiesPaths.at(i),
@@ -637,7 +642,6 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
                 std::chrono::system_clock::now() + std::chrono::seconds(maxThreads < 8 ? 
                                                                         8 : 
                                                                         maxThreads);
-            
             for(int j = 0; j < actions.size(); ++j)
             {
                 if(!actions.at(j).valid())

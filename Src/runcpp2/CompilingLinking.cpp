@@ -219,6 +219,7 @@ namespace
 
         //Cache logs for worker threads
         ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS();
+        int logLevel = ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL();
         
         //Compile async, allow compilation for all source files whether if it succeeded or not
         bool failedAny = false;
@@ -309,9 +310,12 @@ namespace
                         substitutionMap,
                         &buildDir,
                         compileAsExecutable,
-                        &scriptInfo
+                        &scriptInfo,
+                        logLevel
                     ]()
                     {
+                        ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(logLevel);
+                        
                         //Getting PreRun command
                         std::string preRun =    
                             runcpp2::HasValueFromPlatformMap(profile.Compiler.PreRun) ?
@@ -434,7 +438,6 @@ namespace
                     std::chrono::system_clock::now() + std::chrono::seconds(maxThreads < 8 ? 
                                                                             8 : 
                                                                             maxThreads);
-                
                 for(int j = 0; j < actions.size(); ++j)
                 {
                     if(!actions.at(j).valid())
