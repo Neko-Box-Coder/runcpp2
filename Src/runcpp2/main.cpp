@@ -459,6 +459,8 @@ int main(int argc, char* argv[])
                     #endif
                 }
                 
+                ssLOG_LINE("Changes detected, running...");
+                
                 int result = 0;
                 runcpp2::PipelineResult pipelineResult = 
                     runcpp2::StartPipeline( script, 
