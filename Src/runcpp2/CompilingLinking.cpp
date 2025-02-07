@@ -431,7 +431,9 @@ namespace
             if(actions.size() >= maxThreads || i == sourceFiles.size() - 1)
             {
                 std::chrono::system_clock::time_point deadline = 
-                    std::chrono::system_clock::now() + std::chrono::seconds(maxThreads);
+                    std::chrono::system_clock::now() + std::chrono::seconds(maxThreads < 8 ? 
+                                                                            8 : 
+                                                                            maxThreads);
                 
                 for(int j = 0; j < actions.size(); ++j)
                 {
