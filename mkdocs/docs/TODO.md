@@ -7,7 +7,6 @@
     - Add branch/tag option for git
     - Add initialize submodule option for git
 - Allow runcpp2 to be library for scriptable pipeline
-- Async/Multi-thread compile and dependencies processing
 - Smoother CMake support by reading cmake target properties (https://stackoverflow.com/a/56738858/23479578)
 - Add the ability for user to specify custom substitution options which applies to all fields
 - Add the ability to append defines coming from the dependencies

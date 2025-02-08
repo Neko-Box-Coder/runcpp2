@@ -13,8 +13,9 @@ Run/Build:
   -c,  --[c]onfig <file>                  Use specified config file instead of default
   -t,  --create-script-[t]emplate <file>  Creates/prepend runcpp2 script info template
   -s,  --build-[s]ource-only              (Re)Builds source files only without building dependencies.
-                                          The previous built binaries will be used for dependencies.
-                                          Requires dependencies to be built already.
+                                              The previous built binaries will be used for dependencies.
+                                              Requires dependencies to be built already.
+  -j,  --[j]obs                           Maximum number of threads running. Defaults to 8
 Reset/Cleanup:
   -rc, --[r]eset-[c]ache                  Deletes compiled source files cache only
   -ru, --[r]eset-[u]ser-config            Replace current user config with the default one

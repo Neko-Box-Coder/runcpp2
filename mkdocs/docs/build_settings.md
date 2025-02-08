@@ -1,5 +1,249 @@
 # Build Settings
 
+## Special Keywords
+
+### `DefaultPlatform`
+- Type: `string key`
+- Description: Evaluates to the host platform.
+
+### `DefaultProfile`
+- Type: `string key`
+- Description: Evaluates to the preferred profile the user has set in the config file.
+
+---
+
+## Settings
+
+- `PassScriptPath`
+    - Type: `bool`
+    - Optional: `true`
+    - Default: `false`
+    - Description: Whether to pass the script path as the second parameter when running in additional to the binary path.
+    ??? example
+        ```yaml
+        PassScriptPath: false
+        ```
+- `Language`
+    - Type: `string`
+    - Optional: `true`
+    - Default: Determined by file extension
+    - Description: The language of the script.
+    ??? example
+        ```yaml
+        Language: "c++"
+        ```
+- `BuildType`
+    - Type: `enum string`, can be one of the following:
+        - `Executable`
+        - `Static`
+        - `Shared`
+        - `Objects`
+    - Optional: `true`
+    - Default: `Executable`
+    - Description: The type of output to build.
+    ??? example
+        ```yaml
+        BuildType: Executable
+        ```
+- `RequiredProfiles`
+    - Type: `platform profile list`
+    - Optional: `true`
+    - Default: None
+    - Description: The profiles that are required for the script to be built. No profiles are required if this field is empty.
+    ??? example
+        ```yaml
+        RequiredProfiles: 
+            Windows: ["g++"]
+            Linux: ["g++"]
+            MacOS: ["g++"]
+        ```
+- `OverrideCompileFlags`
+    - Type: `platform profile map`
+    - Optional: `true`
+    - Default: None
+    - Description: The compile flags to override for each platform and profile.
+    - Child Fields:
+        - `Remove`
+            - Type: `string`
+            - Optional: `true`
+            - Default: None
+            - Description: The compile flags to remove for each platform and profile.
+        - `Append`
+            - Type: `string`
+            - Optional: `true`
+            - Default: None
+            - Description: The compile flags to append for each platform and profile.
+    ??? example
+        ```yaml
+        OverrideCompileFlags:
+            DefaultPlatform:
+                "g++":
+                    Remove: "-flagA -flagB"
+                    Append: "-flagC -flagD"
+        ```
+- `OverrideLinkFlags`
+    - Type: `platform profile map` with child fields
+    - Optional: `true`
+    - Default: None
+    - Description: The link flags to override for each platform and profile.
+    - Child Fields:
+        - `Remove`
+            - Type: `string`
+            - Optional: `true`
+            - Default: None
+            - Description: The link flags to remove for each platform and profile.
+        - `Append`
+            - Type: `string`
+            - Optional: `true`
+            - Default: None
+            - Description: The link flags to append for each platform and profile.
+    ??? example
+        ```yaml
+        OverrideLinkFlags:
+            DefaultPlatform:
+                "g++":
+                    Remove: "-flagA -flagB"
+                    Append: "-flagC -flagD"
+        ```
+- `OtherFilesToBeCompiled`
+    - Type: `platform profile map` with `list` of `string`
+    - Optional: `true`
+    - Default: None
+    - Description: The source files to be compiled for each platform and profile.
+    ??? example
+        ```yaml
+        OtherFilesToBeCompiled:
+            DefaultPlatform:
+                DefaultProfile:
+                -   "./AnotherSourceFile.cpp"
+        ```
+- `IncludePaths`
+    - Type: `platform profile map` with `list` of `string`
+    - Optional: `true`
+    - Default: None
+    - Description: The include paths to be used for each platform and profile.
+    ??? example
+        ```yaml
+        IncludePaths:
+            DefaultPlatform:
+                DefaultProfile:
+                -   "./include"
+                -   "./src/include"
+        ```
+- `Defines`
+    - Type: `platform profile map` with `list` of `string`
+    - Optional: `true`
+    - Default: None
+    - Description: The defines to be used for each platform and profile.
+    ??? example
+        ```yaml
+        Defines:
+            DefaultPlatform:
+                DefaultProfile:
+                -   "EXAMPLE_DEFINE"              # Define without a value
+                -   "VERSION_MAJOR=1"             # Define with a value
+        ```
+- `Setup`
+    - Type: `platform profile map` with `list` of `string`
+    - Optional: `true`
+    - Default: None
+    - Description: The setup commands to be used for each platform and profile.
+    ??? example
+        ```yaml
+        Setup:
+            DefaultPlatform:
+                DefaultProfile:
+                -   "echo Setting up script..."
+        ```
+- `PreBuild`
+    - Type: `platform profile map` with `list` of `string`
+    - Optional: `true`
+    - Default: None
+    - Description: The pre-build commands to be used for each platform and profile.
+    ??? example
+        ```yaml
+        PreBuild:
+            DefaultPlatform:
+                DefaultProfile:
+                -   "echo Starting build..."
+        ```
+- `PostBuild`
+    - Type: `platform profile map` with `list` of `string`
+    - Optional: `true`
+    - Default: None
+    - Description: The post-build commands to be used for each platform and profile.
+    ??? example
+        ```yaml
+        PostBuild:
+            DefaultPlatform:
+                DefaultProfile:
+                -   "echo Build completed..."
+        ```
+- `Cleanup`
+    - Type: `platform profile map` with `list` of `string`
+    - Optional: `true`
+    - Default: None
+    - Description: The cleanup commands to be used for each platform and profile.
+    ??? example
+        ```yaml
+        Cleanup:
+            DefaultPlatform:
+                DefaultProfile:
+                -   "echo Cleaning up script..."
+        ```
+- `Dependencies`
+    - Type: `list` of `dependency entry`
+    - Optional: `true`
+    - Default: None
+    - Description: The dependencies to be used for each platform and profile.
+    ??? example
+        ```yaml
+        Dependencies:
+        -   Name: MyLibrary
+            Platforms: [Windows, Linux, MacOS]
+            Source:
+                # ImportPath: "config/dependency.yaml"
+                Git:
+                    URL: "https://github.com/MyUser/MyLibrary.git"
+                # Local:
+                #     Path: "./libs/LocalLibrary"
+                #     CopyMode: "Auto"
+            LibraryType: Static
+            IncludePaths:
+            -   "src/include"
+            LinkProperties:
+                DefaultPlatform:
+                    "g++":
+                        SearchLibraryNames: ["MyLibrary"]
+                        ExcludeLibraryNames: []
+                        SearchDirectories: ["./build"]
+                        AdditionalLinkOptions: []
+            Setup:
+                DefaultPlatform:
+                    "g++":
+                    -   "mkdir build"
+            Build:
+                DefaultPlatform:
+                    "g++":
+                    -   "cd build && cmake .."
+                    -   "cd build && cmake --build ."
+            Cleanup:
+                Linux:
+                    "g++":
+                    -   "sudo apt purge MyLibrary"
+            FilesToCopy:
+                DefaultPlatform:
+                    DefaultProfile:
+                    -  "assets/textures/sprite.png"
+                Windows:
+                    "msvc":
+                    -  "assets/textures/sprite.png"
+                    -  "assets/fonts/windows_specific_font.ttf"
+                Linux:
+                    "g++":
+                    -  "assets/textures/sprite.png"
+                    -  "assets/shaders/linux_optimized_shader.glsl"
+        ```
 ## Special Types
 
 ### `platform profile map`
@@ -32,117 +276,6 @@
     Linux: ["g++"]
     MacOS: ["g++"]
     ```
-
-## Special Keywords
-
-### `DefaultPlatform`
-- Type: `string key`
-- Description: Evaluates to the host platform.
-
-### `DefaultProfile`
-- Type: `string key`
-- Description: Evaluates to the preferred profile the user has set in the config file.
-
----
-
-## Settings
-
-- `PassScriptPath`
-    - Type: `bool`
-    - Optional: `true`
-    - Default: `false`
-    - Description: Whether to pass the script path as the second parameter when running in additional to the binary path.
-- `Language`
-    - Type: `string`
-    - Optional: `true`
-    - Default: Determined by file extension
-    - Description: The language of the script.
-- `BuildType`
-    - Type: `enum string`, can be one of the following:
-        - `Executable`
-        - `Static`
-        - `Shared`
-        - `Objects`
-    - Optional: `true`
-    - Default: `Executable`
-    - Description: The type of output to build.
-- `RequiredProfiles`
-    - Type: `platform profile list`
-    - Optional: `true`
-    - Default: None
-    - Description: The profiles that are required for the script to be built. No profiles are required if this field is empty.
-- `OverrideCompileFlags`
-    - Type: `platform profile map`
-    - Optional: `true`
-    - Default: None
-    - Description: The compile flags to override for each platform and profile.
-    - Child Fields:
-        - `Remove`
-            - Type: `string`
-            - Optional: `true`
-            - Default: None
-            - Description: The compile flags to remove for each platform and profile.
-        - `Append`
-            - Type: `string`
-            - Optional: `true`
-            - Default: None
-            - Description: The compile flags to append for each platform and profile.
-- `OverrideLinkFlags`
-    - Type: `platform profile map` with child fields
-    - Optional: `true`
-    - Default: None
-    - Description: The link flags to override for each platform and profile.
-    - Child Fields:
-        - `Remove`
-            - Type: `string`
-            - Optional: `true`
-            - Default: None
-            - Description: The link flags to remove for each platform and profile.
-        - `Append`
-            - Type: `string`
-            - Optional: `true`
-            - Default: None
-            - Description: The link flags to append for each platform and profile.
-- `OtherFilesToBeCompiled`
-    - Type: `platform profile map` with `list` of `string`
-    - Optional: `true`
-    - Default: None
-    - Description: The source files to be compiled for each platform and profile.
-- `IncludePaths`
-    - Type: `platform profile map` with `list` of `string`
-    - Optional: `true`
-    - Default: None
-    - Description: The include paths to be used for each platform and profile.
-- `Defines`
-    - Type: `platform profile map` with `list` of `string`
-    - Optional: `true`
-    - Default: None
-    - Description: The defines to be used for each platform and profile.
-- `Setup`
-    - Type: `platform profile map` with `list` of `string`
-    - Optional: `true`
-    - Default: None
-    - Description: The setup commands to be used for each platform and profile.
-- `PreBuild`
-    - Type: `platform profile map` with `list` of `string`
-    - Optional: `true`
-    - Default: None
-    - Description: The pre-build commands to be used for each platform and profile.
-- `PostBuild`
-    - Type: `platform profile map` with `list` of `string`
-    - Optional: `true`
-    - Default: None
-    - Description: The post-build commands to be used for each platform and profile.
-- `Cleanup`
-    - Type: `platform profile map` with `list` of `string`
-    - Optional: `true`
-    - Default: None
-    - Description: The cleanup commands to be used for each platform and profile.
-- `Dependencies`
-    - Type: `list` of `dependency entry`
-    - Optional: `true`
-    - Default: None
-    - Description: The dependencies to be used for each platform and profile.
 
 ### `dependency entry`
 - Type: `map`
@@ -205,6 +338,9 @@
             - `Object`
             - `Shared`
             - `Header`
+        - Optional: `true`, only if `Source.ImportPath` is specified
+        - Default: None
+        - Description: The type of this dependency
     - `IncludePaths`
         - Type: `list` of `string`
         - Optional: `true`
@@ -212,7 +348,7 @@
         - Description: The include paths to be used for the dependency.
     - `LinkProperties`
         - Type: `map` with child fields
-        - Optional: `true` if `LibraryType` is `Header`
+        - Optional: `true` if `LibraryType` is `Header` or `Source.ImportPath` is specified
         - Default: None
         - Description: The link properties to be used for the dependency.
         - Child Fields:
@@ -256,8 +392,6 @@
         - Optional: `true`
         - Default: None
         - Description: The files to be copied to the output directory for each platform and profile.
-
-
 
 ## Template
 

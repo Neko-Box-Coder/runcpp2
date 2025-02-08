@@ -288,8 +288,8 @@ int main(int argc, char* argv[])
         ssLOG_BASE("    -c,  --[c]onfig <file>                  Use specified config file instead of default");
         ssLOG_BASE("    -t,  --create-script-[t]emplate <file>  Creates/prepend runcpp2 script info template");
         ssLOG_BASE("    -s,  --build-[s]ource-only              (Re)Builds source files only without building dependencies.");
-        ssLOG_BASE("                                            The previous built binaries will be used for dependencies.");
-        ssLOG_BASE("                                            Requires dependencies to be built already.");
+        ssLOG_BASE("                                                The previous built binaries will be used for dependencies.");
+        ssLOG_BASE("                                                Requires dependencies to be built already.");
         ssLOG_BASE("    -j,  --[j]obs                           Maximum number of threads running. Defaults to 8");
         ssLOG_BASE("  Reset/Cleanup:");
         ssLOG_BASE("    -rc, --[r]eset-[c]ache                  Deletes compiled source files cache only");
