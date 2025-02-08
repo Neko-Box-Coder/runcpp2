@@ -559,9 +559,7 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
         if(actions.size() >= maxThreads || i == availableDependencies.size() - 1)
         {
             std::chrono::system_clock::time_point deadline = 
-                std::chrono::system_clock::now() + std::chrono::seconds(maxThreads < 8 ? 
-                                                                        8 : 
-                                                                        maxThreads);
+                std::chrono::system_clock::now() + std::chrono::seconds(60);
             for(int j = 0; j < actions.size(); ++j)
             {
                 if(!actions.at(j).valid())
@@ -580,6 +578,12 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
                         ssLOG_OUTPUT_ALL_CACHE_GROUPED();
                         return false;
                     }
+                }
+                else
+                {
+                    ssLOG_ERROR("Dependencies setup timeout");
+                    ssLOG_OUTPUT_ALL_CACHE_GROUPED();
+                    return false;
                 }
             }
             actions.clear();
@@ -639,9 +643,7 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
         if(actions.size() >= maxThreads || i == availableDependencies.size() - 1)
         {
             std::chrono::system_clock::time_point deadline = 
-                std::chrono::system_clock::now() + std::chrono::seconds(maxThreads < 8 ? 
-                                                                        8 : 
-                                                                        maxThreads);
+                std::chrono::system_clock::now() + std::chrono::seconds(60);
             for(int j = 0; j < actions.size(); ++j)
             {
                 if(!actions.at(j).valid())
@@ -660,6 +662,12 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
                         ssLOG_OUTPUT_ALL_CACHE_GROUPED();
                         return false;
                     }
+                }
+                else
+                {
+                    ssLOG_ERROR("Dependencies build timeout");
+                    ssLOG_OUTPUT_ALL_CACHE_GROUPED();
+                    return false;
                 }
             }
             actions.clear();

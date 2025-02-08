@@ -435,9 +435,7 @@ namespace
             if(actions.size() >= maxThreads || i == sourceFiles.size() - 1)
             {
                 std::chrono::system_clock::time_point deadline = 
-                    std::chrono::system_clock::now() + std::chrono::seconds(maxThreads < 8 ? 
-                                                                            8 : 
-                                                                            maxThreads);
+                    std::chrono::system_clock::now() + std::chrono::seconds(60);
                 for(int j = 0; j < actions.size(); ++j)
                 {
                     if(!actions.at(j).valid())
@@ -454,6 +452,12 @@ namespace
                         actionStatus == std::future_status::ready)
                     {
                         result = actions.at(j).get();
+                    }
+                    else
+                    {
+                        ssLOG_ERROR("Compiling timeout");
+                        ssLOG_OUTPUT_ALL_CACHE_GROUPED();
+                        failedAny = true;
                     }
                     
                     if(!result)
