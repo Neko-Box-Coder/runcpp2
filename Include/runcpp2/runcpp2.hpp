@@ -39,8 +39,8 @@ namespace runcpp2
                                     const std::unordered_map<CmdOptions, std::string> currentOptions,
                                     const std::vector<std::string>& runArgs,
                                     const Data::ScriptInfo* lastScriptInfo,
-                                    Data::ScriptInfo& outScriptInfo,
                                     const std::string& buildOutputDir,
+                                    Data::ScriptInfo& outScriptInfo,
                                     int& returnStatus);
 
     std::string PipelineResultToString(PipelineResult result);

@@ -33,12 +33,14 @@ namespace runcpp2
                                     const Data::ScriptInfo& scriptInfo,
                                     std::vector<Data::DependencyInfo*>& availableDependencies,
                                     const std::vector<std::string>& dependenciesLocalCopiesPaths,
-                                    const std::vector<std::string>& dependenciesSourcePaths);
+                                    const std::vector<std::string>& dependenciesSourcePaths,
+                                    const int maxThreads);
 
     bool BuildDependencies( const runcpp2::Data::Profile& profile,
                             const Data::ScriptInfo& scriptInfo,
                             const std::vector<Data::DependencyInfo*>& availableDependencies,
-                            const std::vector<std::string>& dependenciesLocalCopiesPaths);
+                            const std::vector<std::string>& dependenciesLocalCopiesPaths,
+                            const int maxThreads);
 
     bool GatherDependenciesBinaries(const std::vector<Data::DependencyInfo*>& availableDependencies,
                                     const std::vector<std::string>& dependenciesCopiesPaths,

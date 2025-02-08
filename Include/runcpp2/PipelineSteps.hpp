@@ -66,6 +66,7 @@ namespace runcpp2
                                             const Data::Profile& profile,
                                             const ghc::filesystem::path& absoluteScriptPath,
                                             const Data::ScriptInfo* lastScriptInfo,
+                                            const int maxThreads,
                                             bool& outRecompileNeeded,
                                             bool& outRelinkNeeded,
                                             std::vector<std::string>& outChangedDependencies);
@@ -77,6 +78,7 @@ namespace runcpp2
                         const ghc::filesystem::path& buildDir,
                         const std::unordered_map<CmdOptions, std::string>& currentOptions,
                         const std::vector<std::string>& changedDependencies,
+                        const int maxThreads,
                         std::vector<Data::DependencyInfo*>& outAvailableDependencies,
                         std::vector<std::string>& outGatheredBinariesPaths);
 

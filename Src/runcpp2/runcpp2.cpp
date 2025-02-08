@@ -400,8 +400,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                         const std::unordered_map<CmdOptions, std::string> currentOptions,
                         const std::vector<std::string>& runArgs,
                         const Data::ScriptInfo* lastScriptInfo,
-                        Data::ScriptInfo& outScriptInfo,
                         const std::string& buildOutputDir,
+                        Data::ScriptInfo& outScriptInfo,
                         int& returnStatus)
 {
     INTERNAL_RUNCPP2_SAFE_START();
@@ -464,6 +464,16 @@ runcpp2::StartPipeline( const std::string& scriptPath,
     //Parsing the script, setting up dependencies, compiling and linking
     std::vector<std::string> filesToCopyPaths;
     {
+        const int maxThreads = 
+            currentOptions.count(CmdOptions::THREADS) ? 
+            strtol(currentOptions.at(CmdOptions::THREADS).c_str(), nullptr, 10) : 
+            8;
+        if(maxThreads == 0)
+        {
+            ssLOG_ERROR("Invalid number of threads passed in");
+            return PipelineResult::INVALID_OPTION;
+        }
+        
         BuildsManager buildsManager("/tmp");
         IncludeManager includeManager;
         PipelineResult result = 
@@ -503,6 +513,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                         profiles.at(profileIndex), 
                                         absoluteScriptPath,
                                         lastScriptInfo, 
+                                        maxThreads,
                                         recompileNeeded, 
                                         relinkNeeded, 
                                         changedDependencies);
@@ -522,6 +533,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                         buildDir,
                                         currentOptions,
                                         changedDependencies,
+                                        maxThreads,
                                         availableDependencies,
                                         gatheredBinariesPaths);
             
@@ -662,7 +674,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                         scriptInfo,
                                         availableDependencies,
                                         profiles.at(profileIndex),
-                                        currentOptions.count(CmdOptions::EXECUTABLE) > 0))
+                                        currentOptions.count(CmdOptions::EXECUTABLE) > 0,
+                                        maxThreads))
                 {
                     return PipelineResult::COMPILE_LINK_FAILED;
                 }
@@ -679,7 +692,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                             availableDependencies,
                                             profiles.at(profileIndex),
                                             linkFilesPaths,
-                                            currentOptions.count(CmdOptions::EXECUTABLE) > 0))
+                                            currentOptions.count(CmdOptions::EXECUTABLE) > 0,
+                                            maxThreads))
             {
                 ssLOG_ERROR("Failed to compile or link script");
                 return PipelineResult::COMPILE_LINK_FAILED;

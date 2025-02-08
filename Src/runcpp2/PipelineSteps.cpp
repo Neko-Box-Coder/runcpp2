@@ -524,6 +524,7 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
                                 const Data::Profile& profile,
                                 const ghc::filesystem::path& absoluteScriptPath,
                                 const Data::ScriptInfo* lastScriptInfo,
+                                const int maxThreads,
                                 bool& outRecompileNeeded,
                                 bool& outRelinkNeeded,
                                 std::vector<std::string>& outChangedDependencies)
@@ -731,6 +732,7 @@ runcpp2::ProcessDependencies(   Data::ScriptInfo& scriptInfo,
                                 const ghc::filesystem::path& buildDir,
                                 const std::unordered_map<CmdOptions, std::string>& currentOptions,
                                 const std::vector<std::string>& changedDependencies,
+                                const int maxThreads,
                                 std::vector<Data::DependencyInfo*>& outAvailableDependencies,
                                 std::vector<std::string>& outGatheredBinariesPaths)
 {
@@ -796,7 +798,8 @@ runcpp2::ProcessDependencies(   Data::ScriptInfo& scriptInfo,
                                     scriptInfo, 
                                     outAvailableDependencies,
                                     dependenciesLocalCopiesPaths,
-                                    dependenciesSourcePaths))
+                                    dependenciesSourcePaths,
+                                    maxThreads))
     {
         ssLOG_ERROR("Failed to setup script dependencies");
         return PipelineResult::DEPENDENCIES_FAILED;
@@ -816,7 +819,8 @@ runcpp2::ProcessDependencies(   Data::ScriptInfo& scriptInfo,
         if(!BuildDependencies(  profile,
                                 scriptInfo,
                                 outAvailableDependencies, 
-                                dependenciesLocalCopiesPaths))
+                                dependenciesLocalCopiesPaths,
+                                maxThreads))
         {
             ssLOG_ERROR("Failed to build script dependencies");
             return PipelineResult::DEPENDENCIES_FAILED;

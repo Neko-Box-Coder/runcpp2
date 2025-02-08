@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
     int currentArgIndex = 0;
     std::unordered_map<runcpp2::CmdOptions, std::string> currentOptions;
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 16, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 17, "Update this");
         std::unordered_map<std::string, runcpp2::OptionInfo> longOptionsMap =
         {
             {
@@ -236,10 +236,14 @@ int main(int argc, char* argv[])
             {
                 "--build-source-only",
                 runcpp2::OptionInfo(runcpp2::CmdOptions::BUILD_SOURCE_ONLY, false)
-            }
+            },
+            {
+                "--jobs",
+                runcpp2::OptionInfo(runcpp2::CmdOptions::THREADS, true)
+            },
         };
         
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 16, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 17, "Update this");
         std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
         {
             {"-rc", longOptionsMap.at("--reset-cache")},
@@ -256,6 +260,7 @@ int main(int argc, char* argv[])
             {"-c", longOptionsMap.at("--config")},
             {"-cu", longOptionsMap.at("--cleanup")},
             {"-s", longOptionsMap.at("--build-source-only")},
+            {"-j", longOptionsMap.at("--jobs")},
         };
         
         currentArgIndex = ParseArgs(longOptionsMap, shortOptionsMap, currentOptions, argc, argv);
@@ -272,7 +277,7 @@ int main(int argc, char* argv[])
     //Help message
     if(currentOptions.count(runcpp2::CmdOptions::HELP))
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 16, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 17, "Update this");
         ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
         ssLOG_BASE("Options:");
         ssLOG_BASE("  Run/Build:");
@@ -283,8 +288,9 @@ int main(int argc, char* argv[])
         ssLOG_BASE("    -c,  --[c]onfig <file>                  Use specified config file instead of default");
         ssLOG_BASE("    -t,  --create-script-[t]emplate <file>  Creates/prepend runcpp2 script info template");
         ssLOG_BASE("    -s,  --build-[s]ource-only              (Re)Builds source files only without building dependencies.");
-        ssLOG_BASE("                                            The previous built binaries will be used for dependencies.");
-        ssLOG_BASE("                                            Requires dependencies to be built already.");
+        ssLOG_BASE("                                                The previous built binaries will be used for dependencies.");
+        ssLOG_BASE("                                                Requires dependencies to be built already.");
+        ssLOG_BASE("    -j,  --[j]obs                           Maximum number of threads running. Defaults to 8");
         ssLOG_BASE("  Reset/Cleanup:");
         ssLOG_BASE("    -rc, --[r]eset-[c]ache                  Deletes compiled source files cache only");
         ssLOG_BASE("    -ru, --[r]eset-[u]ser-config            Replace current user config with the default one");
@@ -469,8 +475,8 @@ int main(int argc, char* argv[])
                                             currentOptions, 
                                             scriptArgs,
                                             lastParsedScriptInfo,
-                                            parsedScriptInfo,
                                             "",
+                                            parsedScriptInfo,
                                             result);
             
                 static_assert(static_cast<int>(runcpp2::PipelineResult::COUNT) == 13, "Update this");
@@ -518,8 +524,8 @@ int main(int argc, char* argv[])
                                 currentOptions, 
                                 scriptArgs,
                                 nullptr,
-                                parsedScriptInfo,
                                 outputDir,
+                                parsedScriptInfo,
                                 result) != runcpp2::PipelineResult::SUCCESS)
     {
         return -1;

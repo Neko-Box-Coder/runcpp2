@@ -21,6 +21,7 @@ namespace runcpp2
         CONFIG_FILE,
         CLEANUP,
         BUILD_SOURCE_ONLY,
+        THREADS,
         COUNT
     };
 }
