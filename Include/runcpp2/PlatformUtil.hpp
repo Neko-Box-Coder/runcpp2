@@ -29,14 +29,11 @@ namespace runcpp2
     
     std::vector<std::string> GetPlatformNames();
     
-    bool RunCommandAndGetOutput(const std::string& command, 
-                                std::string& outOutput,
-                                std::string runDirectory = "");
-    
-    bool RunCommandAndGetOutput(const std::string& command, 
-                                std::string& outOutput, 
-                                int& outReturnCode,
-                                std::string runDirectory = "");
+    bool RunCommand(const std::string& command, 
+                    const bool& captureOutput,
+                    const std::string& runDirectory, 
+                    std::string& outOutput, 
+                    int& outReturnCode);
     
     #if defined(_WIN32)
         std::string GetWindowsError();

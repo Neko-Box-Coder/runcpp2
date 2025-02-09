@@ -122,17 +122,18 @@ namespace
                 
                 int returnCode = 0;
                 std::string output;
-                if(!runcpp2::RunCommandAndGetOutput(gitCloneCommand, 
-                                                    output, 
-                                                    returnCode,
-                                                    buildDir.string()))
+                if(!runcpp2::RunCommand(gitCloneCommand, 
+                                        false,
+                                        buildDir.string(),
+                                        output, 
+                                        returnCode))
                 {
                     ssLOG_ERROR("Failed to run git clone with result: " << returnCode);
-                    ssLOG_ERROR("Output: \n" << output);
+                    //ssLOG_ERROR("Output: \n" << output);
                     return false;
                 }
-                else
-                    ssLOG_INFO("Output: \n" << output);
+                //else
+                //    ssLOG_INFO("Output: \n" << output);
             }
             else if(mpark::get_if<runcpp2::Data::LocalSource>(&(dependency.Source.Source)))
             {
@@ -257,10 +258,12 @@ namespace
             
             int returnCode = 0;
             std::string output;
-            if(!runcpp2::RunCommandAndGetOutput(commands->at(k), 
-                                                output, 
-                                                returnCode, 
-                                                processedDependencyPath))
+            
+            if(!runcpp2::RunCommand(commands->at(k), 
+                                    true,
+                                    processedDependencyPath,
+                                    output, 
+                                    returnCode))
             {
                 ssLOG_ERROR("Failed to run command with result: " << returnCode);
                 ssLOG_ERROR("Output: \n" << output);
