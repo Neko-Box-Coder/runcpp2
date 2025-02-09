@@ -240,7 +240,8 @@ runcpp2::RunProfileCommands(const Data::ProfilesCommands* commands,
             {
                 std::string output;
                 int returnCode = 0;
-                if(!runcpp2::RunCommandAndGetOutput(cmd, output, returnCode, workingDir))
+                
+                if(!runcpp2::RunCommand(cmd, true, workingDir, output, returnCode))
                 {
                     ssLOG_ERROR(commandType << " command failed: " << cmd << 
                                 " with return code " << returnCode);
@@ -404,7 +405,8 @@ runcpp2::PipelineResult runcpp2::HandleCleanup( const Data::ScriptInfo& scriptIn
             {
                 std::string output;
                 int returnCode = 0;
-                if(!runcpp2::RunCommandAndGetOutput(cmd, output, returnCode, scriptDirectory))
+                
+                if(!runcpp2::RunCommand(cmd, true, scriptDirectory, output, returnCode))
                 {
                     ssLOG_ERROR("Cleanup command failed: " << cmd << 
                                 " with return code " << returnCode);

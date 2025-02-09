@@ -337,11 +337,11 @@ namespace
                             
                             std::string setupOutput;
                             int setupResult;
-                            
-                            if( !runcpp2::RunCommandAndGetOutput(   setupStep, 
-                                                                    setupOutput, 
-                                                                    setupResult,
-                                                                    buildDir.string()) || 
+                            if( !runcpp2::RunCommand(   setupStep, 
+                                                        true,
+                                                        buildDir.string(),
+                                                        setupOutput, 
+                                                        setupResult) || 
                                 setupResult != 0)
                             {
                                 ssLOG_ERROR("Setup command \"" << setupStep << "\" failed");
@@ -375,10 +375,12 @@ namespace
                             
                             std::string commandOutput;
                             int resultCode = 0;
-                            if( !runcpp2::RunCommandAndGetOutput(   compileCommand, 
-                                                                    commandOutput, 
-                                                                    resultCode,
-                                                                    buildDir.string()) || 
+                            
+                            if( !runcpp2::RunCommand(   compileCommand, 
+                                                        true,
+                                                        buildDir.string(),
+                                                        commandOutput, 
+                                                        resultCode) || 
                                 resultCode != 0)
                             {
                                 ssLOG_ERROR("Compile command failed with result " << resultCode);
@@ -413,10 +415,11 @@ namespace
                             std::string cleanupOutput;
                             int cleanupResult;
                             
-                            if( !runcpp2::RunCommandAndGetOutput(   cleanupStep, 
-                                                                    cleanupOutput, 
-                                                                    cleanupResult,
-                                                                    buildDir.string()) || 
+                            if( !runcpp2::RunCommand(   cleanupStep, 
+                                                        true,
+                                                        buildDir.string(),
+                                                        cleanupOutput, 
+                                                        cleanupResult) || 
                                 cleanupResult != 0)
                             {
                                 ssLOG_ERROR("Cleanup command \"" << cleanupStep << "\" failed");
@@ -708,10 +711,11 @@ namespace
                 std::string setupOutput;
                 int setupResult;
                 
-                if( !runcpp2::RunCommandAndGetOutput(   setupStep, 
-                                                        setupOutput, 
-                                                        setupResult,
-                                                        buildDir.string()) || 
+                if( !runcpp2::RunCommand(   setupStep, 
+                                            true,
+                                            buildDir.string(),
+                                            setupOutput, 
+                                            setupResult) || 
                     setupResult != 0)
                 {
                     ssLOG_ERROR("Setup command \"" << setupStep << "\" failed");
@@ -744,10 +748,12 @@ namespace
                 ssLOG_INFO("running link command: " << linkCommand << " in " << buildDir.string());
                 std::string linkOutput;
                 int resultCode = 0;
-                if( !runcpp2::RunCommandAndGetOutput(   linkCommand, 
-                                                        linkOutput, 
-                                                        resultCode, 
-                                                        buildDir.string()) ||
+                
+                if( !runcpp2::RunCommand(   linkCommand, 
+                                            true,
+                                            buildDir.string(),
+                                            linkOutput, 
+                                            resultCode) ||
                     resultCode != 0)
                 {
                     ssLOG_ERROR("Link command failed with result " << resultCode);
@@ -775,10 +781,11 @@ namespace
                 std::string cleanupOutput;
                 int cleanupResult;
                 
-                if( !runcpp2::RunCommandAndGetOutput(   cleanupStep, 
-                                                        cleanupOutput, 
-                                                        cleanupResult,
-                                                        buildDir.string()) || 
+                if( !runcpp2::RunCommand(   cleanupStep, 
+                                            true,
+                                            buildDir.string(),
+                                            cleanupOutput, 
+                                            cleanupResult) || 
                     cleanupResult != 0)
                 {
                     ssLOG_ERROR("Cleanup command \"" << cleanupStep << "\" failed");
@@ -812,10 +819,11 @@ namespace
             std::string commandOutput;
             int commandResult = 0;
             
-            if( !runcpp2::RunCommandAndGetOutput(   steps.at(i), 
-                                                    commandOutput,
-                                                    commandResult,
-                                                    buildDir.string()) ||
+            if( !runcpp2::RunCommand(   steps.at(i), 
+                                        true,
+                                        buildDir.string(),
+                                        commandOutput,
+                                        commandResult) ||
                 commandResult != 0)
             {
                 ssLOG_ERROR("Command \"" << steps.at(i) << "\" failed");

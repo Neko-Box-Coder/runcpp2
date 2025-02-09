@@ -69,18 +69,11 @@ std::vector<std::string> runcpp2::GetPlatformNames()
     #endif
 }
 
-bool runcpp2::RunCommandAndGetOutput(   const std::string& command, 
-                                        std::string& outOutput, 
-                                        std::string runDirectory)
-{
-    int returnCode;
-    return RunCommandAndGetOutput(command, outOutput, returnCode, runDirectory);
-}
-
-bool runcpp2::RunCommandAndGetOutput(   const std::string& command, 
-                                        std::string& outOutput, 
-                                        int& outReturnCode,
-                                        std::string runDirectory)
+bool runcpp2::RunCommand(   const std::string& command, 
+                            const bool& captureOutput,
+                            const std::string& runDirectory, 
+                            std::string& outOutput, 
+                            int& outReturnCode)
 {
     ssLOG_FUNC_DEBUG();
     ssLOG_DEBUG("Running: " << command);
@@ -88,7 +81,7 @@ bool runcpp2::RunCommandAndGetOutput(   const std::string& command,
     if(!runDirectory.empty())
         commandInfo.RunDirectory = runDirectory.c_str();
     
-    commandInfo.RedirectOutput = true;
+    commandInfo.RedirectOutput = captureOutput;
     SYSTEM2_RESULT sys2Result = System2Run(command.c_str(), &commandInfo);
     
     if(sys2Result != SYSTEM2_RESULT_SUCCESS)
@@ -98,20 +91,23 @@ bool runcpp2::RunCommandAndGetOutput(   const std::string& command,
     }
     outOutput.clear();
     
-    do
+    if(captureOutput)
     {
-        uint32_t byteRead = 0;
-        outOutput.resize(outOutput.size() + 4096);
-        
-        sys2Result = 
-            System2ReadFromOutput(  &commandInfo, 
-                                    const_cast<char*>(outOutput.data()) + outOutput.size() - 4096,
-                                    4096, 
-                                    &byteRead);
+        do
+        {
+            uint32_t byteRead = 0;
+            outOutput.resize(outOutput.size() + 4096);
+            
+            sys2Result = 
+                System2ReadFromOutput(  &commandInfo, 
+                                        const_cast<char*>(outOutput.data()) + outOutput.size() - 4096,
+                                        4096, 
+                                        &byteRead);
 
-        outOutput.resize(outOutput.size() + byteRead);
+            outOutput.resize(outOutput.size() + byteRead);
+        }
+        while(sys2Result == SYSTEM2_RESULT_READ_NOT_FINISHED);
     }
-    while(sys2Result == SYSTEM2_RESULT_READ_NOT_FINISHED);
     
     sys2Result = System2GetCommandReturnValueSync(&commandInfo, &outReturnCode, false);
     if(sys2Result != SYSTEM2_RESULT_SUCCESS)
@@ -120,7 +116,8 @@ bool runcpp2::RunCommandAndGetOutput(   const std::string& command,
         return false;
     }
     
-    ssLOG_DEBUG("outOutput: \n" << outOutput.c_str());
+    if(captureOutput)
+        ssLOG_DEBUG("outOutput: \n" << outOutput.c_str());
     
     if(outReturnCode != 0)
     {

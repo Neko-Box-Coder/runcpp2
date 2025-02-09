@@ -33,7 +33,8 @@ namespace
                 for(int i = 0; i < cleanupSteps.size(); ++i)
                 {
                     std::string output;
-                    if(!runcpp2::RunCommandAndGetOutput(cleanupSteps.at(i), output))
+                    int resultCode;
+                    if(!runcpp2::RunCommand(cleanupSteps.at(i), true, "", output, resultCode))
                     {
                         ssLOG_INFO("Failed to run cleanup for " << profile.Name);
                         return false;
@@ -53,7 +54,8 @@ namespace
             for(int i = 0; i < setupSteps.size(); ++i)
             {
                 std::string output;
-                if(!runcpp2::RunCommandAndGetOutput(setupSteps.at(i), output))
+                int resultCode;
+                if(!runcpp2::RunCommand(setupSteps.at(i), true, "", output, resultCode))
                 {
                     ssLOG_INFO("Failed to run setup for " << profile.Name);
                     runCleanup();
@@ -77,7 +79,8 @@ namespace
             command += *runcpp2::GetValueFromPlatformMap(profile.Compiler.CheckExistence);
             
             std::string output;
-            if(!runcpp2::RunCommandAndGetOutput(command, output))
+            int returnCode;
+            if(!runcpp2::RunCommand(command, true, "", output, returnCode))
             {
                 ssLOG_INFO("Failed to find compiler for profile " << profile.Name);
                 runCleanup();
@@ -100,7 +103,8 @@ namespace
             command += *runcpp2::GetValueFromPlatformMap(profile.Linker.CheckExistence);
             
             std::string output;
-            if(!runcpp2::RunCommandAndGetOutput(command, output))
+            int returnCode;
+            if(!runcpp2::RunCommand(command, true, "", output, returnCode))
             {
                 ssLOG_INFO("Failed to find linker for profile " << profile.Name);
                 runCleanup();
