@@ -17,6 +17,8 @@ int main(int argc, char** argv)
             const char* yamlStr = R"(
                 Git:
                     URL: https://github.com/user/repo.git
+                    Branch: master
+                    FullHistory: true
             )";
             
             ryml::Tree tree = ryml::parse_in_arena(c4::to_csubstr(yamlStr));
@@ -37,7 +39,9 @@ int main(int argc, char** argv)
         const runcpp2::Data::GitSource* git = 
             mpark::get_if<runcpp2::Data::GitSource>(&dependencySource.Source);
         ssTEST_OUTPUT_ASSERT("Should be Git source", git != nullptr);
-        ssTEST_OUTPUT_ASSERT("URL", git->URL == "https://github.com/user/repo.git");
+        ssTEST_OUTPUT_ASSERT("URL", git->URL, "https://github.com/user/repo.git");
+        ssTEST_OUTPUT_ASSERT("Branch", git->Branch, "master");
+        ssTEST_OUTPUT_ASSERT("FullHistory", git->FullHistory, true);
         
         //Test ToString() and Equals()
         ssTEST_OUTPUT_EXECUTION
@@ -184,9 +188,34 @@ int main(int argc, char** argv)
             bool parseResult = dependencySource.ParseYAML_Node(nodeRef);
         );
         
-        ssTEST_OUTPUT_ASSERT("ParseYAML_Node should fail", !parseResult);
+        ssTEST_OUTPUT_ASSERT("ParseYAML_Node should fail", parseResult, false);
     };
-    
+
+    ssTEST("DependencySource Should Handle Invalid FullHistory Option")
+    {
+        ssTEST_OUTPUT_SETUP
+        (
+            const char* yamlStr = R"(
+                Git:
+                    URL: https://github.com/user/repo.git
+                    FullHistory: What
+            )";
+            
+            ryml::Tree tree = ryml::parse_in_arena(c4::to_csubstr(yamlStr));
+            ryml::ConstNodeRef root = tree.rootref();
+            
+            runcpp2::Data::DependencySource dependencySource;
+        );
+        
+        ssTEST_OUTPUT_EXECUTION
+        (
+            ryml::ConstNodeRef nodeRef = root;
+            bool parseResult = dependencySource.ParseYAML_Node(nodeRef);
+        );
+        
+        ssTEST_OUTPUT_ASSERT("ParseYAML_Node should fail", parseResult, false);
+    };
+
     ssTEST_END_TEST_GROUP();
     return 0;
 }

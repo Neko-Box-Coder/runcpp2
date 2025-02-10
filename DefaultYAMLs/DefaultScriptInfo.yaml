@@ -149,6 +149,13 @@ Dependencies:
         Git:
             # Git repository URL
             URL: "https://github.com/MyUser/MyLibrary.git"
+            
+            # (Optional) Branch name or tag name. Full ref path is accepted as well. 
+            #            Defaults to default branch on specified git repo if this is not specified
+            # Branch: "MyBranch"
+            
+            # (Optional) Checkout full git history or just the target commit. Defaults to false
+            # FullHistory: false
         
         # Dependency or import YAML file exists in local filesystem directory, 
         #   and needs to be copied to build directory

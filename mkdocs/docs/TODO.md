@@ -1,11 +1,16 @@
 # Roadmap
 
-## Planned
+## Done
 
+!!! info "`latest` version"
+    - Async/Multi-thread compile and dependencies processing
+    - More git options
+        - Add branch/tag option for git
+        - Add initialize submodule option for git
+
+
+## Planned
 - Ability to skip DefaultPlatform and DefaultProfile
-- More git options
-    - Add branch/tag option for git
-    - Add initialize submodule option for git
 - Allow runcpp2 to be library for scriptable pipeline
 - Smoother CMake support by reading cmake target properties (https://stackoverflow.com/a/56738858/23479578)
 - Add the ability for user to specify custom substitution options which applies to all fields
@@ -37,6 +42,4 @@
 - Allow Languages to override FileExtensions in compiler profile (?)
 - Custom Platform
 - Ability to specify custom run commands
-- 
-
 

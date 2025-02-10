@@ -312,6 +312,18 @@
                         - Optional: `false`
                         - Default: None
                         - Description: The url of the git repository.
+                    - `Branch`
+                        - Type: `string`
+                        - Optional: `true`
+                        - Default: None
+                        - Description: Branch name or tag name. Full ref path is accepted as well. 
+                        - !!! info "This requires `latest` version"
+                    - `FullHistory`
+                        - Type: `bool`
+                        - Optional: `true`
+                        - Default: `false`
+                        - Description: Checkout full git history or just the target commit.
+                        - !!! info "This requires `latest` version"
             - `Local`
                 - Type: `map` with child fields
                 - Optional: `true` if `ImportPath` is specified or `Git` is specified
@@ -547,6 +559,13 @@ Dependencies:
         Git:
             # Git repository URL
             URL: "https://github.com/MyUser/MyLibrary.git"
+            
+            # (Optional) Branch name or tag name. Full ref path is accepted as well. 
+            #            Defaults to default branch on specified git repo if this is not specified
+            # Branch: "MyBranch"
+            
+            # (Optional) Checkout full git history or just the target commit. Defaults to false
+            # FullHistory: false
         
         # Dependency or import YAML file exists in local filesystem directory, 
         #   and needs to be copied to build directory

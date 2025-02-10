@@ -12,6 +12,8 @@ namespace runcpp2
         {
             public:
                 std::string URL;
+                std::string Branch;
+                bool FullHistory = false;
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef& node);
                 std::string ToString(std::string indentation) const;

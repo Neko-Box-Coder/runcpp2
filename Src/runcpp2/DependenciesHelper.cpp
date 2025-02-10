@@ -115,7 +115,15 @@ namespace
                 const runcpp2::Data::GitSource* git = 
                     mpark::get_if<runcpp2::Data::GitSource>(&(dependency.Source.Source));
                 
-                std::string gitCloneCommand = "git clone " + git->URL;
+                std::string gitCloneCommand =
+                    std::string("git clone ") + 
+                    (git->FullHistory ? "" : "--depth 1 ") + 
+                    (
+                        git->Branch.empty() ? 
+                        std::string("") : 
+                        std::string("--branch ") + git->Branch
+                    ) +
+                    git->URL;
                 
                 ssLOG_INFO("Running git clone command: " << gitCloneCommand << " in " << 
                             buildDir.string());

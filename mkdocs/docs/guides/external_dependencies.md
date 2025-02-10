@@ -35,6 +35,7 @@ This is configured under the `Source` section. We currently support 2 sources:
         Source:
             Git:
                 URL: "https://github.com/MyUser/MyLibrary.git"
+                
         LibraryType: Static
         IncludePaths:
         -   "include/MyLibrary"
@@ -53,6 +54,30 @@ This is configured under the `Source` section. We currently support 2 sources:
         IncludePaths:
         -   "include/LocalLibrary"
     ```
+
+---
+
+## Specifying Git Clone Options
+
+!!! info "This requires `latest` version"
+
+You can specify the target branch/tag name and to clone whole git history or not with:
+`Branch` and `FullHistory`. 
+
+A normal clone without full history will be performed if none of these are specified.
+
+???+ example
+    ```yaml
+    Dependencies:
+    ...
+        Source:
+            Git:
+                URL: "https://github.com/MyUser/MyLibrary.git"
+                Branch: "SpecialBranch"
+                FullHistory: true
+    ...
+    ```
+
 
 ---
 
