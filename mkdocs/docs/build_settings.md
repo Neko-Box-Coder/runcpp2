@@ -312,6 +312,25 @@
                         - Optional: `false`
                         - Default: None
                         - Description: The url of the git repository.
+                    !!! info "This requires `latest` version"
+                        - `Branch`
+                            - Type: `string`
+                            - Optional: `true`
+                            - Default: None
+                            - Description: Branch name or tag name.
+                        - `FullHistory`
+                            - Type: `bool`
+                            - Optional: `true`
+                            - Default: `false`
+                            - Description: Checkout full git history or just the target commit.
+                        - `SubmoduleInitType`
+                            - Type: `enum string`, can be one of the following:
+                                - `None`
+                                - `Shallow`
+                                - `Full`
+                            - Optional: `true`
+                            - Default: `Shallow`
+                            - Description: Initialization type for all the submodules recursively 
             - `Local`
                 - Type: `map` with child fields
                 - Optional: `true` if `ImportPath` is specified or `Git` is specified
@@ -547,6 +566,19 @@ Dependencies:
         Git:
             # Git repository URL
             URL: "https://github.com/MyUser/MyLibrary.git"
+            
+            # (Optional) Branch name or tag name
+            #            Defaults to default branch on specified git repo if this is not specified
+            # Branch: ""
+            
+            # (Optional) Checkout full git history or just the target commit. Defaults to false
+            # FullHistory: false
+            
+            # (Optional) Initialization type for all the submodules recursively
+            #            - "None": Don't initialize any submodules
+            #            - "Shallow": Only checkout the target commit of all the submodules (default)
+            #            - "Full": Checkout the full git history of all the submodules
+            # SubmoduleInitType: "Shallow"
         
         # Dependency or import YAML file exists in local filesystem directory, 
         #   and needs to be copied to build directory

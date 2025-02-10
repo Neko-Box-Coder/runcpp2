@@ -384,6 +384,7 @@ namespace
                                 resultCode != 0)
                             {
                                 ssLOG_ERROR("Compile command failed with result " << resultCode);
+                                ssLOG_ERROR("Was trying to run: " << compileCommand);
                                 ssLOG_ERROR("Compile output: \n" << commandOutput);
                                 return false;
                             }
@@ -756,6 +757,7 @@ namespace
                                             resultCode) ||
                     resultCode != 0)
                 {
+                    ssLOG_ERROR("Was trying to run: " << linkCommand);
                     ssLOG_ERROR("Link command failed with result " << resultCode);
                     ssLOG_ERROR("Link output: \n" << linkOutput);
                     return false;

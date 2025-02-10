@@ -245,6 +245,7 @@ runcpp2::RunProfileCommands(const Data::ProfilesCommands* commands,
                 {
                     ssLOG_ERROR(commandType << " command failed: " << cmd << 
                                 " with return code " << returnCode);
+                    ssLOG_ERROR("Was trying to run: " << cmd);
                     ssLOG_ERROR("Output: \n" << output);
                     return PipelineResult::UNEXPECTED_FAILURE;
                 }
