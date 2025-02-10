@@ -115,13 +115,35 @@ namespace
                 const runcpp2::Data::GitSource* git = 
                     mpark::get_if<runcpp2::Data::GitSource>(&(dependency.Source.Source));
                 
+                std::string submoduleString;
+                static_assert(  static_cast<int>(runcpp2::Data::SubmoduleInitType::COUNT) == 3, 
+                                "Add new type to be processed");
+                switch(git->CurrentSubmoduleInitType)
+                {
+                    case runcpp2::Data::SubmoduleInitType::NONE:
+                        break;
+                    case runcpp2::Data::SubmoduleInitType::SHALLOW:
+                        submoduleString = "--recursive --shallow-submodules ";
+                        break;
+                    case runcpp2::Data::SubmoduleInitType::FULL:
+                        submoduleString = "--recursive ";
+                        break;
+                    default:
+                    {
+                        ssLOG_ERROR("Invalid git submodule init type: " << 
+                                    static_cast<int>(git->CurrentSubmoduleInitType));
+                        return false;
+                    }
+                }
+                
                 std::string gitCloneCommand =
                     std::string("git clone ") + 
+                    submoduleString + 
                     (git->FullHistory ? "" : "--depth 1 ") + 
                     (
                         git->Branch.empty() ? 
                         std::string("") : 
-                        std::string("--branch ") + git->Branch
+                        std::string("--branch ") + git->Branch + " "
                     ) +
                     git->URL;
                 
@@ -137,6 +159,7 @@ namespace
                                         returnCode))
                 {
                     ssLOG_ERROR("Failed to run git clone with result: " << returnCode);
+                    ssLOG_ERROR("Was trying to run: " << gitCloneCommand);
                     //ssLOG_ERROR("Output: \n" << output);
                     return false;
                 }
@@ -274,6 +297,7 @@ namespace
                                     returnCode))
             {
                 ssLOG_ERROR("Failed to run command with result: " << returnCode);
+                ssLOG_ERROR("Was trying to run: " << commands->at(k));
                 ssLOG_ERROR("Output: \n" << output);
                 return false;
             }

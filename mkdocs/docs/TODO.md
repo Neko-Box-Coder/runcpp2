@@ -3,10 +3,10 @@
 ## Done
 
 !!! info "`latest` version"
-    - Async/Multi-thread compile and dependencies processing
     - More git options
         - Add branch/tag option for git
         - Add initialize submodule option for git
+    - Async/Multi-thread compile and dependencies processing
 
 
 ## Planned

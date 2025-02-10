@@ -64,9 +64,11 @@ This is configured under the `Source` section. We currently support 2 sources:
 You can specify the target branch/tag name and to clone whole git history or not with:
 `Branch` and `FullHistory`. 
 
+You can also specify if you want to clone all the submodules full history or not with `SubmoduleInitType`
+
 A normal clone without full history will be performed if none of these are specified.
 
-???+ example
+???+ example "Example "Not using default and cloning a specify branch and submodules with full history""
     ```yaml
     Dependencies:
     ...
@@ -75,9 +77,9 @@ A normal clone without full history will be performed if none of these are speci
                 URL: "https://github.com/MyUser/MyLibrary.git"
                 Branch: "SpecialBranch"
                 FullHistory: true
+                SubmoduleInitType: "Full"
     ...
     ```
-
 
 ---
 
