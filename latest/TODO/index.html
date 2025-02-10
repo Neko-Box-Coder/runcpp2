@@ -610,6 +610,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#done" class="md-nav__link">
+    <span class="md-ellipsis">
+      Done
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#planned" class="md-nav__link">
     <span class="md-ellipsis">
       Planned
@@ -651,14 +660,22 @@
 
 
 <h1 id="roadmap">Roadmap</h1>
-<h2 id="planned">Planned</h2>
+<h2 id="done">Done</h2>
+<div class="admonition info">
+<p class="admonition-title"><code>latest</code> version</p>
 <ul>
+<li>Async/Multi-thread compile and dependencies processing</li>
 <li>Ability to skip DefaultPlatform and DefaultProfile</li>
 <li>More git options<ul>
 <li>Add branch/tag option for git</li>
 <li>Add initialize submodule option for git</li>
 </ul>
 </li>
+</ul>
+</div>
+<h2 id="planned">Planned</h2>
+<ul>
+<li>Ability to skip DefaultPlatform and DefaultProfile</li>
 <li>Allow runcpp2 to be library for scriptable pipeline</li>
 <li>Smoother CMake support by reading cmake target properties (https://stackoverflow.com/a/56738858/23479578)</li>
 <li>Add the ability for user to specify custom substitution options which applies to all fields</li>
@@ -695,7 +712,6 @@
 <li>Allow Languages to override FileExtensions in compiler profile (?)</li>
 <li>Custom Platform</li>
 <li>Ability to specify custom run commands</li>
-<li></li>
 </ul>
 
 
