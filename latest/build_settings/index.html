@@ -1108,16 +1108,15 @@
 <li>Description: The url of the git repository.</li>
 </ul>
 </li>
+</ul>
+<div class="admonition info">
+<p class="admonition-title">This requires <code>latest</code> version</p>
+<ul>
 <li><code>Branch</code><ul>
 <li>Type: <code>string</code></li>
 <li>Optional: <code>true</code></li>
 <li>Default: None</li>
-<li>Description: Branch name or tag name. Full ref path is accepted as well. </li>
-<li>
-<div class="admonition info">
-<p class="admonition-title">This requires <code>latest</code> version</p>
-</div>
-</li>
+<li>Description: Branch name or tag name.</li>
 </ul>
 </li>
 <li><code>FullHistory</code><ul>
@@ -1125,14 +1124,22 @@
 <li>Optional: <code>true</code></li>
 <li>Default: <code>false</code></li>
 <li>Description: Checkout full git history or just the target commit.</li>
-<li>
-<div class="admonition info">
-<p class="admonition-title">This requires <code>latest</code> version</p>
+</ul>
+</li>
+<li><code>SubmoduleInitType</code><ul>
+<li>Type: <code>enum string</code>, can be one of the following:<ul>
+<li><code>None</code></li>
+<li><code>Shallow</code></li>
+<li><code>Full</code></li>
+</ul>
+</li>
+<li>Optional: <code>true</code></li>
+<li>Default: <code>Shallow</code></li>
+<li>Description: Initialization type for all the submodules recursively </li>
+</ul>
+</li>
+</ul>
 </div>
-</li>
-</ul>
-</li>
-</ul>
 </li>
 </ul>
 </li>
@@ -1412,99 +1419,105 @@
 </span><span id="__span-16-150"><a id="__codelineno-16-150" name="__codelineno-16-150" href="#__codelineno-16-150"></a><span class="w">            </span><span class="c1"># Git repository URL</span>
 </span><span id="__span-16-151"><a id="__codelineno-16-151" name="__codelineno-16-151" href="#__codelineno-16-151"></a><span class="w">            </span><span class="nt">URL</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://github.com/MyUser/MyLibrary.git&quot;</span>
 </span><span id="__span-16-152"><a id="__codelineno-16-152" name="__codelineno-16-152" href="#__codelineno-16-152"></a>
-</span><span id="__span-16-153"><a id="__codelineno-16-153" name="__codelineno-16-153" href="#__codelineno-16-153"></a><span class="w">            </span><span class="c1"># (Optional) Branch name or tag name. Full ref path is accepted as well. </span>
+</span><span id="__span-16-153"><a id="__codelineno-16-153" name="__codelineno-16-153" href="#__codelineno-16-153"></a><span class="w">            </span><span class="c1"># (Optional) Branch name or tag name</span>
 </span><span id="__span-16-154"><a id="__codelineno-16-154" name="__codelineno-16-154" href="#__codelineno-16-154"></a><span class="w">            </span><span class="c1">#            Defaults to default branch on specified git repo if this is not specified</span>
-</span><span id="__span-16-155"><a id="__codelineno-16-155" name="__codelineno-16-155" href="#__codelineno-16-155"></a><span class="w">            </span><span class="c1"># Branch: &quot;MyBranch&quot;</span>
+</span><span id="__span-16-155"><a id="__codelineno-16-155" name="__codelineno-16-155" href="#__codelineno-16-155"></a><span class="w">            </span><span class="c1"># Branch: &quot;&quot;</span>
 </span><span id="__span-16-156"><a id="__codelineno-16-156" name="__codelineno-16-156" href="#__codelineno-16-156"></a>
 </span><span id="__span-16-157"><a id="__codelineno-16-157" name="__codelineno-16-157" href="#__codelineno-16-157"></a><span class="w">            </span><span class="c1"># (Optional) Checkout full git history or just the target commit. Defaults to false</span>
 </span><span id="__span-16-158"><a id="__codelineno-16-158" name="__codelineno-16-158" href="#__codelineno-16-158"></a><span class="w">            </span><span class="c1"># FullHistory: false</span>
 </span><span id="__span-16-159"><a id="__codelineno-16-159" name="__codelineno-16-159" href="#__codelineno-16-159"></a>
-</span><span id="__span-16-160"><a id="__codelineno-16-160" name="__codelineno-16-160" href="#__codelineno-16-160"></a><span class="w">        </span><span class="c1"># Dependency or import YAML file exists in local filesystem directory, </span>
-</span><span id="__span-16-161"><a id="__codelineno-16-161" name="__codelineno-16-161" href="#__codelineno-16-161"></a><span class="w">        </span><span class="c1">#   and needs to be copied to build directory</span>
-</span><span id="__span-16-162"><a id="__codelineno-16-162" name="__codelineno-16-162" href="#__codelineno-16-162"></a><span class="w">        </span><span class="nt">Local</span><span class="p">:</span>
-</span><span id="__span-16-163"><a id="__codelineno-16-163" name="__codelineno-16-163" href="#__codelineno-16-163"></a><span class="w">            </span><span class="c1"># Path to the library directory</span>
-</span><span id="__span-16-164"><a id="__codelineno-16-164" name="__codelineno-16-164" href="#__codelineno-16-164"></a><span class="w">            </span><span class="nt">Path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;./libs/LocalLibrary&quot;</span>
+</span><span id="__span-16-160"><a id="__codelineno-16-160" name="__codelineno-16-160" href="#__codelineno-16-160"></a><span class="w">            </span><span class="c1"># (Optional) Initialization type for all the submodules recursively</span>
+</span><span id="__span-16-161"><a id="__codelineno-16-161" name="__codelineno-16-161" href="#__codelineno-16-161"></a><span class="w">            </span><span class="c1">#            - &quot;None&quot;: Don&#39;t initialize any submodules</span>
+</span><span id="__span-16-162"><a id="__codelineno-16-162" name="__codelineno-16-162" href="#__codelineno-16-162"></a><span class="w">            </span><span class="c1">#            - &quot;Shallow&quot;: Only checkout the target commit of all the submodules (default)</span>
+</span><span id="__span-16-163"><a id="__codelineno-16-163" name="__codelineno-16-163" href="#__codelineno-16-163"></a><span class="w">            </span><span class="c1">#            - &quot;Full&quot;: Checkout the full git history of all the submodules</span>
+</span><span id="__span-16-164"><a id="__codelineno-16-164" name="__codelineno-16-164" href="#__codelineno-16-164"></a><span class="w">            </span><span class="c1"># SubmoduleInitType: &quot;Shallow&quot;</span>
 </span><span id="__span-16-165"><a id="__codelineno-16-165" name="__codelineno-16-165" href="#__codelineno-16-165"></a>
-</span><span id="__span-16-166"><a id="__codelineno-16-166" name="__codelineno-16-166" href="#__codelineno-16-166"></a><span class="w">            </span><span class="c1"># (Optional) How to handle copying files to build directory</span>
-</span><span id="__span-16-167"><a id="__codelineno-16-167" name="__codelineno-16-167" href="#__codelineno-16-167"></a><span class="w">            </span><span class="c1"># Values:</span>
-</span><span id="__span-16-168"><a id="__codelineno-16-168" name="__codelineno-16-168" href="#__codelineno-16-168"></a><span class="w">            </span><span class="c1">#   - &quot;Auto&quot; (default): Try symlink first, then hardlink, then copy as fallback</span>
-</span><span id="__span-16-169"><a id="__codelineno-16-169" name="__codelineno-16-169" href="#__codelineno-16-169"></a><span class="w">            </span><span class="c1">#   - &quot;Symlink&quot;: Create symbolic links only, fail if not possible</span>
-</span><span id="__span-16-170"><a id="__codelineno-16-170" name="__codelineno-16-170" href="#__codelineno-16-170"></a><span class="w">            </span><span class="c1">#   - &quot;Hardlink&quot;: Create hard links only, fail if not possible</span>
-</span><span id="__span-16-171"><a id="__codelineno-16-171" name="__codelineno-16-171" href="#__codelineno-16-171"></a><span class="w">            </span><span class="c1">#   - &quot;Copy&quot;: Copy files to build directory</span>
-</span><span id="__span-16-172"><a id="__codelineno-16-172" name="__codelineno-16-172" href="#__codelineno-16-172"></a><span class="w">            </span><span class="nt">CopyMode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Auto&quot;</span>
-</span><span id="__span-16-173"><a id="__codelineno-16-173" name="__codelineno-16-173" href="#__codelineno-16-173"></a>
-</span><span id="__span-16-174"><a id="__codelineno-16-174" name="__codelineno-16-174" href="#__codelineno-16-174"></a><span class="w">    </span><span class="c1"># Library Type (Static, Object, Shared, Header)</span>
-</span><span id="__span-16-175"><a id="__codelineno-16-175" name="__codelineno-16-175" href="#__codelineno-16-175"></a><span class="w">    </span><span class="nt">LibraryType</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Static</span>
-</span><span id="__span-16-176"><a id="__codelineno-16-176" name="__codelineno-16-176" href="#__codelineno-16-176"></a>
-</span><span id="__span-16-177"><a id="__codelineno-16-177" name="__codelineno-16-177" href="#__codelineno-16-177"></a><span class="w">    </span><span class="c1"># (Optional) Paths to be added to the include paths, relative to the dependency folder</span>
-</span><span id="__span-16-178"><a id="__codelineno-16-178" name="__codelineno-16-178" href="#__codelineno-16-178"></a><span class="w">    </span><span class="nt">IncludePaths</span><span class="p">:</span>
-</span><span id="__span-16-179"><a id="__codelineno-16-179" name="__codelineno-16-179" href="#__codelineno-16-179"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;src/include&quot;</span>
-</span><span id="__span-16-180"><a id="__codelineno-16-180" name="__codelineno-16-180" href="#__codelineno-16-180"></a>
-</span><span id="__span-16-181"><a id="__codelineno-16-181" name="__codelineno-16-181" href="#__codelineno-16-181"></a><span class="w">    </span><span class="c1"># (Optional if LibraryType is Header) Link properties of the dependency</span>
-</span><span id="__span-16-182"><a id="__codelineno-16-182" name="__codelineno-16-182" href="#__codelineno-16-182"></a><span class="w">    </span><span class="nt">LinkProperties</span><span class="p">:</span>
-</span><span id="__span-16-183"><a id="__codelineno-16-183" name="__codelineno-16-183" href="#__codelineno-16-183"></a><span class="w">        </span><span class="c1"># Properties for searching the library binary for each platform</span>
-</span><span id="__span-16-184"><a id="__codelineno-16-184" name="__codelineno-16-184" href="#__codelineno-16-184"></a><span class="w">        </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
-</span><span id="__span-16-185"><a id="__codelineno-16-185" name="__codelineno-16-185" href="#__codelineno-16-185"></a><span class="w">            </span><span class="c1"># Profile-specific properties</span>
-</span><span id="__span-16-186"><a id="__codelineno-16-186" name="__codelineno-16-186" href="#__codelineno-16-186"></a><span class="w">            </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-16-187"><a id="__codelineno-16-187" name="__codelineno-16-187" href="#__codelineno-16-187"></a><span class="w">                </span><span class="c1"># The library names to be searched for when linking against the script. </span>
-</span><span id="__span-16-188"><a id="__codelineno-16-188" name="__codelineno-16-188" href="#__codelineno-16-188"></a><span class="w">                </span><span class="c1"># Binaries with linkable extension that contains one of the names will be linked</span>
-</span><span id="__span-16-189"><a id="__codelineno-16-189" name="__codelineno-16-189" href="#__codelineno-16-189"></a><span class="w">                </span><span class="nt">SearchLibraryNames</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;MyLibrary&quot;</span><span class="p p-Indicator">]</span>
-</span><span id="__span-16-190"><a id="__codelineno-16-190" name="__codelineno-16-190" href="#__codelineno-16-190"></a>
-</span><span id="__span-16-191"><a id="__codelineno-16-191" name="__codelineno-16-191" href="#__codelineno-16-191"></a><span class="w">                </span><span class="c1"># (Optional) The library names to be excluded from being searched.</span>
-</span><span id="__span-16-192"><a id="__codelineno-16-192" name="__codelineno-16-192" href="#__codelineno-16-192"></a><span class="w">                </span><span class="c1">#            Works the same as SearchLibraryNames but will NOT be linked instead</span>
-</span><span id="__span-16-193"><a id="__codelineno-16-193" name="__codelineno-16-193" href="#__codelineno-16-193"></a><span class="w">                </span><span class="nt">ExcludeLibraryNames</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
-</span><span id="__span-16-194"><a id="__codelineno-16-194" name="__codelineno-16-194" href="#__codelineno-16-194"></a>
-</span><span id="__span-16-195"><a id="__codelineno-16-195" name="__codelineno-16-195" href="#__codelineno-16-195"></a><span class="w">                </span><span class="c1"># The path (relative to the dependency folder) to be searched for the dependency binaries</span>
-</span><span id="__span-16-196"><a id="__codelineno-16-196" name="__codelineno-16-196" href="#__codelineno-16-196"></a><span class="w">                </span><span class="nt">SearchDirectories</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;./build&quot;</span><span class="p p-Indicator">]</span>
-</span><span id="__span-16-197"><a id="__codelineno-16-197" name="__codelineno-16-197" href="#__codelineno-16-197"></a>
-</span><span id="__span-16-198"><a id="__codelineno-16-198" name="__codelineno-16-198" href="#__codelineno-16-198"></a><span class="w">                </span><span class="c1"># (Optional) Additional link flags for this dependency</span>
-</span><span id="__span-16-199"><a id="__codelineno-16-199" name="__codelineno-16-199" href="#__codelineno-16-199"></a><span class="w">                </span><span class="nt">AdditionalLinkOptions</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+</span><span id="__span-16-166"><a id="__codelineno-16-166" name="__codelineno-16-166" href="#__codelineno-16-166"></a><span class="w">        </span><span class="c1"># Dependency or import YAML file exists in local filesystem directory, </span>
+</span><span id="__span-16-167"><a id="__codelineno-16-167" name="__codelineno-16-167" href="#__codelineno-16-167"></a><span class="w">        </span><span class="c1">#   and needs to be copied to build directory</span>
+</span><span id="__span-16-168"><a id="__codelineno-16-168" name="__codelineno-16-168" href="#__codelineno-16-168"></a><span class="w">        </span><span class="nt">Local</span><span class="p">:</span>
+</span><span id="__span-16-169"><a id="__codelineno-16-169" name="__codelineno-16-169" href="#__codelineno-16-169"></a><span class="w">            </span><span class="c1"># Path to the library directory</span>
+</span><span id="__span-16-170"><a id="__codelineno-16-170" name="__codelineno-16-170" href="#__codelineno-16-170"></a><span class="w">            </span><span class="nt">Path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;./libs/LocalLibrary&quot;</span>
+</span><span id="__span-16-171"><a id="__codelineno-16-171" name="__codelineno-16-171" href="#__codelineno-16-171"></a>
+</span><span id="__span-16-172"><a id="__codelineno-16-172" name="__codelineno-16-172" href="#__codelineno-16-172"></a><span class="w">            </span><span class="c1"># (Optional) How to handle copying files to build directory</span>
+</span><span id="__span-16-173"><a id="__codelineno-16-173" name="__codelineno-16-173" href="#__codelineno-16-173"></a><span class="w">            </span><span class="c1"># Values:</span>
+</span><span id="__span-16-174"><a id="__codelineno-16-174" name="__codelineno-16-174" href="#__codelineno-16-174"></a><span class="w">            </span><span class="c1">#   - &quot;Auto&quot; (default): Try symlink first, then hardlink, then copy as fallback</span>
+</span><span id="__span-16-175"><a id="__codelineno-16-175" name="__codelineno-16-175" href="#__codelineno-16-175"></a><span class="w">            </span><span class="c1">#   - &quot;Symlink&quot;: Create symbolic links only, fail if not possible</span>
+</span><span id="__span-16-176"><a id="__codelineno-16-176" name="__codelineno-16-176" href="#__codelineno-16-176"></a><span class="w">            </span><span class="c1">#   - &quot;Hardlink&quot;: Create hard links only, fail if not possible</span>
+</span><span id="__span-16-177"><a id="__codelineno-16-177" name="__codelineno-16-177" href="#__codelineno-16-177"></a><span class="w">            </span><span class="c1">#   - &quot;Copy&quot;: Copy files to build directory</span>
+</span><span id="__span-16-178"><a id="__codelineno-16-178" name="__codelineno-16-178" href="#__codelineno-16-178"></a><span class="w">            </span><span class="nt">CopyMode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Auto&quot;</span>
+</span><span id="__span-16-179"><a id="__codelineno-16-179" name="__codelineno-16-179" href="#__codelineno-16-179"></a>
+</span><span id="__span-16-180"><a id="__codelineno-16-180" name="__codelineno-16-180" href="#__codelineno-16-180"></a><span class="w">    </span><span class="c1"># Library Type (Static, Object, Shared, Header)</span>
+</span><span id="__span-16-181"><a id="__codelineno-16-181" name="__codelineno-16-181" href="#__codelineno-16-181"></a><span class="w">    </span><span class="nt">LibraryType</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Static</span>
+</span><span id="__span-16-182"><a id="__codelineno-16-182" name="__codelineno-16-182" href="#__codelineno-16-182"></a>
+</span><span id="__span-16-183"><a id="__codelineno-16-183" name="__codelineno-16-183" href="#__codelineno-16-183"></a><span class="w">    </span><span class="c1"># (Optional) Paths to be added to the include paths, relative to the dependency folder</span>
+</span><span id="__span-16-184"><a id="__codelineno-16-184" name="__codelineno-16-184" href="#__codelineno-16-184"></a><span class="w">    </span><span class="nt">IncludePaths</span><span class="p">:</span>
+</span><span id="__span-16-185"><a id="__codelineno-16-185" name="__codelineno-16-185" href="#__codelineno-16-185"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;src/include&quot;</span>
+</span><span id="__span-16-186"><a id="__codelineno-16-186" name="__codelineno-16-186" href="#__codelineno-16-186"></a>
+</span><span id="__span-16-187"><a id="__codelineno-16-187" name="__codelineno-16-187" href="#__codelineno-16-187"></a><span class="w">    </span><span class="c1"># (Optional if LibraryType is Header) Link properties of the dependency</span>
+</span><span id="__span-16-188"><a id="__codelineno-16-188" name="__codelineno-16-188" href="#__codelineno-16-188"></a><span class="w">    </span><span class="nt">LinkProperties</span><span class="p">:</span>
+</span><span id="__span-16-189"><a id="__codelineno-16-189" name="__codelineno-16-189" href="#__codelineno-16-189"></a><span class="w">        </span><span class="c1"># Properties for searching the library binary for each platform</span>
+</span><span id="__span-16-190"><a id="__codelineno-16-190" name="__codelineno-16-190" href="#__codelineno-16-190"></a><span class="w">        </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
+</span><span id="__span-16-191"><a id="__codelineno-16-191" name="__codelineno-16-191" href="#__codelineno-16-191"></a><span class="w">            </span><span class="c1"># Profile-specific properties</span>
+</span><span id="__span-16-192"><a id="__codelineno-16-192" name="__codelineno-16-192" href="#__codelineno-16-192"></a><span class="w">            </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
+</span><span id="__span-16-193"><a id="__codelineno-16-193" name="__codelineno-16-193" href="#__codelineno-16-193"></a><span class="w">                </span><span class="c1"># The library names to be searched for when linking against the script. </span>
+</span><span id="__span-16-194"><a id="__codelineno-16-194" name="__codelineno-16-194" href="#__codelineno-16-194"></a><span class="w">                </span><span class="c1"># Binaries with linkable extension that contains one of the names will be linked</span>
+</span><span id="__span-16-195"><a id="__codelineno-16-195" name="__codelineno-16-195" href="#__codelineno-16-195"></a><span class="w">                </span><span class="nt">SearchLibraryNames</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;MyLibrary&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-16-196"><a id="__codelineno-16-196" name="__codelineno-16-196" href="#__codelineno-16-196"></a>
+</span><span id="__span-16-197"><a id="__codelineno-16-197" name="__codelineno-16-197" href="#__codelineno-16-197"></a><span class="w">                </span><span class="c1"># (Optional) The library names to be excluded from being searched.</span>
+</span><span id="__span-16-198"><a id="__codelineno-16-198" name="__codelineno-16-198" href="#__codelineno-16-198"></a><span class="w">                </span><span class="c1">#            Works the same as SearchLibraryNames but will NOT be linked instead</span>
+</span><span id="__span-16-199"><a id="__codelineno-16-199" name="__codelineno-16-199" href="#__codelineno-16-199"></a><span class="w">                </span><span class="nt">ExcludeLibraryNames</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
 </span><span id="__span-16-200"><a id="__codelineno-16-200" name="__codelineno-16-200" href="#__codelineno-16-200"></a>
-</span><span id="__span-16-201"><a id="__codelineno-16-201" name="__codelineno-16-201" href="#__codelineno-16-201"></a><span class="w">    </span><span class="c1"># (Optional) Setup commands are run once when the dependency is populated</span>
-</span><span id="__span-16-202"><a id="__codelineno-16-202" name="__codelineno-16-202" href="#__codelineno-16-202"></a><span class="w">    </span><span class="nt">Setup</span><span class="p">:</span>
-</span><span id="__span-16-203"><a id="__codelineno-16-203" name="__codelineno-16-203" href="#__codelineno-16-203"></a><span class="w">        </span><span class="c1"># Target Platform</span>
-</span><span id="__span-16-204"><a id="__codelineno-16-204" name="__codelineno-16-204" href="#__codelineno-16-204"></a><span class="w">        </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
-</span><span id="__span-16-205"><a id="__codelineno-16-205" name="__codelineno-16-205" href="#__codelineno-16-205"></a><span class="w">            </span><span class="c1"># Setup shell commands for the specified profile. </span>
-</span><span id="__span-16-206"><a id="__codelineno-16-206" name="__codelineno-16-206" href="#__codelineno-16-206"></a><span class="w">            </span><span class="c1"># Default commands are run in the dependency folder</span>
-</span><span id="__span-16-207"><a id="__codelineno-16-207" name="__codelineno-16-207" href="#__codelineno-16-207"></a><span class="w">            </span><span class="c1"># You can also use &quot;DefaultProfile&quot; if all the compilers run the same setup commands</span>
-</span><span id="__span-16-208"><a id="__codelineno-16-208" name="__codelineno-16-208" href="#__codelineno-16-208"></a><span class="w">            </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-16-209"><a id="__codelineno-16-209" name="__codelineno-16-209" href="#__codelineno-16-209"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;mkdir</span><span class="nv"> </span><span class="s">build&quot;</span>
-</span><span id="__span-16-210"><a id="__codelineno-16-210" name="__codelineno-16-210" href="#__codelineno-16-210"></a>
-</span><span id="__span-16-211"><a id="__codelineno-16-211" name="__codelineno-16-211" href="#__codelineno-16-211"></a>
-</span><span id="__span-16-212"><a id="__codelineno-16-212" name="__codelineno-16-212" href="#__codelineno-16-212"></a><span class="w">    </span><span class="c1"># (Optional) Build commands are run every time before the script is being built</span>
-</span><span id="__span-16-213"><a id="__codelineno-16-213" name="__codelineno-16-213" href="#__codelineno-16-213"></a><span class="w">    </span><span class="nt">Build</span><span class="p">:</span>
-</span><span id="__span-16-214"><a id="__codelineno-16-214" name="__codelineno-16-214" href="#__codelineno-16-214"></a><span class="w">        </span><span class="c1"># Target Platform</span>
-</span><span id="__span-16-215"><a id="__codelineno-16-215" name="__codelineno-16-215" href="#__codelineno-16-215"></a><span class="w">        </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
-</span><span id="__span-16-216"><a id="__codelineno-16-216" name="__codelineno-16-216" href="#__codelineno-16-216"></a><span class="w">            </span><span class="c1"># Target Profile</span>
-</span><span id="__span-16-217"><a id="__codelineno-16-217" name="__codelineno-16-217" href="#__codelineno-16-217"></a><span class="w">            </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-16-218"><a id="__codelineno-16-218" name="__codelineno-16-218" href="#__codelineno-16-218"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;cd</span><span class="nv"> </span><span class="s">build</span><span class="nv"> </span><span class="s">&amp;&amp;</span><span class="nv"> </span><span class="s">cmake</span><span class="nv"> </span><span class="s">..&quot;</span>
-</span><span id="__span-16-219"><a id="__codelineno-16-219" name="__codelineno-16-219" href="#__codelineno-16-219"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;cd</span><span class="nv"> </span><span class="s">build</span><span class="nv"> </span><span class="s">&amp;&amp;</span><span class="nv"> </span><span class="s">cmake</span><span class="nv"> </span><span class="s">--build</span><span class="nv"> </span><span class="s">.&quot;</span>
-</span><span id="__span-16-220"><a id="__codelineno-16-220" name="__codelineno-16-220" href="#__codelineno-16-220"></a>
-</span><span id="__span-16-221"><a id="__codelineno-16-221" name="__codelineno-16-221" href="#__codelineno-16-221"></a><span class="w">    </span><span class="c1"># (Optional) Cleanup commands are run when the reset option is present. Normally nothing needs</span>
-</span><span id="__span-16-222"><a id="__codelineno-16-222" name="__codelineno-16-222" href="#__codelineno-16-222"></a><span class="w">    </span><span class="c1">#            to be done since the dependency folder will be removed automatically.</span>
-</span><span id="__span-16-223"><a id="__codelineno-16-223" name="__codelineno-16-223" href="#__codelineno-16-223"></a><span class="w">    </span><span class="nt">Cleanup</span><span class="p">:</span>
-</span><span id="__span-16-224"><a id="__codelineno-16-224" name="__codelineno-16-224" href="#__codelineno-16-224"></a><span class="w">        </span><span class="c1"># Target Platform</span>
-</span><span id="__span-16-225"><a id="__codelineno-16-225" name="__codelineno-16-225" href="#__codelineno-16-225"></a><span class="w">        </span><span class="nt">Linux</span><span class="p">:</span>
-</span><span id="__span-16-226"><a id="__codelineno-16-226" name="__codelineno-16-226" href="#__codelineno-16-226"></a><span class="w">            </span><span class="c1"># Target Profile</span>
-</span><span id="__span-16-227"><a id="__codelineno-16-227" name="__codelineno-16-227" href="#__codelineno-16-227"></a><span class="w">            </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-16-228"><a id="__codelineno-16-228" name="__codelineno-16-228" href="#__codelineno-16-228"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;sudo</span><span class="nv"> </span><span class="s">apt</span><span class="nv"> </span><span class="s">purge</span><span class="nv"> </span><span class="s">MyLibrary&quot;</span>
-</span><span id="__span-16-229"><a id="__codelineno-16-229" name="__codelineno-16-229" href="#__codelineno-16-229"></a>
-</span><span id="__span-16-230"><a id="__codelineno-16-230" name="__codelineno-16-230" href="#__codelineno-16-230"></a><span class="w">    </span><span class="c1"># (Optional) Files to be copied to next to output binary for each platform and profile</span>
-</span><span id="__span-16-231"><a id="__codelineno-16-231" name="__codelineno-16-231" href="#__codelineno-16-231"></a><span class="w">    </span><span class="nt">FilesToCopy</span><span class="p">:</span>
-</span><span id="__span-16-232"><a id="__codelineno-16-232" name="__codelineno-16-232" href="#__codelineno-16-232"></a><span class="w">        </span><span class="c1"># Target Platform</span>
-</span><span id="__span-16-233"><a id="__codelineno-16-233" name="__codelineno-16-233" href="#__codelineno-16-233"></a><span class="w">        </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
-</span><span id="__span-16-234"><a id="__codelineno-16-234" name="__codelineno-16-234" href="#__codelineno-16-234"></a><span class="w">            </span><span class="c1"># Profile name</span>
-</span><span id="__span-16-235"><a id="__codelineno-16-235" name="__codelineno-16-235" href="#__codelineno-16-235"></a><span class="w">            </span><span class="nt">DefaultProfile</span><span class="p">:</span>
-</span><span id="__span-16-236"><a id="__codelineno-16-236" name="__codelineno-16-236" href="#__codelineno-16-236"></a><span class="w">            </span><span class="c1"># List of files to copy (relative to the dependency folder)</span>
-</span><span id="__span-16-237"><a id="__codelineno-16-237" name="__codelineno-16-237" href="#__codelineno-16-237"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">  </span><span class="s">&quot;assets/textures/sprite.png&quot;</span>
-</span><span id="__span-16-238"><a id="__codelineno-16-238" name="__codelineno-16-238" href="#__codelineno-16-238"></a><span class="w">        </span><span class="nt">Windows</span><span class="p">:</span>
-</span><span id="__span-16-239"><a id="__codelineno-16-239" name="__codelineno-16-239" href="#__codelineno-16-239"></a><span class="w">            </span><span class="s">&quot;msvc&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-16-240"><a id="__codelineno-16-240" name="__codelineno-16-240" href="#__codelineno-16-240"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">  </span><span class="s">&quot;assets/textures/sprite.png&quot;</span>
-</span><span id="__span-16-241"><a id="__codelineno-16-241" name="__codelineno-16-241" href="#__codelineno-16-241"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">  </span><span class="s">&quot;assets/fonts/windows_specific_font.ttf&quot;</span>
-</span><span id="__span-16-242"><a id="__codelineno-16-242" name="__codelineno-16-242" href="#__codelineno-16-242"></a><span class="w">        </span><span class="nt">Linux</span><span class="p">:</span>
-</span><span id="__span-16-243"><a id="__codelineno-16-243" name="__codelineno-16-243" href="#__codelineno-16-243"></a><span class="w">            </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-16-244"><a id="__codelineno-16-244" name="__codelineno-16-244" href="#__codelineno-16-244"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">  </span><span class="s">&quot;assets/textures/sprite.png&quot;</span>
-</span><span id="__span-16-245"><a id="__codelineno-16-245" name="__codelineno-16-245" href="#__codelineno-16-245"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">  </span><span class="s">&quot;assets/shaders/linux_optimized_shader.glsl&quot;</span>
+</span><span id="__span-16-201"><a id="__codelineno-16-201" name="__codelineno-16-201" href="#__codelineno-16-201"></a><span class="w">                </span><span class="c1"># The path (relative to the dependency folder) to be searched for the dependency binaries</span>
+</span><span id="__span-16-202"><a id="__codelineno-16-202" name="__codelineno-16-202" href="#__codelineno-16-202"></a><span class="w">                </span><span class="nt">SearchDirectories</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;./build&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-16-203"><a id="__codelineno-16-203" name="__codelineno-16-203" href="#__codelineno-16-203"></a>
+</span><span id="__span-16-204"><a id="__codelineno-16-204" name="__codelineno-16-204" href="#__codelineno-16-204"></a><span class="w">                </span><span class="c1"># (Optional) Additional link flags for this dependency</span>
+</span><span id="__span-16-205"><a id="__codelineno-16-205" name="__codelineno-16-205" href="#__codelineno-16-205"></a><span class="w">                </span><span class="nt">AdditionalLinkOptions</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+</span><span id="__span-16-206"><a id="__codelineno-16-206" name="__codelineno-16-206" href="#__codelineno-16-206"></a>
+</span><span id="__span-16-207"><a id="__codelineno-16-207" name="__codelineno-16-207" href="#__codelineno-16-207"></a><span class="w">    </span><span class="c1"># (Optional) Setup commands are run once when the dependency is populated</span>
+</span><span id="__span-16-208"><a id="__codelineno-16-208" name="__codelineno-16-208" href="#__codelineno-16-208"></a><span class="w">    </span><span class="nt">Setup</span><span class="p">:</span>
+</span><span id="__span-16-209"><a id="__codelineno-16-209" name="__codelineno-16-209" href="#__codelineno-16-209"></a><span class="w">        </span><span class="c1"># Target Platform</span>
+</span><span id="__span-16-210"><a id="__codelineno-16-210" name="__codelineno-16-210" href="#__codelineno-16-210"></a><span class="w">        </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
+</span><span id="__span-16-211"><a id="__codelineno-16-211" name="__codelineno-16-211" href="#__codelineno-16-211"></a><span class="w">            </span><span class="c1"># Setup shell commands for the specified profile. </span>
+</span><span id="__span-16-212"><a id="__codelineno-16-212" name="__codelineno-16-212" href="#__codelineno-16-212"></a><span class="w">            </span><span class="c1"># Default commands are run in the dependency folder</span>
+</span><span id="__span-16-213"><a id="__codelineno-16-213" name="__codelineno-16-213" href="#__codelineno-16-213"></a><span class="w">            </span><span class="c1"># You can also use &quot;DefaultProfile&quot; if all the compilers run the same setup commands</span>
+</span><span id="__span-16-214"><a id="__codelineno-16-214" name="__codelineno-16-214" href="#__codelineno-16-214"></a><span class="w">            </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
+</span><span id="__span-16-215"><a id="__codelineno-16-215" name="__codelineno-16-215" href="#__codelineno-16-215"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;mkdir</span><span class="nv"> </span><span class="s">build&quot;</span>
+</span><span id="__span-16-216"><a id="__codelineno-16-216" name="__codelineno-16-216" href="#__codelineno-16-216"></a>
+</span><span id="__span-16-217"><a id="__codelineno-16-217" name="__codelineno-16-217" href="#__codelineno-16-217"></a>
+</span><span id="__span-16-218"><a id="__codelineno-16-218" name="__codelineno-16-218" href="#__codelineno-16-218"></a><span class="w">    </span><span class="c1"># (Optional) Build commands are run every time before the script is being built</span>
+</span><span id="__span-16-219"><a id="__codelineno-16-219" name="__codelineno-16-219" href="#__codelineno-16-219"></a><span class="w">    </span><span class="nt">Build</span><span class="p">:</span>
+</span><span id="__span-16-220"><a id="__codelineno-16-220" name="__codelineno-16-220" href="#__codelineno-16-220"></a><span class="w">        </span><span class="c1"># Target Platform</span>
+</span><span id="__span-16-221"><a id="__codelineno-16-221" name="__codelineno-16-221" href="#__codelineno-16-221"></a><span class="w">        </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
+</span><span id="__span-16-222"><a id="__codelineno-16-222" name="__codelineno-16-222" href="#__codelineno-16-222"></a><span class="w">            </span><span class="c1"># Target Profile</span>
+</span><span id="__span-16-223"><a id="__codelineno-16-223" name="__codelineno-16-223" href="#__codelineno-16-223"></a><span class="w">            </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
+</span><span id="__span-16-224"><a id="__codelineno-16-224" name="__codelineno-16-224" href="#__codelineno-16-224"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;cd</span><span class="nv"> </span><span class="s">build</span><span class="nv"> </span><span class="s">&amp;&amp;</span><span class="nv"> </span><span class="s">cmake</span><span class="nv"> </span><span class="s">..&quot;</span>
+</span><span id="__span-16-225"><a id="__codelineno-16-225" name="__codelineno-16-225" href="#__codelineno-16-225"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;cd</span><span class="nv"> </span><span class="s">build</span><span class="nv"> </span><span class="s">&amp;&amp;</span><span class="nv"> </span><span class="s">cmake</span><span class="nv"> </span><span class="s">--build</span><span class="nv"> </span><span class="s">.&quot;</span>
+</span><span id="__span-16-226"><a id="__codelineno-16-226" name="__codelineno-16-226" href="#__codelineno-16-226"></a>
+</span><span id="__span-16-227"><a id="__codelineno-16-227" name="__codelineno-16-227" href="#__codelineno-16-227"></a><span class="w">    </span><span class="c1"># (Optional) Cleanup commands are run when the reset option is present. Normally nothing needs</span>
+</span><span id="__span-16-228"><a id="__codelineno-16-228" name="__codelineno-16-228" href="#__codelineno-16-228"></a><span class="w">    </span><span class="c1">#            to be done since the dependency folder will be removed automatically.</span>
+</span><span id="__span-16-229"><a id="__codelineno-16-229" name="__codelineno-16-229" href="#__codelineno-16-229"></a><span class="w">    </span><span class="nt">Cleanup</span><span class="p">:</span>
+</span><span id="__span-16-230"><a id="__codelineno-16-230" name="__codelineno-16-230" href="#__codelineno-16-230"></a><span class="w">        </span><span class="c1"># Target Platform</span>
+</span><span id="__span-16-231"><a id="__codelineno-16-231" name="__codelineno-16-231" href="#__codelineno-16-231"></a><span class="w">        </span><span class="nt">Linux</span><span class="p">:</span>
+</span><span id="__span-16-232"><a id="__codelineno-16-232" name="__codelineno-16-232" href="#__codelineno-16-232"></a><span class="w">            </span><span class="c1"># Target Profile</span>
+</span><span id="__span-16-233"><a id="__codelineno-16-233" name="__codelineno-16-233" href="#__codelineno-16-233"></a><span class="w">            </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
+</span><span id="__span-16-234"><a id="__codelineno-16-234" name="__codelineno-16-234" href="#__codelineno-16-234"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;sudo</span><span class="nv"> </span><span class="s">apt</span><span class="nv"> </span><span class="s">purge</span><span class="nv"> </span><span class="s">MyLibrary&quot;</span>
+</span><span id="__span-16-235"><a id="__codelineno-16-235" name="__codelineno-16-235" href="#__codelineno-16-235"></a>
+</span><span id="__span-16-236"><a id="__codelineno-16-236" name="__codelineno-16-236" href="#__codelineno-16-236"></a><span class="w">    </span><span class="c1"># (Optional) Files to be copied to next to output binary for each platform and profile</span>
+</span><span id="__span-16-237"><a id="__codelineno-16-237" name="__codelineno-16-237" href="#__codelineno-16-237"></a><span class="w">    </span><span class="nt">FilesToCopy</span><span class="p">:</span>
+</span><span id="__span-16-238"><a id="__codelineno-16-238" name="__codelineno-16-238" href="#__codelineno-16-238"></a><span class="w">        </span><span class="c1"># Target Platform</span>
+</span><span id="__span-16-239"><a id="__codelineno-16-239" name="__codelineno-16-239" href="#__codelineno-16-239"></a><span class="w">        </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
+</span><span id="__span-16-240"><a id="__codelineno-16-240" name="__codelineno-16-240" href="#__codelineno-16-240"></a><span class="w">            </span><span class="c1"># Profile name</span>
+</span><span id="__span-16-241"><a id="__codelineno-16-241" name="__codelineno-16-241" href="#__codelineno-16-241"></a><span class="w">            </span><span class="nt">DefaultProfile</span><span class="p">:</span>
+</span><span id="__span-16-242"><a id="__codelineno-16-242" name="__codelineno-16-242" href="#__codelineno-16-242"></a><span class="w">            </span><span class="c1"># List of files to copy (relative to the dependency folder)</span>
+</span><span id="__span-16-243"><a id="__codelineno-16-243" name="__codelineno-16-243" href="#__codelineno-16-243"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">  </span><span class="s">&quot;assets/textures/sprite.png&quot;</span>
+</span><span id="__span-16-244"><a id="__codelineno-16-244" name="__codelineno-16-244" href="#__codelineno-16-244"></a><span class="w">        </span><span class="nt">Windows</span><span class="p">:</span>
+</span><span id="__span-16-245"><a id="__codelineno-16-245" name="__codelineno-16-245" href="#__codelineno-16-245"></a><span class="w">            </span><span class="s">&quot;msvc&quot;</span><span class="p p-Indicator">:</span>
+</span><span id="__span-16-246"><a id="__codelineno-16-246" name="__codelineno-16-246" href="#__codelineno-16-246"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">  </span><span class="s">&quot;assets/textures/sprite.png&quot;</span>
+</span><span id="__span-16-247"><a id="__codelineno-16-247" name="__codelineno-16-247" href="#__codelineno-16-247"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">  </span><span class="s">&quot;assets/fonts/windows_specific_font.ttf&quot;</span>
+</span><span id="__span-16-248"><a id="__codelineno-16-248" name="__codelineno-16-248" href="#__codelineno-16-248"></a><span class="w">        </span><span class="nt">Linux</span><span class="p">:</span>
+</span><span id="__span-16-249"><a id="__codelineno-16-249" name="__codelineno-16-249" href="#__codelineno-16-249"></a><span class="w">            </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
+</span><span id="__span-16-250"><a id="__codelineno-16-250" name="__codelineno-16-250" href="#__codelineno-16-250"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">  </span><span class="s">&quot;assets/textures/sprite.png&quot;</span>
+</span><span id="__span-16-251"><a id="__codelineno-16-251" name="__codelineno-16-251" href="#__codelineno-16-251"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">  </span><span class="s">&quot;assets/shaders/linux_optimized_shader.glsl&quot;</span>
 </span></code></pre></div>
 
 
