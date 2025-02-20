@@ -150,7 +150,8 @@ namespace runcpp2
     {
         CO_OVERRIDE_MEMBER_IMPL(OverrideInstance, ghc::filesystem::path, (sourceFile));
         
-        std::size_t pathHash = std::hash<std::string>{}(sourceFile.string());
+        ghc::filesystem::path cleanSourceFile = sourceFile.lexically_normal();
+        std::size_t pathHash = std::hash<std::string>{}(cleanSourceFile.string());
         return IncludeRecordDir / (std::to_string(pathHash) + ".Includes");
     }
 } 

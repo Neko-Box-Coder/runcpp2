@@ -216,6 +216,7 @@ namespace
         std::unordered_map<std::string, std::vector<std::string>> substitutionMap;
         substitutionMap = substitutionMapTemplate;
         std::vector<std::future<bool>> actions;
+        std::vector<bool> finished;
 
         //Cache logs for worker threads
         ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS();
@@ -235,6 +236,7 @@ namespace
                 ssLOG_ERROR("Failed to get relative path for " << currentSource);
                 ssLOG_ERROR("Failed with error: " << e.message());
                 actions.emplace_back(std::async(std::launch::deferred, []{return false;}));
+                finished.emplace_back(false);
                 continue;
             }
             
@@ -260,6 +262,7 @@ namespace
                     ssLOG_ERROR("profile " << profile.Name << " missing extension for " <<
                                 "object link file");
                     actions.emplace_back(std::async(std::launch::deferred, []{return false;}));
+                    finished.emplace_back(false);
                     continue;
                 }
                 
@@ -273,6 +276,7 @@ namespace
                     {
                         ssLOG_ERROR("Failed to substitute \"" << currentPath << "\"");
                         actions.emplace_back(std::async(std::launch::deferred, []{return false;}));
+                        finished.emplace_back(false);
                         continue;
                     }
                     
@@ -283,6 +287,7 @@ namespace
                         ssLOG_ERROR("Failed to create directory structure for " << currentPath);
                         ssLOG_ERROR("Failed with error: " << e.message());
                         actions.emplace_back(std::async(std::launch::deferred, []{return false;}));
+                        finished.emplace_back(false);
                         continue;
                     }
                     
@@ -434,44 +439,58 @@ namespace
                     }
                 )
             ); //actions.emplace_back
+            finished.emplace_back(false);
             
             //Evaluate the compile results for each batch for compilations
             if(actions.size() >= maxThreads || i == sourceFiles.size() - 1)
             {
-                std::chrono::system_clock::time_point deadline = 
-                    std::chrono::system_clock::now() + std::chrono::seconds(60);
-                for(int j = 0; j < actions.size(); ++j)
+                bool needsWaiting = false;
+                do
                 {
-                    if(!actions.at(j).valid())
+                    needsWaiting = false;
+                    std::chrono::system_clock::time_point deadline = 
+                        std::chrono::system_clock::now() + std::chrono::seconds(60);
+                    for(int j = 0; j < actions.size(); ++j)
                     {
-                        ssLOG_ERROR("Failed to construct actions for compiling");
-                        ssLOG_OUTPUT_ALL_CACHE_GROUPED();
-                        return false;
-                    }
-                    
-                    std::future_status actionStatus = actions.at(j).wait_until(deadline);
-                    bool result = false;
-                    
-                    if( actionStatus == std::future_status::deferred || 
-                        actionStatus == std::future_status::ready)
-                    {
-                        result = actions.at(j).get();
-                    }
-                    else
-                    {
-                        ssLOG_ERROR("Compiling timeout");
-                        ssLOG_OUTPUT_ALL_CACHE_GROUPED();
-                        failedAny = true;
-                    }
-                    
-                    if(!result)
-                    {
-                        ssLOG_ERROR("Compiling Failed");
-                        ssLOG_OUTPUT_ALL_CACHE_GROUPED();
-                        failedAny = true;
+                        if(finished.at(j))
+                            continue;
+                        
+                        if(!actions.at(j).valid())
+                        {
+                            ssLOG_ERROR("Failed to construct actions for compiling");
+                            ssLOG_OUTPUT_ALL_CACHE_GROUPED();
+                            return false;
+                        }
+                        
+                        std::future_status actionStatus = actions.at(j).wait_until(deadline);
+                        bool result = false;
+                        
+                        if( actionStatus == std::future_status::deferred || 
+                            actionStatus == std::future_status::ready)
+                        {
+                            result = actions.at(j).get();
+                            finished.at(j) = true;
+                            
+                            if(!result)
+                            {
+                                ssLOG_ERROR("Compiling Failed");
+                                ssLOG_OUTPUT_ALL_CACHE_GROUPED();
+                                failedAny = true;
+                            }
+                        }
+                        else
+                        {
+                            ssLOG_WARNING("Manual interrupt might be needed");
+                            ssLOG_WARNING("Waited 30 seconds, compiling still going...");
+                            needsWaiting = true;
+                            result = true;
+                        }
                     }
                 }
+                while(needsWaiting);
+                
                 actions.clear();
+                finished.clear();
             }
         }
 

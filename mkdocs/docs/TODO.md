@@ -19,7 +19,8 @@
 - Add ability to reference local YAML for user config
 - Add version for user config and prompt for update
 - Add wildcard support for filenames and extensions (Files Globbing)
-
+- Add the ability to query script build directory
+- Add the ability to list script dependencies
 
 ## Not planned yet
 
