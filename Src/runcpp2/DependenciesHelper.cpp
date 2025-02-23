@@ -248,7 +248,8 @@ namespace
                                 const std::unordered_map<   PlatformName, 
                                                             runcpp2::Data::ProfilesCommands> steps,
                                 const std::string& dependenciesCopiedDirectory,
-                                bool required)
+                                bool required,
+                                bool redirectIO)
     {
         ssLOG_FUNC_INFO();
         
@@ -291,18 +292,22 @@ namespace
             std::string output;
             
             if(!runcpp2::RunCommand(commands->at(k), 
-                                    true,
+                                    redirectIO,
                                     processedDependencyPath,
                                     output, 
                                     returnCode))
             {
                 ssLOG_ERROR("Failed to run command with result: " << returnCode);
                 ssLOG_ERROR("Was trying to run: " << commands->at(k));
-                ssLOG_ERROR("Output: \n" << output);
+                if(redirectIO)
+                    ssLOG_ERROR("Output: \n" << output);
                 return false;
             }
             else
-                ssLOG_INFO("Output: \n" << output);
+            {
+                if(redirectIO)
+                    ssLOG_INFO("Output: \n" << output);
+            }
         }
         
         return true;
@@ -499,6 +504,7 @@ bool runcpp2::CleanupDependencies(  const runcpp2::Data::Profile& profile,
         if(!RunDependenciesSteps(   profile, 
                                     availableDependencies.at(i)->Cleanup, 
                                     dependenciesLocalCopiesPaths.at(i),
+                                    false,
                                     false))
         {
             ssLOG_ERROR("Failed to cleanup dependency " << availableDependencies.at(i)->Name);
@@ -586,7 +592,8 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
                     if(!RunDependenciesSteps(   profile, 
                                                 availableDependencies.at(i)->Setup, 
                                                 dependenciesLocalCopiesPaths.at(i),
-                                                true))
+                                                true,
+                                                false))
                     {
                         ssLOG_ERROR("Failed to setup dependency " << 
                                     availableDependencies.at(i)->Name);
@@ -694,7 +701,8 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
                     if(!RunDependenciesSteps(   profile, 
                                                 availableDependencies.at(i)->Build, 
                                                 dependenciesLocalCopiesPaths.at(i),
-                                                true))
+                                                true,
+                                                false))
                     {
                         ssLOG_ERROR("Failed to build dependency " << availableDependencies.at(i)->Name);
                         return false;
@@ -971,7 +979,7 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
     //Do a check to see if any dependencies are copied
     if(outBinariesPaths.size() - nonLinkFilesCount < minimumDependenciesCopiesCount)
     {
-        ssLOG_WARNING("We could missing some link files for dependencies");
+        ssLOG_WARNING("We could be missing some link files for dependencies");
         
         for(int i = 0; i < outBinariesPaths.size(); ++i)
             ssLOG_WARNING("outBinariesPaths[" << i << "]: " << outBinariesPaths.at(i));

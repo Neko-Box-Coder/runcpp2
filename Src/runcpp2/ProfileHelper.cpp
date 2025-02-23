@@ -202,7 +202,7 @@ int runcpp2::GetPreferredProfileIndex(  const std::string& scriptPath,
     
     if(availableProfiles.empty())
     {
-        ssLOG_ERROR("No compilers/linkers found");
+        ssLOG_ERROR("No compilers/linkers found that can be used for " << scriptPath);
         return -1;
     }
     
