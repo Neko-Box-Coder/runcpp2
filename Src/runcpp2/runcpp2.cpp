@@ -130,22 +130,6 @@ namespace
             }
         }
         
-        //Update the include records
-        runcpp2::SourceIncludeMap sourcesIncludes;
-        if(!runcpp2::GatherFilesIncludes(sourcesNeedGathering, includePaths, sourcesIncludes))
-            return false;
-        
-        for(auto it = sourcesIncludes.cbegin(); it != sourcesIncludes.cend(); ++it)
-        {
-            ssLOG_DEBUG("Updating include record for " << it->first);
-            if(!includeManager.WriteIncludeRecord(  ghc::filesystem::path(it->first),
-                                                    it->second))
-            {
-                ssLOG_ERROR("Failed to write include record for " << it->first);
-                return false;
-            }
-        }
-        
         return true;
     }
     
@@ -456,10 +440,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                                 configPreferredProfile);
 
     if(profileIndex == -1)
-    {
-        ssLOG_ERROR("Failed to find a profile to run");
         return PipelineResult::NO_AVAILABLE_PROFILE;
-    }
 
     //Parsing the script, setting up dependencies, compiling and linking
     std::vector<std::string> filesToCopyPaths;
@@ -586,34 +567,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             return PipelineResult::UNEXPECTED_FAILURE;
         }
         
-        //Update the include records
-        {
-            runcpp2::SourceIncludeMap sourcesIncludes;
-            if(!runcpp2::GatherFilesIncludes(sourceFiles, includePaths, sourcesIncludes))
-                return PipelineResult::UNEXPECTED_FAILURE;
-            
-            for(int i = 0; i < sourceFiles.size(); ++i)
-            {
-                ssLOG_DEBUG("Updating include record for " << sourceFiles.at(i).string());
-                if(!sourceHasCache.at(i))
-                {
-                    if(sourcesIncludes.count(sourceFiles.at(i)) == 0)
-                    {
-                        ssLOG_WARNING("Includes not gathered for " << sourceFiles.at(i).string());
-                        continue;
-                    }
-                    
-                    if(!includeManager.WriteIncludeRecord(  sourceFiles.at(i),
-                                                            sourcesIncludes.at(sourceFiles.at(i))))
-                    {
-                        ssLOG_ERROR("Failed to write include record for " << 
-                                    sourceFiles.at(i).string());
-                        return PipelineResult::UNEXPECTED_FAILURE;
-                    }
-                }
-            }
-        }
-        
         std::vector<std::string> linkFilesPaths;
         SeparateDependencyFiles(profiles.at(profileIndex).FilesTypes, 
                                 gatheredBinariesPaths, 
@@ -664,6 +617,49 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             for(int i = 0; i < cachedObjectsFiles.size(); ++i)
                 linkFilesPaths.push_back(cachedObjectsFiles.at(i));
             
+            auto updateIncludeRecords = 
+                [
+                    &sourceFiles, 
+                    &includePaths, 
+                    &sourceHasCache,
+                    &includeManager
+                ] () -> PipelineResult
+                {
+                    runcpp2::SourceIncludeMap sourcesIncludes;
+                    if(!runcpp2::GatherFilesIncludes(sourceFiles, includePaths, sourcesIncludes))
+                        return PipelineResult::UNEXPECTED_FAILURE;
+                    
+                    for(int i = 0; i < sourceFiles.size(); ++i)
+                    {
+                        ssLOG_DEBUG("Updating include record for " << sourceFiles.at(i).string());
+                        if(!sourceHasCache.at(i))
+                        {
+                            if(sourcesIncludes.count(sourceFiles.at(i)) == 0)
+                            {
+                                ssLOG_WARNING(  "Includes not gathered for " << 
+                                                sourceFiles.at(i).string());
+                                continue;
+                            }
+                            
+                            if
+                            (
+                                !includeManager.WriteIncludeRecord
+                                (
+                                    sourceFiles.at(i),
+                                    sourcesIncludes.at(sourceFiles.at(i))
+                                )
+                            )
+                            {
+                                ssLOG_ERROR("Failed to write include record for " << 
+                                            sourceFiles.at(i).string());
+                                return PipelineResult::UNEXPECTED_FAILURE;
+                            }
+                        }
+                    }
+                    
+                    return PipelineResult::SUCCESS;
+                };
+            
             if(currentOptions.count(CmdOptions::WATCH) > 0)
             {
                 if(!CompileScriptOnly(  buildDir,
@@ -680,7 +676,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                     return PipelineResult::COMPILE_LINK_FAILED;
                 }
                 
-                return PipelineResult::SUCCESS;
+                return updateIncludeRecords();
             }
             else if(!CompileAndLinkScript(  buildDir,
                                             absoluteScriptPath,
@@ -698,6 +694,10 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 ssLOG_ERROR("Failed to compile or link script");
                 return PipelineResult::COMPILE_LINK_FAILED;
             }
+            
+            result = updateIncludeRecords();
+            if(result != PipelineResult::SUCCESS)
+                return result;
         }
     }
 
