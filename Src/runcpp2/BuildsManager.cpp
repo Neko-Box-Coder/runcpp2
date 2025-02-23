@@ -180,7 +180,8 @@ namespace runcpp2
             return false;
         }
         
-        std::string processScriptPathStr = ProcessPath(scriptPath.string());
+        ghc::filesystem::path cleanScriptPath = scriptPath.lexically_normal();
+        std::string processScriptPathStr = ProcessPath(cleanScriptPath.string());
         
         if(Mappings.count(processScriptPathStr) > 0)
             return true;
@@ -204,7 +205,7 @@ namespace runcpp2
         
         if(counter == MAX_TRIES)
         {
-            ssLOG_ERROR("Failed to get unique hash for " << scriptPath.string() << 
+            ssLOG_ERROR("Failed to get unique hash for " << cleanScriptPath.string() << 
                         " after " << MAX_TRIES << " attempts");
             return false;
         }
@@ -229,7 +230,7 @@ namespace runcpp2
             return false;
         }
         
-        ssLOG_INFO("Build path " << scriptBuildPath << " for " << scriptPath);
+        ssLOG_INFO("Build path " << scriptBuildPath << " for " << cleanScriptPath);
         Mappings[processScriptPathStr] = scriptBuildPathStr;
         ReverseMappings[scriptBuildPathStr] = processScriptPathStr;
         return true;
@@ -246,7 +247,8 @@ namespace runcpp2
             return false;
         }
         
-        std::string processScriptPathStr = ProcessPath(scriptPath.string());
+        ghc::filesystem::path cleanScriptPath = scriptPath.lexically_normal();
+        std::string processScriptPathStr = ProcessPath(cleanScriptPath.string());
         if(Mappings.count(processScriptPathStr) == 0)
             return true;
         
@@ -267,7 +269,8 @@ namespace runcpp2
             return false;
         }
         
-        return Mappings.count(ProcessPath(scriptPath.string()));
+        ghc::filesystem::path cleanScriptPath = scriptPath.lexically_normal();
+        return Mappings.count(ProcessPath(cleanScriptPath.string()));
     }
     
     bool BuildsManager::GetBuildMapping(const ghc::filesystem::path& scriptPath, 
@@ -282,14 +285,16 @@ namespace runcpp2
             return false;
         }
         
+        ghc::filesystem::path cleanScriptPath = scriptPath.lexically_normal();
+        
         //If it doesn't exist, create the mapping
-        if(!Mappings.count(ProcessPath(scriptPath.string())))
+        if(!Mappings.count(ProcessPath(cleanScriptPath.string())))
         {
-            if(!CreateBuildMapping(scriptPath))
+            if(!CreateBuildMapping(cleanScriptPath))
                 return false;
         }
     
-        outPath = BuildDirectory.string() + "/" + Mappings.at(ProcessPath(scriptPath.string()));
+        outPath = BuildDirectory.string() + "/" + Mappings.at(ProcessPath(cleanScriptPath.string()));
         return true;
     }
     
