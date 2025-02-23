@@ -521,6 +521,8 @@ bool runcpp2::CleanupDependencies(  const runcpp2::Data::Profile& profile,
     return true;
 }
 
+//#define RUNCPP2_USE_PARALLEL_FOR_DEP 0
+
 bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
                                         const ghc::filesystem::path& buildDir,
                                         const Data::ScriptInfo& scriptInfo,
@@ -550,11 +552,14 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
     if(!PopulateAbsoluteIncludePaths(availableDependencies, dependenciesLocalCopiesPaths))
         return false;
     
+    #if RUNCPP2_USE_PARALLEL_FOR_DEP
     std::vector<std::future<bool>> actions;
+    std::vector<bool> finished;
     
     //Cache logs for worker threads
     ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS();
     int logLevel = ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL();
+    #endif
     
     //Run setup steps
     for(int i = 0; i < availableDependencies.size(); ++i)
@@ -566,6 +571,7 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
             continue;
         }
         
+        #if RUNCPP2_USE_PARALLEL_FOR_DEP
         actions.emplace_back
         (
             std::async
@@ -574,7 +580,8 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
                 [i, &profile, &availableDependencies, &dependenciesLocalCopiesPaths, logLevel]()
                 {
                     ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(logLevel);
-                    
+        #endif
+        
                     ssLOG_INFO("Running setup commands for " << availableDependencies.at(i)->Name);
                     if(!RunDependenciesSteps(   profile, 
                                                 availableDependencies.at(i)->Setup, 
@@ -585,44 +592,62 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
                                     availableDependencies.at(i)->Name);
                         return false;
                     }
+        
+        #if RUNCPP2_USE_PARALLEL_FOR_DEP
                     return true;
                 }
             )
         );
         
+        finished.emplace_back(false);
+        
         //Evaluate the setup results for each batch
         if(actions.size() >= maxThreads || i == availableDependencies.size() - 1)
         {
-            std::chrono::system_clock::time_point deadline = 
-                std::chrono::system_clock::now() + std::chrono::seconds(60);
-            for(int j = 0; j < actions.size(); ++j)
+            bool needsWaiting = false;
+            do
             {
-                if(!actions.at(j).valid())
+                std::chrono::system_clock::time_point deadline = 
+                    std::chrono::system_clock::now() + std::chrono::seconds(30);
+                needsWaiting = false;
+                for(int j = 0; j < actions.size(); ++j)
                 {
-                    ssLOG_ERROR("Failed to construct actions for setup");
-                    ssLOG_OUTPUT_ALL_CACHE_GROUPED();
-                    return false;
-                }
-                
-                std::future_status actionStatus = actions.at(j).wait_until(deadline);
-                if(actionStatus == std::future_status::ready)
-                {
-                    if(!actions.at(j).get())
+                    if(finished.at(j))
+                        continue;
+                    
+                    if(!actions.at(j).valid())
                     {
-                        ssLOG_ERROR("Setup failed for dependencies");
+                        ssLOG_ERROR("Failed to construct actions for setup");
                         ssLOG_OUTPUT_ALL_CACHE_GROUPED();
                         return false;
                     }
-                }
-                else
-                {
-                    ssLOG_ERROR("Dependencies setup timeout");
-                    ssLOG_OUTPUT_ALL_CACHE_GROUPED();
-                    return false;
+                    
+                    std::future_status actionStatus = actions.at(j).wait_until(deadline);
+                    if(actionStatus == std::future_status::ready)
+                    {
+                        if(!actions.at(j).get())
+                        {
+                            ssLOG_ERROR("Setup failed for dependencies");
+                            ssLOG_OUTPUT_ALL_CACHE_GROUPED();
+                            return false;
+                        }
+                        finished.at(j) = true;
+                    }
+                    else
+                    {
+                        ssLOG_WARNING("Manual interrupt might be needed");
+                        ssLOG_WARNING("Waited 30 seconds, dependencies setup still going...");
+                        needsWaiting = true;
+                    }
                 }
             }
+            while(needsWaiting);
+            
             actions.clear();
+            finished.clear();
         }
+        
+        #endif //#if RUNCPP2_USE_PARALLEL_FOR_DEP
     }
     
     ssLOG_OUTPUT_ALL_CACHE_GROUPED();
@@ -641,17 +666,21 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
     if(!scriptInfo.Populated)
         return true;
     
+    #if RUNCPP2_USE_PARALLEL_FOR_DEP
     std::vector<std::future<bool>> actions;
+    std::vector<bool> finished;
     
     //Cache logs for worker threads
     ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS();
     int logLevel = ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL();
+    #endif
     
     //Run build steps
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
         ssLOG_INFO("Running build commands for " << availableDependencies.at(i)->Name);
         
+        #if RUNCPP2_USE_PARALLEL_FOR_DEP
         actions.emplace_back
         (
             std::async
@@ -660,6 +689,7 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
                 [i, &profile, &availableDependencies, &dependenciesLocalCopiesPaths, logLevel]()
                 {
                     ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(logLevel);
+        #endif
                     
                     if(!RunDependenciesSteps(   profile, 
                                                 availableDependencies.at(i)->Build, 
@@ -669,44 +699,61 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
                         ssLOG_ERROR("Failed to build dependency " << availableDependencies.at(i)->Name);
                         return false;
                     }
+        
+        #if RUNCPP2_USE_PARALLEL_FOR_DEP
                     return true;
                 }
             )
         );
         
+        finished.emplace_back(false);
+        
         //Evaluate the setup results for each batch
         if(actions.size() >= maxThreads || i == availableDependencies.size() - 1)
         {
-            std::chrono::system_clock::time_point deadline = 
-                std::chrono::system_clock::now() + std::chrono::seconds(60);
-            for(int j = 0; j < actions.size(); ++j)
+            bool needsWaiting = false;
+            do
             {
-                if(!actions.at(j).valid())
+                std::chrono::system_clock::time_point deadline = 
+                    std::chrono::system_clock::now() + std::chrono::seconds(30);
+                needsWaiting = false;
+                for(int j = 0; j < actions.size(); ++j)
                 {
-                    ssLOG_ERROR("Failed to construct actions for building dependencies");
-                    ssLOG_OUTPUT_ALL_CACHE_GROUPED();
-                    return false;
-                }
-                
-                std::future_status actionStatus = actions.at(j).wait_until(deadline);
-                if(actionStatus == std::future_status::ready)
-                {
-                    if(!actions.at(j).get())
+                    if(finished.at(j))
+                        continue;
+                    
+                    if(!actions.at(j).valid())
                     {
-                        ssLOG_ERROR("Build failed for dependencies");
+                        ssLOG_ERROR("Failed to construct actions for building dependencies");
                         ssLOG_OUTPUT_ALL_CACHE_GROUPED();
                         return false;
                     }
-                }
-                else
-                {
-                    ssLOG_ERROR("Dependencies build timeout");
-                    ssLOG_OUTPUT_ALL_CACHE_GROUPED();
-                    return false;
+                    
+                    std::future_status actionStatus = actions.at(j).wait_until(deadline);
+                    if(actionStatus == std::future_status::ready)
+                    {
+                        if(!actions.at(j).get())
+                        {
+                            ssLOG_ERROR("Build failed for dependencies");
+                            ssLOG_OUTPUT_ALL_CACHE_GROUPED();
+                            return false;
+                        }
+                        finished.at(j) = true;
+                    }
+                    else
+                    {
+                        ssLOG_WARNING("Manual interrupt might be needed");
+                        ssLOG_WARNING("Waited 30 seconds, dependencies build still going...");
+                        needsWaiting = true;
+                    }
                 }
             }
+            while(needsWaiting);
+            
             actions.clear();
+            finished.clear();
         }
+        #endif ////#if RUNCPP2_USE_PARALLEL_FOR_DEP
     }
 
     ssLOG_OUTPUT_ALL_CACHE_GROUPED();
