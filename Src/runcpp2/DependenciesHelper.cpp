@@ -521,6 +521,8 @@ bool runcpp2::CleanupDependencies(  const runcpp2::Data::Profile& profile,
     return true;
 }
 
+//#define RUNCPP2_USE_PARALLEL_FOR_DEP 0
+
 bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
                                         const ghc::filesystem::path& buildDir,
                                         const Data::ScriptInfo& scriptInfo,
@@ -550,12 +552,14 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
     if(!PopulateAbsoluteIncludePaths(availableDependencies, dependenciesLocalCopiesPaths))
         return false;
     
+    #if RUNCPP2_USE_PARALLEL_FOR_DEP
     std::vector<std::future<bool>> actions;
     std::vector<bool> finished;
     
     //Cache logs for worker threads
     ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS();
     int logLevel = ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL();
+    #endif
     
     //Run setup steps
     for(int i = 0; i < availableDependencies.size(); ++i)
@@ -567,6 +571,7 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
             continue;
         }
         
+        #if RUNCPP2_USE_PARALLEL_FOR_DEP
         actions.emplace_back
         (
             std::async
@@ -575,7 +580,8 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
                 [i, &profile, &availableDependencies, &dependenciesLocalCopiesPaths, logLevel]()
                 {
                     ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(logLevel);
-                    
+        #endif
+        
                     ssLOG_INFO("Running setup commands for " << availableDependencies.at(i)->Name);
                     if(!RunDependenciesSteps(   profile, 
                                                 availableDependencies.at(i)->Setup, 
@@ -586,6 +592,8 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
                                     availableDependencies.at(i)->Name);
                         return false;
                     }
+        
+        #if RUNCPP2_USE_PARALLEL_FOR_DEP
                     return true;
                 }
             )
@@ -638,6 +646,8 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
             actions.clear();
             finished.clear();
         }
+        
+        #endif //#if RUNCPP2_USE_PARALLEL_FOR_DEP
     }
     
     ssLOG_OUTPUT_ALL_CACHE_GROUPED();
@@ -656,18 +666,21 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
     if(!scriptInfo.Populated)
         return true;
     
+    #if RUNCPP2_USE_PARALLEL_FOR_DEP
     std::vector<std::future<bool>> actions;
     std::vector<bool> finished;
     
     //Cache logs for worker threads
     ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS();
     int logLevel = ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL();
+    #endif
     
     //Run build steps
     for(int i = 0; i < availableDependencies.size(); ++i)
     {
         ssLOG_INFO("Running build commands for " << availableDependencies.at(i)->Name);
         
+        #if RUNCPP2_USE_PARALLEL_FOR_DEP
         actions.emplace_back
         (
             std::async
@@ -676,6 +689,7 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
                 [i, &profile, &availableDependencies, &dependenciesLocalCopiesPaths, logLevel]()
                 {
                     ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(logLevel);
+        #endif
                     
                     if(!RunDependenciesSteps(   profile, 
                                                 availableDependencies.at(i)->Build, 
@@ -685,6 +699,8 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
                         ssLOG_ERROR("Failed to build dependency " << availableDependencies.at(i)->Name);
                         return false;
                     }
+        
+        #if RUNCPP2_USE_PARALLEL_FOR_DEP
                     return true;
                 }
             )
@@ -737,6 +753,7 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
             actions.clear();
             finished.clear();
         }
+        #endif ////#if RUNCPP2_USE_PARALLEL_FOR_DEP
     }
 
     ssLOG_OUTPUT_ALL_CACHE_GROUPED();
