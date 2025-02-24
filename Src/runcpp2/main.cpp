@@ -424,6 +424,8 @@ int main(int argc, char* argv[])
         }
         
         runcpp2::Data::ScriptInfo* lastParsedScriptInfo = nullptr;
+        ghc::filesystem::file_time_type lastFinalSourceWriteTime;
+        ghc::filesystem::file_time_type lastFinalIncludeWriteTime;
         bool needsRunning = true;  //First run always needs running
         
         while(true)
@@ -439,6 +441,8 @@ int main(int argc, char* argv[])
                                                         *lastParsedScriptInfo : 
                                                         parsedScriptInfo,
                                                     currentOptions,
+                                                    lastFinalSourceWriteTime,
+                                                    lastFinalIncludeWriteTime,
                                                     needsUpdate) != runcpp2::PipelineResult::SUCCESS)
                 {
                     ssLOG_ERROR("Failed to check if sources need update");
@@ -477,6 +481,8 @@ int main(int argc, char* argv[])
                                             lastParsedScriptInfo,
                                             "",
                                             parsedScriptInfo,
+                                            lastFinalSourceWriteTime,
+                                            lastFinalIncludeWriteTime,
                                             result);
             
                 static_assert(static_cast<int>(runcpp2::PipelineResult::COUNT) == 13, "Update this");
@@ -518,6 +524,9 @@ int main(int argc, char* argv[])
     if(currentOptions.count(runcpp2::CmdOptions::BUILD) > 0)
         outputDir = ghc::filesystem::current_path().string();
     
+    ghc::filesystem::file_time_type finalSourceWriteTime;
+    ghc::filesystem::file_time_type finalIncludeWriteTime;
+    
     if(runcpp2::StartPipeline(  script, 
                                 profiles, 
                                 preferredProfile, 
@@ -526,6 +535,8 @@ int main(int argc, char* argv[])
                                 nullptr,
                                 outputDir,
                                 parsedScriptInfo,
+                                finalSourceWriteTime,
+                                finalIncludeWriteTime,
                                 result) != runcpp2::PipelineResult::SUCCESS)
     {
         return -1;

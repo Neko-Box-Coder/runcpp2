@@ -25,13 +25,17 @@ namespace runcpp2
 
     void SetLogLevel(const std::string& logLevel);
 
-    PipelineResult CheckSourcesNeedUpdate(  const std::string& scriptPath,
-                                            const std::vector<Data::Profile>& profiles,
-                                            const std::string& configPreferredProfile,
-                                            const Data::ScriptInfo& scriptInfo,
-                                            const std::unordered_map<   CmdOptions, 
-                                                                        std::string>& currentOptions,
-                                            bool& outNeedsUpdate);
+    //NOTE: This should be run after running StartPipeline first
+    PipelineResult 
+    CheckSourcesNeedUpdate( const std::string& scriptPath,
+                            const std::vector<Data::Profile>& profiles,
+                            const std::string& configPreferredProfile,
+                            const Data::ScriptInfo& scriptInfo,
+                            const std::unordered_map<   CmdOptions, 
+                                                        std::string>& currentOptions,
+                            const ghc::filesystem::file_time_type& prevFinalSourceWriteTime,
+                            const ghc::filesystem::file_time_type& prevFinalIncludeWriteTime,
+                            bool& outNeedsUpdate);
 
     PipelineResult StartPipeline(   const std::string& scriptPath, 
                                     const std::vector<Data::Profile>& profiles,
@@ -41,6 +45,8 @@ namespace runcpp2
                                     const Data::ScriptInfo* lastScriptInfo,
                                     const std::string& buildOutputDir,
                                     Data::ScriptInfo& outScriptInfo,
+                                    ghc::filesystem::file_time_type& outFinalSourceWriteTime,
+                                    ghc::filesystem::file_time_type& outFinalIncludeWriteTime,
                                     int& returnStatus);
 
     std::string PipelineResultToString(PipelineResult result);
