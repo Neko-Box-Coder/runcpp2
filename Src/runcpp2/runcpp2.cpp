@@ -32,11 +32,12 @@ namespace
                             const std::vector<ghc::filesystem::path>& sourceFiles,
                             const ghc::filesystem::path& buildDir,
                             const runcpp2::Data::Profile& currentProfile,
-                            const std::vector<ghc::filesystem::path>& includePaths,
                             runcpp2::IncludeManager& includeManager,
                             std::vector<bool>& outHasCache,
                             std::vector<ghc::filesystem::path>& outCachedObjectsFiles,
-                            ghc::filesystem::file_time_type& outFinalObjectWriteTime)
+                            ghc::filesystem::file_time_type& outFinalObjectWriteTime,
+                            ghc::filesystem::file_time_type& outFinalSourceWriteTime,
+                            ghc::filesystem::file_time_type& outFinalIncludeWriteTime)
     {
         ssLOG_FUNC_INFO();
         
@@ -56,7 +57,6 @@ namespace
         
         std::error_code e;
         
-        std::vector<ghc::filesystem::path> sourcesNeedGathering;
         for(int i = 0; i < sourceFiles.size(); ++i)
         {
             ghc::filesystem::path relativeSourcePath = 
@@ -76,46 +76,50 @@ namespace
             
             ssLOG_DEBUG("Trying to use cache: " << sourceFiles.at(i).string());
             
+            //Check source file timestamp
+            ghc::filesystem::file_time_type currentSourceWriteTime = 
+                ghc::filesystem::last_write_time(sourceFiles.at(i), e);
+            if(currentSourceWriteTime > outFinalSourceWriteTime)
+                outFinalSourceWriteTime = currentSourceWriteTime;
+
+            //Check include record
+            bool outdatedIncludeRecord = false;
+            ghc::filesystem::file_time_type currentIncludeWriteTime;
+            {
+                std::vector<ghc::filesystem::path> cachedIncludes;
+                ghc::filesystem::file_time_type recordTime;
+                
+                if(includeManager.ReadIncludeRecord(sourceFiles.at(i), cachedIncludes, recordTime))
+                {
+                    if(includeManager.NeedsUpdate(sourceFiles.at(i), cachedIncludes, recordTime))
+                        outdatedIncludeRecord = true;
+                }
+                
+                if(outdatedIncludeRecord)
+                    ssLOG_DEBUG("Needs to update include record for " << sourceFiles.at(i).string());
+                
+                for(int j = 0; j < cachedIncludes.size(); ++j)
+                {
+                    ghc::filesystem::file_time_type includeWriteTime = 
+                        ghc::filesystem::last_write_time(cachedIncludes.at(j), e);
+                    
+                    if(includeWriteTime > currentIncludeWriteTime)
+                        currentIncludeWriteTime = includeWriteTime;
+                }
+                
+                if(currentIncludeWriteTime > outFinalIncludeWriteTime)
+                    outFinalIncludeWriteTime = currentIncludeWriteTime;
+            }
+            
+            //Check object file timestamp
             if(ghc::filesystem::exists(currentObjectFilePath, e))
             {
-                ghc::filesystem::file_time_type lastObjectWriteTime = 
+                ghc::filesystem::file_time_type currentObjectWriteTime = 
                     ghc::filesystem::last_write_time(currentObjectFilePath, e);
                 
-                //Check source file timestamp
-                ghc::filesystem::file_time_type lastSourceWriteTime = 
-                    ghc::filesystem::last_write_time(sourceFiles.at(i), e);
-                    
-                bool useCache = lastObjectWriteTime > lastSourceWriteTime;
-                
-                //Update include files timestamps
-                {
-                    std::vector<ghc::filesystem::path> cachedIncludes;
-                    ghc::filesystem::file_time_type recordTime;
-                    bool needsGather = true;
-                    
-                    if(includeManager.ReadIncludeRecord(sourceFiles.at(i), 
-                                                        cachedIncludes, 
-                                                        recordTime))
-                    {
-                        if(!includeManager.NeedsUpdate( sourceFiles.at(i), 
-                                                        cachedIncludes, 
-                                                        recordTime))
-                        {
-                            needsGather = false;
-                        }
-                        else if(useCache)
-                            useCache = false;
-                    }
-                    
-                    if(needsGather)
-                    {
-                        ssLOG_DEBUG("Needs to update include record for " << 
-                                    sourceFiles.at(i).string());
-                        sourcesNeedGathering.push_back(sourceFiles.at(i));
-                        useCache = false;
-                    }
-                }
-            
+                bool useCache = currentObjectWriteTime > currentSourceWriteTime &&
+                                currentObjectWriteTime > currentIncludeWriteTime &&
+                                !outdatedIncludeRecord;
                 if(useCache)
                 {
                     ssLOG_INFO("Using cache for " << sourceFiles.at(i).string());
@@ -125,8 +129,8 @@ namespace
                 else
                     ssLOG_INFO("Cache invalidated for " << sourceFiles.at(i).string());
                 
-                if(lastObjectWriteTime > outFinalObjectWriteTime)
-                    outFinalObjectWriteTime = lastObjectWriteTime;
+                if(currentObjectWriteTime > outFinalObjectWriteTime)
+                    outFinalObjectWriteTime = currentObjectWriteTime;
             }
         }
         
@@ -140,7 +144,7 @@ namespace
                             bool buildExecutable,
                             const std::string& scriptName,
                             const std::vector<std::string>& copiedBinariesPaths,
-                            const ghc::filesystem::file_time_type& finalObjectWriteTime,
+                            const ghc::filesystem::file_time_type& finalBinaryWriteTime,
                             bool& outOutputCache)
     {
         for(int i = 0; i < sourceHasCache.size(); ++i)
@@ -152,7 +156,7 @@ namespace
             }
         }
         
-        ghc::filesystem::file_time_type currentFinalObjectWriteTime = finalObjectWriteTime;
+        ghc::filesystem::file_time_type currentFinalBinaryWriteTime = finalBinaryWriteTime;
         std::error_code e;
         
         for(int i = 0; i < copiedBinariesPaths.size(); ++i)
@@ -162,8 +166,8 @@ namespace
                 ghc::filesystem::file_time_type lastObjectWriteTime = 
                     ghc::filesystem::last_write_time(copiedBinariesPaths.at(i), e);
             
-                if(lastObjectWriteTime > currentFinalObjectWriteTime)
-                    currentFinalObjectWriteTime = lastObjectWriteTime;
+                if(lastObjectWriteTime > currentFinalBinaryWriteTime)
+                    currentFinalBinaryWriteTime = lastObjectWriteTime;
             }
             else
             {
@@ -201,7 +205,7 @@ namespace
                 ghc::filesystem::file_time_type lastSharedLibWriteTime = 
                     ghc::filesystem::last_write_time(outputPath, e);
                 
-                if(lastSharedLibWriteTime >= currentFinalObjectWriteTime)
+                if(lastSharedLibWriteTime >= currentFinalBinaryWriteTime)
                 {
                     ssLOG_INFO("Using output cache for " << outputPath.string());
                     continue;
@@ -211,8 +215,8 @@ namespace
                     ssLOG_INFO("Object files have more recent write time");
                     ssLOG_DEBUG("lastSharedLibWriteTime: " << 
                                 lastSharedLibWriteTime.time_since_epoch().count());
-                    ssLOG_DEBUG("currentFinalObjectWriteTime: " << 
-                                currentFinalObjectWriteTime.time_since_epoch().count());
+                    ssLOG_DEBUG("currentFinalBinaryWriteTime: " << 
+                                currentFinalBinaryWriteTime.time_since_epoch().count());
                     outOutputCache = false;
                     return true;
                 }
@@ -264,6 +268,8 @@ runcpp2::CheckSourcesNeedUpdate(    const std::string& scriptPath,
                                     const Data::ScriptInfo& scriptInfo,
                                     const std::unordered_map<   CmdOptions, 
                                                                 std::string>& currentOptions,
+                                    const ghc::filesystem::file_time_type& prevFinalSourceWriteTime,
+                                    const ghc::filesystem::file_time_type& prevFinalIncludeWriteTime,
                                     bool& outNeedsUpdate)
 {
     INTERNAL_RUNCPP2_SAFE_START();
@@ -331,7 +337,10 @@ runcpp2::CheckSourcesNeedUpdate(    const std::string& scriptPath,
         return result;
 
     //Get profile and gather source files
-    const int profileIndex = GetPreferredProfileIndex(scriptPath, scriptInfo, profiles, configPreferredProfile);
+    const int profileIndex = GetPreferredProfileIndex(  scriptPath, 
+                                                        scriptInfo, 
+                                                        profiles, 
+                                                        configPreferredProfile);
     const Data::Profile& currentProfile = profiles.at(profileIndex);
     
     std::vector<ghc::filesystem::path> sourceFiles;
@@ -341,37 +350,35 @@ runcpp2::CheckSourcesNeedUpdate(    const std::string& scriptPath,
     for(int i = 0; i < sourceFiles.size(); ++i)
         ssLOG_DEBUG("sourceFiles.at(i).string(): " << sourceFiles.at(i).string());
 
-    //Get include paths
-    std::vector<ghc::filesystem::path> includePaths;
-    if(!GatherIncludePaths(scriptDirectory, scriptInfo, currentProfile, {}, includePaths))
+    std::vector<bool> sourceHasCache;
+    std::vector<ghc::filesystem::path> cachedObjectsFiles;
+    ghc::filesystem::file_time_type finalObjectWriteTime;
+    ghc::filesystem::file_time_type finalSourceWriteTime;
+    ghc::filesystem::file_time_type finalIncludeWriteTime;
+    
+    if(!HasCompiledCache(   absoluteScriptPath,
+                            sourceFiles,
+                            buildDir,
+                            currentProfile,
+                            includeManager,
+                            sourceHasCache,
+                            cachedObjectsFiles,
+                            finalObjectWriteTime,
+                            finalSourceWriteTime,
+                            finalIncludeWriteTime))
     {
-        ssLOG_ERROR("Failed to gather include paths");
+        //TODO: Maybe add a pipeline result for this?
         return PipelineResult::UNEXPECTED_FAILURE;
     }
     
-    for(int i = 0; i < includePaths.size(); ++i)
-        ssLOG_DEBUG("includePaths.at(i).string(): " << includePaths.at(i).string());
-
-    for(int i = 0; i < sourceFiles.size(); ++i)
+    if( finalSourceWriteTime > prevFinalSourceWriteTime ||
+        finalIncludeWriteTime > prevFinalIncludeWriteTime)
     {
-        std::vector<ghc::filesystem::path> cachedIncludes;
-        ghc::filesystem::file_time_type recordTime;
-        
-        if(includeManager.ReadIncludeRecord(sourceFiles.at(i), 
-                                            cachedIncludes, 
-                                            recordTime))
-        {
-            if(includeManager.NeedsUpdate(  sourceFiles.at(i), 
-                                            cachedIncludes, 
-                                            recordTime))
-            {
-                outNeedsUpdate = true;
-                return PipelineResult::SUCCESS;
-            }
-        }
+        outNeedsUpdate = true;
     }
+    else
+        outNeedsUpdate = false;
     
-    outNeedsUpdate = false;
     return PipelineResult::SUCCESS;
 
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
@@ -386,6 +393,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                         const Data::ScriptInfo* lastScriptInfo,
                         const std::string& buildOutputDir,
                         Data::ScriptInfo& outScriptInfo,
+                        ghc::filesystem::file_time_type& outFinalSourceWriteTime,
+                        ghc::filesystem::file_time_type& outFinalIncludeWriteTime,
                         int& returnStatus)
 {
     INTERNAL_RUNCPP2_SAFE_START();
@@ -557,14 +566,47 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                     sourceFiles, 
                                     buildDir, 
                                     profiles.at(profileIndex),
-                                    includePaths,
                                     includeManager,
                                     sourceHasCache,
                                     cachedObjectsFiles,
-                                    finalObjectWriteTime))
+                                    finalObjectWriteTime,
+                                    outFinalSourceWriteTime,
+                                    outFinalIncludeWriteTime))
         {
             //TODO: Maybe add a pipeline result for this?
             return PipelineResult::UNEXPECTED_FAILURE;
+        }
+        
+        runcpp2::SourceIncludeMap sourcesIncludes;
+        if(!runcpp2::GatherFilesIncludes(sourceFiles, includePaths, sourcesIncludes))
+            return PipelineResult::UNEXPECTED_FAILURE;
+        
+        for(int i = 0; i < sourceFiles.size(); ++i)
+        {
+            ssLOG_DEBUG("Updating include record for " << sourceFiles.at(i).string());
+            if(!sourceHasCache.at(i))
+            {
+                if(sourcesIncludes.count(sourceFiles.at(i)) == 0)
+                {
+                    ssLOG_WARNING(  "Includes not gathered for " << 
+                                    sourceFiles.at(i).string());
+                    continue;
+                }
+                
+                bool writeResult = 
+                    includeManager.WriteIncludeRecord
+                    (
+                        sourceFiles.at(i), 
+                        sourcesIncludes.at(sourceFiles.at(i))
+                    );
+                
+                if(!writeResult)
+                {
+                    ssLOG_ERROR("Failed to write include record for " << 
+                                sourceFiles.at(i).string());
+                    return PipelineResult::UNEXPECTED_FAILURE;
+                }
+            }
         }
         
         std::vector<std::string> linkFilesPaths;
@@ -575,7 +617,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         
         std::error_code e;
 
-        //Update finalObjectWriteTime
+        //Get finalBinaryWriteTime by combining final object and dependencies write times
+        ghc::filesystem::file_time_type finalBinaryWriteTime = finalObjectWriteTime;
         for(int i = 0; i < linkFilesPaths.size(); ++i)
         {
             if(!ghc::filesystem::exists(linkFilesPaths.at(i), e))
@@ -587,8 +630,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             ghc::filesystem::file_time_type lastWriteTime = 
                 ghc::filesystem::last_write_time(linkFilesPaths.at(i), e);
 
-            if(lastWriteTime > finalObjectWriteTime)
-                finalObjectWriteTime = lastWriteTime;
+            if(lastWriteTime > finalBinaryWriteTime)
+                finalBinaryWriteTime = lastWriteTime;
         }
         
         //Run PreBuild commands before compilation
@@ -605,7 +648,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                             currentOptions.count(CmdOptions::EXECUTABLE) > 0,
                             scriptName,
                             linkFilesPaths,
-                            finalObjectWriteTime,
+                            finalBinaryWriteTime,
                             outputCache))
         {
             ssLOG_WARNING("Error detected when trying to use output cache. A cleanup is recommended");
@@ -616,49 +659,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         {
             for(int i = 0; i < cachedObjectsFiles.size(); ++i)
                 linkFilesPaths.push_back(cachedObjectsFiles.at(i));
-            
-            auto updateIncludeRecords = 
-                [
-                    &sourceFiles, 
-                    &includePaths, 
-                    &sourceHasCache,
-                    &includeManager
-                ] () -> PipelineResult
-                {
-                    runcpp2::SourceIncludeMap sourcesIncludes;
-                    if(!runcpp2::GatherFilesIncludes(sourceFiles, includePaths, sourcesIncludes))
-                        return PipelineResult::UNEXPECTED_FAILURE;
-                    
-                    for(int i = 0; i < sourceFiles.size(); ++i)
-                    {
-                        ssLOG_DEBUG("Updating include record for " << sourceFiles.at(i).string());
-                        if(!sourceHasCache.at(i))
-                        {
-                            if(sourcesIncludes.count(sourceFiles.at(i)) == 0)
-                            {
-                                ssLOG_WARNING(  "Includes not gathered for " << 
-                                                sourceFiles.at(i).string());
-                                continue;
-                            }
-                            
-                            if
-                            (
-                                !includeManager.WriteIncludeRecord
-                                (
-                                    sourceFiles.at(i),
-                                    sourcesIncludes.at(sourceFiles.at(i))
-                                )
-                            )
-                            {
-                                ssLOG_ERROR("Failed to write include record for " << 
-                                            sourceFiles.at(i).string());
-                                return PipelineResult::UNEXPECTED_FAILURE;
-                            }
-                        }
-                    }
-                    
-                    return PipelineResult::SUCCESS;
-                };
             
             if(currentOptions.count(CmdOptions::WATCH) > 0)
             {
@@ -676,7 +676,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                     return PipelineResult::COMPILE_LINK_FAILED;
                 }
                 
-                return updateIncludeRecords();
+                return PipelineResult::SUCCESS;
             }
             else if(!CompileAndLinkScript(  buildDir,
                                             absoluteScriptPath,
@@ -694,10 +694,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 ssLOG_ERROR("Failed to compile or link script");
                 return PipelineResult::COMPILE_LINK_FAILED;
             }
-            
-            result = updateIncludeRecords();
-            if(result != PipelineResult::SUCCESS)
-                return result;
         }
     }
 
