@@ -120,6 +120,15 @@ namespace
                 bool useCache = currentObjectWriteTime > currentSourceWriteTime &&
                                 currentObjectWriteTime > currentIncludeWriteTime &&
                                 !outdatedIncludeRecord;
+                
+                ssLOG_DEBUG("currentObjectWriteTime: " << 
+                            currentObjectWriteTime.time_since_epoch().count());
+                ssLOG_DEBUG("currentSourceWriteTime: " << 
+                            currentSourceWriteTime.time_since_epoch().count());
+                ssLOG_DEBUG("currentIncludeWriteTime: " << 
+                            currentIncludeWriteTime.time_since_epoch().count());
+                ssLOG_DEBUG("outdatedIncludeRecord: " << outdatedIncludeRecord);
+                
                 if(useCache)
                 {
                     ssLOG_INFO("Using cache for " << sourceFiles.at(i).string());
@@ -578,14 +587,14 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         }
         
         runcpp2::SourceIncludeMap sourcesIncludes;
-        if(!runcpp2::GatherFilesIncludes(sourceFiles, includePaths, sourcesIncludes))
+        if(!runcpp2::GatherFilesIncludes(sourceFiles, sourceHasCache, includePaths, sourcesIncludes))
             return PipelineResult::UNEXPECTED_FAILURE;
         
         for(int i = 0; i < sourceFiles.size(); ++i)
         {
-            ssLOG_DEBUG("Updating include record for " << sourceFiles.at(i).string());
             if(!sourceHasCache.at(i))
             {
+                ssLOG_DEBUG("Updating include record for " << sourceFiles.at(i).string());
                 if(sourcesIncludes.count(sourceFiles.at(i)) == 0)
                 {
                     ssLOG_WARNING(  "Includes not gathered for " << 
@@ -607,6 +616,8 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                     return PipelineResult::UNEXPECTED_FAILURE;
                 }
             }
+            else
+                ssLOG_DEBUG("Include record for " << sourceFiles.at(i).string() << " is up to date");
         }
         
         std::vector<std::string> linkFilesPaths;

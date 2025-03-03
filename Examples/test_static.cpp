@@ -136,7 +136,7 @@ int main(int argc, char* argv[])
     #else
         auto re = System2CppRun("ls -lah", commandInfo);
     #endif
-    System2CppGetCommandReturnValueSync(commandInfo, returnCode);
+    System2CppGetCommandReturnValueSync(commandInfo, returnCode, false);
     
     for(int i = 0; i < argc; ++i)
         std::cout << "Arg" << i << ": " << argv[i] << std::endl;

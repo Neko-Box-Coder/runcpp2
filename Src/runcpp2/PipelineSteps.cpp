@@ -1267,17 +1267,29 @@ bool runcpp2::GatherIncludePaths(   const ghc::filesystem::path& scriptDirectory
 }
 
 bool runcpp2::GatherFilesIncludes(  const std::vector<ghc::filesystem::path>& sourceFiles,
+                                    const std::vector<bool>& sourceHasCache,
                                     const std::vector<ghc::filesystem::path>& includePaths,
                                     SourceIncludeMap& outSourceIncludes)
 {
     ssLOG_FUNC_INFO();
     INTERNAL_RUNCPP2_SAFE_START();
     
-    outSourceIncludes.clear();
-    std::unordered_set<std::string> visitedFiles;
-    
-    for(const ghc::filesystem::path& source : sourceFiles)
+    if(sourceFiles.size() != sourceHasCache.size())
     {
+        ssLOG_ERROR("Size of sourceFiles and sourceHasCache not matching");
+        return false;
+    }
+    
+    outSourceIncludes.clear();
+    
+    for(int i = 0; i < sourceFiles.size(); ++i)
+    {
+        if(sourceHasCache.at(i))
+            continue;
+        
+        const ghc::filesystem::path& source = sourceFiles.at(i);
+        
+        std::unordered_set<std::string> visitedFiles;
         ssLOG_INFO("Gathering includes for " << source.string());
         
         std::vector<ghc::filesystem::path>& currentIncludes = outSourceIncludes[source.string()];

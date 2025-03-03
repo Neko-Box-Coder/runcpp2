@@ -115,6 +115,9 @@ namespace runcpp2
         std::error_code e;
         ghc::filesystem::file_time_type sourceTime = ghc::filesystem::last_write_time(sourceFile, e);
         
+        ssLOG_DEBUG("sourceTime: " << sourceTime.time_since_epoch().count());
+        ssLOG_DEBUG("recordTime: " << recordTime.time_since_epoch().count());
+        
         if(sourceTime > recordTime)
         {
             ssLOG_DEBUG("Source file newer than include record");
