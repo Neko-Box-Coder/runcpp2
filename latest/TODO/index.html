@@ -625,6 +625,39 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Planned">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#v030" class="md-nav__link">
+    <span class="md-ellipsis">
+      v0.3.0
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v040" class="md-nav__link">
+    <span class="md-ellipsis">
+      v0.4.0
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tbd" class="md-nav__link">
+    <span class="md-ellipsis">
+      TBD
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -673,21 +706,32 @@
 </ul>
 </div>
 <h2 id="planned">Planned</h2>
+<h3 id="v030">v0.3.0</h3>
 <ul>
 <li>Ability to skip DefaultPlatform and DefaultProfile</li>
 <li>Allow runcpp2 to be library for scriptable pipeline</li>
-<li>Smoother CMake support by reading cmake target properties (https://stackoverflow.com/a/56738858/23479578)</li>
+<li>Add ability to reference local YAML for user config</li>
+<li>Add version for default user config and prompt for update</li>
+<li>Add more default profiles</li>
+</ul>
+<h3 id="v040">v0.4.0</h3>
+<ul>
+<li>Migrate to libyaml</li>
+<li>Ability to compile runcpp2 as single cpp</li>
+</ul>
+<h3 id="tbd">TBD</h3>
+<ul>
 <li>Add the ability for user to specify custom substitution options which applies to all fields</li>
 <li>Add the ability to append defines coming from the dependencies</li>
 <li>Check last run is shared lib or executable. Reset cache when necessary if different type</li>
-<li>Add ability to reference local YAML for user config</li>
-<li>Add version for user config and prompt for update</li>
 <li>Add wildcard support for filenames and extensions (Files Globbing)</li>
+<li>Add the ability to query script build directory</li>
+<li>Add the ability to list script dependencies</li>
 </ul>
 <h2 id="not-planned-yet">Not planned yet</h2>
 <ul>
+<li>Smoother CMake support by reading cmake target properties (https://stackoverflow.com/a/56738858/23479578)</li>
 <li>Add the ability to specify different profiles(?)/defines for different source files</li>
-<li>Ability to compile runcpp2 as single cpp</li>
 <li>Handle escape characters at the end<ul>
 <li>To avoid situation like this:<ul>
 <li>Substitution string: -I "{path}"</li>
@@ -702,7 +746,6 @@
 </li>
 <li>Use <csignal> to handle potential segfaults</li>
 <li>Use System2 subprocess if no prepend commands to be safer</li>
-<li>Migrate to libyaml</li>
 <li>Add tests and examples (On Windows as well)</li>
 <li>Make SearchLibraryNames and SearchDirectories optional (?)</li>
 <li>Add cache limit</li>
