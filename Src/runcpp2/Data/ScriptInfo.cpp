@@ -3,7 +3,7 @@
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef& node)
+bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef node)
 {
     ssLOG_FUNC_DEBUG();
     

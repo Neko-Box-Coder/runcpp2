@@ -72,8 +72,7 @@ int main(int argc, char** argv)
         
         ssTEST_OUTPUT_EXECUTION
         (
-            ryml::ConstNodeRef nodeRef = root;
-            bool parseResult = stageInfo.ParseYAML_Node(nodeRef, "LinkTypes");
+            bool parseResult = stageInfo.ParseYAML_Node(root, "LinkTypes");
         );
         
         ssTEST_OUTPUT_ASSERT("ParseYAML_Node should succeed", parseResult);
@@ -135,8 +134,7 @@ int main(int argc, char** argv)
             ryml::Tree outputTree = ryml::parse_in_arena(ryml::to_csubstr(yamlOutput));
             
             runcpp2::Data::StageInfo parsedOutput;
-            nodeRef = outputTree.rootref();
-            parsedOutput.ParseYAML_Node(nodeRef, "LinkTypes");
+            parsedOutput.ParseYAML_Node(outputTree.rootref(), "LinkTypes");
         );
         
         ssTEST_OUTPUT_ASSERT("Parsed output should equal original", stageInfo.Equals(parsedOutput));
@@ -163,8 +161,7 @@ int main(int argc, char** argv)
         
         ssTEST_OUTPUT_EXECUTION
         (
-            ryml::ConstNodeRef nodeRef = root;
-            bool parseResult = stageInfo.ParseYAML_Node(nodeRef, "LinkTypes");
+            bool parseResult = stageInfo.ParseYAML_Node(root, "LinkTypes");
         );
         
         ssTEST_OUTPUT_ASSERT("ParseYAML_Node should fail for malformed YAML", !parseResult);
@@ -215,8 +212,7 @@ int main(int argc, char** argv)
         
         ssTEST_OUTPUT_EXECUTION
         (
-            ryml::ConstNodeRef nodeRef = root;
-            bool parseResult = stageInfo.ParseYAML_Node(nodeRef, "LinkTypes");
+            bool parseResult = stageInfo.ParseYAML_Node(root, "LinkTypes");
         );
         
         ssTEST_OUTPUT_ASSERT(   "ParseYAML_Node should fail for missing ExecutableShared", 

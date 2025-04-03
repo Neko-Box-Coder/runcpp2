@@ -485,7 +485,7 @@ bool runcpp2::Data::StageInfo::ConstructCommand(const SubstitutionMap& substitut
 }
 
 
-bool runcpp2::Data::StageInfo::ParseYAML_Node(  ryml::ConstNodeRef& node, 
+bool runcpp2::Data::StageInfo::ParseYAML_Node(  ryml::ConstNodeRef node, 
                                                 std::string outputTypeKeyName)
 {
     ssLOG_FUNC_DEBUG();

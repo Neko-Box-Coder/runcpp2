@@ -18,7 +18,7 @@ namespace runcpp2
                 //TODO: Allow specifying command can fail
                 std::unordered_map<ProfileName, std::vector<std::string>> CommandSteps;
                 
-                bool ParseYAML_Node(ryml::ConstNodeRef& node);
+                bool ParseYAML_Node(ryml::ConstNodeRef node);
                 std::string ToString(std::string indentation) const;
                 bool Equals(const ProfilesCommands& other) const;
         };

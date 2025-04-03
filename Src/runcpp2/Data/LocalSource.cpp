@@ -2,7 +2,6 @@
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
-#include <optional>
 
 namespace
 {
@@ -59,7 +58,7 @@ namespace
     }
 }
 
-bool runcpp2::Data::LocalSource::ParseYAML_Node(ryml::ConstNodeRef& node)
+bool runcpp2::Data::LocalSource::ParseYAML_Node(ryml::ConstNodeRef node)
 {
     INTERNAL_RUNCPP2_SAFE_START();
     

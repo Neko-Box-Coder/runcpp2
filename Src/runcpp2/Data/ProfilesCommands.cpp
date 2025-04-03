@@ -3,7 +3,7 @@
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::ProfilesCommands::ParseYAML_Node(ryml::ConstNodeRef& node)
+bool runcpp2::Data::ProfilesCommands::ParseYAML_Node(ryml::ConstNodeRef node)
 {
     INTERNAL_RUNCPP2_SAFE_START();
     

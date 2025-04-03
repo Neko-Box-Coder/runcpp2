@@ -21,7 +21,7 @@ namespace runcpp2
                         bool nullable);
     };
     
-    bool CheckNodeRequirements( ryml::ConstNodeRef& node, 
+    bool CheckNodeRequirements( ryml::ConstNodeRef node, 
                                 const std::vector<NodeRequirement>& requirements);
 
     bool GetParsableInfo(const std::string& contentToParse, std::string& outParsableInfo);
@@ -29,7 +29,7 @@ namespace runcpp2
     bool ResolveYAML_Stream(ryml::Tree& rootTree, 
                             ryml::ConstNodeRef& outRootNode);
     
-    bool ExistAndHasChild(  const ryml::ConstNodeRef& node, 
+    bool ExistAndHasChild(  ryml::ConstNodeRef node, 
                             const std::string& childName,
                             bool nullable = false);
     

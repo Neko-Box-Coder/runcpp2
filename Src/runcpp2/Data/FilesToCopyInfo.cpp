@@ -2,7 +2,7 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::FilesToCopyInfo::ParseYAML_Node(const ryml::ConstNodeRef& node)
+bool runcpp2::Data::FilesToCopyInfo::ParseYAML_Node(ryml::ConstNodeRef node)
 {
     INTERNAL_RUNCPP2_SAFE_START();
     

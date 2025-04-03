@@ -14,7 +14,7 @@ void runcpp2::Data::Profile::GetNames(std::vector<std::string>& outNames) const
     outNames.push_back("DefaultProfile");
 }
 
-bool runcpp2::Data::Profile::ParseYAML_Node(ryml::ConstNodeRef& profileNode)
+bool runcpp2::Data::Profile::ParseYAML_Node(ryml::ConstNodeRef profileNode)
 {
     ssLOG_FUNC_DEBUG();
     

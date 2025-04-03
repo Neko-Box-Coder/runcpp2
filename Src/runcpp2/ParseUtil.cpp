@@ -20,7 +20,7 @@ runcpp2::NodeRequirement::NodeRequirement(  const std::string& name,
                                                                 Nullable(nullable)
 {}
 
-bool runcpp2::CheckNodeRequirements(ryml::ConstNodeRef& node, 
+bool runcpp2::CheckNodeRequirements(ryml::ConstNodeRef node, 
                                     const std::vector<NodeRequirement>& requirements)
 {
     ssLOG_FUNC_DEBUG();
@@ -310,7 +310,7 @@ bool runcpp2::ResolveYAML_Stream(   ryml::Tree& rootTree,
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
-bool runcpp2::ExistAndHasChild( const ryml::ConstNodeRef& node, 
+bool runcpp2::ExistAndHasChild( ryml::ConstNodeRef node, 
                                 const std::string& childName,
                                 bool nullable)
 {

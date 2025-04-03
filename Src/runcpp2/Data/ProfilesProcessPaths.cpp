@@ -2,7 +2,7 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::ProfilesProcessPaths::ParseYAML_Node(ryml::ConstNodeRef& node)
+bool runcpp2::Data::ProfilesProcessPaths::ParseYAML_Node(ryml::ConstNodeRef node)
 {
     ssLOG_FUNC_DEBUG();
 

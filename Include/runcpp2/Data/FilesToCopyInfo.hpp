@@ -16,7 +16,7 @@ namespace runcpp2
         {
             std::unordered_map<ProfileName, std::vector<std::string>> ProfileFiles;
             
-            bool ParseYAML_Node(const ryml::ConstNodeRef& node);
+            bool ParseYAML_Node(ryml::ConstNodeRef node);
             std::string ToString(std::string indentation) const;
             bool Equals(const FilesToCopyInfo& other) const;
         };
