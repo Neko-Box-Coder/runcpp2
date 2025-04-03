@@ -21,6 +21,12 @@ namespace runcpp2
                         bool nullable);
     };
     
+    bool CheckNodeRequirement(  ryml::ConstNodeRef node, 
+                                const std::string name, 
+                                ryml::NodeType nodeType,
+                                bool required,
+                                bool nullable);
+    
     bool CheckNodeRequirements( ryml::ConstNodeRef node, 
                                 const std::vector<NodeRequirement>& requirements);
 

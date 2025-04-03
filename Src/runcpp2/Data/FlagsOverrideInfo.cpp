@@ -30,6 +30,27 @@ bool runcpp2::Data::FlagsOverrideInfo::ParseYAML_Node(ryml::ConstNodeRef node)
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
+bool runcpp2::Data::FlagsOverrideInfo::IsYAML_NodeParsableAsDefault(ryml::ConstNodeRef node) const
+{
+    INTERNAL_RUNCPP2_SAFE_START();
+    if(ExistAndHasChild(node, "Remove") || ExistAndHasChild(node, "Append"))
+    {
+        std::vector<NodeRequirement> requirements =
+        {
+            NodeRequirement("Remove", ryml::NodeType_e::KEYVAL, false, true),
+            NodeRequirement("Append", ryml::NodeType_e::KEYVAL, false, true)
+        };
+        
+        if(!CheckNodeRequirements(node, requirements))
+            return false;
+        
+        return true;
+    }
+    
+    return false;
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
 std::string runcpp2::Data::FlagsOverrideInfo::ToString(std::string indentation) const
 {
     std::string out;

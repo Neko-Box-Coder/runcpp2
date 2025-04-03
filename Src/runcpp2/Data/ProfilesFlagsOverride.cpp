@@ -4,6 +4,7 @@
 
 bool runcpp2::Data::ProfilesFlagsOverride::ParseYAML_Node(ryml::ConstNodeRef node)
 {
+    ssLOG_FUNC_DEBUG();
     INTERNAL_RUNCPP2_SAFE_START();
     
     if(!node.is_map())

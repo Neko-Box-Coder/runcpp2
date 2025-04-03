@@ -6,7 +6,6 @@
 bool runcpp2::Data::ProfilesDefines::ParseYAML_Node(ryml::ConstNodeRef node)
 {
     ssLOG_FUNC_DEBUG();
-
     INTERNAL_RUNCPP2_SAFE_START();
     
     if(!node.is_map())
@@ -17,40 +16,63 @@ bool runcpp2::Data::ProfilesDefines::ParseYAML_Node(ryml::ConstNodeRef node)
     
     for(int i = 0; i < node.num_children(); ++i)
     {
-        if(!INTERNAL_RUNCPP2_BIT_CONTANTS(node[i].type().type, ryml::NodeType_e::SEQ))
-        {
-            ssLOG_ERROR("ProfilesDefines: Defines type requires a list");
-            return false;
-        }
-        
         ryml::ConstNodeRef currentProfileDefinesNode = node[i];
         ProfileName profile = GetKey(currentProfileDefinesNode);
-
-        for(int j = 0; j < currentProfileDefinesNode.num_children(); ++j)
-        {
-            std::string defineStr = GetValue(currentProfileDefinesNode[j]);
-            Define define;
-            
-            size_t equalPos = defineStr.find('=');
-            if(equalPos != std::string::npos)
-            {
-                define.Name = defineStr.substr(0, equalPos);
-                define.Value = defineStr.substr(equalPos + 1);
-                define.HasValue = true;
-            }
-            else
-            {
-                define.Name = defineStr;
-                define.Value = "";
-                define.HasValue = false;
-            }
-            
-            Defines[profile].push_back(define);
-        }
+        if(!ParseYAML_NodeWithProfile(currentProfileDefinesNode, profile))
+            return false;
     }
     
     return true;
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::Data::ProfilesDefines::ParseYAML_NodeWithProfile( ryml::ConstNodeRef node, 
+                                                                ProfileName profile)
+{
+    ssLOG_FUNC_DEBUG();
+    INTERNAL_RUNCPP2_SAFE_START();
     
+    if(!INTERNAL_RUNCPP2_BIT_CONTANTS(node.type().type, ryml::NodeType_e::SEQ))
+    {
+        ssLOG_ERROR("ProfilesDefines: Paths type requires a list");
+        return false;
+    }
+    
+    for(int i = 0; i < node.num_children(); ++i)
+    {
+        std::string defineStr = GetValue(node[i]);
+        Define define;
+        
+        size_t equalPos = defineStr.find('=');
+        if(equalPos != std::string::npos)
+        {
+            define.Name = defineStr.substr(0, equalPos);
+            define.Value = defineStr.substr(equalPos + 1);
+            define.HasValue = true;
+        }
+        else
+        {
+            define.Name = defineStr;
+            define.Value = "";
+            define.HasValue = false;
+        }
+        
+        Defines[profile].push_back(define);
+    }
+    
+    return true;
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::Data::ProfilesDefines::IsYAML_NodeParsableAsDefault(ryml::ConstNodeRef node) const
+{
+    ssLOG_FUNC_DEBUG();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
+    if(!INTERNAL_RUNCPP2_BIT_CONTANTS(node.type().type, ryml::NodeType_e::SEQ))
+        return false;
+    
+    return true;
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 

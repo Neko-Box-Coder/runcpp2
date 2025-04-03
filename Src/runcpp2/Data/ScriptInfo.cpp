@@ -15,16 +15,24 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef node)
         NodeRequirement("Language", ryml::NodeType_e::KEYVAL, false, true),
         NodeRequirement("BuildType", ryml::NodeType_e::KEYVAL, false, true),
         NodeRequirement("RequiredProfiles", ryml::NodeType_e::MAP, false, true),
+        
+        //Expecting either platform profile map or remove append map
         NodeRequirement("OverrideCompileFlags", ryml::NodeType_e::MAP, false, true),
+        
+        //Expecting either platform profile map or remove append map
         NodeRequirement("OverrideLinkFlags", ryml::NodeType_e::MAP, false, true),
-        NodeRequirement("OtherFilesToBeCompiled", ryml::NodeType_e::MAP, false, true),
-        NodeRequirement("IncludePaths", ryml::NodeType_e::MAP, false, true),
-        NodeRequirement("Dependencies", ryml::NodeType_e::SEQ, false, true),
-        NodeRequirement("Defines", ryml::NodeType_e::MAP, false, true),
-        NodeRequirement("Setup", ryml::NodeType_e::MAP, false, true),
-        NodeRequirement("PreBuild", ryml::NodeType_e::MAP, false, true),
-        NodeRequirement("PostBuild", ryml::NodeType_e::MAP, false, true),
-        NodeRequirement("Cleanup", ryml::NodeType_e::MAP, false, true)
+        
+        //OtherFilesToBeCompiled can be platform profile map or sequence of paths, handle later
+        //IncludePaths can be platform profile map or sequence of paths, handle later
+        
+        NodeRequirement("Dependencies", ryml::NodeType_e::SEQ, false, true)
+        
+        
+        //NodeRequirement("Defines", ryml::NodeType_e::MAP, false, true),
+        //NodeRequirement("Setup", ryml::NodeType_e::MAP, false, true),
+        //NodeRequirement("PreBuild", ryml::NodeType_e::MAP, false, true),
+        //NodeRequirement("PostBuild", ryml::NodeType_e::MAP, false, true),
+        //NodeRequirement("Cleanup", ryml::NodeType_e::MAP, false, true)
     };
     
     if(!CheckNodeRequirements(node, requirements))
@@ -85,23 +93,39 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef node)
             RequiredProfiles[platform] = profiles;
         }
     }
-    
+     
     if(ExistAndHasChild(node, "OverrideCompileFlags"))
     {
         ryml::ConstNodeRef overrideCompileFlagsNode = node["OverrideCompileFlags"];
         
-        for(int i = 0; i < overrideCompileFlagsNode.num_children(); ++i)
+        //If we skip platform profile
+        FlagsOverrideInfo defaultCompileFlags;
+        if(defaultCompileFlags.IsYAML_NodeParsableAsDefault(overrideCompileFlagsNode))
         {
-            PlatformName platform = GetKey(overrideCompileFlagsNode[i]);
-            ProfilesFlagsOverride compileFlags;
-            ryml::ConstNodeRef currentCompileFlagsNode = overrideCompileFlagsNode[i];
-            
-            if(!compileFlags.ParseYAML_Node(currentCompileFlagsNode))
+            if(defaultCompileFlags.ParseYAML_Node(overrideCompileFlagsNode))
             {
-                ssLOG_ERROR("ScriptInfo: Failed to parse OverrideCompileFlags.");
-                return false;
+                OverrideCompileFlags["DefaultPlatform"] = ProfilesFlagsOverride();
+                OverrideCompileFlags.at("DefaultPlatform")
+                                    .FlagsOverrides["DefaultProfile"] = defaultCompileFlags;
             }
-            OverrideCompileFlags[platform] = compileFlags;
+            else
+                return false;
+        }
+        else
+        {
+            for(int i = 0; i < overrideCompileFlagsNode.num_children(); ++i)
+            {
+                PlatformName platform = GetKey(overrideCompileFlagsNode[i]);
+                ProfilesFlagsOverride compileFlags;
+                ryml::ConstNodeRef currentCompileFlagsNode = overrideCompileFlagsNode[i];
+                
+                if(!compileFlags.ParseYAML_Node(currentCompileFlagsNode))
+                {
+                    ssLOG_ERROR("ScriptInfo: Failed to parse OverrideCompileFlags.");
+                    return false;
+                }
+                OverrideCompileFlags[platform] = compileFlags;
+            }
         }
     }
     
@@ -109,52 +133,113 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef node)
     {
         ryml::ConstNodeRef overrideLinkFlagsNode = node["OverrideLinkFlags"];
         
-        for(int i = 0; i < overrideLinkFlagsNode.num_children(); ++i)
+        //If we skip platform profile
+        FlagsOverrideInfo defaultLinkFlags;
+        if(defaultLinkFlags.IsYAML_NodeParsableAsDefault(overrideLinkFlagsNode))
         {
-            PlatformName platform = GetKey(overrideLinkFlagsNode[i]);
-            ProfilesFlagsOverride linkFlags;
-            ryml::ConstNodeRef currentLinkFlagsNode = overrideLinkFlagsNode[i];
-            
-            if(!linkFlags.ParseYAML_Node(currentLinkFlagsNode))
+            if(defaultLinkFlags.ParseYAML_Node(overrideLinkFlagsNode))
             {
-                ssLOG_ERROR("ScriptInfo: Failed to parse OverrideLinkFlags.");
-                return false;
+                OverrideLinkFlags["DefaultPlatform"] = ProfilesFlagsOverride();
+                OverrideLinkFlags   .at("DefaultPlatform")
+                                    .FlagsOverrides["DefaultProfile"] = defaultLinkFlags;
             }
-            OverrideLinkFlags[platform] = linkFlags;
+            else
+                return false;
+        }
+        else
+        {
+            for(int i = 0; i < overrideLinkFlagsNode.num_children(); ++i)
+            {
+                PlatformName platform = GetKey(overrideLinkFlagsNode[i]);
+                ProfilesFlagsOverride linkFlags;
+                ryml::ConstNodeRef currentLinkFlagsNode = overrideLinkFlagsNode[i];
+                
+                if(!linkFlags.ParseYAML_Node(currentLinkFlagsNode))
+                {
+                    ssLOG_ERROR("ScriptInfo: Failed to parse OverrideLinkFlags.");
+                    return false;
+                }
+                OverrideLinkFlags[platform] = linkFlags;
+            }
         }
     }
     
     if(ExistAndHasChild(node, "OtherFilesToBeCompiled"))
     {
-        for(int i = 0; i < node["OtherFilesToBeCompiled"].num_children(); ++i)
+        //If we skip platform profile
+        ProfilesProcessPaths defaultCompilesFiles;
+        if(defaultCompilesFiles.IsYAML_NodeParsableAsDefault(node["OtherFilesToBeCompiled"]))
         {
-            ProfilesProcessPaths compilesFiles;
-            ryml::ConstNodeRef currentProfileMapNode = node["OtherFilesToBeCompiled"][i];
-            PlatformName platform = GetKey(currentProfileMapNode);
-            
-            if(!compilesFiles.ParseYAML_Node(currentProfileMapNode))
+            if(defaultCompilesFiles.ParseYAML_NodeWithProfile(  node["OtherFilesToBeCompiled"], 
+                                                                "DefaultProfile"))
             {
-                ssLOG_ERROR("ScriptInfo: Failed to parse OtherFilesToBeCompiled.");
+                OtherFilesToBeCompiled["DefaultPlatform"] = defaultCompilesFiles;
+            }
+            else
+                return false;
+        }
+        else
+        {
+            if(!CheckNodeRequirement(   node["OtherFilesToBeCompiled"], 
+                                        "OtherFilesToBeCompiled",
+                                        ryml::NodeType_e::MAP,
+                                        false,
+                                        true))
+            {
                 return false;
             }
-            OtherFilesToBeCompiled[platform] = compilesFiles;
+            
+            for(int i = 0; i < node["OtherFilesToBeCompiled"].num_children(); ++i)
+            {
+                ProfilesProcessPaths compilesFiles;
+                ryml::ConstNodeRef currentProfileMapNode = node["OtherFilesToBeCompiled"][i];
+                PlatformName platform = GetKey(currentProfileMapNode);
+                
+                if(!compilesFiles.ParseYAML_Node(currentProfileMapNode))
+                {
+                    ssLOG_ERROR("ScriptInfo: Failed to parse OtherFilesToBeCompiled.");
+                    return false;
+                }
+                OtherFilesToBeCompiled[platform] = compilesFiles;
+            }
         }
     }
 
     if(ExistAndHasChild(node, "IncludePaths"))
     {
-        for(int i = 0; i < node["IncludePaths"].num_children(); ++i)
+        //If we skip platform profile
+        ProfilesProcessPaths defaultIncludePaths;
+        if(defaultIncludePaths.IsYAML_NodeParsableAsDefault(node["IncludePaths"]))
         {
-            ProfilesProcessPaths includePaths;
-            ryml::ConstNodeRef currentProfileMapNode = node["IncludePaths"][i];
-            PlatformName platform = GetKey(currentProfileMapNode);
-            
-            if(!includePaths.ParseYAML_Node(currentProfileMapNode))
+            if(defaultIncludePaths.ParseYAML_NodeWithProfile(node["IncludePaths"], "DefaultProfile"))
+                IncludePaths["DefaultPlatform"] = defaultIncludePaths;
+            else
+                return false;
+        }
+        else
+        {
+            if(!CheckNodeRequirement(   node["IncludePaths"], 
+                                        "IncludePaths",
+                                        ryml::NodeType_e::MAP,
+                                        false,
+                                        true))
             {
-                ssLOG_ERROR("ScriptInfo: Failed to parse IncludePaths.");
                 return false;
             }
-            IncludePaths[platform] = includePaths;
+            
+            for(int i = 0; i < node["IncludePaths"].num_children(); ++i)
+            {
+                ProfilesProcessPaths includePaths;
+                ryml::ConstNodeRef currentProfileMapNode = node["IncludePaths"][i];
+                PlatformName platform = GetKey(currentProfileMapNode);
+                
+                if(!includePaths.ParseYAML_Node(currentProfileMapNode))
+                {
+                    ssLOG_ERROR("ScriptInfo: Failed to parse IncludePaths.");
+                    return false;
+                }
+                IncludePaths[platform] = includePaths;
+            }
         }
     }
     
@@ -178,87 +263,191 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef node)
     if(ExistAndHasChild(node, "Defines"))
     {
         ryml::ConstNodeRef definesNode = node["Defines"];
-        
-        for(int i = 0; i < definesNode.num_children(); ++i)
+        //If we skip platform profile
+        ProfilesDefines defaultDefines;
+        if(defaultDefines.IsYAML_NodeParsableAsDefault(node["Defines"]))
         {
-            PlatformName platform = GetKey(definesNode[i]);
-            ProfilesDefines profilesDefines;
-            ryml::ConstNodeRef currentDefinesNode = definesNode[i];
-            
-            if(!profilesDefines.ParseYAML_Node(currentDefinesNode))
+            if(defaultDefines.ParseYAML_NodeWithProfile(node["Defines"], "DefaultProfile"))
+                Defines["DefaultPlatform"] = defaultDefines;
+            else
+                return false;
+        }
+        else
+        {
+            if(!CheckNodeRequirement(   node["Defines"], 
+                                        "Defines",
+                                        ryml::NodeType_e::MAP,
+                                        false,
+                                        true))
             {
-                ssLOG_ERROR("ScriptInfo: Failed to parse Defines.");
                 return false;
             }
-            Defines[platform] = profilesDefines;
+            
+            for(int i = 0; i < definesNode.num_children(); ++i)
+            {
+                PlatformName platform = GetKey(definesNode[i]);
+                ProfilesDefines profilesDefines;
+                ryml::ConstNodeRef currentDefinesNode = definesNode[i];
+                
+                if(!profilesDefines.ParseYAML_Node(currentDefinesNode))
+                {
+                    ssLOG_ERROR("ScriptInfo: Failed to parse Defines.");
+                    return false;
+                }
+                Defines[platform] = profilesDefines;
+            }
         }
     }
     
     if(ExistAndHasChild(node, "Setup"))
     {
-        for(int i = 0; i < node["Setup"].num_children(); ++i)
+        //If we skip platform profile
+        ProfilesCommands defaultCommands;
+        if(defaultCommands.IsYAML_NodeParsableAsDefault(node["Setup"]))
         {
-            PlatformName platform = GetKey(node["Setup"][i]);
-            ProfilesCommands commands;
-            ryml::ConstNodeRef currentCommandsNode = node["Setup"][i];
-            
-            if(!commands.ParseYAML_Node(currentCommandsNode))
+            if(defaultCommands.ParseYAML_NodeWithProfile(node["Setup"], "DefaultProfile"))
+                Setup["DefaultPlatform"] = defaultCommands;
+            else
+                return false;
+        }
+        else
+        {
+            if(!CheckNodeRequirement(   node["Setup"], 
+                                        "Setup",
+                                        ryml::NodeType_e::MAP,
+                                        false,
+                                        true))
             {
-                ssLOG_ERROR("ScriptInfo: Failed to parse Setup.");
                 return false;
             }
-            Setup[platform] = commands;
+            
+            for(int i = 0; i < node["Setup"].num_children(); ++i)
+            {
+                PlatformName platform = GetKey(node["Setup"][i]);
+                ProfilesCommands commands;
+                ryml::ConstNodeRef currentCommandsNode = node["Setup"][i];
+                
+                if(!commands.ParseYAML_Node(currentCommandsNode))
+                {
+                    ssLOG_ERROR("ScriptInfo: Failed to parse Setup.");
+                    return false;
+                }
+                Setup[platform] = commands;
+            }
         }
     }
     
     if(ExistAndHasChild(node, "PreBuild"))
     {
-        for(int i = 0; i < node["PreBuild"].num_children(); ++i)
+        //If we skip platform profile
+        ProfilesCommands defaultCommands;
+        if(defaultCommands.IsYAML_NodeParsableAsDefault(node["PreBuild"]))
         {
-            PlatformName platform = GetKey(node["PreBuild"][i]);
-            ProfilesCommands commands;
-            ryml::ConstNodeRef currentCommandsNode = node["PreBuild"][i];
-            
-            if(!commands.ParseYAML_Node(currentCommandsNode))
+            if(defaultCommands.ParseYAML_NodeWithProfile(node["PreBuild"], "DefaultProfile"))
+                PreBuild["DefaultPlatform"] = defaultCommands;
+            else
+                return false;
+        }
+        else
+        {
+            if(!CheckNodeRequirement(   node["PreBuild"], 
+                                        "PreBuild",
+                                        ryml::NodeType_e::MAP,
+                                        false,
+                                        true))
             {
-                ssLOG_ERROR("ScriptInfo: Failed to parse PreBuild.");
                 return false;
             }
-            PreBuild[platform] = commands;
+            
+            for(int i = 0; i < node["PreBuild"].num_children(); ++i)
+            {
+                PlatformName platform = GetKey(node["PreBuild"][i]);
+                ProfilesCommands commands;
+                ryml::ConstNodeRef currentCommandsNode = node["PreBuild"][i];
+                
+                if(!commands.ParseYAML_Node(currentCommandsNode))
+                {
+                    ssLOG_ERROR("ScriptInfo: Failed to parse PreBuild.");
+                    return false;
+                }
+                PreBuild[platform] = commands;
+            }
         }
     }
     
     if(ExistAndHasChild(node, "PostBuild"))
     {
-        for(int i = 0; i < node["PostBuild"].num_children(); ++i)
+        //If we skip platform profile
+        ProfilesCommands defaultCommands;
+        if(defaultCommands.IsYAML_NodeParsableAsDefault(node["PostBuild"]))
         {
-            PlatformName platform = GetKey(node["PostBuild"][i]);
-            ProfilesCommands commands;
-            ryml::ConstNodeRef currentCommandsNode = node["PostBuild"][i];
-            
-            if(!commands.ParseYAML_Node(currentCommandsNode))
+            if(defaultCommands.ParseYAML_NodeWithProfile(node["PostBuild"], "DefaultProfile"))
+                PostBuild["DefaultPlatform"] = defaultCommands;
+            else
+                return false;
+        }
+        else
+        {
+            if(!CheckNodeRequirement(   node["PostBuild"], 
+                                        "PostBuild",
+                                        ryml::NodeType_e::MAP,
+                                        false,
+                                        true))
             {
-                ssLOG_ERROR("ScriptInfo: Failed to parse PostBuild.");
                 return false;
             }
-            PostBuild[platform] = commands;
+            
+            for(int i = 0; i < node["PostBuild"].num_children(); ++i)
+            {
+                PlatformName platform = GetKey(node["PostBuild"][i]);
+                ProfilesCommands commands;
+                ryml::ConstNodeRef currentCommandsNode = node["PostBuild"][i];
+                
+                if(!commands.ParseYAML_Node(currentCommandsNode))
+                {
+                    ssLOG_ERROR("ScriptInfo: Failed to parse PostBuild.");
+                    return false;
+                }
+                PostBuild[platform] = commands;
+            }
         }
     }
     
     if(ExistAndHasChild(node, "Cleanup"))
     {
-        for(int i = 0; i < node["Cleanup"].num_children(); ++i)
+        //If we skip platform profile
+        ProfilesCommands defaultCommands;
+        if(defaultCommands.IsYAML_NodeParsableAsDefault(node["Cleanup"]))
         {
-            PlatformName platform = GetKey(node["Cleanup"][i]);
-            ProfilesCommands commands;
-            ryml::ConstNodeRef currentCommandsNode = node["Cleanup"][i];
-            
-            if(!commands.ParseYAML_Node(currentCommandsNode))
+            if(defaultCommands.ParseYAML_NodeWithProfile(node["Cleanup"], "DefaultProfile"))
+                Cleanup["DefaultPlatform"] = defaultCommands;
+            else
+                return false;
+        }
+        else
+        {
+            if(!CheckNodeRequirement(   node["Cleanup"], 
+                                        "Cleanup",
+                                        ryml::NodeType_e::MAP,
+                                        false,
+                                        true))
             {
-                ssLOG_ERROR("ScriptInfo: Failed to parse Cleanup.");
                 return false;
             }
-            Cleanup[platform] = commands;
+            
+            for(int i = 0; i < node["Cleanup"].num_children(); ++i)
+            {
+                PlatformName platform = GetKey(node["Cleanup"][i]);
+                ProfilesCommands commands;
+                ryml::ConstNodeRef currentCommandsNode = node["Cleanup"][i];
+                
+                if(!commands.ParseYAML_Node(currentCommandsNode))
+                {
+                    ssLOG_ERROR("ScriptInfo: Failed to parse Cleanup.");
+                    return false;
+                }
+                Cleanup[platform] = commands;
+            }
         }
     }
     
