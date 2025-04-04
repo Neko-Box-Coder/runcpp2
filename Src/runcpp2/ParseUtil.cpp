@@ -2,8 +2,6 @@
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/StringUtil.hpp"
 
-#include "ssLogger/ssLog.hpp"
-
 runcpp2::NodeRequirement::NodeRequirement() :   Name(""),
                                                 NodeType(),
                                                 Required(false),

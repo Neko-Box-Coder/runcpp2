@@ -15,27 +15,50 @@ bool runcpp2::Data::ProfilesFlagsOverride::ParseYAML_Node(ryml::ConstNodeRef nod
     
     for(int i = 0; i < node.num_children(); ++i)
     {
-        if(!INTERNAL_RUNCPP2_BIT_CONTANTS(node[i].type().type, ryml::NodeType_e::MAP))
-        {
-            ssLOG_ERROR("ProfilesFlagsOverrides: FlagsOverrideInfo type requires a map");
-            return false;
-        }
-        
         ProfileName profile = GetKey(node[i]);
-        FlagsOverrideInfo flags;
-        
-        ryml::ConstNodeRef flagsOverrideNode = node[i];
-        
-        if(!flags.ParseYAML_Node(flagsOverrideNode))
-        {
-            ssLOG_ERROR("ProfilesFlagsOverrides: Unable to parse FlagsOverride.");
+        if(!ParseYAML_NodeWithProfile(node[i], profile))
             return false;
-        }
-        
-        FlagsOverrides[profile] = flags;
     }
     
     return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::Data::ProfilesFlagsOverride::ParseYAML_NodeWithProfile(   ryml::ConstNodeRef node, 
+                                                                        ProfileName profile)
+{
+    ssLOG_FUNC_DEBUG();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
+    if(!INTERNAL_RUNCPP2_BIT_CONTANTS(node.type().type, ryml::NodeType_e::MAP))
+    {
+        ssLOG_ERROR("ProfilesFlagsOverrides: FlagsOverrideInfo type requires a map");
+        return false;
+    }
+    
+    FlagsOverrideInfo flags;
+    ryml::ConstNodeRef flagsOverrideNode = node;
+    
+    if(!flags.ParseYAML_Node(flagsOverrideNode))
+    {
+        ssLOG_ERROR("ProfilesFlagsOverrides: Unable to parse FlagsOverride.");
+        return false;
+    }
+    
+    FlagsOverrides[profile] = flags;
+    
+    return true;
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::Data::ProfilesFlagsOverride::IsYAML_NodeParsableAsDefault(ryml::ConstNodeRef node) const
+{
+    ssLOG_FUNC_DEBUG();
+    INTERNAL_RUNCPP2_SAFE_START();
+
+    FlagsOverrideInfo flags;
+    return flags.IsYAML_NodeParsableAsDefault(node);
     
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
