@@ -274,6 +274,167 @@ int main(int argc, char** argv)
                                 scriptInfo.Equals(parsedOutput));
     };
     
+    ssTEST("ScriptInfo Should Parse Fields Without Platform And Profile As Default")
+    {
+        ssTEST_OUTPUT_SETUP
+        (
+            //NOTE: This is just a test YAML for validating parsing, don't use it for actual config
+            const char* yamlStr = R"(
+                Language: C++
+                OverrideCompileFlags:
+                    Remove: /W4
+                    Append: /W3
+                OverrideLinkFlags:
+                    Remove: /SUBSYSTEM:CONSOLE
+                    Append: /SUBSYSTEM:WINDOWS
+                OtherFilesToBeCompiled:
+                -   src/extra.cpp
+                -   src/debug.cpp
+                IncludePaths:
+                -   include
+                -   src/include
+                Defines:
+                -   _DEBUG
+                -   VERSION=1.0.0
+                Setup:
+                -   echo 1
+                -   echo 2
+                PreBuild:
+                -   echo 3
+                -   echo 4
+                PostBuild:
+                -   echo 5
+                -   echo 6
+                Cleanup:
+                -   echo 7
+                -   echo 8
+            )";
+            
+            ryml::Tree tree = ryml::parse_in_arena(c4::to_csubstr(yamlStr));
+            ryml::ConstNodeRef root = tree.rootref();
+            
+            runcpp2::Data::ScriptInfo scriptInfo;
+        );
+        
+        ssTEST_OUTPUT_EXECUTION
+        (
+            bool parseResult = scriptInfo.ParseYAML_Node(root);
+        );
+        
+        ssTEST_OUTPUT_ASSERT("ParseYAML_Node should succeed", parseResult);
+        
+        //Verify basic fields
+        ssTEST_OUTPUT_ASSERT("Language", scriptInfo.Language == "C++");
+        
+        //Verify OverrideCompileFlags with default platform and profile
+        ssTEST_OUTPUT_SETUP
+        (
+            const runcpp2::Data::FlagsOverrideInfo& defaultCompileFlags = 
+                scriptInfo  .OverrideCompileFlags
+                            .at("DefaultPlatform")
+                            .FlagsOverrides
+                            .at("DefaultProfile");
+        );
+        ssTEST_OUTPUT_ASSERT("Default compile remove flag", defaultCompileFlags.Remove == "/W4");
+        ssTEST_OUTPUT_ASSERT("Default compile append flag", defaultCompileFlags.Append == "/W3");
+        
+        //Verify OverrideLinkFlags with default platform and profile
+        ssTEST_OUTPUT_SETUP
+        (
+            const runcpp2::Data::FlagsOverrideInfo& defaultLinkFlags = 
+                scriptInfo  .OverrideLinkFlags
+                            .at("DefaultPlatform")
+                            .FlagsOverrides
+                            .at("DefaultProfile");
+        );
+        ssTEST_OUTPUT_ASSERT(   "Default link remove flag", 
+                                defaultLinkFlags.Remove == "/SUBSYSTEM:CONSOLE");
+        ssTEST_OUTPUT_ASSERT(   "Default link append flag", 
+                                defaultLinkFlags.Append == "/SUBSYSTEM:WINDOWS");
+        
+        //Verify OtherFilesToBeCompiled with default platform and profile
+        ssTEST_OUTPUT_SETUP
+        (
+            const std::vector<ghc::filesystem::path>& defaultCompileFiles = 
+                scriptInfo  .OtherFilesToBeCompiled.at("DefaultPlatform").Paths.at("DefaultProfile");
+        );
+        ssTEST_OUTPUT_ASSERT("Default files count", defaultCompileFiles.size() == 2);
+        ssTEST_OUTPUT_ASSERT("Default first file", defaultCompileFiles.at(0) == "src/extra.cpp");
+        ssTEST_OUTPUT_ASSERT("Default second file", defaultCompileFiles.at(1) == "src/debug.cpp");
+        
+        //Verify IncludePaths with default platform and profile
+        ssTEST_OUTPUT_SETUP
+        (
+            const std::vector<ghc::filesystem::path>& defaultIncludePaths = 
+                scriptInfo.IncludePaths.at("DefaultPlatform").Paths.at("DefaultProfile");
+        );
+        ssTEST_OUTPUT_ASSERT("Default include paths count", defaultIncludePaths.size() == 2);
+        ssTEST_OUTPUT_ASSERT("Default first include path", defaultIncludePaths.at(0) == "include");
+        ssTEST_OUTPUT_ASSERT(   "Default second include path", 
+                                defaultIncludePaths.at(1) == "src/include");
+        
+        //Verify Defines with default platform and profile
+        ssTEST_OUTPUT_SETUP
+        (
+            const std::vector<runcpp2::Data::Define>& defaultDefines = 
+                scriptInfo.Defines.at("DefaultPlatform").Defines.at("DefaultProfile");
+        );
+        ssTEST_OUTPUT_ASSERT("Default defines count", defaultDefines.size() == 2);
+        ssTEST_OUTPUT_ASSERT("Default first define", defaultDefines.at(0).Name == "_DEBUG");
+        ssTEST_OUTPUT_ASSERT("Default second define name", defaultDefines.at(1).Name == "VERSION");
+        ssTEST_OUTPUT_ASSERT("Default second define value", defaultDefines.at(1).Value == "1.0.0");
+        
+        //Verify Setup with default platform and profile
+        ssTEST_OUTPUT_SETUP
+        (
+            const std::vector<std::string>& defaultSetupCommands = 
+                scriptInfo.Setup.at("DefaultPlatform").CommandSteps.at("DefaultProfile");
+        );
+        ssTEST_OUTPUT_ASSERT("Default setup commands count", defaultSetupCommands.size() == 2);
+        ssTEST_OUTPUT_ASSERT(   "Default first setup command", 
+                                defaultSetupCommands.at(0) == "echo 1");
+        ssTEST_OUTPUT_ASSERT(   "Default second setup command", 
+                                defaultSetupCommands.at(1) == "echo 2");
+        
+        //Verify PreBuild with default platform and profile
+        ssTEST_OUTPUT_SETUP
+        (
+            const std::vector<std::string>& defaultPreBuildCommands = 
+                scriptInfo.PreBuild.at("DefaultPlatform").CommandSteps.at("DefaultProfile");
+        );
+        ssTEST_OUTPUT_ASSERT("Default prebuild commands count", defaultPreBuildCommands.size() == 2);
+        ssTEST_OUTPUT_ASSERT(   "Default first prebuild command", 
+                                defaultPreBuildCommands.at(0) == "echo 3");
+        ssTEST_OUTPUT_ASSERT(   "Default second prebuild command", 
+                                defaultPreBuildCommands.at(1) == "echo 4");
+        
+        //Verify PostBuild with default platform and profile
+        ssTEST_OUTPUT_SETUP
+        (
+            const std::vector<std::string>& defaultPostBuildCommands = 
+                scriptInfo.PostBuild.at("DefaultPlatform").CommandSteps.at("DefaultProfile");
+        );
+        ssTEST_OUTPUT_ASSERT(   "Default postbuild commands count", 
+                                defaultPostBuildCommands.size() == 2);
+        ssTEST_OUTPUT_ASSERT(   "Default first postbuild command", 
+                                defaultPostBuildCommands.at(0) == "echo 5");
+        ssTEST_OUTPUT_ASSERT(   "Default second postbuild command", 
+                                defaultPostBuildCommands.at(1) == "echo 6");
+        
+        //Verify Cleanup with default platform and profile
+        ssTEST_OUTPUT_SETUP
+        (
+            const std::vector<std::string>& defaultCleanupCommands = 
+                scriptInfo.Cleanup.at("DefaultPlatform").CommandSteps.at("DefaultProfile");
+        );
+        ssTEST_OUTPUT_ASSERT(   "Default cleanup commands count", 
+                                defaultCleanupCommands.size() == 2);
+        ssTEST_OUTPUT_ASSERT(   "Default first cleanup command", 
+                                defaultCleanupCommands.at(0) == "echo 7");
+        ssTEST_OUTPUT_ASSERT(   "Default second cleanup command", 
+                                defaultCleanupCommands.at(1) == "echo 8");
+    };
+    
     ssTEST_END_TEST_GROUP();
     return 0;
 }
