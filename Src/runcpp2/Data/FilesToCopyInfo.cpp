@@ -4,6 +4,7 @@
 
 bool runcpp2::Data::FilesToCopyInfo::ParseYAML_Node(ryml::ConstNodeRef node)
 {
+    ssLOG_FUNC_DEBUG();
     INTERNAL_RUNCPP2_SAFE_START();
     
     if(!node.is_map())
@@ -12,21 +13,56 @@ bool runcpp2::Data::FilesToCopyInfo::ParseYAML_Node(ryml::ConstNodeRef node)
         return false;
     }
     
-    for(int i = 0; i < node.num_children(); i++)
+    //If we skip platform profile
+    if(IsYAML_NodeParsableAsDefault(node))
     {
-        if(!node[i].is_seq())
-        {
-            ssLOG_ERROR("FilesToCopyInfo: Node is not a sequence");
+        if(!ParseYAML_NodeWithProfile(node, "DefaultProfile"))
             return false;
+    }
+    else
+    {
+        for(int i = 0; i < node.num_children(); i++)
+        {
+            ProfileName profile = GetKey(node[i]);
+            if(!ParseYAML_NodeWithProfile(node[i], profile))
+                return false;
         }
-        
-        ProfileName profile = GetKey(node[i]);
-        for(int j = 0; j < node[i].num_children(); j++)
-            ProfileFiles[profile].push_back(GetValue(node[i][j]));
     }
     
     return true;
     
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::Data::FilesToCopyInfo::ParseYAML_NodeWithProfile( ryml::ConstNodeRef node, 
+                                                                ProfileName profile)
+{
+    ssLOG_FUNC_DEBUG();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
+    if(!INTERNAL_RUNCPP2_BIT_CONTANTS(node.type().type, ryml::NodeType_e::SEQ))
+    {
+        ssLOG_ERROR("FilesToCopyInfo: Node is not a sequence");
+        return false;
+    }
+    
+    for(int i = 0; i < node.num_children(); i++)
+        ProfileFiles[profile].push_back(GetValue(node[i]));
+    
+    return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::Data::FilesToCopyInfo::IsYAML_NodeParsableAsDefault(ryml::ConstNodeRef node) const
+{
+    ssLOG_FUNC_DEBUG();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
+    if(!INTERNAL_RUNCPP2_BIT_CONTANTS(node.type().type, ryml::NodeType_e::SEQ))
+        return false;
+    
+    return true;
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 

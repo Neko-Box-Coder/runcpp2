@@ -40,11 +40,14 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(ryml::ConstNodeRef node)
         NodeRequirement("Source", ryml::NodeType_e::MAP, true, false),
         NodeRequirement("LibraryType", ryml::NodeType_e::KEYVAL, true, false),
         NodeRequirement("IncludePaths", ryml::NodeType_e::SEQ, false, true),
+        
+        //Expecting either platform profile map or ProfileLinkProperty map
         NodeRequirement("LinkProperties", ryml::NodeType_e::MAP, false, false),
-        NodeRequirement("Setup", ryml::NodeType_e::MAP, false, true),
-        NodeRequirement("Cleanup", ryml::NodeType_e::MAP, false, true),
-        NodeRequirement("Build", ryml::NodeType_e::MAP, false, true),
-        NodeRequirement("FilesToCopy", ryml::NodeType_e::MAP, false, true)
+        
+        //Setup can be platform profile map or sequence of commands, handle later
+        //Cleanup can be platform profile map or sequence of commands, handle later
+        //Build can be platform profile map or sequence of commands, handle later
+        //FilesToCopy can be platform profile map or sequence of paths, handle later
     };
     
     if(!CheckNodeRequirements(node, requirements))
@@ -91,22 +94,12 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(ryml::ConstNodeRef node)
     
     if(ExistAndHasChild(node, "LinkProperties"))
     {
-        ryml::ConstNodeRef linkPropertiesNode = node["LinkProperties"];
-        
-        for(int i = 0; i < linkPropertiesNode.num_children(); ++i)
+        if(!ParsePlatformProfileMap<DependencyLinkProperty>(node, 
+                                                            "LinkProperties", 
+                                                            LinkProperties, 
+                                                            "LinkProperties"))
         {
-            PlatformName platform = GetKey(linkPropertiesNode[i]);
-            ryml::ConstNodeRef platformNode = linkPropertiesNode[i];
-            
-            //Insert an empty DependencyLinkProperty and get a reference to it
-            DependencyLinkProperty& linkProperty = LinkProperties[platform];
-            
-            if(!linkProperty.ParseYAML_Node(platformNode))
-            {
-                ssLOG_ERROR("DependencyInfo: Failed to parse LinkProperties for platform " << 
-                            platform);
-                return false;
-            }
+            return false;
         }
     }
     else if(LibraryType != DependencyLibraryType::HEADER)
@@ -115,75 +108,18 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(ryml::ConstNodeRef node)
                     Data::DependencyLibraryTypeToString(LibraryType));
         return false;
     }
-    
-    if(ExistAndHasChild(node, "Setup"))
-    {
-        for(int i = 0; i < node["Setup"].num_children(); ++i)
-        {
-            ProfilesCommands currentSetup;
-            ryml::ConstNodeRef currentSetupNode = node["Setup"][i];
-            
-            if(!currentSetup.ParseYAML_Node(currentSetupNode))
-            {
-                ssLOG_ERROR("DependencyInfo: Failed to parse Setup");
-                return false;
-            }
-            
-            Setup[GetKey(node["Setup"][i])] = currentSetup;
-        }
-    }
-    
-    if(ExistAndHasChild(node, "Cleanup"))
-    {
-        for(int i = 0; i < node["Cleanup"].num_children(); ++i)
-        {
-            ProfilesCommands currentCleanup;
-            ryml::ConstNodeRef currentCleanupNode = node["Cleanup"][i];
-            
-            if(!currentCleanup.ParseYAML_Node(currentCleanupNode))
-            {
-                ssLOG_ERROR("DependencyInfo: Failed to parse Cleanup");
-                return false;
-            }
-            
-            Cleanup[GetKey(node["Cleanup"][i])] = currentCleanup;
-        }
-    }
-    
-    if(ExistAndHasChild(node, "Build"))
-    {
-        for(int i = 0; i < node["Build"].num_children(); ++i)
-        {
-            ProfilesCommands currentBuild;
-            ryml::ConstNodeRef currentBuildNode = node["Build"][i];
-            
-            if(!currentBuild.ParseYAML_Node(currentBuildNode))
-            {
-                ssLOG_ERROR("DependencyInfo: Failed to parse Build");
-                return false;
-            }
-            
-            Build[GetKey(node["Build"][i])] = currentBuild;
-        }
-    }
-    
-    if(ExistAndHasChild(node, "FilesToCopy"))
-    {
-        for(int i = 0; i < node["FilesToCopy"].num_children(); ++i)
-        {
-            FilesToCopyInfo currentFilesToCopy;
-            ryml::ConstNodeRef currentFilesToCopyNode = node["FilesToCopy"][i];
-            PlatformName platform = GetKey(currentFilesToCopyNode);
-            
-            if(!currentFilesToCopy.ParseYAML_Node(currentFilesToCopyNode))
-            {
-                ssLOG_ERROR("DependencyInfo: Failed to parse FilesToCopy");
-                return false;
-            }
-            
-            FilesToCopy[platform] = currentFilesToCopy;
-        }
-    }
+
+    if(!ParsePlatformProfileMap<ProfilesCommands>(node, "Setup", Setup, "Setup"))
+        return false;
+
+    if(!ParsePlatformProfileMap<ProfilesCommands>(node, "Cleanup", Cleanup, "Cleanup"))
+        return false;
+
+    if(!ParsePlatformProfileMap<ProfilesCommands>(node, "Build", Build, "Build"))
+        return false;
+
+    if(!ParsePlatformProfileMap<FilesToCopyInfo>(node, "FilesToCopy", FilesToCopy, "FilesToCopy"))
+        return false;
 
     return true;
     
