@@ -250,20 +250,34 @@
 - Type: `Platforms Map With Profiles Map`
 - Description: A map of platforms with a map of profiles. 
 
-??? TODO 
-    If platform and profile are not specified, the default platform and profile are used.
-
 ???+ Example
     ```yaml
-    Windows:
-        "g++":
-            ExampleSetting: "ExampleValue"
-    Linux:
-        "g++":
-            ExampleSetting: "ExampleValue"
-    MacOS:
-        "g++":
-            ExampleSetting: "ExampleValue"
+    ExampleSettings:
+        Windows:
+            "g++":
+                ExampleSubSetting: "ExampleValue"
+        Linux:
+            "g++":
+                ExampleSubSetting: "ExampleValue2"
+        MacOS:
+            "g++":
+                ExampleSubSetting: "ExampleValue3"
+    ```
+
+!!! info "This requires `latest` version"
+    If platform and profile are not specified, the default platform and profile are used. So
+    ```yaml
+    ExampleSettings:
+        ExampleSubSetting: "ExampleValue"
+    ```
+    
+    is the same as
+    
+    ```yaml
+    ExampleSettings:
+        DefaultPlatform:
+            DefaultProfile:
+                ExampleSubSetting: "ExampleValue"
     ```
 
 ### `platform profile list`

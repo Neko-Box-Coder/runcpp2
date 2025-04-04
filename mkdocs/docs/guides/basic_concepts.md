@@ -96,10 +96,10 @@ There are two special keywords for more flexible configuration:
             "g++":
                 Flags: "-O2"
     ```
-    When using g++, only `-O2` will be used.
-    When using any other profile, only `-Wall` will be used, not `-Wall -O2`.
+    When using g++, only `-O2` will be used, not `-Wall -O2`.
+    When using any other profile, only `-Wall` will be used.
 
-??? TODO
+!!! info "This requires `latest` version"
     If you have a setting that **only** has DefaultPlatform and DefaultProfile, you can directly 
     specify the settings without listing it under DefaultPlatform and DefaultProfile.
 

@@ -7,13 +7,13 @@
         - Add branch/tag option for git
         - Add initialize submodule option for git
     - Async/Multi-thread compile and dependencies processing
+    - Ability to skip DefaultPlatform and DefaultProfile
 
 
 ## Planned
 
 ### v0.3.0
 
-- Ability to skip DefaultPlatform and DefaultProfile
 - Allow runcpp2 to be library for scriptable pipeline
 - Add ability to reference local YAML for user config
 - Add version for default user config and prompt for update
