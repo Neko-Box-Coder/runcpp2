@@ -775,11 +775,11 @@ represent different compilers toolchains and their configurations.</p>
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">        </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
 </span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">            </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O2&quot;</span>
 </span></code></pre></div>
-When using g++, only <code>-O2</code> will be used.
-When using any other profile, only <code>-Wall</code> will be used, not <code>-Wall -O2</code>.</p>
+When using g++, only <code>-O2</code> will be used, not <code>-Wall -O2</code>.
+When using any other profile, only <code>-Wall</code> will be used.</p>
 </div>
-<details class="todo">
-<summary>Todo</summary>
+<div class="admonition info">
+<p class="admonition-title">This requires <code>latest</code> version</p>
 <p>If you have a setting that <strong>only</strong> has DefaultPlatform and DefaultProfile, you can directly 
 specify the settings without listing it under DefaultPlatform and DefaultProfile.</p>
 <p>For example:
@@ -792,7 +792,7 @@ is equivalent to:
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">        </span><span class="nt">DefaultProfile</span><span class="p">:</span>
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">            </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wall&quot;</span>
 </span></code></pre></div></p>
-</details>
+</div>
 
 
 
