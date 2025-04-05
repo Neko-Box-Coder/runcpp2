@@ -24,6 +24,102 @@ def SetGithubStatus(githubToken, context, targetUrl, desc, status, repoOwner, re
         """
 }
 
+def UpdateNightlyTag(githubToken, repoOwner, repoName, expectedHash)
+{
+    // Install jq and zip if not already installed
+    bash """
+        if ! command -v jq &> /dev/null; then
+            echo "Installing jq..."
+            apt-get update
+            apt-get install -y jq
+        fi
+        
+        if ! command -v zip &> /dev/null; then
+            echo "Installing zip..."
+            apt-get update
+            apt-get install -y jq zip
+        fi
+    """
+    
+    def response = bash """
+        curl -L --fail-with-body \\
+        -X PATCH \\
+        -H "Accept: application/vnd.github+json" \\
+        -H "Authorization: Bearer ${githubToken}" \\
+        -H "X-GitHub-Api-Version: 2022-11-28" \\
+        -d '{
+            "sha":"${expectedHash}",
+            "force":true
+        }' \\
+        https://api.github.com/repos/${repoOwner}/${repoName}/git/refs/tags/nightly
+        """
+    
+    echo "response: ${response}"
+}
+
+def UploadArtifactToGithub(githubToken, repoOwner, repoName, tagName, artifactPath, artifactName)
+{
+    bash """
+        # Create a release if it doesn't exist
+        RELEASE_ID=\$(curl -s -L --fail-with-body \\
+            -H "Authorization: Bearer ${githubToken}" \\
+            "https://api.github.com/repos/${repoOwner}/${repoName}/releases/tags/${tagName}" \\
+            | jq -r '.id')
+        
+        if [ "\$RELEASE_ID" = "null" ]; then
+            RELEASE_ID=\$(curl -s -L --fail-with-body \\
+                -X POST \\
+                -H "Accept: application/vnd.github+json" \\
+                -H "Authorization: Bearer ${githubToken}" \\
+                -H "X-GitHub-Api-Version: 2022-11-28" \\
+                -d '{
+                    "tag_name": "${tagName}",
+                    "name": "Nightly Build",
+                    "body": "Automated nightly build from CI"
+                }' \\
+                "https://api.github.com/repos/${repoOwner}/${repoName}/releases" | jq -r '.id')
+        fi
+        
+        curl -L --fail-with-body \\
+            -X PATCH \\
+            -H "Accept: application/vnd.github+json" \\
+            -H "Authorization: Bearer ${githubToken}" \\
+            -H "X-GitHub-Api-Version: 2022-11-28" \\
+            -d '{
+                "tag_name": "${tagName}",
+                "name": "Nightly Build",
+                "body": "Automated nightly build from CI"
+            }' \\
+            "https://api.github.com/repos/${repoOwner}/${repoName}/releases/\${RELEASE_ID}"
+        
+        # Check if the asset already exists
+        ASSET_ID=\$(curl -s -L --fail-with-body \\
+            -H "Authorization: Bearer ${githubToken}" \\
+            "https://api.github.com/repos/${repoOwner}/${repoName}/releases/\${RELEASE_ID}/assets" | 
+            jq -r ".[] | select(.name == \\\"${artifactName}\\\") | .id")
+        
+        if [ "\$ASSET_ID" != "" ]; then
+            echo "Asset ${artifactName} already exists with ID \$ASSET_ID. Deleting it..."
+            curl -L --fail-with-body \\
+                -X DELETE \\
+                -H "Accept: application/vnd.github+json" \\
+                -H "Authorization: Bearer ${githubToken}" \\
+                -H "X-GitHub-Api-Version: 2022-11-28" \\
+                "https://api.github.com/repos/${repoOwner}/${repoName}/releases/assets/\${ASSET_ID}"
+        fi
+
+        # Upload the artifact
+        curl -L --fail-with-body \\
+            -X POST \\
+            -H "Accept: application/vnd.github+json" \\
+            -H "Authorization: Bearer ${githubToken}" \\
+            -H "Content-Type: application/octet-stream" \\
+            --data-binary "@${artifactPath}" \\
+            "https://uploads.github.com/repos/${repoOwner}/${repoName}/releases/\${RELEASE_ID}/assets?name=${artifactName}"
+    """
+    //"""
+}
+
 def REPO_OWNER = "Neko-Box-Coder"
 def REPO_NAME = "runcpp2"
 def TARGET_URL = 'https://github.com/Neko-Box-Coder/runcpp2.git'
@@ -97,9 +193,20 @@ pipeline
                             error('Receiving non relevant PR action')
                         else
                         {
-                            timeout(time: 30, unit: 'MINUTES')
+                            if(env.GITHUB_PR_REPO_OWNER == REPO_OWNER)
                             {
-                                input 'Approval this job?'
+                                echo    "env.GITHUB_PR_REPO_OWNER (${env.GITHUB_PR_REPO_OWNER}) is " +
+                                        "the same as original REPO_OWNER (${REPO_OWNER})"
+                                echo "Skipping approval..."
+                            }
+                            else
+                            {
+                                echo    "env.GITHUB_PR_REPO_OWNER (${env.GITHUB_PR_REPO_OWNER}) is " +
+                                        " not the same as original REPO_OWNER (${REPO_OWNER})"
+                                timeout(time: 30, unit: 'MINUTES')
+                                {
+                                    input 'Approval this job?'
+                                }
                             }
                         }
                         
@@ -146,7 +253,7 @@ pipeline
                         ]
                     )
                     
-                    GIT_HASH = bash("echo \$(git rev-parse --verify HEAD)", true)
+                    GIT_HASH = bash("echo \$(git rev-parse --verify HEAD)", true).trim()
                     echo "GITHASH: ${GIT_HASH}"
                     
                     if(!STORE_BUILD)
@@ -221,7 +328,6 @@ pipeline
             
             //NOTE: We use Debug builds for now even for release.
         }
-
         stage('Test') 
         {
             parallel 
@@ -337,6 +443,67 @@ pipeline
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
             }
+        }
+        stage('Update GitHub Nightly Release')
+        {
+            agent { label 'linux' }
+            when 
+            {
+                expression { return env.X_GitHub_Event == 'push' && 
+                                    env.GITHUB_PUSH_REF == 'refs/heads/master' }
+            }
+            steps
+            {
+                script
+                {
+                    withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')])
+                    {
+                        //Wait for nightly tag to be updated to the correct commit
+                        UpdateNightlyTag('$GITHUB_TOKEN', REPO_OWNER, REPO_NAME, GIT_HASH)
+                        
+                        //Upload Linux executable
+                        dir('WindowsBuild') { unstash 'windows_build' }
+                        dir('LinuxBuild') { unstash 'linux_build' }
+                        if (fileExists('LinuxBuild/Build/runcpp2')) 
+                        {
+                            bash """
+                                cd LinuxBuild/Build
+                                zip -9 ../../runcpp2-linux.zip runcpp2
+                            """
+                            UploadArtifactToGithub( '$GITHUB_TOKEN', 
+                                                    REPO_OWNER, 
+                                                    REPO_NAME, 
+                                                    "nightly", 
+                                                    "runcpp2-linux.zip", 
+                                                    "runcpp2-linux.zip")
+                        }
+                        else
+                        {
+                            error('Failed to find linux build')
+                        }
+                        
+                        //Upload Windows executable
+                        if (fileExists('WindowsBuild/Build/Debug/runcpp2.exe')) 
+                        {
+                            bash """
+                                cd WindowsBuild/Build/Debug
+                                zip -9 ../../../runcpp2-windows.zip runcpp2.exe
+                            """
+                            UploadArtifactToGithub( '$GITHUB_TOKEN', 
+                                                    REPO_OWNER, 
+                                                    REPO_NAME, 
+                                                    "nightly", 
+                                                    "runcpp2-windows.zip", 
+                                                    "runcpp2-windows.zip")
+                        }
+                        else
+                        {
+                            error('Failed to find windows build')
+                        }
+                    }
+                }
+            }
+            post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
         }
         
         stage('Notify')
