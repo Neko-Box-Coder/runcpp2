@@ -8,7 +8,14 @@ project(runcpp2)
 set(CMAKE_CXX_STANDARD 11)
 
 option(RUNCPP2_UPDATE_DEFAULT_YAMLS "Update default yaml files" OFF)
-option(RUNCPP2_BUILD_TESTS "Build runcpp2 tests" OFF)
+
+if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    option(RUNCPP2_WARNINGS_AS_ERRORS "Treat warnings as errors" ON)
+    option(RUNCPP2_BUILD_TESTS "Build runcpp2 tests" ON)
+else()
+    option(RUNCPP2_WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
+    option(RUNCPP2_BUILD_TESTS "Build runcpp2 tests" OFF)
+endif()
 
 # =========================================================================
 # Retrieving Version String
@@ -158,28 +165,35 @@ target_link_libraries(runcpp2 PUBLIC ghc_filesystem ryml::ryml mpark_variant)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # TODO: Try to change to /Wall
-    set(STANDARD_COMPILE_FLAGS "/utf-8;/W1;/DGHC_WIN_DISABLE_WSTRING_STORAGE_TYPE=1")
+    set(RUNCPP2_STANDARD_COMPILE_FLAGS "/utf-8;/W1;/DGHC_WIN_DISABLE_WSTRING_STORAGE_TYPE=1")
+    if (RUNCPP2_WARNINGS_AS_ERRORS)
+        list(APPEND RUNCPP2_STANDARD_COMPILE_FLAGS "/WX")
+    endif()
+    
+    message("RUNCPP2_STANDARD_COMPILE_FLAGS: ${RUNCPP2_STANDARD_COMPILE_FLAGS}")
 else()
-    set(STANDARD_COMPILE_FLAGS  "-Wall"
-                                "-Wno-return-local-addr"
-                                "-Wno-sign-compare"
-                                #"-Wno-unused-variable"
-                                #"-Wno-unused-but-set-variable"
-                                "-Wno-unused-parameter"
-                                "-Wno-switch"
-                                "-Wno-gnu-zero-variadic-macro-arguments"
-                                "-Wextra"
-                                "-pedantic"
-                                "-Werror")
+    set(RUNCPP2_STANDARD_COMPILE_FLAGS  "-Wall"
+                                        "-Wno-return-local-addr"
+                                        "-Wno-sign-compare"
+                                        #"-Wno-unused-variable"
+                                        #"-Wno-unused-but-set-variable"
+                                        "-Wno-unused-parameter"
+                                        "-Wno-switch"
+                                        "-Wno-gnu-zero-variadic-macro-arguments"
+                                        "-Wextra"
+                                        "-pedantic")
+    if (RUNCPP2_WARNINGS_AS_ERRORS)
+        list(APPEND RUNCPP2_STANDARD_COMPILE_FLAGS "-Werror")
+    endif()
 endif()
 
-target_compile_options(runcpp2 PRIVATE "${STANDARD_COMPILE_FLAGS}")
+target_compile_options(runcpp2 PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
 
 # Define the version macro
 target_compile_definitions(runcpp2 PUBLIC RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}")
 
 add_executable(runcpp2_main "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/main.cpp")
-target_compile_options(runcpp2_main PRIVATE "${STANDARD_COMPILE_FLAGS}")
+target_compile_options(runcpp2_main PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
 target_link_libraries(runcpp2_main PRIVATE runcpp2 ssLogger ghc_filesystem)
 set_target_properties(runcpp2_main PROPERTIES OUTPUT_NAME "runcpp2")
 

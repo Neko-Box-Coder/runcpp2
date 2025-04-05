@@ -23,7 +23,7 @@ namespace runcpp2
                 std::string Path;
                 LocalCopyMode CopyMode = LocalCopyMode::Auto;
                 
-                bool ParseYAML_Node(ryml::ConstNodeRef& node);
+                bool ParseYAML_Node(ryml::ConstNodeRef node);
                 std::string ToString(std::string indentation) const;
                 bool Equals(const LocalSource& other) const;
         };

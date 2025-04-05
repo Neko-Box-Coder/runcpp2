@@ -53,21 +53,6 @@ Each setting supports two operations:
     The default flags for each profile can be found in your user config file. 
     Run `runcpp2 --show-config-path` to locate it.
 
-??? example "Common Use Cases"
-    ```yaml
-    OverrideCompileFlags:
-        DefaultPlatform:
-            "g++":
-                Append: "-O3"                    # Optimize for speed
-            "msvc":
-                Append: "/O2"                    # Optimize for speed
-                
-    OverrideLinkFlags:
-        Windows:
-            "msvc":
-                Append: "/SUBSYSTEM:WINDOWS"     # Build as GUI application
-    ```
-
 ---
 
 ## Adding Source Files And Include Paths

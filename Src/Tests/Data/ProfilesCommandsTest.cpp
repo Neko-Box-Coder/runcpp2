@@ -33,8 +33,7 @@ int main(int argc, char** argv)
         
         ssTEST_OUTPUT_EXECUTION
         (
-            ryml::ConstNodeRef nodeRef = root;
-            bool parseResult = profilesCommands.ParseYAML_Node(nodeRef);
+            bool parseResult = profilesCommands.ParseYAML_Node(root);
         );
         
         ssTEST_OUTPUT_ASSERT("ParseYAML_Node should succeed", parseResult);
@@ -56,8 +55,7 @@ int main(int argc, char** argv)
             ryml::Tree outputTree = ryml::parse_in_arena(ryml::to_csubstr(yamlOutput));
             
             runcpp2::Data::ProfilesCommands parsedOutput;
-            nodeRef = outputTree.rootref();
-            parsedOutput.ParseYAML_Node(nodeRef);
+            parsedOutput.ParseYAML_Node(outputTree.rootref());
         );
         
         ssTEST_OUTPUT_ASSERT(   "Parsed output should equal original", 

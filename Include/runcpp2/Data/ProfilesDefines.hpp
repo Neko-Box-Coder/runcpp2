@@ -24,7 +24,9 @@ namespace runcpp2
             public:
                 std::unordered_map<ProfileName, std::vector<Define>> Defines;
 
-                bool ParseYAML_Node(ryml::ConstNodeRef& node);
+                bool ParseYAML_Node(ryml::ConstNodeRef node);
+                bool ParseYAML_NodeWithProfile(ryml::ConstNodeRef node, ProfileName profile);
+                bool IsYAML_NodeParsableAsDefault(ryml::ConstNodeRef node) const;
                 std::string ToString(std::string indentation) const;
                 bool Equals(const ProfilesDefines& other) const;
         };

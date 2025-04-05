@@ -35,7 +35,6 @@ This is configured under the `Source` section. We currently support 2 sources:
         Source:
             Git:
                 URL: "https://github.com/MyUser/MyLibrary.git"
-                
         LibraryType: Static
         IncludePaths:
         -   "include/MyLibrary"
@@ -61,25 +60,26 @@ This is configured under the `Source` section. We currently support 2 sources:
 
 !!! info "This requires `latest` version"
 
-You can specify the target branch/tag name and to clone whole git history or not with:
-`Branch` and `FullHistory`. 
+    You can specify the target branch/tag name and to clone whole git history or not with:
+    `Branch` and `FullHistory`. 
 
-You can also specify if you want to clone all the submodules full history or not with `SubmoduleInitType`
+    You can also specify if you want to clone all the submodules full history or not with 
+    `SubmoduleInitType`
 
-A normal clone without full history will be performed if none of these are specified.
+    A normal clone without full history will be performed if none of these are specified.
 
-???+ example "Example "Not using default and cloning a specify branch and submodules with full history""
-    ```yaml
-    Dependencies:
-    ...
-        Source:
-            Git:
-                URL: "https://github.com/MyUser/MyLibrary.git"
-                Branch: "SpecialBranch"
-                FullHistory: true
-                SubmoduleInitType: "Full"
-    ...
-    ```
+    ???+ example "Example "Not using default and cloning a specify branch and submodules with full history""
+        ```yaml
+        Dependencies:
+        ...
+            Source:
+                Git:
+                    URL: "https://github.com/MyUser/MyLibrary.git"
+                    Branch: "SpecialBranch"
+                    FullHistory: true
+                    SubmoduleInitType: "Full"
+        ...
+        ```
 
 ---
 
@@ -87,7 +87,8 @@ A normal clone without full history will be performed if none of these are speci
 
 ### Include Paths
 
-Include paths can be specified using the `IncludePaths` field. These paths are relative to the dependency's root directory:
+Include paths can be specified using the `IncludePaths` field. 
+These paths are relative to the dependency's root directory:
 
 ???+ example
     ```yaml
@@ -104,22 +105,7 @@ Include paths can be specified using the `IncludePaths` field. These paths are r
 
 For non-header libraries, you need to specify how to link against the library using `LinkProperties`:
 
-???+ example "Basic Link Settings"
-    ```yaml
-    Dependencies:
-    -   Name: MyLibrary
-        LibraryType: Static
-        LinkProperties:
-            DefaultPlatform:
-                "g++":
-                    # Names to search for when looking for library files
-                    SearchLibraryNames: ["MyLibrary"]
-                    # Where to look for the library files
-                    SearchDirectories: ["build"]
-        # ... other fields ...
-    ```
-
-??? example "Platform-Specific Link Settings"
+???+ example
     ```yaml
     Dependencies:
     -   Name: MyLibrary
@@ -146,7 +132,8 @@ For non-header libraries, you need to specify how to link against the library us
 
 ### Excluding Libraries
 
-Sometimes a dependency might have multiple library files, but you only want to link against specific ones. 
+Sometimes a dependency might have multiple library files, 
+but you only want to link against specific ones. 
 
 Use `ExcludeLibraryNames` to skip certain libraries:
 
@@ -169,9 +156,12 @@ Use `ExcludeLibraryNames` to skip certain libraries:
 
 ## Adding Setup, Build and Cleanup Commands
 
-runcpp2 supports external dependencies with any build systems by allowing you to specify different command hooks similar to [command hooks in your project](building_project_sources.md#adding-command-hooks)
+runcpp2 supports external dependencies with any build systems by allowing you 
+to specify different command hooks similar to 
+[command hooks in your project](building_project_sources.md#adding-command-hooks)
 
-The only difference is that `PreBuild` and `PostBuild` hooks are replaced with `Build` hook which is run together when building your project source files.
+The only difference is that `PreBuild` and `PostBuild` hooks are replaced with
+ `Build` hook which is run together when building your project source files.
 
 ??? example
     ```yaml
@@ -196,26 +186,23 @@ The only difference is that `PreBuild` and `PostBuild` hooks are replaced with `
 
 ## Copying Files
 
-Sometimes dependencies need additional files (like DLLs, shaders, or assets) to be copied next to your executable. You can specify these files using the `FilesToCopy` field.
+Sometimes dependencies need additional files (like DLLs, shaders, or assets) to be copied next 
+to your executable. You can specify these files using the `FilesToCopy` field.
 
-All paths are relative to the dependency's root directory. The files are copied to the output directory where the executable is located.
+All paths are relative to the dependency's root directory. 
+The files are copied to the output directory where the executable is located.
 
-???+ example "Basic File Copying"
+???+ example
     ```yaml
     Dependencies:
-    -   Name: MyLibrary
+    -   Name: MyLibraryA
         # ... other fields ...
         FilesToCopy:
             DefaultPlatform:
                 DefaultProfile:
                 -   "assets/shaders/default.glsl"    # Copy shader file
                 -   "data/config.json"               # Copy config file
-    ```
-
-??? example "Copying Platform-Specific Files"
-    ```yaml
-    Dependencies:
-    -   Name: MyLibrary
+    -   Name: MyLibraryB
         # ... other fields ...
         FilesToCopy:
             Windows:
@@ -230,13 +217,15 @@ All paths are relative to the dependency's root directory. The files are copied 
 
 ## Importing Dependency Info
 
-You can separate dependency info into standalone YAML files and import them into your project.
+You can separate dependency info into standalone dependency YAML files and 
+import them into your project.
 
-The standalone YAML file is the same as a single dependency entry in the `Dependencies` section.
+The standalone dependency YAML file is the same as a single dependency entry in the `Dependencies` section.
 
-??? example
+???+ example
     If you have:
-    ```yaml
+    ```yaml title="main.yaml"
+    # ... other fields ...
     Dependencies:
     -   Name: MyLibrary
         Platforms: [Windows, Linux, MacOS]
@@ -244,9 +233,10 @@ The standalone YAML file is the same as a single dependency entry in the `Depend
             Git:
                 URL: "https://github.com/MyUser/MyLibrary.git"
         LibraryType: Header
+    # ... other fields ...
     ```
-    Then you can create a standalone YAML file:
-    ```yaml
+    Then the standalone dependency YAML file will look like this:
+    ```yaml title="MyLibrary.yaml"
     Name: MyLibrary
     Platforms: [Windows, Linux, MacOS]
     Source:
@@ -255,7 +245,7 @@ The standalone YAML file is the same as a single dependency entry in the `Depend
     LibraryType: Header
     ```
 
-To import a dependency info, use the `ImportPath` field under the `Source` section:
+To import a standalone dependency YAML, use the `ImportPath` field under the `Source` section:
 
 Just like previously, you can import the dependency info from a git repository or a local directory.
 
@@ -308,18 +298,16 @@ When using `ImportPath`:
                 Path: "./libs/LocalLibrary"
     ```
 
-
-
-Example of a dependency configuration file (dependency.yaml):
-```yaml
-Name: ImportedLibrary
-Platforms: [Windows, Linux, MacOS]
-LibraryType: Static
-IncludePaths:
--   "src/include"
-Build:
-    DefaultPlatform:
-        "g++":
-        -   "cmake -B build"
-        -   "cmake --build build"
-```
+???+ example "Example of `build_info.yaml` in above cases:"
+    ```yaml title="build_info.yaml"
+    Name: MyLibrary
+    Platforms: [Windows, Linux, MacOS]
+    LibraryType: Static
+    IncludePaths:
+    -   "src/include"
+    Build:
+        DefaultPlatform:
+            "g++":
+            -   "cd .. && cmake -B build"
+            -   "cd .. && cmake --build build"
+    ```

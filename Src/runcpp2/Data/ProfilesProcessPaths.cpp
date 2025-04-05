@@ -2,10 +2,9 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::ProfilesProcessPaths::ParseYAML_Node(ryml::ConstNodeRef& node)
+bool runcpp2::Data::ProfilesProcessPaths::ParseYAML_Node(ryml::ConstNodeRef node)
 {
     ssLOG_FUNC_DEBUG();
-
     INTERNAL_RUNCPP2_SAFE_START();
     
     if(!node.is_map())
@@ -16,21 +15,45 @@ bool runcpp2::Data::ProfilesProcessPaths::ParseYAML_Node(ryml::ConstNodeRef& nod
     
     for(int i = 0; i < node.num_children(); ++i)
     {
-        if(!INTERNAL_RUNCPP2_BIT_CONTANTS(node[i].type().type, ryml::NodeType_e::SEQ))
-        {
-            ssLOG_ERROR("ProfilesProcessPaths: Paths type requires a list");
-            return false;
-        }
-        
         ryml::ConstNodeRef currentProfilePathsNode = node[i];
         ProfileName profile = GetKey(currentProfilePathsNode);
-
-        for(int j = 0; j <  currentProfilePathsNode.num_children(); ++j)
-            Paths[profile].push_back(GetValue(currentProfilePathsNode[j]));
+        
+        if(!ParseYAML_NodeWithProfile(currentProfilePathsNode, profile))
+            return false;
     }
     
     return true;
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::Data::ProfilesProcessPaths::ParseYAML_NodeWithProfile(ryml::ConstNodeRef node, 
+                                                                    ProfileName profile)
+{
+    ssLOG_FUNC_DEBUG();
+    INTERNAL_RUNCPP2_SAFE_START();
     
+    if(!INTERNAL_RUNCPP2_BIT_CONTANTS(node.type().type, ryml::NodeType_e::SEQ))
+    {
+        ssLOG_ERROR("ProfilesProcessPaths: Paths type requires a list");
+        return false;
+    }
+    
+    for(int i = 0; i < node.num_children(); ++i)
+        Paths[profile].push_back(GetValue(node[i]));
+    
+    return true;
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::Data::ProfilesProcessPaths::IsYAML_NodeParsableAsDefault(ryml::ConstNodeRef node) const
+{
+    ssLOG_FUNC_DEBUG();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
+    if(!INTERNAL_RUNCPP2_BIT_CONTANTS(node.type().type, ryml::NodeType_e::SEQ))
+        return false;
+    
+    return true;
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 

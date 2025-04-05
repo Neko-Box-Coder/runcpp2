@@ -3,8 +3,9 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(ryml::ConstNodeRef& node)
+bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(ryml::ConstNodeRef node)
 {
+    ssLOG_FUNC_DEBUG();
     INTERNAL_RUNCPP2_SAFE_START();
     
     if(!node.is_map())
@@ -63,6 +64,87 @@ bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(ryml::ConstNodeRef& n
 
     return true;
     
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::Data::DependencyLinkProperty::ParseYAML_NodeWithProfile(  ryml::ConstNodeRef node, 
+                                                                        ProfileName profile)
+{
+    ssLOG_FUNC_DEBUG();
+    INTERNAL_RUNCPP2_SAFE_START();
+    
+    ProfileLinkProperty& property = ProfileProperties[profile];
+    
+    std::vector<NodeRequirement> requirements =
+    {
+        NodeRequirement("SearchLibraryNames", ryml::NodeType_e::SEQ, true, false),
+        NodeRequirement("SearchDirectories", ryml::NodeType_e::SEQ, true, false),
+        NodeRequirement("ExcludeLibraryNames", ryml::NodeType_e::SEQ, false, true),
+        NodeRequirement("AdditionalLinkOptions", ryml::NodeType_e::SEQ, false, true)
+    };
+    
+    if(!CheckNodeRequirements(node, requirements))
+    {
+        ssLOG_ERROR("DependencyLinkProperty: Failed to meet requirements for profile " << 
+                    profile);
+        return false;
+    }
+    
+    for(int i = 0; i < node["SearchLibraryNames"].num_children(); ++i)
+        property.SearchLibraryNames.push_back(GetValue(node["SearchLibraryNames"][i]));
+    
+    for(int i = 0; i < node["SearchDirectories"].num_children(); ++i)
+        property.SearchDirectories.push_back(GetValue(node["SearchDirectories"][i]));
+
+    if(ExistAndHasChild(node, "ExcludeLibraryNames"))
+    {
+        for(int i = 0; i < node["ExcludeLibraryNames"].num_children(); ++i)
+        {
+            property.ExcludeLibraryNames
+                    .push_back(GetValue(node["ExcludeLibraryNames"][i]));
+            
+        }
+    }
+
+    if(ExistAndHasChild(node, "AdditionalLinkOptions"))
+    {
+        for(int i = 0; i < node["AdditionalLinkOptions"].num_children(); ++i)
+        {
+            property.AdditionalLinkOptions
+                    .push_back(GetValue(node["AdditionalLinkOptions"][i]));
+        }
+    }
+    
+    ProfileProperties[profile] = property;
+    
+    return true;
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool 
+runcpp2::Data::DependencyLinkProperty::IsYAML_NodeParsableAsDefault(ryml::ConstNodeRef node) const
+{
+    ssLOG_FUNC_DEBUG();
+    INTERNAL_RUNCPP2_SAFE_START();
+
+    if(!INTERNAL_RUNCPP2_BIT_CONTANTS(node.type().type, ryml::NodeType_e::MAP))
+    {
+        ssLOG_ERROR("DependencyLinkProperty type requires a map");
+        return false;
+    }
+
+    if(ExistAndHasChild(node, "SearchLibraryNames") && ExistAndHasChild(node, "SearchDirectories"))
+    {
+        std::vector<NodeRequirement> requirements =
+        {
+            NodeRequirement("SearchLibraryNames", ryml::NodeType_e::SEQ, true, false),
+            NodeRequirement("SearchDirectories", ryml::NodeType_e::SEQ, true, false)
+        };
+        
+        return CheckNodeRequirements(node, requirements);
+    }
+    
+    return false;
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
