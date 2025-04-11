@@ -359,10 +359,10 @@ pipeline
                         bash "ls -lah ./Build/Src/Tests"
                         bash    "cd ./Build && ./runcpp2 -l " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
-                                "--log-level info ../Examples/test.cpp"
+                                "--log-level info ../Tests/test.cpp"
                         bash    "cd ./Build && ./runcpp2 -l -b " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
-                                "--log-level info ../Examples/test.cpp"
+                                "--log-level info ../Tests/test.cpp"
                         bash "ls -lah ./Build"
                         
                         
@@ -373,7 +373,7 @@ pipeline
                         bash "ls -lah ./Build/Src/Tests"
                         bash    "cd ./Build && ./runcpp2 -l -b " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
-                                "--log-level info ../Examples/test_static.cpp"
+                                "--log-level info ../Tests/test_static.cpp"
                         bash "ls -lah ./Build"
                         
                         
@@ -384,7 +384,7 @@ pipeline
                         bash "ls -lah ./Build/Src/Tests"
                         bash    "cd ./Build && ./runcpp2 -l " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
-                                "--log-level info ../Examples/testLocalDependency.cpp"
+                                "--log-level info ../Tests/testLocalDependency.cpp"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
@@ -415,10 +415,10 @@ pipeline
                         bat 'dir'
                         bat "cd .\\Build\\Debug && .\\runcpp2.exe -l " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
-                            "--log-level info ..\\..\\Examples\\test.cpp"
+                            "--log-level info ..\\..\\Tests\\test.cpp"
                         bat "cd .\\Build\\Debug && .\\runcpp2.exe -l -b " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
-                            "--log-level info ..\\..\\Examples\\test.cpp"
+                            "--log-level info ..\\..\\Tests\\test.cpp"
                         bat "dir .\\Build\\Debug"
                         
                         
@@ -428,7 +428,7 @@ pipeline
                         bat 'dir'
                         bat "cd .\\Build\\Debug && .\\runcpp2.exe -l -b " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
-                            "--log-level info ..\\..\\Examples\\test_static.cpp"
+                            "--log-level info ..\\..\\Tests\\test_static.cpp"
                         bat "dir .\\Build\\Debug"
                         
                         
@@ -438,7 +438,7 @@ pipeline
                         bat 'dir'
                         bat "cd .\\Build\\Debug && .\\runcpp2.exe -l " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
-                            "--log-level info ..\\..\\Examples\\testLocalDependency.cpp"
+                            "--log-level info ..\\..\\Tests\\testLocalDependency.cpp"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
