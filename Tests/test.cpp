@@ -81,7 +81,7 @@ Dependencies:
         DefaultPlatform:
             DefaultProfile:
             -   "cd build && cmake .. -DssLOG_BUILD_TYPE=SHARED"
-            -   "cd build && cmake --build . --config Release -j 16"
+            -   "cd build && cmake --build . -j 16"
     FilesToCopy:
         # Target Platform (Default, Windows, Linux, MacOS, or Unix)
         DefaultPlatform:

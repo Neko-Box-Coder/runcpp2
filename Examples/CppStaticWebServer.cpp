@@ -8,8 +8,7 @@ Dependencies:
             URL: "https://github.com/yhirose/cpp-httplib.git"
             Branch: "v0.20.0"
     LibraryType: Header
-    IncludePaths:
-    -   "./"
+    IncludePaths: ["./"]
 */
 
 #include "httplib.h"

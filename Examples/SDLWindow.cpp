@@ -16,10 +16,12 @@ Dependencies:
             DefaultProfile:
                 SearchLibraryNames: ["SDL2"]
                 SearchDirectories: ["./build/debug"]
+                ExcludeLibraryNames: ["SDL2-static", "SDL2_test"]
         Unix:
             DefaultProfile:
                 SearchLibraryNames: ["SDL2"]
                 SearchDirectories: ["./build"]
+                ExcludeLibraryNames: ["SDL2-static", "SDL2_test"]
     Setup: ["mkdir build", "cd build && cmake .."]
     Build: ["cd build && cmake --build . -j 16"]
 
@@ -33,7 +35,7 @@ Dependencies:
 */
 
 
-#include <SDL2/SDL.h>
+#include "SDL.h"
 
 #include <iostream>
 
