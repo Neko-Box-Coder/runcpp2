@@ -73,12 +73,12 @@ Most build settings in runcpp2 follow this structure:
     OverrideCompileFlags:
         Windows:
             "g++":
-                Flags: "-O2 -Wall"
+                Append: "-O2 -Wall"
             "msvc":
-                Flags: "/O2"
+                Append: "/O2"
         Linux:
             "g++":
-                Flags: "-O3"
+                Append: "-O3"
     ```
 
 There are two special keywords for more flexible configuration:
@@ -92,9 +92,9 @@ There are two special keywords for more flexible configuration:
     OverrideCompileFlags:
         DefaultPlatform:
             DefaultProfile:
-                Flags: "-Wall"
+                Append: "-Wall"
             "g++":
-                Flags: "-O2"
+                Append: "-O2"
     ```
     When using g++, only `-O2` will be used, not `-Wall -O2`.
     When using any other profile, only `-Wall` will be used.
@@ -106,12 +106,12 @@ There are two special keywords for more flexible configuration:
     For example:
     ```yaml
     OverrideCompileFlags:
-        Flags: "-Wall"
+        Append: "-Wall"
     ```
     is equivalent to:
     ```yaml
     OverrideCompileFlags:
         DefaultPlatform:
             DefaultProfile:
-                Flags: "-Wall"
+                Append: "-Wall"
     ```

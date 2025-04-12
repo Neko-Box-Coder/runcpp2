@@ -33,7 +33,7 @@
 - Add the ability to query script build directory
 - Add the ability to list script dependencies
 
-## Not planned yet
+## Planned But Low Priority
 
 - Smoother CMake support by reading cmake target properties (https://stackoverflow.com/a/56738858/23479578)
 - Add the ability to specify different profiles(?)/defines for different source files

@@ -98,7 +98,7 @@ All paths are relative to the script file's location.
 
 ### Globbing Source Files
 
-**WIP**
+**Coming Soon**. See [Roadmap](../TODO.md)
 
 ### Mixing C And C++ Files
 
@@ -233,4 +233,5 @@ runcpp2 provides four types of command hooks that run at different stages of the
 ---
 
 ## Intellisense and language server support
-**WIP**
+
+**Coming Soon**. See [Roadmap](../TODO.md)
