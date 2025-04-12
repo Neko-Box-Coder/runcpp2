@@ -322,7 +322,7 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
     
     if(ghc::filesystem::exists(dedicatedYamlLoc, e))
     {
-        //Record write time for yaml file
+        //Record write time for yaml file for watch option
         outScriptInfo.LastWriteTime = ghc::filesystem::last_write_time(dedicatedYamlLoc, e);
         if(e)
         {
@@ -337,7 +337,7 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
     }
     else
     {
-        //Record write time for script file
+        //Record write time for script file for watch option
         outScriptInfo.LastWriteTime = ghc::filesystem::last_write_time(absoluteScriptPath, e);
         if(e)
         {
