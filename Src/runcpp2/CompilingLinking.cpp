@@ -312,7 +312,8 @@ namespace
                         i,
                         &profile,
                         &currentOutputTypeInfo,
-                        substitutionMap,
+                        substitutionMap,    //NOTE: substitutionMap is used by the next source file, 
+                                            //      therefore need to copy it.
                         &buildDir,
                         compileAsExecutable,
                         &scriptInfo,
@@ -437,7 +438,7 @@ namespace
                         
                         return true;
                     }
-                )
+                ) //std::async
             ); //actions.emplace_back
             finished.emplace_back(false);
             
@@ -491,8 +492,8 @@ namespace
                 
                 actions.clear();
                 finished.clear();
-            }
-        }
+            } //if(actions.size() >= maxThreads || i == sourceFiles.size() - 1)
+        } //for(int i = 0; i < sourceFiles.size(); ++i)
 
         ssLOG_OUTPUT_ALL_CACHE_GROUPED();
         return !failedAny;
