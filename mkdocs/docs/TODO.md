@@ -8,7 +8,12 @@
         - Add initialize submodule option for git
     - Async/Multi-thread compile and dependencies processing
     - Ability to skip DefaultPlatform and DefaultProfile
-
+    - Handle escape characters at the end
+        - To avoid situation like this:
+            - Substitution string: `-I "{path}"`
+            - Substitution value: `.\`
+            - Substituted string: `-I ".\"`
+                - Where the path contains escape character which escaped the wrapping quotes
 
 ## Planned
 
@@ -76,12 +81,6 @@ endfunction()
 print_target_properties(matplot)
 -->
 - Add the ability to specify different profiles(?)/defines for different source files
-- Handle escape characters at the end
-    - To avoid situation like this:
-        - Substitution string: -I "{path}"
-        - Substitution value: .\
-        - Substituted string: -I ".\"
-            - Where the path contains escape character which escaped the wrapping quotes
 - Use <csignal> to handle potential segfaults
 - Use System2 subprocess if no prepend commands to be safer
 - Add tests and examples (On Windows as well)

@@ -282,7 +282,54 @@ namespace
                 ssLOG_ERROR("INTERNAL ERROR, missing substitution value for \"" << substitution << "\"");
                 return false;
             }
-            const std::string& currentValue = substitutionMap.at(substitution).at(substituteValueIndex);
+            
+            std::string currentValue = substitutionMap.at(substitution).at(substituteValueIndex);
+            
+            //Escape escapes character at the end if any
+            {
+                std::vector<char> escapeChars = {'\\'};
+                #ifdef _WIN32
+                    escapeChars.emplace_back('^');
+                #endif
+                if(!currentValue.empty())
+                {
+                    int currentValIndex = currentValue.size();
+                    while(currentValIndex > 0)
+                    {
+                        --currentValIndex;
+                        bool found = false;
+                        for(int j = 0; j < escapeChars.size(); ++j)
+                        {
+                            if(currentValue[currentValIndex] == escapeChars[j])
+                            {
+                                found = true;
+                                break;
+                            }
+                        }
+                        
+                        if(!found)
+                        {
+                            ++currentValIndex;
+                            break;
+                        }
+                    }
+                    
+                    if(currentValIndex < currentValue.size())
+                    {
+                        const std::string foundEscapes = currentValue.substr(currentValIndex);
+                        std::string newEndEscapes;
+                        //Just repeat the escape characters
+                        for(int j = 0; j < foundEscapes.size(); ++j)
+                        {
+                            newEndEscapes.push_back(foundEscapes[j]);
+                            newEndEscapes.push_back(foundEscapes[j]);
+                        }
+                    
+                        currentValue = currentValue.substr(0, currentValIndex) + newEndEscapes;
+                    }
+                }
+            }
+            
             ssLOG_DEBUG("Replacing \"" << substitution << "\" with \"" << currentValue << 
                         "\" in \"" << escapedString << "\"");
             
@@ -436,8 +483,8 @@ bool runcpp2::Data::StageInfo::ConstructCommand(const SubstitutionMap& substitut
             {
                 if(substitutionMap.count(substitutionsInCurrentPart.at(j)) == 0)
                 {
-                    ssLOG_DEBUG("No substitution found for " << substitutionsInCurrentPart.at(j) << " in " <<
-                                currentRunParts.at(i).CommandPart);
+                    ssLOG_DEBUG("No substitution found for " << substitutionsInCurrentPart.at(j) << 
+                                " in " << currentRunParts.at(i).CommandPart);
                     
                     ssLOG_DEBUG("Current run part is type repeat, skipping to next");
                     continue;
