@@ -18,7 +18,7 @@ Dependencies:
             DefaultProfile:
                 SearchLibraryNames: ["civetweb"]
                 SearchDirectories: ["./output/src"]
-    Setup: ["mkdir output", "cd output && cmake .."]
+    Setup: ["mkdir output", "cd output && cmake .. -DCIVETWEB_BUILD_TESTING=OFF -DCIVETWEB_ENABLE_ASAN=OFF"]
     Build: ["cd output && cmake --build . -j 16"]
 */
 

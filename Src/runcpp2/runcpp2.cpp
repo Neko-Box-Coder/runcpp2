@@ -502,7 +502,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         if(result != PipelineResult::SUCCESS)
             return result;
         
-        //Check if script info has changed if provided
+        //Check if script info has changed if provided and run setup if needed
         bool recompileNeeded = false;
         bool relinkNeeded = false;
         std::vector<std::string> changedDependencies;

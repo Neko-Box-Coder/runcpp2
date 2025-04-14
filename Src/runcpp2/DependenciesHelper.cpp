@@ -234,8 +234,16 @@ namespace
                 
                 dependencies.at(i) 
                             ->AbsoluteIncludePaths
-                            .push_back(ghc::filesystem::absolute(   dependenciesCopiesPaths.at(i) + "/" + 
-                                                                    dependencies.at(i)->IncludePaths.at(j)).string());
+                            .push_back
+                            (
+                                ghc::filesystem::absolute
+                                (
+                                    dependenciesCopiesPaths.at(i) + 
+                                    "/" + 
+                                    dependencies.at(i)->IncludePaths.at(j)
+                                )
+                                .string()
+                            );
             
                 ssLOG_DEBUG("Include path added: " << dependencies.at(i)->AbsoluteIncludePaths.back());
             }
