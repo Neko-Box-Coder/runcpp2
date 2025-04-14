@@ -752,12 +752,12 @@ represent different compilers toolchains and their configurations.</p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="nt">Windows</span><span class="p">:</span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">            </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O2</span><span class="nv"> </span><span class="s">-Wall&quot;</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O2</span><span class="nv"> </span><span class="s">-Wall&quot;</span>
 </span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="s">&quot;msvc&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">            </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/O2&quot;</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/O2&quot;</span>
 </span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="nt">Linux</span><span class="p">:</span>
 </span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">        </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">            </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O3&quot;</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O3&quot;</span>
 </span></code></pre></div>
 </details>
 <p>There are two special keywords for more flexible configuration:</p>
@@ -771,9 +771,9 @@ represent different compilers toolchains and their configurations.</p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="nt">DefaultProfile</span><span class="p">:</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">            </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wall&quot;</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wall&quot;</span>
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">        </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">            </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O2&quot;</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O2&quot;</span>
 </span></code></pre></div>
 When using g++, only <code>-O2</code> will be used, not <code>-Wall -O2</code>.
 When using any other profile, only <code>-Wall</code> will be used.</p>
@@ -784,13 +784,13 @@ When using any other profile, only <code>-Wall</code> will be used.</p>
 specify the settings without listing it under DefaultPlatform and DefaultProfile.</p>
 <p>For example:
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wall&quot;</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wall&quot;</span>
 </span></code></pre></div>
 is equivalent to:
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">        </span><span class="nt">DefaultProfile</span><span class="p">:</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">            </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wall&quot;</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wall&quot;</span>
 </span></code></pre></div></p>
 </div>
 
