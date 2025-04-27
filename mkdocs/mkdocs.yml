@@ -40,6 +40,9 @@ nav:
     -   user_config.md
     -   TODO.md
 
+repo_url: https://github.com/Neko-Box-Coder/runcpp2
+repo_name: Neko-Box-Coder/runcpp2
+
 extra_css: [extra.css]
 markdown_extensions:
 -   admonition

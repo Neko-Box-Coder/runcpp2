@@ -6,8 +6,8 @@
 ```yaml
 # List of anchors that will be aliased later
 Templates:
-    MSVC_CompileFlags: &MSVC_CompileFlags
-        Flags: "/nologo /W4 /diagnostics:caret /D NDEBUG /utf-8 /Gm- /MD /EHa /TP /std:c++17 /GR /TP"
+    vs2022_v17+_CompileFlags: &vs2022_v17+_CompileFlags
+        Flags: "/nologo /W4 /diagnostics:caret /utf-8 /Gm- /MDd /EHar /TP /std:c++17 /GR /RTC1 /Zc:inline /Zi"
     
     "g++_CompileRunParts": &g++_CompileRunParts
     -   Type: Once
@@ -34,10 +34,13 @@ Templates:
     -   Type: Repeats
         CommandPart: " /I\"{IncludeDirectoryPath}\""
     -   Type: Once
-        CommandPart: " /Fo\"{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}\" \"{InputFilePath}\""
+        CommandPart: " /Fo\"{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}\" \
+            /Fd\"{OutputFileDirectory}{/}{DebugSymbolFile.Prefix}{InputFileName}{DebugSymbolFile.Extension}\" \
+            \"{InputFilePath}\""
     
     "vs2022_v17+_CompileExpectedOutputFiles": &vs2022_v17+_CompileExpectedOutputFiles
     -   "{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}"
+    -   "{OutputFileDirectory}{/}{DebugSymbolFile.Prefix}{InputFileName}{DebugSymbolFile.Extension}"
     
     # The following fields set the prefixes and extensions for each type of the files
     # If the name of an object files are libtest.so and libtest2.so,
@@ -97,7 +100,7 @@ Templates:
                 Windows: ""
                 Unix: ""
             Extension:
-                Windows: ""
+                Windows: ".pdb"
                 Unix: ""
 
 # WARNING: All command substitutions in this file are passed directly to the shell.
@@ -105,7 +108,9 @@ Templates:
 #          to prevent potential security vulnerabilities.
 
 # A profile to be used if not specified while running the build script
-PreferredProfile: "g++"
+PreferredProfile: 
+    DefaultPlatform: "g++"
+    Windows: "msvc"
 
 # List of compiler/linker profiles that instruct how to compile/link
 Profiles:
@@ -349,25 +354,25 @@ Profiles:
         CompileTypes:
             Executable:
                 Windows:
-                    <<: *MSVC_CompileFlags
+                    <<: *vs2022_v17+_CompileFlags
                     Executable: "CL.exe"
                     RunParts: *vs2022_v17+_CompileRunParts
                     ExpectedOutputFiles: *vs2022_v17+_CompileExpectedOutputFiles
             ExecutableShared:
                 Windows:
-                    <<: *MSVC_CompileFlags
+                    <<: *vs2022_v17+_CompileFlags
                     Executable: "CL.exe"
                     RunParts: *vs2022_v17+_CompileRunParts
                     ExpectedOutputFiles: *vs2022_v17+_CompileExpectedOutputFiles
             Static:
                 Windows:
-                    <<: *MSVC_CompileFlags
+                    <<: *vs2022_v17+_CompileFlags
                     Executable: "CL.exe"
                     RunParts: *vs2022_v17+_CompileRunParts
                     ExpectedOutputFiles: *vs2022_v17+_CompileExpectedOutputFiles
             Shared:
                 Windows:
-                    <<: *MSVC_CompileFlags
+                    <<: *vs2022_v17+_CompileFlags
                     Executable: "CL.exe"
                     RunParts: *vs2022_v17+_CompileRunParts
                     ExpectedOutputFiles: *vs2022_v17+_CompileExpectedOutputFiles
@@ -382,6 +387,7 @@ Profiles:
                     Flags: >-
                         /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib
                         oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /manifest:embed /SUBSYSTEM:CONSOLE
+                        /DEBUG /MANIFESTUAC:"level='asInvoker'"
                     Executable: "link.exe"
                     RunParts:
                     -   Type: Once
@@ -396,7 +402,7 @@ Profiles:
                     Flags: >-
                         /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib
                         oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /manifest:embed /SUBSYSTEM:CONSOLE
-                        /DLL
+                        /DEBUG /DLL /MANIFESTUAC:"level='asInvoker'"
                     Executable: "link.exe"
                     RunParts:
                     -   Type: Once
@@ -428,7 +434,7 @@ Profiles:
                     Flags: >-
                         /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib
                         oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /manifest:embed /SUBSYSTEM:CONSOLE
-                        /DLL
+                        /DEBUG /DLL /MANIFESTUAC:"level='asInvoker'"
                     Executable: "link.exe"
                     RunParts:
                     -   Type: Once
@@ -439,5 +445,6 @@ Profiles:
                     -   Type: Repeats
                         CommandPart: " \"{LinkFilePath}\""
                     ExpectedOutputFiles: ["{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}"]
+
 
 ```

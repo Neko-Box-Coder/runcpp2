@@ -5,6 +5,15 @@
 #include <stdio.h>
 #include <cctype>
 
+#if !INTERNAL_RUNCPP2_UNIT_TESTS
+    #define CO_NO_OVERRIDE 1
+    #include "CppOverride.hpp"
+#else
+    #include "CppOverride.hpp"
+    extern CO_DECLARE_INSTANCE(OverrideInstance);
+#endif
+
+
 namespace
 {
     char GetAltFileSystemSeparator()
@@ -56,6 +65,8 @@ std::string runcpp2::ProcessPath(const std::string& path)
 
 std::vector<std::string> runcpp2::GetPlatformNames()
 {
+    CO_OVERRIDE_IMPL(OverrideInstance, std::vector<std::string>, ());
+    
     #ifdef _WIN32
         return {"Windows", "DefaultPlatform"};
     #elif __linux__
