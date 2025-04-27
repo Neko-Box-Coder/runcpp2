@@ -14,15 +14,16 @@
             - Substitution value: `.\`
             - Substituted string: `-I ".\"`
                 - Where the path contains escape character which escaped the wrapping quotes
+    - Add platform map for PreferredProfile for user config
 
 ## Planned
 
 ### v0.3.0
+- Add ability to reference local YAML for user config
+- Add interactive tutorials and redo documentations
 
 - Allow runcpp2 to be library for scriptable pipeline
-- Add ability to reference local YAML for user config
 - Add version for default user config and prompt for update
-- Add platform map for PreferredProfile for user config
 - Add more default profiles
 
 ### v0.4.0

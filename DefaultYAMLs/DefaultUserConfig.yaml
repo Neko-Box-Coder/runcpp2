@@ -101,9 +101,10 @@ Templates:
 #          Exercise caution when using variables or user-provided input in your build commands
 #          to prevent potential security vulnerabilities.
 
-# TODO(NOW): Make it auto? Or DefaultProfile?
 # A profile to be used if not specified while running the build script
-PreferredProfile: "g++"
+PreferredProfile: 
+    DefaultPlatform: "g++"
+    Windows: "msvc"
 
 # List of compiler/linker profiles that instruct how to compile/link
 Profiles:

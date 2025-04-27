@@ -15,12 +15,19 @@ target_compile_options(IncludeManagerTest PRIVATE "${RUNCPP2_STANDARD_COMPILE_FL
 target_link_libraries(IncludeManagerTest PRIVATE ghc_filesystem CppOverride ssTest ssLogger)
 target_compile_definitions(IncludeManagerTest PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=1)
 
+
+add_executable(ConfigParsingTest "${CMAKE_CURRENT_LIST_DIR}/ConfigParsingTest.cpp")
+target_include_directories(ConfigParsingTest PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../../Include")
+target_compile_options(ConfigParsingTest PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
+target_link_libraries(ConfigParsingTest PRIVATE ghc_filesystem CppOverride ssTest ssLogger runcpp2_override)
+target_compile_definitions(ConfigParsingTest PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=1)
+
+
 function(create_data_test TEST_NAME)
     add_executable("${TEST_NAME}" "${CMAKE_CURRENT_LIST_DIR}/Data/${TEST_NAME}.cpp")
     target_compile_options("${TEST_NAME}" PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
     target_compile_definitions("${TEST_NAME}" PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=1 TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES=1)
     target_link_libraries("${TEST_NAME}" PUBLIC runcpp2 ssTest)
-    
 endfunction()
 
 create_data_test(FilePropertiesTest)

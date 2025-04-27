@@ -1,11 +1,18 @@
 #include "runcpp2/ConfigParsing.hpp"
 #include "runcpp2/ParseUtil.hpp"
+#include "runcpp2/PlatformUtil.hpp"
 #include "runcpp2/YamlLib.hpp"
 
 #include "cfgpath.h"
 #include "ghc/filesystem.hpp"
 #include "ssLogger/ssLog.hpp"
 
+#if INTERNAL_RUNCPP2_UNIT_TESTS
+    #include "Tests/ConfigParsing/MockComponents.hpp"
+#else
+    #define CO_NO_OVERRIDE 1
+    #include "CppOverride.hpp"
+#endif
 
 extern "C" const uint8_t DefaultUserConfig[];
 extern "C" const size_t DefaultUserConfig_size;
@@ -16,26 +23,26 @@ namespace
                             std::vector<runcpp2::Data::Profile>& outProfiles,
                             std::string& outPreferredProfile)
     {
-        ssLOG_FUNC_INFO();
-        
         INTERNAL_RUNCPP2_SAFE_START();
+        
+        ssLOG_FUNC_INFO();
         
         std::string temp = userConfigString;
         ryml::Tree rootTree = ryml::parse_in_place(c4::to_substr(temp));
-        ryml::ConstNodeRef rootProfileNode;
+        ryml::ConstNodeRef configNode;
         
-        if(!runcpp2::ResolveYAML_Stream(rootTree, rootProfileNode))
+        if(!runcpp2::ResolveYAML_Stream(rootTree, configNode))
             return false;
         
-        if( !runcpp2::ExistAndHasChild(rootProfileNode, "Profiles") || 
-            !INTERNAL_RUNCPP2_BIT_CONTANTS( rootProfileNode["Profiles"].type().type,
+        if( !runcpp2::ExistAndHasChild(configNode, "Profiles") || 
+            !INTERNAL_RUNCPP2_BIT_CONTANTS( configNode["Profiles"].type().type,
                                             ryml::NodeType_e::SEQ))
         {
             ssLOG_ERROR("Profiles is invalid");
             return false;
         }
         
-        ryml::ConstNodeRef profilesNode = rootProfileNode["Profiles"];
+        ryml::ConstNodeRef profilesNode = configNode["Profiles"];
         
         if(profilesNode.num_children() == 0)
         {
@@ -58,14 +65,52 @@ namespace
             }
         }
         
-        if( runcpp2::ExistAndHasChild(rootProfileNode, "PreferredProfile") && 
-            INTERNAL_RUNCPP2_BIT_CONTANTS(  rootProfileNode["PreferredProfile"].type().type,
-                                            ryml::NodeType_e::KEYVAL))
+        if(outProfiles.empty())
         {
-            rootProfileNode["PreferredProfile"] >> outPreferredProfile;
+            ssLOG_ERROR("No profiles registered");
+            return false;
+        }
+        
+        if(runcpp2::ExistAndHasChild(configNode, "PreferredProfile"))
+        {
+            ryml::ConstNodeRef preferredProfilesMapNode = configNode["PreferredProfile"];
+            
+            if(INTERNAL_RUNCPP2_BIT_CONTANTS(   preferredProfilesMapNode.type().type, 
+                                                ryml::NodeType_e::MAP))
+            {
+                std::unordered_map<PlatformName, std::string> preferredProfiles;
+                for(int i = 0; i < preferredProfilesMapNode.num_children(); ++i)
+                {
+                    PlatformName platform = runcpp2::GetKey(preferredProfilesMapNode[i]);
+                    ryml::ConstNodeRef currentNode = preferredProfilesMapNode[i];
+                    if(!INTERNAL_RUNCPP2_BIT_CONTANTS(currentNode.type().type, ryml::NodeType_e::KEYVAL))
+                    {
+                        ssLOG_ERROR("Failed to parse PreferredProfile map. "
+                                    "Keyval is expected in each platform");
+                        return false;
+                    }
+                    currentNode >> preferredProfiles[platform];
+                }
+                
+                const std::string* selectedProfile = runcpp2::GetValueFromPlatformMap(preferredProfiles);
+                outPreferredProfile = 
+                    selectedProfile != nullptr ? *selectedProfile : outPreferredProfile;
+            }
+            else if(INTERNAL_RUNCPP2_BIT_CONTANTS(  preferredProfilesMapNode.type().type, 
+                                                    ryml::NodeType_e::KEYVAL))
+            {
+                configNode["PreferredProfile"] >> outPreferredProfile;
+            }
+            else
+            {
+                ssLOG_ERROR("PreferredProfile needs to be a map or string value: " << 
+                            preferredProfilesMapNode.type().type_str());
+                return false;
+            }
+            
             if(outPreferredProfile.empty())
             {
-                outPreferredProfile = outProfiles.at(0).Name;
+                outPreferredProfile = outProfiles.front().Name;
                 ssLOG_WARNING("PreferredProfile is empty. Using the first profile name");
             }
         }
@@ -101,10 +146,11 @@ std::string runcpp2::GetConfigFilePath()
     
     //config directory is created by get_user_config_folder if it doesn't exist
     {
+        std::error_code ec;
         for(int i = 0; i < sizeof(compilerConfigFilePaths) / sizeof(std::string); ++i)
         {
             //Check if the config file exists
-            if(ghc::filesystem::exists(compilerConfigFilePaths[i]))
+            if(ghc::filesystem::exists(compilerConfigFilePaths[i], ec))
                 return compilerConfigFilePaths[i];
         }
     }
@@ -114,6 +160,8 @@ std::string runcpp2::GetConfigFilePath()
 
 bool runcpp2::WriteDefaultConfig(const std::string& userConfigPath)
 {
+    CO_OVERRIDE_IMPL(OverrideInstance, bool, (userConfigPath));
+    
     std::error_code _;
     if(ghc::filesystem::exists(userConfigPath, _))
     {
