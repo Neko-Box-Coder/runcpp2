@@ -1020,7 +1020,7 @@ bool runcpp2::HandleImport( Data::DependencyInfo& dependency,
     }
 
     //Parse the YAML file
-    ryml::ConstNodeRef resolvedTree;
+    ryml::NodeRef resolvedRootNode;
     ryml::Tree importedTree;
     std::string content;
     {
@@ -1036,7 +1036,7 @@ bool runcpp2::HandleImport( Data::DependencyInfo& dependency,
 
         importedTree = ryml::parse_in_place(c4::to_substr(content));
         
-        if(!runcpp2::ResolveYAML_Stream(importedTree, resolvedTree))
+        if(!runcpp2::ResolveYAML_Stream(importedTree, resolvedRootNode))
             return false;
     }
 
@@ -1058,7 +1058,7 @@ bool runcpp2::HandleImport( Data::DependencyInfo& dependency,
     dependency = Data::DependencyInfo();
     
     //Parse the imported dependency
-    if(!dependency.ParseYAML_Node(resolvedTree))
+    if(!dependency.ParseYAML_Node(resolvedRootNode))
     {
         ssLOG_ERROR("Failed to parse imported dependency: " << fullPath);
         

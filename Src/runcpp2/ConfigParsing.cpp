@@ -16,10 +16,115 @@
 
 extern "C" const uint8_t DefaultUserConfig[];
 extern "C" const size_t DefaultUserConfig_size;
+extern "C" const uint8_t CommonFileTypes[];
+extern "C" const size_t CommonFileTypes_size;
+extern "C" const uint8_t G_PlusPlus[];
+extern "C" const size_t G_PlusPlus_size;
+extern "C" const uint8_t Vs2022_v17Plus[];
+extern "C" const size_t Vs2022_v17Plus_size;
+
 
 namespace 
 {
+    bool ResovleProfileImport(  ryml::NodeRef currentProfileNode, 
+                                const std::string& configPath,
+                                std::vector<ryml::Tree>& importProfileTrees)
+    {
+        INTERNAL_RUNCPP2_SAFE_START();
+        
+        ssLOG_FUNC_INFO();
+        
+        ghc::filesystem::path currentImportFilePath = configPath;
+        std::stack<ghc::filesystem::path> pathsToImport;
+        while(runcpp2::ExistAndHasChild(currentProfileNode, "Import") || !pathsToImport.empty())
+        {
+            //If we import field, we should deal with it instead
+            if(runcpp2::ExistAndHasChild(currentProfileNode, "Import"))
+            {
+                const ryml::NodeType_e importNodeType = currentProfileNode["Import"].type().type;
+                if( !INTERNAL_RUNCPP2_BIT_CONTANTS(importNodeType, ryml::NodeType_e::KEYVAL) &&
+                    !INTERNAL_RUNCPP2_BIT_CONTANTS(importNodeType, ryml::NodeType_e::SEQ))
+                {
+                    ssLOG_ERROR("Import must be a path or sequence of paths of YAML file(s)");
+                    return false;
+                }
+                
+                ghc::filesystem::path currentImportDir = currentImportFilePath;
+                currentImportDir = currentImportDir.parent_path();
+                if(currentProfileNode["Import"].is_keyval())
+                {
+                    pathsToImport.push( currentImportDir / 
+                                        runcpp2::GetValue(currentProfileNode["Import"]));
+                }
+                else
+                {
+                    if(currentProfileNode["Import"].num_children() == 0)
+                    {
+                        ssLOG_ERROR("An import sequence cannot be an empty");
+                        return false;
+                    }
+                    
+                    for(int i = 0; i < currentProfileNode["Import"].num_children(); ++i)
+                    {
+                        if(!currentProfileNode["Import"][i].is_val())
+                        {
+                            ssLOG_ERROR("It must be a sequence of paths");
+                            return false;
+                        }
+                        
+                        pathsToImport.push( currentImportDir / 
+                                            runcpp2::GetValue(currentProfileNode["Import"][i]));
+                    }
+                }
+            }
+            
+            currentImportFilePath = pathsToImport.top();
+            pathsToImport.pop();
+            
+            std::error_code ec;
+            if(!ghc::filesystem::exists(currentImportFilePath, ec))
+            {
+                ssLOG_ERROR("Import path doesn't exist: " << currentImportFilePath.string());
+                return false;
+            }
+            
+            //Read compiler profiles
+            std::ifstream importProfileFile(currentImportFilePath);
+            if(!importProfileFile)
+            {
+                ssLOG_ERROR("Failed to open profile import file: " << currentImportFilePath);
+                return false;
+            }
+            std::stringstream buffer;
+            buffer << importProfileFile.rdbuf();
+            
+            ryml::NodeRef importProfileNode;
+            importProfileTrees.emplace_back();
+            importProfileTrees.back() = ryml::parse_in_arena(buffer.str().c_str());
+            if(!runcpp2::ResolveYAML_Stream(importProfileTrees.back(), importProfileNode))
+                return false;
+            
+            if(!runcpp2::MergeYAML_NodeChildren(importProfileNode, currentProfileNode))
+                return false;
+            
+            //Replace the current import field if the import profile has an import field
+            if(runcpp2::ExistAndHasChild(importProfileNode, "Import"))
+            {
+                currentProfileNode.remove_child("Import");
+                importProfileNode["Import"].duplicate(currentProfileNode, {});
+            }
+            //Otherwise, remove the current import field
+            else
+                currentProfileNode.remove_child("Import");
+        }
+        
+        return true;
+        
+        INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+    }
+    
     bool ParseUserConfig(   const std::string& userConfigString, 
+                            const std::string& configPath,
                             std::vector<runcpp2::Data::Profile>& outProfiles,
                             std::string& outPreferredProfile)
     {
@@ -27,9 +132,8 @@ namespace
         
         ssLOG_FUNC_INFO();
         
-        std::string temp = userConfigString;
-        ryml::Tree rootTree = ryml::parse_in_place(c4::to_substr(temp));
-        ryml::ConstNodeRef configNode;
+        ryml::Tree rootTree = ryml::parse_in_arena(userConfigString.c_str());
+        ryml::NodeRef configNode;
         
         if(!runcpp2::ResolveYAML_Stream(rootTree, configNode))
             return false;
@@ -42,7 +146,7 @@ namespace
             return false;
         }
         
-        ryml::ConstNodeRef profilesNode = configNode["Profiles"];
+        ryml::NodeRef profilesNode = configNode["Profiles"];
         
         if(profilesNode.num_children() == 0)
         {
@@ -51,19 +155,28 @@ namespace
         }
         
         ssLOG_INFO(profilesNode.num_children() << " profiles found in user config");
+        std::vector<ryml::Tree> importProfileTrees;
         for(int i = 0; i < profilesNode.num_children(); ++i)
         {
             ssLOG_INFO("Parsing profile at index " << i);
-            ryml::ConstNodeRef currentProfileNode = profilesNode[i];
             
+            if(!INTERNAL_RUNCPP2_BIT_CONTANTS(profilesNode[i].type().type, ryml::NodeType_e::MAP))
+            {
+                ssLOG_ERROR("Profile entry must be a map");
+                return false;
+            }
+            
+            if(!ResovleProfileImport(profilesNode[i], configPath, importProfileTrees))
+                return false;
+
             outProfiles.push_back({});
-            if(!outProfiles.back().ParseYAML_Node(currentProfileNode))
+            if(!outProfiles.back().ParseYAML_Node(profilesNode[i]))
             {
                 outProfiles.erase(outProfiles.end() - 1);
                 ssLOG_ERROR("Failed to parse compiler profile at index " << i);
                 return false;
             }
-        }
+        } //for(int i = 0; i < profilesNode.num_children(); ++i)
         
         if(outProfiles.empty())
         {
@@ -83,7 +196,8 @@ namespace
                 {
                     PlatformName platform = runcpp2::GetKey(preferredProfilesMapNode[i]);
                     ryml::ConstNodeRef currentNode = preferredProfilesMapNode[i];
-                    if(!INTERNAL_RUNCPP2_BIT_CONTANTS(currentNode.type().type, ryml::NodeType_e::KEYVAL))
+                    if(!INTERNAL_RUNCPP2_BIT_CONTANTS(  currentNode.type().type, 
+                                                        ryml::NodeType_e::KEYVAL))
                     {
                         ssLOG_ERROR("Failed to parse PreferredProfile map. "
                                     "Keyval is expected in each platform");
@@ -92,7 +206,8 @@ namespace
                     currentNode >> preferredProfiles[platform];
                 }
                 
-                const std::string* selectedProfile = runcpp2::GetValueFromPlatformMap(preferredProfiles);
+                const std::string* selectedProfile = 
+                    runcpp2::GetValueFromPlatformMap(preferredProfiles);
                 outPreferredProfile = 
                     selectedProfile != nullptr ? *selectedProfile : outPreferredProfile;
             }
@@ -113,7 +228,7 @@ namespace
                 outPreferredProfile = outProfiles.front().Name;
                 ssLOG_WARNING("PreferredProfile is empty. Using the first profile name");
             }
-        }
+        } //if(runcpp2::ExistAndHasChild(configNode, "PreferredProfile"))
         
         return true;
         
@@ -123,6 +238,8 @@ namespace
 
 std::string runcpp2::GetConfigFilePath()
 {
+    CO_OVERRIDE_IMPL(OverrideInstance, std::string, ());
+    
     //Check if user config exists
     char configDirC_Str[MAX_PATH] = {0};
     
@@ -210,15 +327,54 @@ bool runcpp2::WriteDefaultConfig(const std::string& userConfigPath)
         while(true);
     }
     
-    //Create default compiler profiles
-    std::ofstream configFile(userConfigPath, std::ios::binary);
-    if(!configFile)
+    //Create user config
     {
-        ssLOG_ERROR("Failed to create default config file: " << userConfigPath);
+        std::ofstream configFile(userConfigPath, std::ios::binary);
+        if(!configFile)
+        {
+            ssLOG_ERROR("Failed to create default config file: " << userConfigPath);
+            return false;
+        }
+        configFile.write((const char*)DefaultUserConfig, DefaultUserConfig_size);
+    }
+    
+    ghc::filesystem::path userConfigDirectory = userConfigPath;
+    userConfigDirectory = userConfigDirectory.parent_path();
+    ghc::filesystem::path defaultYamlDirectory = userConfigDirectory / "Default";
+    
+    //Default configs
+    if(!ghc::filesystem::exists(defaultYamlDirectory , _))
+    {
+        if(!ghc::filesystem::create_directories(defaultYamlDirectory, _))
+        {
+            ssLOG_ERROR("Failed to create directory: " << defaultYamlDirectory.string());
+            return false;
+        }
+    }
+    
+    //Writing default profiles
+    auto writeDefaultConfig = 
+        [&defaultYamlDirectory]
+        (ghc::filesystem::path outputPath, const uint8_t* outputContent, size_t outputSize)
+        {
+            const ghc::filesystem::path currentOutputPath = defaultYamlDirectory / outputPath;
+            std::ofstream defaultFile(currentOutputPath.string(), std::ios::binary);
+            if(!defaultFile)
+            {
+                ssLOG_ERROR("Failed to create default config file: " << currentOutputPath.string());
+                return false;
+            }
+            defaultFile.write((const char*)outputContent, outputSize);
+            return true;
+        };
+    
+    if( !writeDefaultConfig("CommonFileTypes.yaml", CommonFileTypes, CommonFileTypes_size) ||
+        !writeDefaultConfig("g++.yaml", G_PlusPlus, G_PlusPlus_size) ||
+        !writeDefaultConfig("vs2022_v17+.yaml", Vs2022_v17Plus, Vs2022_v17Plus_size))
+    {
         return false;
     }
-    configFile.write((const char*)DefaultUserConfig, DefaultUserConfig_size);
-    configFile.close();
+    
     return true;
 }
 
@@ -258,18 +414,18 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles,
     //Read compiler profiles
     std::string userConfigContent;
     {
-        std::ifstream userConfigFilePath(configPath);
-        if(!userConfigFilePath)
+        std::ifstream userConfigFile(configPath);
+        if(!userConfigFile)
         {
             ssLOG_ERROR("Failed to open config file: " << configPath);
             return false;
         }
         std::stringstream buffer;
-        buffer << userConfigFilePath.rdbuf();
+        buffer << userConfigFile.rdbuf();
         userConfigContent = buffer.str();
     }
     
-    if(!ParseUserConfig(userConfigContent, outProfiles, outPreferredProfile))
+    if(!ParseUserConfig(userConfigContent, configPath, outProfiles, outPreferredProfile))
     {
         ssLOG_ERROR("Failed to parse config file: " << configPath);
         return false;
@@ -289,10 +445,9 @@ bool runcpp2::ParseScriptInfo(  const std::string& scriptInfo,
         return true;
 
     ryml::Tree scriptTree;
-    std::string temp = scriptInfo;
-    scriptTree = ryml::parse_in_place(c4::to_substr(temp));
+    scriptTree = ryml::parse_in_arena(scriptInfo.c_str());
     
-    ryml::ConstNodeRef rootScriptNode;
+    ryml::NodeRef rootScriptNode;
     
     if(!runcpp2::ResolveYAML_Stream(scriptTree, rootScriptNode))
         return false;

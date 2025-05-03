@@ -1,0 +1,137 @@
+# DO NOT modify this file. Changes will be overwritten when there's a reset or update
+
+# List of anchors that will be aliased later. `Template` is **NOT** part of a profile
+Templates:
+    vs2022_v17+_CompileFlags: &vs2022_v17+_CompileFlags
+        Flags: "/nologo /W4 /diagnostics:caret /utf-8 /Gm- /MDd /EHar /TP /std:c++17 /GR /RTC1 /Zc:inline /Zi"
+    "vs2022_v17+_CompileRunParts": &vs2022_v17+_CompileRunParts
+    -   Type: Once
+        CommandPart: "{Executable} /c {CompileFlags}"
+    -   Type: Repeats
+        CommandPart: " /D{DefineNameOnly}="
+    -   Type: Repeats
+        CommandPart: " \"/D{DefineName}={DefineValue}\""
+    -   Type: Repeats
+        CommandPart: " /I\"{IncludeDirectoryPath}\""
+    -   Type: Once
+        CommandPart: " /Fo\"{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}\" \
+            /Fd\"{OutputFileDirectory}{/}{DebugSymbolFile.Prefix}{InputFileName}{DebugSymbolFile.Extension}\" \
+            \"{InputFilePath}\""
+    "vs2022_v17+_CompileExpectedOutputFiles": &vs2022_v17+_CompileExpectedOutputFiles
+    -   "{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}"
+    -   "{OutputFileDirectory}{/}{DebugSymbolFile.Prefix}{InputFileName}{DebugSymbolFile.Extension}"
+    
+# https://learn.microsoft.com/en-us/cpp/overview/compiler-versions?view=msvc-170
+Name: "vs2022_v17+"
+NameAliases: ["msvc1930+", "msvc"]
+FileExtensions: [.cpp, .cc, .cxx]
+Languages: ["c++"]
+Import: "./CommonFileTypes.yaml"
+Setup: 
+    Windows:
+    -   >-
+        for /f "usebackq tokens=*" %i in (`CALL "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" 
+        -version "[17.0,18.0)" -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do ( 
+        echo "%i\VC\Auxiliary\Build\vcvarsall.bat" x64 > .\prerun.bat
+        )
+Cleanup: 
+    Windows: [ "del .\\prerun.bat" ]
+Compiler:
+    PreRun: 
+        Windows: ".\\prerun.bat"
+    CheckExistence: 
+        Windows: "where.exe CL.exe"
+    CompileTypes:
+        Executable:
+            Windows:
+                <<: *vs2022_v17+_CompileFlags
+                Executable: "CL.exe"
+                RunParts: *vs2022_v17+_CompileRunParts
+                ExpectedOutputFiles: *vs2022_v17+_CompileExpectedOutputFiles
+        ExecutableShared:
+            Windows:
+                <<: *vs2022_v17+_CompileFlags
+                Executable: "CL.exe"
+                RunParts: *vs2022_v17+_CompileRunParts
+                ExpectedOutputFiles: *vs2022_v17+_CompileExpectedOutputFiles
+        Static:
+            Windows:
+                <<: *vs2022_v17+_CompileFlags
+                Executable: "CL.exe"
+                RunParts: *vs2022_v17+_CompileRunParts
+                ExpectedOutputFiles: *vs2022_v17+_CompileExpectedOutputFiles
+        Shared:
+            Windows:
+                <<: *vs2022_v17+_CompileFlags
+                Executable: "CL.exe"
+                RunParts: *vs2022_v17+_CompileRunParts
+                ExpectedOutputFiles: *vs2022_v17+_CompileExpectedOutputFiles
+Linker:
+    PreRun: 
+        Windows: ".\\prerun.bat"
+    CheckExistence:
+        Windows: "where.exe link.exe"
+    LinkTypes:
+        Executable:
+            Windows:
+                Flags: >-
+                    /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib
+                    oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /manifest:embed /SUBSYSTEM:CONSOLE
+                    /DEBUG /MANIFESTUAC:"level='asInvoker'"
+                Executable: "link.exe"
+                RunParts:
+                -   Type: Once
+                    CommandPart: >-
+                        {Executable} {LinkFlags}
+                        /OUT:"{OutputFileDirectory}{/}{OutputFileName}.exe"
+                -   Type: Repeats
+                    CommandPart: " \"{LinkFilePath}\""
+                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{OutputFileName}.exe"]
+        ExecutableShared:
+            Windows:
+                Flags: >-
+                    /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib
+                    oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /manifest:embed /SUBSYSTEM:CONSOLE
+                    /DEBUG /DLL /MANIFESTUAC:"level='asInvoker'"
+                Executable: "link.exe"
+                RunParts:
+                -   Type: Once
+                    CommandPart: >-
+                        {Executable} {LinkFlags}
+                        /OUT:"{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}"
+                        /IMPLIB:"{OutputFileDirectory}{/}{SharedLinkFile.Prefix}{OutputFileName}{SharedLinkFile.Extension}"
+                        /DEF:".\temp.def"
+                -   Type: Repeats
+                    CommandPart: " \"{LinkFilePath}\""
+                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}"]
+                Setup: [ "echo EXPORTS > .\\temp.def", "echo.   main @1 >> .\\temp.def" ]
+                Cleanup: [ "del .\\temp.def" ]
+        Static:
+            Windows:
+                Flags: "/NOLOGO"
+                Executable: "lib.exe"
+                RunParts:
+                -   Type: Once
+                    CommandPart: >-
+                        {Executable} {LinkFlags}
+                        /OUT:"{OutputFileDirectory}{/}{StaticLinkFile.Prefix}{OutputFileName}{StaticLinkFile.Extension}"
+                        /IMPLIB:"{OutputFileDirectory}{/}{SharedLinkFile.Prefix}{OutputFileName}{SharedLinkFile.Extension}"
+                -   Type: Repeats
+                    CommandPart: " \"{LinkFilePath}\""
+                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{StaticLinkFile.Prefix}{OutputFileName}{StaticLinkFile.Extension}"]
+        Shared:
+            Windows:
+                Flags: >-
+                    /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib
+                    oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /manifest:embed /SUBSYSTEM:CONSOLE
+                    /DEBUG /DLL /MANIFESTUAC:"level='asInvoker'"
+                Executable: "link.exe"
+                RunParts:
+                -   Type: Once
+                    CommandPart: >-
+                        {Executable} {LinkFlags}
+                        /OUT:"{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}"
+                        /IMPLIB:"{OutputFileDirectory}{/}{SharedLinkFile.Prefix}{OutputFileName}{SharedLinkFile.Extension}"
+                -   Type: Repeats
+                    CommandPart: " \"{LinkFilePath}\""
+                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}"]

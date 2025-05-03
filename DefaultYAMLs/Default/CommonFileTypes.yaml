@@ -1,0 +1,47 @@
+# DO NOT modify this file. Changes will be overwritten when there's a reset or update
+
+FilesTypes:
+    # The file properties for the files to be **linked** as object file for each platform
+    ObjectLinkFile:
+        Prefix:
+            DefaultPlatform: ""
+        Extension:
+            Windows: ".obj"
+            Unix: ".o"
+    # The file properties for the files to be **linked** as shared libraries for each platform
+    SharedLinkFile:
+        Prefix:
+            Windows: ""
+            Linux: "lib"
+            MacOS: ""
+        Extension:
+            Windows: ".lib"
+            Linux: ".so"
+            MacOS: ".dylib"
+    # The file properties for the files to be **copied** as shared libraries for each platform
+    SharedLibraryFile:
+        Prefix:
+            Windows: ""
+            Linux: "lib"
+            MacOS: ""
+        Extension:
+            Windows: ".dll"
+            Linux: ".so"
+            MacOS: ".dylib"
+    # The file properties for the files to be linked as static libraries for each platform
+    StaticLinkFile:
+        Prefix:
+            Unix: "lib"
+            Windows: ""
+        Extension:
+            Windows: ".lib"
+            Unix: ".a"
+    # (Optional) The file properties for debug symbols to be copied alongside the binary 
+    #               for each platform
+    DebugSymbolFile:
+        Prefix:
+            Windows: ""
+            Unix: ""
+        Extension:
+            Windows: ".pdb"
+            Unix: ""
