@@ -114,13 +114,13 @@ if(RUNCPP2_UPDATE_DEFAULT_YAMLS OR EMBEDDED_FILE_SIZE LESS 1024)
         set(FILES_TO_EMBED  "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/DefaultUserConfig.yaml"
                             "DefaultUserConfig"
                             
-                            "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/CommonFileTypes.yaml"
+                            "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/Default/CommonFileTypes.yaml"
                             "CommonFileTypes"
                             
-                            "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/g++.yaml"
+                            "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/Default/g++.yaml"
                             "G_PlusPlus"
                             
-                            "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/vs2022_v17+.yaml"
+                            "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/Default/vs2022_v17+.yaml"
                             "Vs2022_v17Plus"
                             
                             "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/DefaultScriptInfo.yaml"

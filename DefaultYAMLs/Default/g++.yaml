@@ -42,6 +42,8 @@ Languages: ["c++"]
 # The file properties for the object files for each platform. 
 # See "./CommonFileTypes.yaml" for FilesTypes
 # FilesTypes: ...
+
+# We can use the "Import" field to import other yaml files. We are importing "FilesTypes" here
 Import: "./CommonFileTypes.yaml"
 
 # Specify the compiler settings
