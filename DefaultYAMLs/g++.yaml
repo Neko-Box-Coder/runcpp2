@@ -1,0 +1,237 @@
+# DO NOT modify this file. Changes will be overwritten when there's a reset or update
+
+# List of anchors that will be aliased later. `Template` is **NOT** part of a profile
+Templates:
+    "g++_CompileRunParts": &g++_CompileRunParts
+    -   Type: Once
+        CommandPart: "{Executable} -c {CompileFlags}"
+    -   Type: Repeats
+        CommandPart: " -D{DefineNameOnly}="
+    -   Type: Repeats
+        CommandPart: " \"-D{DefineName}={DefineValue}\""
+    -   Type: Repeats
+        CommandPart: " -I\"{IncludeDirectoryPath}\""
+    -   Type: Once
+        CommandPart: " \"{InputFilePath}\" -o \"{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}\""
+    
+    "g++_CompileExpectedOutputFiles": &g++_CompileExpectedOutputFiles
+    -   "{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}"
+
+# Name (case sensitive) of the profile that can be queried from a script
+Name: "g++"
+
+# (Optional) Name aliases (case sensitive) of the current profile
+NameAliases: ["mingw"]
+
+# The file extensions associated with the profile
+FileExtensions: [.cpp, .cc, .cxx]
+
+# The languages supported by the profile
+Languages: ["c++"]
+
+# (Optional) The commands to run in **shell** before calling the compiler/linker for each platform.
+#            This is run inside the root build directory.
+# Setup: 
+#     DefaultPlatform: []
+
+# (Optional) The commands to run in **shell** after calling the compiler/linker for each platform.
+#            This is run inside the root build directory.
+# Cleanup: 
+#     DefaultPlatform: []
+
+# The file properties for the object files for each platform. 
+# See "./CommonFileTypes.yaml" for FilesTypes
+# FilesTypes: ...
+Import: "./CommonFileTypes.yaml"
+
+# Specify the compiler settings
+Compiler:
+    # (Optional) The command to be prepend for each compile command in **shell** for each platform
+    # PreRun: 
+    #     DefaultPlatform: ""
+    
+    # Shell command to use for checking if the executable exists or not
+    CheckExistence: 
+        DefaultPlatform: "g++ -v"
+    
+    # Here are a list of substitution strings for RunParts, Setup and Cleanup. 
+    # To escape '{' and '}' to avoid substitutioon, simply repeat the '{' or '}' character again.
+    # So "${MyBashVariable}" will become "${{MyBashVariable}}"
+    
+    # {Executable}:                 Compiler executable
+    # {CompileFlags}:               Compile flags from config and override
+    # {InputFileName}:              Name of the input file (without directory path and extension)
+    # {InputFileExtension}:         Extension of the input file
+    # {InputFileDirectory}:         Directory of the input file
+    # {InputFilePath}:              Full path to the input file
+    # {OutputFileDirectory}:        Directory of all the output files
+    # {/}:                          Filesystem separator for the host platform
+    
+    # {SharedLibraryFile.Prefix}
+    # {SharedLinkFile.Prefix}
+    # {StaticLinkFile.Prefix}
+    # {ObjectLinkFile.Prefix}
+    # {DebugSymbolFile.Prefix}
+    
+    # {SharedLibraryFile.Extension}
+    # {SharedLinkFile.Extension}
+    # {StaticLinkFile.Extension}
+    # {ObjectLinkFile.Extension}
+    # {DebugSymbolFile.Extension}
+    
+    # Below are iterable substitution strings, must be inside "Repeats" run type:
+    # {IncludeDirectoryPath}:       Path to all the include directories
+    # {DefineNameOnly}:             All the defines without a value specified (equivalent to #define X)
+    # {DefineName}:                 Name of all the defines that has a value specified
+    # {DefineValue}:                Value of all the defines that has a value specified (use together with {DefineName})
+    CompileTypes:
+        Executable:
+            DefaultPlatform:
+                # Default flags to be substituted as {CompileFlags}
+                Flags: "-std=c++17 -Wall -g"
+                
+                # The executable to be substituted as {Executable}
+                Executable: "g++"
+                
+                # The components for the command to be run
+                RunParts: *g++_CompileRunParts
+                
+                # What files to be expected as output for the command
+                ExpectedOutputFiles: *g++_CompileExpectedOutputFiles
+                
+                # (Optional) The commands to run in **shell** BEFORE compiling
+                #            This is run inside the .runcpp2 directory where the build happens.
+                # Setup: []
+                
+                # (Optional) The commands to run in **shell** AFTER compiling
+                #            This is run inside the .runcpp2 directory where the build happens.
+                # Cleanup: []
+        ExecutableShared:
+            DefaultPlatform:
+                Flags: "-std=c++17 -Wall -g -fpic"
+                Executable: "g++"
+                RunParts: *g++_CompileRunParts
+                ExpectedOutputFiles: *g++_CompileExpectedOutputFiles
+                # Setup: []
+                # Cleanup: []
+        Static:
+            DefaultPlatform:
+                Flags: "-std=c++17 -Wall -g"
+                Executable: "g++"
+                RunParts: *g++_CompileRunParts
+                ExpectedOutputFiles: *g++_CompileExpectedOutputFiles
+                # Setup: []
+                # Cleanup: []
+        Shared:
+            DefaultPlatform:
+                Flags: "-std=c++17 -Wall -g -fpic"
+                Executable: "g++"
+                RunParts: *g++_CompileRunParts
+                ExpectedOutputFiles: *g++_CompileExpectedOutputFiles
+                # Setup: []
+                # Cleanup: []
+
+# Specify the linker settings
+Linker:
+    CheckExistence:
+        DefaultPlatform: "g++ -v"
+    
+    # Here are a list of substitution strings for RunParts, Setup and Cleanup
+    # {Executable}:                 Linker executable
+    # {LinkFlags}:                  Link flags from config and override
+    # {OutputFileName}:             Name of all the output files (without directory path and extension)
+    # {OutputFileDirectory}:        Directory of all the output files
+    # {/}:                          Filesystem separator for the host platform
+    
+    # {SharedLibraryFile.Prefix}
+    # {SharedLinkFile.Prefix}
+    # {StaticLinkFile.Prefix}
+    # {ObjectLinkFile.Prefix}
+    # {DebugSymbolFile.Prefix}
+    
+    # {SharedLibraryFile.Extension}
+    # {SharedLinkFile.Extension}
+    # {StaticLinkFile.Extension}
+    # {ObjectLinkFile.Extension}
+    # {DebugSymbolFile.Extension}
+    
+    # Below are iterable substitution strings, must be inside "Repeats" run type:
+    # {LinkFileName}:               Name of the file to be linked, regardless of the build type
+    # {LinkFileExtension}:          File Extension of the file to be linked, regardless of the build type
+    # {LinkFileDirectory}:          Directory of the file to be linked, regardless of the build type
+    # {LinkFilePath}:               Full path to the file to be linked, regardless of the build type
+    
+    # {LinkObjectFileName}:         Name of the object file to be linked
+    # {LinkObjectFileExtension}:    File Extension of the object file to be linked
+    # {LinkObjectFileDirectory}:    Directory of the object file to be linked
+    # {LinkObjectFilePath}:         Full path to the object file to be linked
+    
+    # {LinkSharedFileName}:         Name of the shared file to be linked
+    # {LinkSharedFileExtension}:    File Extension of the shared file to be linked
+    # {LinkSharedFileDirectory}:    Directory of the shared file to be linked
+    # {LinkSharedFilePath}:         Full path to the shared file to be linked
+    
+    # {LinkStaticFileName}:         Name of the static file to be linked
+    # {LinkStaticFileExtension}:    File Extension of the static file to be linked
+    # {LinkStaticFileDirectory}:    Directory of the static file to be linked
+    # {LinkStaticFilePath}:         Full path to the static file to be linked
+    LinkTypes:
+        Executable:
+            Unix:
+                Flags: "-Wl,-rpath,\\$ORIGIN"
+                Executable: "g++"
+                RunParts:
+                -   Type: Once
+                    CommandPart: "{Executable} {LinkFlags} -o \"{OutputFileDirectory}{/}{OutputFileName}\""
+                -   Type: Repeats
+                    CommandPart: " \"{LinkFilePath}\""
+                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{OutputFileName}"]
+                # Setup: []
+                # Cleanup: []
+            Windows:
+                Flags: "-Wl,-rpath,\\$ORIGIN"
+                Executable: "g++"
+                RunParts:
+                -   Type: Once
+                    CommandPart: "{Executable} {LinkFlags} -o \"{OutputFileDirectory}{/}{OutputFileName}.exe\""
+                -   Type: Repeats
+                    CommandPart: " \"{LinkFilePath}\""
+                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{OutputFileName}.exe"]
+                # Setup: []
+                # Cleanup: []
+        ExecutableShared:
+            DefaultPlatform:
+                Flags: "-shared -Wl,-rpath,\\$ORIGIN"
+                Executable: "g++"
+                RunParts:
+                -   Type: Once
+                    CommandPart: "{Executable} {LinkFlags} -o \"{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}\""
+                -   Type: Repeats
+                    CommandPart: " \"{LinkFilePath}\""
+                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}"]
+                # Setup: []
+                # Cleanup: []
+        Static:
+            DefaultPlatform:
+                Flags: ""
+                Executable: "g++"
+                RunParts:
+                -   Type: Once
+                    CommandPart: "{Executable} {LinkFlags} -o \"{OutputFileDirectory}{/}{StaticLinkFile.Prefix}{OutputFileName}{StaticLinkFile.Extension}\""
+                -   Type: Repeats
+                    CommandPart: " \"{LinkFilePath}\""
+                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{StaticLinkFile.Prefix}{OutputFileName}{StaticLinkFile.Extension}"]
+                # Setup: []
+                # Cleanup: []
+        Shared:
+            DefaultPlatform:
+                Flags: "-shared -Wl,-rpath,\\$ORIGIN"
+                Executable: "g++"
+                RunParts:
+                -   Type: Once
+                    CommandPart: "{Executable} {LinkFlags} -o \"{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}\""
+                -   Type: Repeats
+                    CommandPart: " \"{LinkFilePath}\""
+                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}"]
+                # Setup: []
+                # Cleanup: []

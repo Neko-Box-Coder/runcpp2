@@ -294,7 +294,7 @@ bool runcpp2::GetParsableInfo(const std::string& contentToParse, std::string& ou
 }
 
 bool runcpp2::ResolveYAML_Stream(   ryml::Tree& rootTree, 
-                                    ryml::ConstNodeRef& outRootNode)
+                                    ryml::NodeRef& outRootNode)
 {
     ssLOG_FUNC_DEBUG();
     
@@ -327,6 +327,29 @@ bool runcpp2::ResolveYAML_Stream(   ryml::Tree& rootTree,
     }
     else
         outRootNode = rootTree.rootref();
+    
+    return true;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::MergeYAML_NodeChildren(ryml::NodeRef nodeToMergeFrom, ryml::NodeRef nodeToMergeTo)
+{
+    ssLOG_FUNC_DEBUG();
+    
+    INTERNAL_RUNCPP2_SAFE_START();
+    
+    if(!nodeToMergeFrom.is_map() || !nodeToMergeTo.is_map())
+    {
+        ssLOG_ERROR("Merge node is not map");
+        return false;
+    }
+    
+    for(int i = 0; i < nodeToMergeFrom.num_children(); ++i)
+    {
+        if(!ExistAndHasChild(nodeToMergeTo, GetKey(nodeToMergeFrom[i]), true))
+            nodeToMergeFrom[i].duplicate(nodeToMergeTo, {});
+    }
     
     return true;
     

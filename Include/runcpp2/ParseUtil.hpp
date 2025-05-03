@@ -36,7 +36,10 @@ namespace runcpp2
     bool GetParsableInfo(const std::string& contentToParse, std::string& outParsableInfo);
     
     bool ResolveYAML_Stream(ryml::Tree& rootTree, 
-                            ryml::ConstNodeRef& outRootNode);
+                            ryml::NodeRef& outRootNode);
+    
+    //NOTE: Tree of both nodeToMergeTo and nodeToMergeFrom needs to be alive to be valid
+    bool MergeYAML_NodeChildren(ryml::NodeRef nodeToMergeFrom, ryml::NodeRef nodeToMergeTo);
     
     bool ExistAndHasChild(  ryml::ConstNodeRef node, 
                             const std::string& childName,
