@@ -43,7 +43,9 @@ Languages: ["c++"]
 # See "./CommonFileTypes.yaml" for FilesTypes
 # FilesTypes: ...
 
-# We can use the "Import" field to import other yaml files. We are importing "FilesTypes" here
+# (Optional) We can use the "Import" field to import other yaml files. We are importing "FilesTypes" here.
+#            Import can either be a single path or a list of paths. 
+#            All the fields in the imported yaml files will be merged together
 Import: "./CommonFileTypes.yaml"
 
 # Specify the compiler settings

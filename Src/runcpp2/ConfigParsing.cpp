@@ -35,19 +35,51 @@ namespace
         ssLOG_FUNC_INFO();
         
         ghc::filesystem::path currentImportFilePath = configPath;
-        while(runcpp2::ExistAndHasChild(currentProfileNode, "Import"))
+        std::stack<ghc::filesystem::path> pathsToImport;
+        while(runcpp2::ExistAndHasChild(currentProfileNode, "Import") || !pathsToImport.empty())
         {
-            if(!INTERNAL_RUNCPP2_BIT_CONTANTS(  currentProfileNode["Import"].type().type, 
-                                                ryml::NodeType_e::KEYVAL))
+            //If we import field, we should deal with it instead
+            if(runcpp2::ExistAndHasChild(currentProfileNode, "Import"))
             {
-                ssLOG_ERROR("Import must be a path to a YAML file");
-                return false;
+                const ryml::NodeType_e importNodeType = currentProfileNode["Import"].type().type;
+                if( !INTERNAL_RUNCPP2_BIT_CONTANTS(importNodeType, ryml::NodeType_e::KEYVAL) &&
+                    !INTERNAL_RUNCPP2_BIT_CONTANTS(importNodeType, ryml::NodeType_e::SEQ))
+                {
+                    ssLOG_ERROR("Import must be a path or sequence of paths of YAML file(s)");
+                    return false;
+                }
+                
+                ghc::filesystem::path currentImportDir = currentImportFilePath;
+                currentImportDir = currentImportDir.parent_path();
+                if(currentProfileNode["Import"].is_keyval())
+                {
+                    pathsToImport.push( currentImportDir / 
+                                        runcpp2::GetValue(currentProfileNode["Import"]));
+                }
+                else
+                {
+                    if(currentProfileNode["Import"].num_children() == 0)
+                    {
+                        ssLOG_ERROR("An import sequence cannot be an empty");
+                        return false;
+                    }
+                    
+                    for(int i = 0; i < currentProfileNode["Import"].num_children(); ++i)
+                    {
+                        if(!currentProfileNode["Import"][i].is_val())
+                        {
+                            ssLOG_ERROR("It must be a sequence of paths");
+                            return false;
+                        }
+                        
+                        pathsToImport.push( currentImportDir / 
+                                            runcpp2::GetValue(currentProfileNode["Import"][i]));
+                    }
+                }
             }
             
-            ghc::filesystem::path currentImportDir = currentImportFilePath;
-            currentImportDir = currentImportDir.parent_path();
-            currentImportFilePath = 
-                currentImportDir / runcpp2::GetValue(currentProfileNode["Import"]);
+            currentImportFilePath = pathsToImport.top();
+            pathsToImport.pop();
             
             std::error_code ec;
             if(!ghc::filesystem::exists(currentImportFilePath, ec))
@@ -77,7 +109,10 @@ namespace
             
             //Replace the current import field if the import profile has an import field
             if(runcpp2::ExistAndHasChild(importProfileNode, "Import"))
-                currentProfileNode["Import"] << runcpp2::GetValue(importProfileNode["Import"]);
+            {
+                currentProfileNode.remove_child("Import");
+                importProfileNode["Import"].duplicate(currentProfileNode, {});
+            }
             //Otherwise, remove the current import field
             else
                 currentProfileNode.remove_child("Import");

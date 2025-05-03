@@ -301,7 +301,8 @@ int main(int argc, char** argv)
             const char* mainConfigYamlStr = R"(
                 PreferredProfile: "imported-profile"
                 Profiles:
-                -   Import: "Default/g++.yaml"
+                -   Import: ["Default/gcc.yaml", "Default/gccCompilerLinker.yaml"]
+                
                 -   Name: "second-profile"
                     FileExtensions: [.cpp, .cc, .cxx]
                     Languages: ["c++"]
@@ -334,12 +335,15 @@ int main(int argc, char** argv)
                         LinkTypes: *TypeInfoEntries
             )";
 
-            const char* importedProfileYamlStr = R"(
+            const char* importedGccProfileYamlStr = R"(
                 Name: "imported-profile"
-                NameAliases: ["gcc"]
+                NameAliases: ["g++"]
                 FileExtensions: [.cpp, .cc]
                 Languages: ["c++"]
                 Import: "filetypes.yaml"
+            )";
+            
+            const char* importedCompilerLinkerYamlStr = R"(
                 Compiler:
                     CheckExistence: 
                         DefaultPlatform: "imported-gcc -v"
@@ -387,80 +391,124 @@ int main(int argc, char** argv)
                                             .ReturnsResult();
             
             //Setup filesystem exist for the import yaml files
-            std::string firstExpectedImportPath = "some/config/dir/Default/g++.yaml";
-            std::string secondExpectedImportPath = "some/config/dir/Default/filetypes.yaml";
+            std::string gccExpectedImportPath = "some/config/dir/Default/gcc.yaml";
+            std::string filetypesExpectedImportPath = "some/config/dir/Default/filetypes.yaml";
+            std::string gccCompilerLinkerExpectedImportPath = 
+                "some/config/dir/Default/gccCompilerLinker.yaml";
             
-            std::shared_ptr<OverrideResult> firstImportFileExistResult = 
+            std::shared_ptr<OverrideResult> gccImportFileExistResult = 
                 CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
                                     .WhenCalledWith<const std::string&, 
-                                                    CO_ANY_TYPE>(   firstExpectedImportPath, 
+                                                    CO_ANY_TYPE>(   gccExpectedImportPath, 
                                                                     CO_ANY)
                                     .Returns<bool>(true)
                                     .ReturnsResult();
-            std::shared_ptr<OverrideResult> secondImportFileExistResult = 
+            std::shared_ptr<OverrideResult> filetypesImportFileExistResult = 
                 CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
                                     .WhenCalledWith<const std::string&, 
-                                                    CO_ANY_TYPE>(   secondExpectedImportPath, 
+                                                    CO_ANY_TYPE>(   filetypesExpectedImportPath, 
                                                                     CO_ANY)
+                                    .Returns<bool>(true)
+                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> gccCompilerLinkerImportFileExistResult = 
+                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
+                                    .WhenCalledWith
+                                    <
+                                        const std::string&, 
+                                        CO_ANY_TYPE
+                                    >
+                                    (
+                                        gccCompilerLinkerExpectedImportPath, 
+                                        CO_ANY
+                                    )
                                     .Returns<bool>(true)
                                     .ReturnsResult();
             
             //Record if there's an ifstream created with import paths
-            void* firstImportIfstreamInstance = nullptr;
-            void* secondImportIfstreamInstance = nullptr;
-            std::shared_ptr<OverrideResult> firstImportedFileStreamResult = 
+            void* gccImportIfstreamInstance = nullptr;
+            void* filetypesImportIfstreamInstance = nullptr;
+            void* gccCompilerLinkerImportIfstreamInstance = nullptr;
+            std::shared_ptr<OverrideResult> gccImportedFileStreamResult = 
                 CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ifstream)
                                     .WhenCalledWith<const ghc::filesystem::path>
-                                        (firstExpectedImportPath)
+                                        (gccExpectedImportPath)
                                     .Times(1)
                                     .WhenCalledExpectedly_Do
                                     (
-                                        [&firstImportIfstreamInstance]
+                                        [&gccImportIfstreamInstance]
                                         (void* instance, const std::vector<void*>&) 
                                         {
-                                            firstImportIfstreamInstance = instance;
+                                            gccImportIfstreamInstance = instance;
                                         }
                                     )
                                     .ReturnsResult();
-            std::shared_ptr<OverrideResult> secondImportedFileStreamResult = 
+            std::shared_ptr<OverrideResult> filetypesImportedFileStreamResult = 
                 CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ifstream)
                                     .WhenCalledWith<const ghc::filesystem::path>
-                                        (secondExpectedImportPath)
+                                        (filetypesExpectedImportPath)
                                     .Times(1)
                                     .WhenCalledExpectedly_Do
                                     (
-                                        [&secondImportIfstreamInstance]
+                                        [&filetypesImportIfstreamInstance]
                                         (void* instance, const std::vector<void*>&) 
                                         {
-                                            secondImportIfstreamInstance = instance;
+                                            filetypesImportIfstreamInstance = instance;
+                                        }
+                                    )
+                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> gccCompilerLinkerImportedFileStreamResult = 
+                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ifstream)
+                                    .WhenCalledWith<const ghc::filesystem::path>
+                                        (gccCompilerLinkerExpectedImportPath)
+                                    .Times(1)
+                                    .WhenCalledExpectedly_Do
+                                    (
+                                        [&gccCompilerLinkerImportIfstreamInstance]
+                                        (void* instance, const std::vector<void*>&) 
+                                        {
+                                            gccCompilerLinkerImportIfstreamInstance = instance;
                                         }
                                     )
                                     .ReturnsResult();
             
             //Mock for rdbuf call with specific path check for import files
-            std::shared_ptr<OverrideResult> firstImportedFileRdbufResult = 
+            std::shared_ptr<OverrideResult> gccImportedFileRdbufResult = 
                 CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
-                                    .Returns<std::string>(importedProfileYamlStr)
+                                    .Returns<std::string>(importedGccProfileYamlStr)
                                     .Times(1)
                                     .If
                                     (
-                                        [&firstImportIfstreamInstance]
+                                        [&gccImportIfstreamInstance]
                                         (void* instance, const std::vector<void*>&) -> bool
                                         {
-                                            return instance == firstImportIfstreamInstance;
+                                            return instance == gccImportIfstreamInstance;
                                         }
                                     )
                                     .ReturnsResult();
-            std::shared_ptr<OverrideResult> secondImportedFileRdbufResult = 
+            std::shared_ptr<OverrideResult> filetypesImportedFileRdbufResult = 
                 CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
                                     .Returns<std::string>(importedFiletypesYamlStr)
                                     .Times(1)
                                     .If
                                     (
-                                        [&secondImportIfstreamInstance]
+                                        [&filetypesImportIfstreamInstance]
                                         (void* instance, const std::vector<void*>&) -> bool
                                         {
-                                            return instance == secondImportIfstreamInstance;
+                                            return instance == filetypesImportIfstreamInstance;
+                                        }
+                                    )
+                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> gccCompilerLinkerImportedFileRdbufResult = 
+                CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
+                                    .Returns<std::string>(importedCompilerLinkerYamlStr)
+                                    .Times(1)
+                                    .If
+                                    (
+                                        [&gccCompilerLinkerImportIfstreamInstance]
+                                        (void* instance, const std::vector<void*>&) -> bool
+                                        {
+                                            return  instance == 
+                                                    gccCompilerLinkerImportIfstreamInstance;
                                         }
                                     )
                                     .ReturnsResult();
@@ -476,14 +524,17 @@ int main(int argc, char** argv)
         );
         
         commonOverrideStatusCheck();
-        ssTEST_OUTPUT_ASSERT("", firstImportFileExistResult->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT("", secondImportFileExistResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT("", gccImportFileExistResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT("", filetypesImportFileExistResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT("", gccCompilerLinkerImportFileExistResult->GetSucceedCount(), 1);
         
-        ssTEST_OUTPUT_ASSERT("", firstImportedFileStreamResult->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT("", secondImportedFileStreamResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT("", gccImportedFileStreamResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT("", filetypesImportedFileStreamResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT("", gccCompilerLinkerImportedFileStreamResult->GetSucceedCount(), 1);
         
-        ssTEST_OUTPUT_ASSERT("", firstImportedFileRdbufResult->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT("", secondImportedFileRdbufResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT("", gccImportedFileRdbufResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT("", filetypesImportedFileRdbufResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT("", gccCompilerLinkerImportedFileRdbufResult->GetSucceedCount(), 1);
         
         ssTEST_OUTPUT_ASSERT("ReadUserConfig should succeed", parseResult);
         ssTEST_OUTPUT_ASSERT("Should parse 2 profiles (1 imported + 1 inline)", profiles.size(), 2);
@@ -503,7 +554,7 @@ int main(int argc, char** argv)
                                     "file-prefix");
             ssTEST_OUTPUT_ASSERT(   "First profile should have correct name aliases", 
                                     profiles[0].NameAliases.size() == 1 && 
-                                    profiles[0].NameAliases.find("gcc") != 
+                                    profiles[0].NameAliases.find("g++") != 
                                         profiles[0].NameAliases.end());
             ssTEST_OUTPUT_ASSERT(   "PreferredProfile should match the imported profile", 
                                     preferredProfile, 
