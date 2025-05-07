@@ -8,6 +8,8 @@ Dependencies:
             URL: "https://github.com/Neko-Box-Coder/ssLogger.git"
     LibraryType: Header
     IncludePaths: ["Include"]
+    Defines:
+    -   "_CRT_SECURE_NO_WARNINGS=1"
 
 -   Name: "System2.cpp"
     Platforms: [DefaultPlatform]
@@ -35,12 +37,28 @@ Dependencies:
 #include <thread>
 #include <chrono>
 
-#define DELAYED_OUTPUT(str) \
-    do { std::this_thread::sleep_for(std::chrono::milliseconds(1000)); ssLOG_BASE(str); } while(0)
+std::string runcpp2ExecutablePath = "";
+bool integrationTest = false;
 
+#define DELAYED_OUTPUT(str) \
+    do \
+    { \
+        if(!integrationTest) \
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000)); \
+        ssLOG_BASE(str); \
+    } while(0)
 
 std::string GetInput(bool allowEmpty = false)
 {
+    if(integrationTest)
+    {
+        if(!allowEmpty)
+            ssLOG_ERROR("GetInput() called with allowEmpty set to false for testing");
+        
+        DELAYED_OUTPUT("");
+        return "";
+    }
+    
     std::string input;
     bool triggered = false;
     do
@@ -62,6 +80,12 @@ std::string GetInput(bool allowEmpty = false)
 
 bool GetYN_WithDefault(bool defaultY)
 {
+    if(integrationTest)
+    {
+        DELAYED_OUTPUT("y");
+        return defaultY;
+    }
+    
     while(true)
     {
         std::string input = GetInput(true);
@@ -90,7 +114,6 @@ bool GetYN()
     }
 }
 
-std::string runcpp2ExecutablePath = "";
 
 bool InitializeRuncpp2ExecutablePath()
 {
@@ -145,10 +168,14 @@ bool InitializeRuncpp2ExecutablePath()
     return true;
 }
 
-bool RunCommand(const std::string& command, bool expectingZeroReturnValue = true)
+bool RunCommand(const std::string& command, 
+                bool expectingZeroReturnValue = true, 
+                bool convertSlashes = true)
 {
+    (void)convertSlashes;
     std::string updatedCommand = command;
     #ifdef _WIN32
+    if(convertSlashes)
     {
         std::string::size_type pos = 0;
         while((pos = updatedCommand.find('/', pos)) != std::string::npos)
@@ -156,7 +183,7 @@ bool RunCommand(const std::string& command, bool expectingZeroReturnValue = true
             updatedCommand.replace(pos, 1, "\\");
             pos++;
         }
-    }   
+    }
     #endif
     
     DELAYED_OUTPUT( "-----------------------\n"
@@ -166,7 +193,8 @@ bool RunCommand(const std::string& command, bool expectingZeroReturnValue = true
     SYSTEM2_RESULT result = System2CppRun(updatedCommand, commandInfo);
     if(result != SYSTEM2_RESULT_SUCCESS)
     {
-        ssLOG_ERROR("Failed to run the command: " << result);
+        ssLOG_ERROR("Failed to run the command: " << updatedCommand);
+        ssLOG_ERROR("SYSTEM2_RESULT: " << result);
         return false;
     }
     
@@ -174,12 +202,14 @@ bool RunCommand(const std::string& command, bool expectingZeroReturnValue = true
     result = System2CppGetCommandReturnValueSync(commandInfo, returnCode, false);
     if(result != SYSTEM2_RESULT_SUCCESS)
     {
+        ssLOG_ERROR("Command failed: " << updatedCommand);
         ssLOG_ERROR("Failed to get the return value of the command: " << result);
         return false;
     }
 
     if(expectingZeroReturnValue && returnCode != 0)
     {
+        ssLOG_ERROR("Command failed: " << updatedCommand);
         ssLOG_ERROR("The command returned a non-zero return value: " << returnCode);
         return false;
     }
@@ -191,14 +221,16 @@ bool RunCommand(const std::string& command, bool expectingZeroReturnValue = true
     return true;
 }
 
-bool RunCommandWithPrompt(const std::string& command, bool expectingZeroReturnValue = true)
+bool RunCommandWithPrompt(  const std::string& command, 
+                            bool expectingZeroReturnValue = true, 
+                            bool convertSlashes = true)
 {
     //DELAYED_OUTPUT("> " << command << " # Press enter to continue...");
     std::cout << "> " << command << "       # Press enter to continue...";
     GetInput(true);
     DELAYED_OUTPUT("");
 
-    return RunCommand(command, expectingZeroReturnValue);
+    return RunCommand(command, expectingZeroReturnValue, convertSlashes);
 }
 
 std::string ReadFile(const std::string& path)
@@ -286,15 +318,20 @@ int main(int, char**)
     
     DELAYED_OUTPUT( "We can get the binary files of the script by "
                     "using the `--build` (or `-b`) option.");
-    DELAYED_OUTPUT("This will output the binary files in the directory specified.");
+    DELAYED_OUTPUT( "And we can specify the output directory for the binary files with `--output` "
+                    "(or `-o`)");
     DELAYED_OUTPUT( "We also need to pass the `--executable` (or `-e`) option to "
                     "explicitly get an executable file. \n"
                     "See https://neko-box-coder.github.io/runcpp2/latest/guides/"
                     "building_project_sources/ for more details.\n");
+    
+    //TODO: Remove this when the cache bug is fixed
+    DELAYED_OUTPUT("`--rebuild` is just resetting the build cache");
 
     DELAYED_OUTPUT("Let's try it");
     if(!RunCommandWithPrompt(   runcpp2ExecutablePath + 
-                                " --build ./tutorial --executable tutorial/main.cpp"))
+                                " --build --output ./tutorial --executable --rebuild "
+                                "tutorial/main.cpp"))
     {
         return false;
     }
@@ -745,8 +782,8 @@ bool Chapter3_ExternalDependencies()
     #ifdef _WIN32
         if(!RunCommandWithPrompt(   "powershell -Command \""
                                     "Invoke-WebRequest https://github.com/Neko-Box-Coder/runcpp2/raw/"
-                                    "refs/heads/InteractiveTutorial/Examples/Logging.cpp"
-                                    "-OutFile tutorial/Logging.cpp\""))
+                                    "refs/heads/InteractiveTutorial/Examples/Logging.cpp "
+                                    "-OutFile tutorial/Logging.cpp\"", true, false))
         {
             return false;
         }    
@@ -782,7 +819,7 @@ bool Chapter3_ExternalDependencies()
         if(!RunCommandWithPrompt(   "powershell -Command \""
                                     "Invoke-WebRequest https://github.com/Neko-Box-Coder/runcpp2/raw/"
                                     "refs/heads/InteractiveTutorial/Examples/SDLWindow.cpp "
-                                    "-OutFile tutorial/SDLWindow.cpp\""))
+                                    "-OutFile tutorial/SDLWindow.cpp\"", true, false))
         {
             return false;
         }
@@ -826,8 +863,17 @@ bool Chapter3_ExternalDependencies()
                     "then link against the built binary and display a Window.");
     DELAYED_OUTPUT( "It might take a bit of time to build SDL2 but only happens when you run "
                     "the script for the first time. Let's run it now.");
-    if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " SDLWindow.cpp"))
-        return false;
+    if(!integrationTest)
+    {
+        if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " SDLWindow.cpp"))
+            return false;
+    }
+    else
+    {
+        DELAYED_OUTPUT("running SDLWindow.cpp skipped for integration testing");
+        if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " --build SDLWindow.cpp"))
+            return false;
+    }
 
     DELAYED_OUTPUT("You can also have a dependency as a standalone YAML file which you can import.");
     DELAYED_OUTPUT("Let me move the SDL2 dependency to a standalone YAML file.");
@@ -877,7 +923,7 @@ Dependencies:
         int expectedIndent = 0;
         std::string sdlContent;
         {
-            for(int i = sdlStart - 1; 
+            for(int i = (int)sdlStart - 1; 
                 i >= 0 && (fileContent[i] == ' ' || fileContent[i] == '-'); 
                 --i)
             {
@@ -885,7 +931,7 @@ Dependencies:
             }
             
             size_t sdlEnd = sdlStart;
-            for(int i = sdlStart + 1; i < (int)commentBlock.length(); ++i)
+            for(int i = (int)sdlStart + 1; i < (int)commentBlock.length(); ++i)
             {
                 if(commentBlock[i] == '\n') 
                 {
@@ -905,6 +951,8 @@ Dependencies:
                         //Short empty line, remove it
                         else if(commentBlock[lineStart + spaces] == '\n' && spaces < expectedIndent)
                             commentBlock.erase(lineStart, spaces + 1);
+                        else if(commentBlock[lineStart + spaces] == '\r')
+                            continue;
                         else
                             break;
                     }
@@ -936,8 +984,8 @@ Dependencies:
             std::string indentSpaces(expectedIndent, ' ');
             indentSpaces = "\n" + indentSpaces;
             
-            int currentIndentPos = sdlContent.find(indentSpaces, firstNewline);
-            while((size_t)currentIndentPos != std::string::npos)
+            size_t currentIndentPos = sdlContent.find(indentSpaces, firstNewline);
+            while(currentIndentPos != std::string::npos)
             {
                 sdlContent.replace(currentIndentPos, indentSpaces.length(), "\n");
                 currentIndentPos = sdlContent.find(indentSpaces, ++currentIndentPos);
@@ -972,8 +1020,17 @@ Dependencies:
     GetInput(true);
 
     DELAYED_OUTPUT("Let's run it now.");
-    if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " SDLWindow.cpp"))
-        return false;
+    if(!integrationTest)
+    {
+        if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " SDLWindow.cpp"))
+            return false;
+    }
+    else
+    {
+        DELAYED_OUTPUT("running SDLWindow.cpp skipped for integration testing");
+        if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " --build SDLWindow.cpp"))
+            return false;
+    }
     
     DELAYED_OUTPUT("This concludes the 3rd chapter of the tutorial.");
     DELAYED_OUTPUT("Press enter to continue...");
@@ -982,17 +1039,47 @@ Dependencies:
     return true;
 }
 
-
 int main(int argc, char* argv[])
 {
     ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_WARNING);
+    
+    //--test <path to runcpp2> <path to config file>
+    integrationTest = argc > 2 && std::string(argv[1]) == "--test";
     
     DELAYED_OUTPUT( "===========================================\n"
                     "Runcpp2 Interactive Tutorial\n"
                     "===========================================\n");
 
-    if(!InitializeRuncpp2ExecutablePath())
-        return 1;
+    if(!integrationTest)
+    {
+        if(!InitializeRuncpp2ExecutablePath())
+            return 1;
+    }
+    else
+    {
+        if(argc != 4)
+        {
+            ssLOG_ERROR("Missing arguments for integrationTest");
+            return 1;
+        }
+        
+        std::error_code ec;
+        auto exePath = ghc::filesystem::absolute(ghc::filesystem::path(argv[2]), ec);
+        if(ec)
+        {
+            ssLOG_ERROR("Failed to get absolute path for " << argv[2] << ". \n" << ec.message());
+            return 1;
+        }
+        
+        auto configPath = ghc::filesystem::absolute(ghc::filesystem::path(argv[3]), ec);
+        if(ec)
+        {
+            ssLOG_ERROR("Failed to get absolute path for " << argv[3] << ". \n" << ec.message());
+            return 1;
+        }
+        
+        runcpp2ExecutablePath = exePath.string() + " -l -c " + configPath.string();
+    }
 
     DELAYED_OUTPUT("The whole tutorial is about 15 minutes long.");
 

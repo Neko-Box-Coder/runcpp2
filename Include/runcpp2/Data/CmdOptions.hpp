@@ -23,6 +23,7 @@ namespace runcpp2
         CLEANUP,
         BUILD_SOURCE_ONLY,
         THREADS,
+        TUTORIAL,
         COUNT
     };
 }

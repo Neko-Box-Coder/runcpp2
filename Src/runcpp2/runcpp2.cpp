@@ -810,3 +810,68 @@ std::string runcpp2::PipelineResultToString(PipelineResult result)
             return "UNKNOWN_PIPELINE_RESULT";
     }
 }
+
+bool runcpp2::DownloadTutorial(char* runcppPath)
+{
+    std::string dummy;
+    int returnCode = 0;
+    
+    std::string input;
+    while(true)
+    {
+        input.clear();
+        ssLOG_BASE( "This will download InteractiveTutorial.cpp from github to current directory. "
+                    "Continue? [Y/n]");
+        
+        if(!std::getline(std::cin, input))
+        {
+            ssLOG_ERROR("IO Error when trying to get cin");
+            return false;
+        }
+        
+        if(!input.empty())
+        {
+            if(input == "y" || input == "Y")
+                break;
+            else if(input == "n" || input == "N")
+            {
+                ssLOG_BASE("Not continuing");
+                return 0;
+            }
+            else
+                ssLOG_BASE("Please only answer with y or n");
+        }
+        else
+            break;
+    }
+    
+    #ifdef _WIN32
+        if(!RunCommand( "powershell -Command \""
+                        "Invoke-WebRequest https://github.com/Neko-Box-Coder/runcpp2/raw/"
+                        "refs/heads/InteractiveTutorial/Examples/InteractiveTutorial.cpp "
+                        "-OutFile InteractiveTutorial.cpp\"",
+                        false,
+                        "./",
+                        dummy,
+                        returnCode))
+        {
+            return false;
+        }    
+    #else
+        if(!RunCommand( "curl -L -o tutorial/Logging.cpp "
+                        "https://github.com/Neko-Box-Coder/runcpp2/raw/refs/heads/"
+                        "InteractiveTutorial/Examples/InteractiveTutorial.cpp",
+                        false,
+                        "./",
+                        dummy,
+                        returnCode))
+        {
+            return false;
+        }
+    #endif
+    
+    ssLOG_BASE("Downloaded InteractiveTutorial.cpp from github.");
+    ssLOG_BASE("Do `" << runcppPath << " InteractiveTutorial.cpp to start the tutorial.");
+    
+    return true;
+}

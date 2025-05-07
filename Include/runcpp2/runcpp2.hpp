@@ -55,6 +55,8 @@ namespace runcpp2
                                     int& returnStatus);
 
     std::string PipelineResultToString(PipelineResult result);
+    
+    bool DownloadTutorial(char* runcppPath);
 }
 
 #endif

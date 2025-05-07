@@ -305,6 +305,8 @@ int main(int argc, char* argv[])
         ssLOG_BASE("    -v,  --[v]ersion                        Show the version of runcpp2");
         ssLOG_BASE("    -h,  --[h]elp                           Show this help message");
         ssLOG_BASE("         --log-level <level>                Sets the log level (Normal, Info, Debug) for runcpp2");
+        ssLOG_BASE("  Others:");
+        ssLOG_BASE("         --tutorial                         Start interactive tutorial");
         return 0;
     }
     
@@ -343,6 +345,14 @@ int main(int argc, char* argv[])
     if(currentOptions.count(runcpp2::CmdOptions::VERSION))
     {
         ssLOG_BASE("runcpp2 version " << RUNCPP2_VERSION);
+        return 0;
+    }
+    
+    //Download tutorial
+    if(currentOptions.count(runcpp2::CmdOptions::TUTORIAL))
+    {
+        if(!runcpp2::DownloadTutorial(argv[0]))
+            return -1;
         return 0;
     }
     
