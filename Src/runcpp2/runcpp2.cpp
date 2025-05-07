@@ -569,7 +569,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         std::vector<ghc::filesystem::path> cachedObjectsFiles;
         ghc::filesystem::file_time_type finalObjectWriteTime;
         
-        if(currentOptions.count(runcpp2::CmdOptions::RESET_CACHE) > 0 || recompileNeeded)
+        if(currentOptions.count(CmdOptions::RESET_CACHE) > 0 || recompileNeeded)
             sourceHasCache = std::vector<bool>(sourceFiles.size(), false);
         else if(!HasCompiledCache(  absoluteScriptPath,
                                     sourceFiles, 
@@ -671,6 +671,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             for(int i = 0; i < cachedObjectsFiles.size(); ++i)
                 linkFilesPaths.push_back(cachedObjectsFiles.at(i));
             
+            //TODO: Compile and link for watch as well. Load library as well
             if(currentOptions.count(CmdOptions::WATCH) > 0)
             {
                 if(!CompileScriptOnly(  buildDir,
@@ -708,62 +709,64 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         }
     }
 
-    //Run the compiled file at script directory
+    //Trigger post build and run the script if needed
     {
         std::vector<ghc::filesystem::path> targets;
         ghc::filesystem::path runnableTarget;
-        
-        // Only get runnable target if we're not in build-only mode
-        ghc::filesystem::path* runnableTargetPtr = 
-            (currentOptions.count(CmdOptions::BUILD) == 0) ? &runnableTarget : nullptr;
-        
         result = GetBuiltTargetPaths(   buildDir, 
                                         scriptName, 
                                         profiles.at(profileIndex), 
                                         currentOptions,
                                         scriptInfo,
                                         targets,
-                                        runnableTargetPtr);
+                                        &runnableTarget);
             
         if(result != PipelineResult::SUCCESS)
             return result;
 
-        if(currentOptions.count(CmdOptions::BUILD) == 0)
+        if(targets.empty())
         {
-            //Move copying to before post build
-            std::vector<std::string> copiedPaths;
-            if(!CopyFiles(buildDir, filesToCopyPaths, copiedPaths))
-            {
-                ssLOG_ERROR("Failed to copy binaries before running the script");
-                return PipelineResult::UNEXPECTED_FAILURE;
-            }
+            ssLOG_WARNING("No target files found");
+            return PipelineResult::SUCCESS;
+        }
+        
+        //Copy files to build directory
+        std::vector<std::string> copiedPaths;
+        if(!buildOutputDir.empty())
+        {
+            buildDir = buildOutputDir;
+            //filesToCopyPaths.push_back(runnableTarget.string());
+            for(const ghc::filesystem::path& target : targets)
+                filesToCopyPaths.push_back(target.string());
+        }
 
-            //Run PostBuild commands after successful compilation
-            result = HandlePostBuild(scriptInfo, profiles.at(profileIndex), buildDir.string());
-            if(result != PipelineResult::SUCCESS)
-                return PipelineResult::UNEXPECTED_FAILURE;
-            
-            //Don't run if we are just watching
-            if(currentOptions.count(CmdOptions::WATCH) > 0)
-                return PipelineResult::SUCCESS;
-            
-            ssLOG_INFO("Running script...");
-            return RunCompiledOutput(   runnableTarget,
-                                        absoluteScriptPath, 
-                                        scriptInfo, 
-                                        runArgs, 
-                                        currentOptions, 
-                                        returnStatus);
-        }
-        else
+        if(!CopyFiles(buildDir, filesToCopyPaths, copiedPaths))
         {
-            return HandleBuildOutput(   targets,
-                                        filesToCopyPaths, 
-                                        scriptInfo, 
-                                        profiles.at(profileIndex), 
-                                        buildOutputDir, 
-                                        currentOptions);
+            ssLOG_ERROR("Failed to copy binaries before running the script");
+            return PipelineResult::UNEXPECTED_FAILURE;
         }
+        
+        //Run PostBuild commands after successful compilation
+        result = HandlePostBuild(scriptInfo, profiles.at(profileIndex), buildDir.string());
+        if(result != PipelineResult::SUCCESS)
+            return PipelineResult::UNEXPECTED_FAILURE;
+
+        //Don't run if we are just watching, reseting source cache or building
+        if( currentOptions.count(CmdOptions::WATCH) > 0 || 
+            currentOptions.count(CmdOptions::RESET_CACHE) > 0 ||
+            currentOptions.count(CmdOptions::BUILD) > 0)
+        {
+            return PipelineResult::SUCCESS;
+        }
+        
+        //Run otherwise
+        ssLOG_INFO("Running script...");
+        return RunCompiledOutput(   runnableTarget,
+                                    absoluteScriptPath, 
+                                    scriptInfo, 
+                                    runArgs, 
+                                    currentOptions, 
+                                    returnStatus);
     }
 
     return PipelineResult::UNEXPECTED_FAILURE;

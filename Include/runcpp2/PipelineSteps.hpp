@@ -103,14 +103,6 @@ namespace runcpp2
                         const std::unordered_map<CmdOptions, std::string>& currentOptions,
                         int& returnStatus);
 
-    PipelineResult 
-    HandleBuildOutput(  const std::vector<ghc::filesystem::path>& targets,
-                        const std::vector<std::string>& filesToCopyPaths,
-                        const Data::ScriptInfo& scriptInfo,
-                        const Data::Profile& profile,
-                        const std::string& buildOutputDir,
-                        const std::unordered_map<CmdOptions, std::string>& currentOptions);
-
     PipelineResult GetBuiltTargetPaths( const ghc::filesystem::path& buildDir,
                                         const std::string& scriptName,
                                         const Data::Profile& profile,
