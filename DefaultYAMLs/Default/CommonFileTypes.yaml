@@ -13,7 +13,7 @@ FilesTypes:
         Prefix:
             Windows: ""
             Linux: "lib"
-            MacOS: ""
+            MacOS: "lib"
         Extension:
             Windows: ".lib"
             Linux: ".so"
