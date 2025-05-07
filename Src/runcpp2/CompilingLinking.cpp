@@ -626,8 +626,9 @@ namespace
                         ssLOG_WARNING(  "Trying to link static dependency when script is being " <<
                                         "built as shared. Linking might not work on some platforms.");
                         
+                        //TODO: Bug where cache is not invalidated when running with a different type
                         //TODO: Maybe revert the default back to executable?
-                        ssLOG_WARNING(  "If linking fails, run with -e instead");
+                        ssLOG_WARNING("If linking fails, run with -rb instead");
                     }
                     
                     goto processLinkFile;

@@ -822,7 +822,8 @@ runcpp2::ProcessDependencies(   Data::ScriptInfo& scriptInfo,
                                 dependenciesLocalCopiesPaths,
                                 maxThreads))
         {
-            ssLOG_ERROR("Failed to build script dependencies");
+            ssLOG_ERROR("Failed to build script dependencies. Maybe try resetting dependencies "
+                        "with \"-rd all\" and run again?");
             return PipelineResult::DEPENDENCIES_FAILED;
         }
     }
