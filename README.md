@@ -28,48 +28,17 @@ you can run c++ files anywhere you want.
 
 ## ⚡️ Getting Started
 
-### 1. Running source file directly
-Suppose you have a c++ file called `script.cpp`, you can run it immediately by doing 
+### Interactive Tutorial
 
-> *shell*
-```shell
-runcpp2 ./script.cpp <any arguments>
-```
+You can get started by running the tutorial with `runcpp2 --tutorial` and follow the instructions
 
-> [!NOTE]
-> On Unix, if you have added runcpp2 to your PATH and add this line `//bin/true;runcpp2 "$0" "$@"; exit $?;` 
-> to the top of your script, you can run the script directly by `./script.cpp <arguments>`
+### User Guide
 
----
+You can also follow the documentation guide on 
+[https://neko-box-coder.github.io/runcpp2/latest/guides/basics/](https://neko-box-coder.github.io/runcpp2/latest/guides/basics/)
 
-### 2. Watch and give compile errors
-If you want to edit the script but want to have feedback for any error, you can use "watch" mode.
+### Examples
 
-> *shell*
-```shell
-runcpp2 --watch ./script.cpp
-```
-
----
-
-### 3. Sepcifying Build Settings
-Build settings such as compile/link flags, external dependencies, command hooks, etc.
-can be spcified inlined inside a source file or as a separate yaml file in the format of YAML
-
-- To specify build settings in a dedicated yaml file:
-    - The yaml file in the same directory and share the same as the source file being run will be used
-- To specify inline build settings inside a source file: 
-    - Put them inside a comment with `runcpp2` at the beginning of the build settings
-    - The inline build settings can exist in anywhere of the source file
-    - Both inline (but continuous) comments (`//`) and block comments are supported (`/* */`)
-
-For a complete list of build settings, see [Build Settings](https://neko-box-coder.github.io/runcpp2/latest/build_settings/) or generate the template with
-
-> *shell*
-```shell
-runcpp2 --create-script-template ./script.cpp   # Embeds the build settings template as comment
-runcpp2 --create-script-template ./script.yaml  # Creates the build settings template as dedicated yaml file
-runcpp2 -t ./script.cpp                         # Short form
-```
+You can find all the examples you can run out of the box in [https://github.com/Neko-Box-Coder/runcpp2/tree/master/Examples](https://github.com/Neko-Box-Coder/runcpp2/tree/master/Examples)
 
 

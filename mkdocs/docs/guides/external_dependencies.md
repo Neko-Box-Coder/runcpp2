@@ -58,7 +58,7 @@ This is configured under the `Source` section. We currently support 2 sources:
 
 ## Specifying Git Clone Options
 
-!!! info "This requires `latest` version"
+!!! info "This requires `v0.3.0` version"
 
     You can specify the target branch/tag name and to clone whole git history or not with:
     `Branch` and `FullHistory`. 
@@ -126,9 +126,12 @@ For non-header libraries, you need to specify how to link against the library us
     ```
 
 !!! tip "Library Name Patterns"
-    - The library name should be specified without extensions
-    - For Windows: `MyLibrary` will match `MyLibrary.lib` and `MyLibrary.dll`
-    - For Unix: `MyLibrary` will match `libMyLibrary.a` and `libMyLibrary.so`
+    - The library name can be matched without extensions to allow cross-platform compatibility
+        - For Windows: `MyLibrary` will match `MyLibrary.lib` and `MyLibrary.dll`
+        - For Unix: `MyLibrary` will match `libMyLibrary.a` and `libMyLibrary.so`
+    - The whole name can also be matched if needed
+        - For example, `MyLibrary.lib` will match `MyLibrary.lib`
+
 
 ### Excluding Libraries
 
@@ -171,22 +174,22 @@ The only difference is that `PreBuild` and `PostBuild` hooks are replaced with
         Setup:
             DefaultPlatform:
                 "g++":
-                    -   "mkdir build"
+                -   "mkdir build"
         Build:
             DefaultPlatform:
                 "g++":
-                    -   "cmake --build build"
+                -   "cmake --build build"
         Cleanup:
             DefaultPlatform:
                 "g++":
-                    -   "rm -rf build"
+                -   "rm -rf build"
     ```
 
 ---
 
 ## Copying Files
 
-Sometimes dependencies need additional files (like DLLs, shaders, or assets) to be copied next 
+Sometimes dependencies need additional files (like binaries, shaders, or assets) to be copied next 
 to your executable. You can specify these files using the `FilesToCopy` field.
 
 All paths are relative to the dependency's root directory. 

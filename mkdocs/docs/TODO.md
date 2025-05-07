@@ -1,46 +1,48 @@
 # Roadmap
 
+
 ## Done
 
-!!! info "`latest` version"
-    - More git options
-        - Add branch/tag option for git
-        - Add initialize submodule option for git
-    - Async/Multi-thread compile and dependencies processing
-    - Ability to skip DefaultPlatform and DefaultProfile
-    - Handle escape characters at the end
-        - To avoid situation like this:
-            - Substitution string: `-I "{path}"`
-            - Substitution value: `.\`
-            - Substituted string: `-I ".\"`
-                - Where the path contains escape character which escaped the wrapping quotes
-    - Add platform map for PreferredProfile for user config
-    - Add ability to reference local YAML file for config profiles
+### v0.3.0
+- More git options
+    - Add branch/tag option for git
+    - Add initialize submodule option for git
+- Async/Multi-thread compile and dependencies processing
+- Ability to skip DefaultPlatform and DefaultProfile
+- Handle escape characters at the end
+    - To avoid situation like this:
+        - Substitution string: `-I "{path}"`
+        - Substitution value: `.\`
+        - Substituted string: `-I ".\"`
+            - Where the path contains escape character which escaped the wrapping quotes
+- Add platform map for PreferredProfile for user config
+- Add ability to reference local YAML file for config profiles
+- Add interactive tutorials and redo documentations
+
+### Nightly
 
 ## Planned
 
-### v0.3.0
-- Add interactive tutorials and redo documentations
+### v0.4.0
 
 - Allow runcpp2 to be library for scriptable pipeline
 - Add version for default user config and prompt for update
 - Add more default profiles
-
-### v0.4.0
-
 - Migrate to libyaml
 - Ability to compile runcpp2 as single cpp
 
-### TBD
+## High Priority
 
+- Update `FileProperties.hpp` to use list of string for prefix and extension
+    - Merge `SharedLinkFile` and `SharedLibraryFile`
 - Add the ability for user to specify custom substitution options which applies to all fields
 - Add the ability to append defines coming from the dependencies
-- Check last run is shared lib or executable. Reset cache when necessary if different type
+- Check last run is shared lib or executable. Reset cache when necessary if different type (`Src/runcpp2/CompilingLinking.cpp:502 LinkScript()`)
 - Add wildcard support for filenames and extensions (Files Globbing)
 - Add the ability to query script build directory
 - Add the ability to list script dependencies
 
-## Planned But Low Priority
+## TBD
 
 - Smoother CMake support by reading cmake target properties (https://stackoverflow.com/a/56738858/23479578)
 <!--
@@ -82,7 +84,7 @@ endfunction()
 print_target_properties(matplot)
 -->
 - Add the ability to specify different profiles(?)/defines for different source files
-- Use <csignal> to handle potential segfaults
+- Use `<csignal>` to handle potential segfaults
 - Use System2 subprocess if no prepend commands to be safer
 - Add tests and examples (On Windows as well)
 - Make SearchLibraryNames and SearchDirectories optional (?)

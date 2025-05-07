@@ -31,7 +31,7 @@ nav:
     -   index.md
     # -   guides.md
     -   Guides:
-        -   guides/basic_concepts.md
+        -   guides/basics.md
         -   guides/building_project_sources.md
         -   guides/external_dependencies.md
         -   guides/scriptable_pipeline.md
