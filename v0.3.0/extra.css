@@ -1,0 +1,40 @@
+
+
+.md-header__button.md-logo {
+    // margin-top: 0;
+    // margin-bottom: 0;
+    // margin-right: 0;
+    // padding-right: 0;
+    // padding-top: 0;
+    // padding-bottom: 0;
+    width: 5rem;
+}
+
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+    width: 100%;
+    height: auto;
+    overflow: hidden;
+    //height: 50%;
+    //width: 100%;
+    //min-width: 3rem;
+    //display: block;
+    //margin-left: auto;
+    //margin-right: auto;
+}
+
+.md-nav__list > .md-nav__item {
+    margin-left: 0.5rem;
+}
+
+.md-nav--primary > .md-nav__list > .md-nav__item {
+    margin-left: 0;
+}
+
+.md-typeset h5, .md-typeset h6 {
+    font-weight: 700;
+    letter-spacing: -.01em;
+    margin: 1em 0;
+    font-size: 1em;
+}
+

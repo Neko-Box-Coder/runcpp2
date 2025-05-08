@@ -1,0 +1,1200 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://neko-box-coder.github.io/runcpp2/v0.3.0/user_config/">
+      
+      
+        <link rel="prev" href="../build_settings/">
+      
+      
+        <link rel="next" href="../TODO/">
+      
+      
+      <link rel="icon" href="../favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.49">
+    
+    
+      
+        <title>User Config - runcpp2</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.6f8fc17f.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+    <meta name="google-site-verification" content="DbD9BorxRao-ddtExeVQxiQZgzMci9rCahyn_1yCcoY" />
+
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#user-config" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="runcpp2" class="md-header__button md-logo" aria-label="runcpp2" data-md-component="logo">
+      
+  <img src="../Runcpp2Logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            runcpp2
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              User Config
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Neko-Box-Coder/runcpp2" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Neko-Box-Coder/runcpp2
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guides/basics/" class="md-tabs__link">
+          
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../program_manual/" class="md-tabs__link">
+        
+  
+    
+  
+  Program Manual
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../build_settings/" class="md-tabs__link">
+        
+  
+    
+  
+  Build Settings
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+    
+  
+  User Config
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../TODO/" class="md-tabs__link">
+        
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="runcpp2" class="md-nav__button md-logo" aria-label="runcpp2" data-md-component="logo">
+      
+  <img src="../Runcpp2Logo.png" alt="logo">
+
+    </a>
+    runcpp2
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Neko-Box-Coder/runcpp2" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Neko-Box-Coder/runcpp2
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Guides
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/basics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/building_project_sources/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Building Project Sources
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/external_dependencies/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    External Dependencies
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/scriptable_pipeline/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Scriptable Pipeline
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../program_manual/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Program Manual
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../build_settings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Build Settings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    User Config
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    User Config
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#userconfigyaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      UserConfig.yaml
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defaultgyaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      Default/g++.yaml
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defaultvs2022_v17yaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      Default/vs2022_v17+.yaml
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defaultcommonfiletypesyaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      Default/CommonFileTypes.yaml
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TODO/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Roadmap
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="user-config">User Config</h1>
+<p><strong>TODO</strong></p>
+<h2 id="userconfigyaml"><code>UserConfig.yaml</code></h2>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># WARNING: All command substitutions in this file are passed directly to the shell.</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1">#          Exercise caution when using variables or user-provided input in your build commands</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1">#          to prevent potential security vulnerabilities.</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># A profile to be used if not specified while running the build script</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nt">PreferredProfile</span><span class="p">:</span><span class="w"> </span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="nt">DefaultPlatform</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;g++&quot;</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nt">Windows</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;msvc&quot;</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="c1"># List of compiler/linker profiles that instruct how to compile/link</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c1"># See &quot;./Default/g++.yaml&quot; for the documentation of each field in a profile entry</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="nt">Profiles</span><span class="p">:</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Import</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;./Default/g++.yaml&quot;</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Import</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;./Default/vs2022_v17+.yaml&quot;</span>
+</span></code></pre></div>
+<h2 id="defaultgyaml"><code>Default/g++.yaml</code></h2>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># DO NOT modify this file. Changes will be overwritten when there&#39;s a reset or update</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># List of anchors that will be aliased later. `Template` is **NOT** part of a profile</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="nt">Templates</span><span class="p">:</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="s">&quot;g++_CompileRunParts&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="nl">&amp;g</span><span class="l l-Scalar l-Scalar-Plain">++_CompileRunParts</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Once</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">        </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{Executable}</span><span class="nv"> </span><span class="s">-c</span><span class="nv"> </span><span class="s">{CompileFlags}&quot;</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Repeats</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">        </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">-D{DefineNameOnly}=&quot;</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Repeats</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">\&quot;-D{DefineName}={DefineValue}\&quot;&quot;</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Repeats</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">        </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">-I\&quot;{IncludeDirectoryPath}\&quot;&quot;</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Once</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">        </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">\&quot;{InputFilePath}\&quot;</span><span class="nv"> </span><span class="s">-o</span><span class="nv"> </span><span class="s">\&quot;{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}\&quot;&quot;</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">    </span><span class="s">&quot;g++_CompileExpectedOutputFiles&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="nl">&amp;g</span><span class="l l-Scalar l-Scalar-Plain">++_CompileExpectedOutputFiles</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}&quot;</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="c1"># Name (case sensitive) of the profile that can be queried from a script</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="nt">Name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;g++&quot;</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="c1"># (Optional) Name aliases (case sensitive) of the current profile</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="nt">NameAliases</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;mingw&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="c1"># The file extensions associated with the profile</span>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="nt">FileExtensions</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">.cpp</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">.cc</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">.cxx</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="c1"># The languages supported by the profile</span>
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="nt">Languages</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;c++&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>
+</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="c1"># (Optional) The commands to run in **shell** before calling the compiler/linker for each platform.</span>
+</span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="c1">#            This is run inside the root build directory.</span>
+</span><span id="__span-1-34"><a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="c1"># Setup: </span>
+</span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="c1">#     DefaultPlatform: []</span>
+</span><span id="__span-1-36"><a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>
+</span><span id="__span-1-37"><a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="c1"># (Optional) The commands to run in **shell** after calling the compiler/linker for each platform.</span>
+</span><span id="__span-1-38"><a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="c1">#            This is run inside the root build directory.</span>
+</span><span id="__span-1-39"><a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="c1"># Cleanup: </span>
+</span><span id="__span-1-40"><a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="c1">#     DefaultPlatform: []</span>
+</span><span id="__span-1-41"><a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a>
+</span><span id="__span-1-42"><a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a><span class="c1"># The file properties for the object files for each platform. </span>
+</span><span id="__span-1-43"><a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a><span class="c1"># See &quot;./CommonFileTypes.yaml&quot; for FilesTypes</span>
+</span><span id="__span-1-44"><a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a><span class="c1"># FilesTypes: ...</span>
+</span><span id="__span-1-45"><a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a>
+</span><span id="__span-1-46"><a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a><span class="c1"># We can use the &quot;Import&quot; field to import other yaml files. We are importing &quot;FilesTypes&quot; here</span>
+</span><span id="__span-1-47"><a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a><span class="nt">Import</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;./CommonFileTypes.yaml&quot;</span>
+</span><span id="__span-1-48"><a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a>
+</span><span id="__span-1-49"><a id="__codelineno-1-49" name="__codelineno-1-49" href="#__codelineno-1-49"></a><span class="c1"># Specify the compiler settings</span>
+</span><span id="__span-1-50"><a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a><span class="nt">Compiler</span><span class="p">:</span>
+</span><span id="__span-1-51"><a id="__codelineno-1-51" name="__codelineno-1-51" href="#__codelineno-1-51"></a><span class="w">    </span><span class="c1"># (Optional) The command to be prepend for each compile command in **shell** for each platform</span>
+</span><span id="__span-1-52"><a id="__codelineno-1-52" name="__codelineno-1-52" href="#__codelineno-1-52"></a><span class="w">    </span><span class="c1"># PreRun: </span>
+</span><span id="__span-1-53"><a id="__codelineno-1-53" name="__codelineno-1-53" href="#__codelineno-1-53"></a><span class="w">    </span><span class="c1">#     DefaultPlatform: &quot;&quot;</span>
+</span><span id="__span-1-54"><a id="__codelineno-1-54" name="__codelineno-1-54" href="#__codelineno-1-54"></a>
+</span><span id="__span-1-55"><a id="__codelineno-1-55" name="__codelineno-1-55" href="#__codelineno-1-55"></a><span class="w">    </span><span class="c1"># Shell command to use for checking if the executable exists or not</span>
+</span><span id="__span-1-56"><a id="__codelineno-1-56" name="__codelineno-1-56" href="#__codelineno-1-56"></a><span class="w">    </span><span class="nt">CheckExistence</span><span class="p">:</span><span class="w"> </span>
+</span><span id="__span-1-57"><a id="__codelineno-1-57" name="__codelineno-1-57" href="#__codelineno-1-57"></a><span class="w">        </span><span class="nt">DefaultPlatform</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;g++</span><span class="nv"> </span><span class="s">-v&quot;</span>
+</span><span id="__span-1-58"><a id="__codelineno-1-58" name="__codelineno-1-58" href="#__codelineno-1-58"></a>
+</span><span id="__span-1-59"><a id="__codelineno-1-59" name="__codelineno-1-59" href="#__codelineno-1-59"></a><span class="w">    </span><span class="c1"># Here are a list of substitution strings for RunParts, Setup and Cleanup. </span>
+</span><span id="__span-1-60"><a id="__codelineno-1-60" name="__codelineno-1-60" href="#__codelineno-1-60"></a><span class="w">    </span><span class="c1"># To escape &#39;{&#39; and &#39;}&#39; to avoid substitutioon, simply repeat the &#39;{&#39; or &#39;}&#39; character again.</span>
+</span><span id="__span-1-61"><a id="__codelineno-1-61" name="__codelineno-1-61" href="#__codelineno-1-61"></a><span class="w">    </span><span class="c1"># So &quot;${MyBashVariable}&quot; will become &quot;${{MyBashVariable}}&quot;</span>
+</span><span id="__span-1-62"><a id="__codelineno-1-62" name="__codelineno-1-62" href="#__codelineno-1-62"></a>
+</span><span id="__span-1-63"><a id="__codelineno-1-63" name="__codelineno-1-63" href="#__codelineno-1-63"></a><span class="w">    </span><span class="c1"># {Executable}:                 Compiler executable</span>
+</span><span id="__span-1-64"><a id="__codelineno-1-64" name="__codelineno-1-64" href="#__codelineno-1-64"></a><span class="w">    </span><span class="c1"># {CompileFlags}:               Compile flags from config and override</span>
+</span><span id="__span-1-65"><a id="__codelineno-1-65" name="__codelineno-1-65" href="#__codelineno-1-65"></a><span class="w">    </span><span class="c1"># {InputFileName}:              Name of the input file (without directory path and extension)</span>
+</span><span id="__span-1-66"><a id="__codelineno-1-66" name="__codelineno-1-66" href="#__codelineno-1-66"></a><span class="w">    </span><span class="c1"># {InputFileExtension}:         Extension of the input file</span>
+</span><span id="__span-1-67"><a id="__codelineno-1-67" name="__codelineno-1-67" href="#__codelineno-1-67"></a><span class="w">    </span><span class="c1"># {InputFileDirectory}:         Directory of the input file</span>
+</span><span id="__span-1-68"><a id="__codelineno-1-68" name="__codelineno-1-68" href="#__codelineno-1-68"></a><span class="w">    </span><span class="c1"># {InputFilePath}:              Full path to the input file</span>
+</span><span id="__span-1-69"><a id="__codelineno-1-69" name="__codelineno-1-69" href="#__codelineno-1-69"></a><span class="w">    </span><span class="c1"># {OutputFileDirectory}:        Directory of all the output files</span>
+</span><span id="__span-1-70"><a id="__codelineno-1-70" name="__codelineno-1-70" href="#__codelineno-1-70"></a><span class="w">    </span><span class="c1"># {/}:                          Filesystem separator for the host platform</span>
+</span><span id="__span-1-71"><a id="__codelineno-1-71" name="__codelineno-1-71" href="#__codelineno-1-71"></a>
+</span><span id="__span-1-72"><a id="__codelineno-1-72" name="__codelineno-1-72" href="#__codelineno-1-72"></a><span class="w">    </span><span class="c1"># {SharedLibraryFile.Prefix}</span>
+</span><span id="__span-1-73"><a id="__codelineno-1-73" name="__codelineno-1-73" href="#__codelineno-1-73"></a><span class="w">    </span><span class="c1"># {SharedLinkFile.Prefix}</span>
+</span><span id="__span-1-74"><a id="__codelineno-1-74" name="__codelineno-1-74" href="#__codelineno-1-74"></a><span class="w">    </span><span class="c1"># {StaticLinkFile.Prefix}</span>
+</span><span id="__span-1-75"><a id="__codelineno-1-75" name="__codelineno-1-75" href="#__codelineno-1-75"></a><span class="w">    </span><span class="c1"># {ObjectLinkFile.Prefix}</span>
+</span><span id="__span-1-76"><a id="__codelineno-1-76" name="__codelineno-1-76" href="#__codelineno-1-76"></a><span class="w">    </span><span class="c1"># {DebugSymbolFile.Prefix}</span>
+</span><span id="__span-1-77"><a id="__codelineno-1-77" name="__codelineno-1-77" href="#__codelineno-1-77"></a>
+</span><span id="__span-1-78"><a id="__codelineno-1-78" name="__codelineno-1-78" href="#__codelineno-1-78"></a><span class="w">    </span><span class="c1"># {SharedLibraryFile.Extension}</span>
+</span><span id="__span-1-79"><a id="__codelineno-1-79" name="__codelineno-1-79" href="#__codelineno-1-79"></a><span class="w">    </span><span class="c1"># {SharedLinkFile.Extension}</span>
+</span><span id="__span-1-80"><a id="__codelineno-1-80" name="__codelineno-1-80" href="#__codelineno-1-80"></a><span class="w">    </span><span class="c1"># {StaticLinkFile.Extension}</span>
+</span><span id="__span-1-81"><a id="__codelineno-1-81" name="__codelineno-1-81" href="#__codelineno-1-81"></a><span class="w">    </span><span class="c1"># {ObjectLinkFile.Extension}</span>
+</span><span id="__span-1-82"><a id="__codelineno-1-82" name="__codelineno-1-82" href="#__codelineno-1-82"></a><span class="w">    </span><span class="c1"># {DebugSymbolFile.Extension}</span>
+</span><span id="__span-1-83"><a id="__codelineno-1-83" name="__codelineno-1-83" href="#__codelineno-1-83"></a>
+</span><span id="__span-1-84"><a id="__codelineno-1-84" name="__codelineno-1-84" href="#__codelineno-1-84"></a><span class="w">    </span><span class="c1"># Below are iterable substitution strings, must be inside &quot;Repeats&quot; run type:</span>
+</span><span id="__span-1-85"><a id="__codelineno-1-85" name="__codelineno-1-85" href="#__codelineno-1-85"></a><span class="w">    </span><span class="c1"># {IncludeDirectoryPath}:       Path to all the include directories</span>
+</span><span id="__span-1-86"><a id="__codelineno-1-86" name="__codelineno-1-86" href="#__codelineno-1-86"></a><span class="w">    </span><span class="c1"># {DefineNameOnly}:             All the defines without a value specified (equivalent to #define X)</span>
+</span><span id="__span-1-87"><a id="__codelineno-1-87" name="__codelineno-1-87" href="#__codelineno-1-87"></a><span class="w">    </span><span class="c1"># {DefineName}:                 Name of all the defines that has a value specified</span>
+</span><span id="__span-1-88"><a id="__codelineno-1-88" name="__codelineno-1-88" href="#__codelineno-1-88"></a><span class="w">    </span><span class="c1"># {DefineValue}:                Value of all the defines that has a value specified (use together with {DefineName})</span>
+</span><span id="__span-1-89"><a id="__codelineno-1-89" name="__codelineno-1-89" href="#__codelineno-1-89"></a><span class="w">    </span><span class="nt">CompileTypes</span><span class="p">:</span>
+</span><span id="__span-1-90"><a id="__codelineno-1-90" name="__codelineno-1-90" href="#__codelineno-1-90"></a><span class="w">        </span><span class="nt">Executable</span><span class="p">:</span>
+</span><span id="__span-1-91"><a id="__codelineno-1-91" name="__codelineno-1-91" href="#__codelineno-1-91"></a><span class="w">            </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
+</span><span id="__span-1-92"><a id="__codelineno-1-92" name="__codelineno-1-92" href="#__codelineno-1-92"></a><span class="w">                </span><span class="c1"># Default flags to be substituted as {CompileFlags}</span>
+</span><span id="__span-1-93"><a id="__codelineno-1-93" name="__codelineno-1-93" href="#__codelineno-1-93"></a><span class="w">                </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-std=c++17</span><span class="nv"> </span><span class="s">-Wall</span><span class="nv"> </span><span class="s">-g&quot;</span>
+</span><span id="__span-1-94"><a id="__codelineno-1-94" name="__codelineno-1-94" href="#__codelineno-1-94"></a>
+</span><span id="__span-1-95"><a id="__codelineno-1-95" name="__codelineno-1-95" href="#__codelineno-1-95"></a><span class="w">                </span><span class="c1"># The executable to be substituted as {Executable}</span>
+</span><span id="__span-1-96"><a id="__codelineno-1-96" name="__codelineno-1-96" href="#__codelineno-1-96"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;g++&quot;</span>
+</span><span id="__span-1-97"><a id="__codelineno-1-97" name="__codelineno-1-97" href="#__codelineno-1-97"></a>
+</span><span id="__span-1-98"><a id="__codelineno-1-98" name="__codelineno-1-98" href="#__codelineno-1-98"></a><span class="w">                </span><span class="c1"># The components for the command to be run</span>
+</span><span id="__span-1-99"><a id="__codelineno-1-99" name="__codelineno-1-99" href="#__codelineno-1-99"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span><span class="w"> </span><span class="nv">*g</span><span class="l l-Scalar l-Scalar-Plain">++_CompileRunParts</span>
+</span><span id="__span-1-100"><a id="__codelineno-1-100" name="__codelineno-1-100" href="#__codelineno-1-100"></a>
+</span><span id="__span-1-101"><a id="__codelineno-1-101" name="__codelineno-1-101" href="#__codelineno-1-101"></a><span class="w">                </span><span class="c1"># What files to be expected as output for the command</span>
+</span><span id="__span-1-102"><a id="__codelineno-1-102" name="__codelineno-1-102" href="#__codelineno-1-102"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="nv">*g</span><span class="l l-Scalar l-Scalar-Plain">++_CompileExpectedOutputFiles</span>
+</span><span id="__span-1-103"><a id="__codelineno-1-103" name="__codelineno-1-103" href="#__codelineno-1-103"></a>
+</span><span id="__span-1-104"><a id="__codelineno-1-104" name="__codelineno-1-104" href="#__codelineno-1-104"></a><span class="w">                </span><span class="c1"># (Optional) The commands to run in **shell** BEFORE compiling</span>
+</span><span id="__span-1-105"><a id="__codelineno-1-105" name="__codelineno-1-105" href="#__codelineno-1-105"></a><span class="w">                </span><span class="c1">#            This is run inside the .runcpp2 directory where the build happens.</span>
+</span><span id="__span-1-106"><a id="__codelineno-1-106" name="__codelineno-1-106" href="#__codelineno-1-106"></a><span class="w">                </span><span class="c1"># Setup: []</span>
+</span><span id="__span-1-107"><a id="__codelineno-1-107" name="__codelineno-1-107" href="#__codelineno-1-107"></a>
+</span><span id="__span-1-108"><a id="__codelineno-1-108" name="__codelineno-1-108" href="#__codelineno-1-108"></a><span class="w">                </span><span class="c1"># (Optional) The commands to run in **shell** AFTER compiling</span>
+</span><span id="__span-1-109"><a id="__codelineno-1-109" name="__codelineno-1-109" href="#__codelineno-1-109"></a><span class="w">                </span><span class="c1">#            This is run inside the .runcpp2 directory where the build happens.</span>
+</span><span id="__span-1-110"><a id="__codelineno-1-110" name="__codelineno-1-110" href="#__codelineno-1-110"></a><span class="w">                </span><span class="c1"># Cleanup: []</span>
+</span><span id="__span-1-111"><a id="__codelineno-1-111" name="__codelineno-1-111" href="#__codelineno-1-111"></a><span class="w">        </span><span class="nt">ExecutableShared</span><span class="p">:</span>
+</span><span id="__span-1-112"><a id="__codelineno-1-112" name="__codelineno-1-112" href="#__codelineno-1-112"></a><span class="w">            </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
+</span><span id="__span-1-113"><a id="__codelineno-1-113" name="__codelineno-1-113" href="#__codelineno-1-113"></a><span class="w">                </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-std=c++17</span><span class="nv"> </span><span class="s">-Wall</span><span class="nv"> </span><span class="s">-g</span><span class="nv"> </span><span class="s">-fpic&quot;</span>
+</span><span id="__span-1-114"><a id="__codelineno-1-114" name="__codelineno-1-114" href="#__codelineno-1-114"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;g++&quot;</span>
+</span><span id="__span-1-115"><a id="__codelineno-1-115" name="__codelineno-1-115" href="#__codelineno-1-115"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span><span class="w"> </span><span class="nv">*g</span><span class="l l-Scalar l-Scalar-Plain">++_CompileRunParts</span>
+</span><span id="__span-1-116"><a id="__codelineno-1-116" name="__codelineno-1-116" href="#__codelineno-1-116"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="nv">*g</span><span class="l l-Scalar l-Scalar-Plain">++_CompileExpectedOutputFiles</span>
+</span><span id="__span-1-117"><a id="__codelineno-1-117" name="__codelineno-1-117" href="#__codelineno-1-117"></a><span class="w">                </span><span class="c1"># Setup: []</span>
+</span><span id="__span-1-118"><a id="__codelineno-1-118" name="__codelineno-1-118" href="#__codelineno-1-118"></a><span class="w">                </span><span class="c1"># Cleanup: []</span>
+</span><span id="__span-1-119"><a id="__codelineno-1-119" name="__codelineno-1-119" href="#__codelineno-1-119"></a><span class="w">        </span><span class="nt">Static</span><span class="p">:</span>
+</span><span id="__span-1-120"><a id="__codelineno-1-120" name="__codelineno-1-120" href="#__codelineno-1-120"></a><span class="w">            </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
+</span><span id="__span-1-121"><a id="__codelineno-1-121" name="__codelineno-1-121" href="#__codelineno-1-121"></a><span class="w">                </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-std=c++17</span><span class="nv"> </span><span class="s">-Wall</span><span class="nv"> </span><span class="s">-g&quot;</span>
+</span><span id="__span-1-122"><a id="__codelineno-1-122" name="__codelineno-1-122" href="#__codelineno-1-122"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;g++&quot;</span>
+</span><span id="__span-1-123"><a id="__codelineno-1-123" name="__codelineno-1-123" href="#__codelineno-1-123"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span><span class="w"> </span><span class="nv">*g</span><span class="l l-Scalar l-Scalar-Plain">++_CompileRunParts</span>
+</span><span id="__span-1-124"><a id="__codelineno-1-124" name="__codelineno-1-124" href="#__codelineno-1-124"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="nv">*g</span><span class="l l-Scalar l-Scalar-Plain">++_CompileExpectedOutputFiles</span>
+</span><span id="__span-1-125"><a id="__codelineno-1-125" name="__codelineno-1-125" href="#__codelineno-1-125"></a><span class="w">                </span><span class="c1"># Setup: []</span>
+</span><span id="__span-1-126"><a id="__codelineno-1-126" name="__codelineno-1-126" href="#__codelineno-1-126"></a><span class="w">                </span><span class="c1"># Cleanup: []</span>
+</span><span id="__span-1-127"><a id="__codelineno-1-127" name="__codelineno-1-127" href="#__codelineno-1-127"></a><span class="w">        </span><span class="nt">Shared</span><span class="p">:</span>
+</span><span id="__span-1-128"><a id="__codelineno-1-128" name="__codelineno-1-128" href="#__codelineno-1-128"></a><span class="w">            </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
+</span><span id="__span-1-129"><a id="__codelineno-1-129" name="__codelineno-1-129" href="#__codelineno-1-129"></a><span class="w">                </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-std=c++17</span><span class="nv"> </span><span class="s">-Wall</span><span class="nv"> </span><span class="s">-g</span><span class="nv"> </span><span class="s">-fpic&quot;</span>
+</span><span id="__span-1-130"><a id="__codelineno-1-130" name="__codelineno-1-130" href="#__codelineno-1-130"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;g++&quot;</span>
+</span><span id="__span-1-131"><a id="__codelineno-1-131" name="__codelineno-1-131" href="#__codelineno-1-131"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span><span class="w"> </span><span class="nv">*g</span><span class="l l-Scalar l-Scalar-Plain">++_CompileRunParts</span>
+</span><span id="__span-1-132"><a id="__codelineno-1-132" name="__codelineno-1-132" href="#__codelineno-1-132"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="nv">*g</span><span class="l l-Scalar l-Scalar-Plain">++_CompileExpectedOutputFiles</span>
+</span><span id="__span-1-133"><a id="__codelineno-1-133" name="__codelineno-1-133" href="#__codelineno-1-133"></a><span class="w">                </span><span class="c1"># Setup: []</span>
+</span><span id="__span-1-134"><a id="__codelineno-1-134" name="__codelineno-1-134" href="#__codelineno-1-134"></a><span class="w">                </span><span class="c1"># Cleanup: []</span>
+</span><span id="__span-1-135"><a id="__codelineno-1-135" name="__codelineno-1-135" href="#__codelineno-1-135"></a>
+</span><span id="__span-1-136"><a id="__codelineno-1-136" name="__codelineno-1-136" href="#__codelineno-1-136"></a><span class="c1"># Specify the linker settings</span>
+</span><span id="__span-1-137"><a id="__codelineno-1-137" name="__codelineno-1-137" href="#__codelineno-1-137"></a><span class="nt">Linker</span><span class="p">:</span>
+</span><span id="__span-1-138"><a id="__codelineno-1-138" name="__codelineno-1-138" href="#__codelineno-1-138"></a><span class="w">    </span><span class="nt">CheckExistence</span><span class="p">:</span>
+</span><span id="__span-1-139"><a id="__codelineno-1-139" name="__codelineno-1-139" href="#__codelineno-1-139"></a><span class="w">        </span><span class="nt">DefaultPlatform</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;g++</span><span class="nv"> </span><span class="s">-v&quot;</span>
+</span><span id="__span-1-140"><a id="__codelineno-1-140" name="__codelineno-1-140" href="#__codelineno-1-140"></a>
+</span><span id="__span-1-141"><a id="__codelineno-1-141" name="__codelineno-1-141" href="#__codelineno-1-141"></a><span class="w">    </span><span class="c1"># Here are a list of substitution strings for RunParts, Setup and Cleanup</span>
+</span><span id="__span-1-142"><a id="__codelineno-1-142" name="__codelineno-1-142" href="#__codelineno-1-142"></a><span class="w">    </span><span class="c1"># {Executable}:                 Linker executable</span>
+</span><span id="__span-1-143"><a id="__codelineno-1-143" name="__codelineno-1-143" href="#__codelineno-1-143"></a><span class="w">    </span><span class="c1"># {LinkFlags}:                  Link flags from config and override</span>
+</span><span id="__span-1-144"><a id="__codelineno-1-144" name="__codelineno-1-144" href="#__codelineno-1-144"></a><span class="w">    </span><span class="c1"># {OutputFileName}:             Name of all the output files (without directory path and extension)</span>
+</span><span id="__span-1-145"><a id="__codelineno-1-145" name="__codelineno-1-145" href="#__codelineno-1-145"></a><span class="w">    </span><span class="c1"># {OutputFileDirectory}:        Directory of all the output files</span>
+</span><span id="__span-1-146"><a id="__codelineno-1-146" name="__codelineno-1-146" href="#__codelineno-1-146"></a><span class="w">    </span><span class="c1"># {/}:                          Filesystem separator for the host platform</span>
+</span><span id="__span-1-147"><a id="__codelineno-1-147" name="__codelineno-1-147" href="#__codelineno-1-147"></a>
+</span><span id="__span-1-148"><a id="__codelineno-1-148" name="__codelineno-1-148" href="#__codelineno-1-148"></a><span class="w">    </span><span class="c1"># {SharedLibraryFile.Prefix}</span>
+</span><span id="__span-1-149"><a id="__codelineno-1-149" name="__codelineno-1-149" href="#__codelineno-1-149"></a><span class="w">    </span><span class="c1"># {SharedLinkFile.Prefix}</span>
+</span><span id="__span-1-150"><a id="__codelineno-1-150" name="__codelineno-1-150" href="#__codelineno-1-150"></a><span class="w">    </span><span class="c1"># {StaticLinkFile.Prefix}</span>
+</span><span id="__span-1-151"><a id="__codelineno-1-151" name="__codelineno-1-151" href="#__codelineno-1-151"></a><span class="w">    </span><span class="c1"># {ObjectLinkFile.Prefix}</span>
+</span><span id="__span-1-152"><a id="__codelineno-1-152" name="__codelineno-1-152" href="#__codelineno-1-152"></a><span class="w">    </span><span class="c1"># {DebugSymbolFile.Prefix}</span>
+</span><span id="__span-1-153"><a id="__codelineno-1-153" name="__codelineno-1-153" href="#__codelineno-1-153"></a>
+</span><span id="__span-1-154"><a id="__codelineno-1-154" name="__codelineno-1-154" href="#__codelineno-1-154"></a><span class="w">    </span><span class="c1"># {SharedLibraryFile.Extension}</span>
+</span><span id="__span-1-155"><a id="__codelineno-1-155" name="__codelineno-1-155" href="#__codelineno-1-155"></a><span class="w">    </span><span class="c1"># {SharedLinkFile.Extension}</span>
+</span><span id="__span-1-156"><a id="__codelineno-1-156" name="__codelineno-1-156" href="#__codelineno-1-156"></a><span class="w">    </span><span class="c1"># {StaticLinkFile.Extension}</span>
+</span><span id="__span-1-157"><a id="__codelineno-1-157" name="__codelineno-1-157" href="#__codelineno-1-157"></a><span class="w">    </span><span class="c1"># {ObjectLinkFile.Extension}</span>
+</span><span id="__span-1-158"><a id="__codelineno-1-158" name="__codelineno-1-158" href="#__codelineno-1-158"></a><span class="w">    </span><span class="c1"># {DebugSymbolFile.Extension}</span>
+</span><span id="__span-1-159"><a id="__codelineno-1-159" name="__codelineno-1-159" href="#__codelineno-1-159"></a>
+</span><span id="__span-1-160"><a id="__codelineno-1-160" name="__codelineno-1-160" href="#__codelineno-1-160"></a><span class="w">    </span><span class="c1"># Below are iterable substitution strings, must be inside &quot;Repeats&quot; run type:</span>
+</span><span id="__span-1-161"><a id="__codelineno-1-161" name="__codelineno-1-161" href="#__codelineno-1-161"></a><span class="w">    </span><span class="c1"># {LinkFileName}:               Name of the file to be linked, regardless of the build type</span>
+</span><span id="__span-1-162"><a id="__codelineno-1-162" name="__codelineno-1-162" href="#__codelineno-1-162"></a><span class="w">    </span><span class="c1"># {LinkFileExtension}:          File Extension of the file to be linked, regardless of the build type</span>
+</span><span id="__span-1-163"><a id="__codelineno-1-163" name="__codelineno-1-163" href="#__codelineno-1-163"></a><span class="w">    </span><span class="c1"># {LinkFileDirectory}:          Directory of the file to be linked, regardless of the build type</span>
+</span><span id="__span-1-164"><a id="__codelineno-1-164" name="__codelineno-1-164" href="#__codelineno-1-164"></a><span class="w">    </span><span class="c1"># {LinkFilePath}:               Full path to the file to be linked, regardless of the build type</span>
+</span><span id="__span-1-165"><a id="__codelineno-1-165" name="__codelineno-1-165" href="#__codelineno-1-165"></a>
+</span><span id="__span-1-166"><a id="__codelineno-1-166" name="__codelineno-1-166" href="#__codelineno-1-166"></a><span class="w">    </span><span class="c1"># {LinkObjectFileName}:         Name of the object file to be linked</span>
+</span><span id="__span-1-167"><a id="__codelineno-1-167" name="__codelineno-1-167" href="#__codelineno-1-167"></a><span class="w">    </span><span class="c1"># {LinkObjectFileExtension}:    File Extension of the object file to be linked</span>
+</span><span id="__span-1-168"><a id="__codelineno-1-168" name="__codelineno-1-168" href="#__codelineno-1-168"></a><span class="w">    </span><span class="c1"># {LinkObjectFileDirectory}:    Directory of the object file to be linked</span>
+</span><span id="__span-1-169"><a id="__codelineno-1-169" name="__codelineno-1-169" href="#__codelineno-1-169"></a><span class="w">    </span><span class="c1"># {LinkObjectFilePath}:         Full path to the object file to be linked</span>
+</span><span id="__span-1-170"><a id="__codelineno-1-170" name="__codelineno-1-170" href="#__codelineno-1-170"></a>
+</span><span id="__span-1-171"><a id="__codelineno-1-171" name="__codelineno-1-171" href="#__codelineno-1-171"></a><span class="w">    </span><span class="c1"># {LinkSharedFileName}:         Name of the shared file to be linked</span>
+</span><span id="__span-1-172"><a id="__codelineno-1-172" name="__codelineno-1-172" href="#__codelineno-1-172"></a><span class="w">    </span><span class="c1"># {LinkSharedFileExtension}:    File Extension of the shared file to be linked</span>
+</span><span id="__span-1-173"><a id="__codelineno-1-173" name="__codelineno-1-173" href="#__codelineno-1-173"></a><span class="w">    </span><span class="c1"># {LinkSharedFileDirectory}:    Directory of the shared file to be linked</span>
+</span><span id="__span-1-174"><a id="__codelineno-1-174" name="__codelineno-1-174" href="#__codelineno-1-174"></a><span class="w">    </span><span class="c1"># {LinkSharedFilePath}:         Full path to the shared file to be linked</span>
+</span><span id="__span-1-175"><a id="__codelineno-1-175" name="__codelineno-1-175" href="#__codelineno-1-175"></a>
+</span><span id="__span-1-176"><a id="__codelineno-1-176" name="__codelineno-1-176" href="#__codelineno-1-176"></a><span class="w">    </span><span class="c1"># {LinkStaticFileName}:         Name of the static file to be linked</span>
+</span><span id="__span-1-177"><a id="__codelineno-1-177" name="__codelineno-1-177" href="#__codelineno-1-177"></a><span class="w">    </span><span class="c1"># {LinkStaticFileExtension}:    File Extension of the static file to be linked</span>
+</span><span id="__span-1-178"><a id="__codelineno-1-178" name="__codelineno-1-178" href="#__codelineno-1-178"></a><span class="w">    </span><span class="c1"># {LinkStaticFileDirectory}:    Directory of the static file to be linked</span>
+</span><span id="__span-1-179"><a id="__codelineno-1-179" name="__codelineno-1-179" href="#__codelineno-1-179"></a><span class="w">    </span><span class="c1"># {LinkStaticFilePath}:         Full path to the static file to be linked</span>
+</span><span id="__span-1-180"><a id="__codelineno-1-180" name="__codelineno-1-180" href="#__codelineno-1-180"></a><span class="w">    </span><span class="nt">LinkTypes</span><span class="p">:</span>
+</span><span id="__span-1-181"><a id="__codelineno-1-181" name="__codelineno-1-181" href="#__codelineno-1-181"></a><span class="w">        </span><span class="nt">Executable</span><span class="p">:</span>
+</span><span id="__span-1-182"><a id="__codelineno-1-182" name="__codelineno-1-182" href="#__codelineno-1-182"></a><span class="w">            </span><span class="nt">Unix</span><span class="p">:</span>
+</span><span id="__span-1-183"><a id="__codelineno-1-183" name="__codelineno-1-183" href="#__codelineno-1-183"></a><span class="w">                </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wl,-rpath,\\$ORIGIN&quot;</span>
+</span><span id="__span-1-184"><a id="__codelineno-1-184" name="__codelineno-1-184" href="#__codelineno-1-184"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;g++&quot;</span>
+</span><span id="__span-1-185"><a id="__codelineno-1-185" name="__codelineno-1-185" href="#__codelineno-1-185"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span>
+</span><span id="__span-1-186"><a id="__codelineno-1-186" name="__codelineno-1-186" href="#__codelineno-1-186"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Once</span>
+</span><span id="__span-1-187"><a id="__codelineno-1-187" name="__codelineno-1-187" href="#__codelineno-1-187"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{Executable}</span><span class="nv"> </span><span class="s">{LinkFlags}</span><span class="nv"> </span><span class="s">-o</span><span class="nv"> </span><span class="s">\&quot;{OutputFileDirectory}{/}{OutputFileName}\&quot;&quot;</span>
+</span><span id="__span-1-188"><a id="__codelineno-1-188" name="__codelineno-1-188" href="#__codelineno-1-188"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Repeats</span>
+</span><span id="__span-1-189"><a id="__codelineno-1-189" name="__codelineno-1-189" href="#__codelineno-1-189"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">\&quot;{LinkFilePath}\&quot;&quot;</span>
+</span><span id="__span-1-190"><a id="__codelineno-1-190" name="__codelineno-1-190" href="#__codelineno-1-190"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;{OutputFileDirectory}{/}{OutputFileName}&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-191"><a id="__codelineno-1-191" name="__codelineno-1-191" href="#__codelineno-1-191"></a><span class="w">                </span><span class="c1"># Setup: []</span>
+</span><span id="__span-1-192"><a id="__codelineno-1-192" name="__codelineno-1-192" href="#__codelineno-1-192"></a><span class="w">                </span><span class="c1"># Cleanup: []</span>
+</span><span id="__span-1-193"><a id="__codelineno-1-193" name="__codelineno-1-193" href="#__codelineno-1-193"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span>
+</span><span id="__span-1-194"><a id="__codelineno-1-194" name="__codelineno-1-194" href="#__codelineno-1-194"></a><span class="w">                </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wl,-rpath,\\$ORIGIN&quot;</span>
+</span><span id="__span-1-195"><a id="__codelineno-1-195" name="__codelineno-1-195" href="#__codelineno-1-195"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;g++&quot;</span>
+</span><span id="__span-1-196"><a id="__codelineno-1-196" name="__codelineno-1-196" href="#__codelineno-1-196"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span>
+</span><span id="__span-1-197"><a id="__codelineno-1-197" name="__codelineno-1-197" href="#__codelineno-1-197"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Once</span>
+</span><span id="__span-1-198"><a id="__codelineno-1-198" name="__codelineno-1-198" href="#__codelineno-1-198"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{Executable}</span><span class="nv"> </span><span class="s">{LinkFlags}</span><span class="nv"> </span><span class="s">-o</span><span class="nv"> </span><span class="s">\&quot;{OutputFileDirectory}{/}{OutputFileName}.exe\&quot;&quot;</span>
+</span><span id="__span-1-199"><a id="__codelineno-1-199" name="__codelineno-1-199" href="#__codelineno-1-199"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Repeats</span>
+</span><span id="__span-1-200"><a id="__codelineno-1-200" name="__codelineno-1-200" href="#__codelineno-1-200"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">\&quot;{LinkFilePath}\&quot;&quot;</span>
+</span><span id="__span-1-201"><a id="__codelineno-1-201" name="__codelineno-1-201" href="#__codelineno-1-201"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;{OutputFileDirectory}{/}{OutputFileName}.exe&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-202"><a id="__codelineno-1-202" name="__codelineno-1-202" href="#__codelineno-1-202"></a><span class="w">                </span><span class="c1"># Setup: []</span>
+</span><span id="__span-1-203"><a id="__codelineno-1-203" name="__codelineno-1-203" href="#__codelineno-1-203"></a><span class="w">                </span><span class="c1"># Cleanup: []</span>
+</span><span id="__span-1-204"><a id="__codelineno-1-204" name="__codelineno-1-204" href="#__codelineno-1-204"></a><span class="w">        </span><span class="nt">ExecutableShared</span><span class="p">:</span>
+</span><span id="__span-1-205"><a id="__codelineno-1-205" name="__codelineno-1-205" href="#__codelineno-1-205"></a><span class="w">            </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
+</span><span id="__span-1-206"><a id="__codelineno-1-206" name="__codelineno-1-206" href="#__codelineno-1-206"></a><span class="w">                </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-shared</span><span class="nv"> </span><span class="s">-Wl,-rpath,\\$ORIGIN&quot;</span>
+</span><span id="__span-1-207"><a id="__codelineno-1-207" name="__codelineno-1-207" href="#__codelineno-1-207"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;g++&quot;</span>
+</span><span id="__span-1-208"><a id="__codelineno-1-208" name="__codelineno-1-208" href="#__codelineno-1-208"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span>
+</span><span id="__span-1-209"><a id="__codelineno-1-209" name="__codelineno-1-209" href="#__codelineno-1-209"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Once</span>
+</span><span id="__span-1-210"><a id="__codelineno-1-210" name="__codelineno-1-210" href="#__codelineno-1-210"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{Executable}</span><span class="nv"> </span><span class="s">{LinkFlags}</span><span class="nv"> </span><span class="s">-o</span><span class="nv"> </span><span class="s">\&quot;{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}\&quot;&quot;</span>
+</span><span id="__span-1-211"><a id="__codelineno-1-211" name="__codelineno-1-211" href="#__codelineno-1-211"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Repeats</span>
+</span><span id="__span-1-212"><a id="__codelineno-1-212" name="__codelineno-1-212" href="#__codelineno-1-212"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">\&quot;{LinkFilePath}\&quot;&quot;</span>
+</span><span id="__span-1-213"><a id="__codelineno-1-213" name="__codelineno-1-213" href="#__codelineno-1-213"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-214"><a id="__codelineno-1-214" name="__codelineno-1-214" href="#__codelineno-1-214"></a><span class="w">                </span><span class="c1"># Setup: []</span>
+</span><span id="__span-1-215"><a id="__codelineno-1-215" name="__codelineno-1-215" href="#__codelineno-1-215"></a><span class="w">                </span><span class="c1"># Cleanup: []</span>
+</span><span id="__span-1-216"><a id="__codelineno-1-216" name="__codelineno-1-216" href="#__codelineno-1-216"></a><span class="w">        </span><span class="nt">Static</span><span class="p">:</span>
+</span><span id="__span-1-217"><a id="__codelineno-1-217" name="__codelineno-1-217" href="#__codelineno-1-217"></a><span class="w">            </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
+</span><span id="__span-1-218"><a id="__codelineno-1-218" name="__codelineno-1-218" href="#__codelineno-1-218"></a><span class="w">                </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+</span><span id="__span-1-219"><a id="__codelineno-1-219" name="__codelineno-1-219" href="#__codelineno-1-219"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;g++&quot;</span>
+</span><span id="__span-1-220"><a id="__codelineno-1-220" name="__codelineno-1-220" href="#__codelineno-1-220"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span>
+</span><span id="__span-1-221"><a id="__codelineno-1-221" name="__codelineno-1-221" href="#__codelineno-1-221"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Once</span>
+</span><span id="__span-1-222"><a id="__codelineno-1-222" name="__codelineno-1-222" href="#__codelineno-1-222"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{Executable}</span><span class="nv"> </span><span class="s">{LinkFlags}</span><span class="nv"> </span><span class="s">-o</span><span class="nv"> </span><span class="s">\&quot;{OutputFileDirectory}{/}{StaticLinkFile.Prefix}{OutputFileName}{StaticLinkFile.Extension}\&quot;&quot;</span>
+</span><span id="__span-1-223"><a id="__codelineno-1-223" name="__codelineno-1-223" href="#__codelineno-1-223"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Repeats</span>
+</span><span id="__span-1-224"><a id="__codelineno-1-224" name="__codelineno-1-224" href="#__codelineno-1-224"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">\&quot;{LinkFilePath}\&quot;&quot;</span>
+</span><span id="__span-1-225"><a id="__codelineno-1-225" name="__codelineno-1-225" href="#__codelineno-1-225"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;{OutputFileDirectory}{/}{StaticLinkFile.Prefix}{OutputFileName}{StaticLinkFile.Extension}&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-226"><a id="__codelineno-1-226" name="__codelineno-1-226" href="#__codelineno-1-226"></a><span class="w">                </span><span class="c1"># Setup: []</span>
+</span><span id="__span-1-227"><a id="__codelineno-1-227" name="__codelineno-1-227" href="#__codelineno-1-227"></a><span class="w">                </span><span class="c1"># Cleanup: []</span>
+</span><span id="__span-1-228"><a id="__codelineno-1-228" name="__codelineno-1-228" href="#__codelineno-1-228"></a><span class="w">        </span><span class="nt">Shared</span><span class="p">:</span>
+</span><span id="__span-1-229"><a id="__codelineno-1-229" name="__codelineno-1-229" href="#__codelineno-1-229"></a><span class="w">            </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
+</span><span id="__span-1-230"><a id="__codelineno-1-230" name="__codelineno-1-230" href="#__codelineno-1-230"></a><span class="w">                </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-shared</span><span class="nv"> </span><span class="s">-Wl,-rpath,\\$ORIGIN&quot;</span>
+</span><span id="__span-1-231"><a id="__codelineno-1-231" name="__codelineno-1-231" href="#__codelineno-1-231"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;g++&quot;</span>
+</span><span id="__span-1-232"><a id="__codelineno-1-232" name="__codelineno-1-232" href="#__codelineno-1-232"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span>
+</span><span id="__span-1-233"><a id="__codelineno-1-233" name="__codelineno-1-233" href="#__codelineno-1-233"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Once</span>
+</span><span id="__span-1-234"><a id="__codelineno-1-234" name="__codelineno-1-234" href="#__codelineno-1-234"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{Executable}</span><span class="nv"> </span><span class="s">{LinkFlags}</span><span class="nv"> </span><span class="s">-o</span><span class="nv"> </span><span class="s">\&quot;{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}\&quot;&quot;</span>
+</span><span id="__span-1-235"><a id="__codelineno-1-235" name="__codelineno-1-235" href="#__codelineno-1-235"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Repeats</span>
+</span><span id="__span-1-236"><a id="__codelineno-1-236" name="__codelineno-1-236" href="#__codelineno-1-236"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">\&quot;{LinkFilePath}\&quot;&quot;</span>
+</span><span id="__span-1-237"><a id="__codelineno-1-237" name="__codelineno-1-237" href="#__codelineno-1-237"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-1-238"><a id="__codelineno-1-238" name="__codelineno-1-238" href="#__codelineno-1-238"></a><span class="w">                </span><span class="c1"># Setup: []</span>
+</span><span id="__span-1-239"><a id="__codelineno-1-239" name="__codelineno-1-239" href="#__codelineno-1-239"></a><span class="w">                </span><span class="c1"># Cleanup: []</span>
+</span></code></pre></div>
+<h2 id="defaultvs2022_v17yaml"><code>Default/vs2022_v17+.yaml</code></h2>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># DO NOT modify this file. Changes will be overwritten when there&#39;s a reset or update</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># List of anchors that will be aliased later. `Template` is **NOT** part of a profile</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="nt">Templates</span><span class="p">:</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">vs2022_v17+_CompileFlags</span><span class="p">:</span><span class="w"> </span><span class="nl">&amp;vs2022_v17</span><span class="l l-Scalar l-Scalar-Plain">+_CompileFlags</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">Flags</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;/nologo</span><span class="nv"> </span><span class="s">/W4</span><span class="nv"> </span><span class="s">/diagnostics:caret</span><span class="nv"> </span><span class="s">/utf-8</span><span class="nv"> </span><span class="s">/Gm-</span><span class="nv"> </span><span class="s">/MDd</span><span class="nv"> </span><span class="s">/EHar</span><span class="nv"> </span><span class="s">/TP</span><span class="nv"> </span><span class="s">/std:c++17</span><span class="nv"> </span><span class="s">/GR</span><span class="nv"> </span><span class="s">/RTC1</span><span class="nv"> </span><span class="s">/Zc:inline</span><span class="nv"> </span><span class="s">/Zi&quot;</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="s">&quot;vs2022_v17+_CompileRunParts&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="nl">&amp;vs2022_v17</span><span class="l l-Scalar l-Scalar-Plain">+_CompileRunParts</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Once</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">        </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;{Executable}</span><span class="nv"> </span><span class="s">/c</span><span class="nv"> </span><span class="s">{CompileFlags}&quot;</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Repeats</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">        </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">/D{DefineNameOnly}=&quot;</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Repeats</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">        </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">\&quot;/D{DefineName}={DefineValue}\&quot;&quot;</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Repeats</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">        </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">/I\&quot;{IncludeDirectoryPath}\&quot;&quot;</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Once</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">        </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">/Fo\&quot;{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}\&quot;</span><span class="nv"> </span><span class="s">\</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">            </span><span class="s">/Fd\&quot;{OutputFileDirectory}{/}{DebugSymbolFile.Prefix}{InputFileName}{DebugSymbolFile.Extension}\&quot;</span><span class="nv"> </span><span class="s">\</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">            </span><span class="s">\&quot;{InputFilePath}\&quot;&quot;</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">    </span><span class="s">&quot;vs2022_v17+_CompileExpectedOutputFiles&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="nl">&amp;vs2022_v17</span><span class="l l-Scalar l-Scalar-Plain">+_CompileExpectedOutputFiles</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}&quot;</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;{OutputFileDirectory}{/}{DebugSymbolFile.Prefix}{InputFileName}{DebugSymbolFile.Extension}&quot;</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="c1"># https://learn.microsoft.com/en-us/cpp/overview/compiler-versions?view=msvc-170</span>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="nt">Name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;vs2022_v17+&quot;</span>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="nt">NameAliases</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;msvc1930+&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;msvc&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="nt">FileExtensions</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">.cpp</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">.cc</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">.cxx</span><span class="p p-Indicator">]</span>
+</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="nt">Languages</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;c++&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="nt">Import</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;./CommonFileTypes.yaml&quot;</span>
+</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="nt">Setup</span><span class="p">:</span><span class="w"> </span>
+</span><span id="__span-2-31"><a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="w">    </span><span class="nt">Windows</span><span class="p">:</span>
+</span><span id="__span-2-32"><a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="p p-Indicator">&gt;-</span>
+</span><span id="__span-2-33"><a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="w">        </span><span class="no">for /f &quot;usebackq tokens=*&quot; %i in (`CALL &quot;C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe&quot; </span>
+</span><span id="__span-2-34"><a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="w">        </span><span class="no">-version &quot;[17.0,18.0)&quot; -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do ( </span>
+</span><span id="__span-2-35"><a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="w">        </span><span class="no">echo &quot;%i\VC\Auxiliary\Build\vcvarsall.bat&quot; x64 &gt; .\prerun.bat</span>
+</span><span id="__span-2-36"><a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="w">        </span><span class="no">)</span>
+</span><span id="__span-2-37"><a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span class="nt">Cleanup</span><span class="p">:</span><span class="w"> </span>
+</span><span id="__span-2-38"><a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a><span class="w">    </span><span class="nt">Windows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">&quot;del</span><span class="nv"> </span><span class="s">.\\prerun.bat&quot;</span><span class="w"> </span><span class="p p-Indicator">]</span>
+</span><span id="__span-2-39"><a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a><span class="nt">Compiler</span><span class="p">:</span>
+</span><span id="__span-2-40"><a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a><span class="w">    </span><span class="nt">PreRun</span><span class="p">:</span><span class="w"> </span>
+</span><span id="__span-2-41"><a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a><span class="w">        </span><span class="nt">Windows</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.\\prerun.bat&quot;</span>
+</span><span id="__span-2-42"><a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a><span class="w">    </span><span class="nt">CheckExistence</span><span class="p">:</span><span class="w"> </span>
+</span><span id="__span-2-43"><a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a><span class="w">        </span><span class="nt">Windows</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;where.exe</span><span class="nv"> </span><span class="s">CL.exe&quot;</span>
+</span><span id="__span-2-44"><a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a><span class="w">    </span><span class="nt">CompileTypes</span><span class="p">:</span>
+</span><span id="__span-2-45"><a id="__codelineno-2-45" name="__codelineno-2-45" href="#__codelineno-2-45"></a><span class="w">        </span><span class="nt">Executable</span><span class="p">:</span>
+</span><span id="__span-2-46"><a id="__codelineno-2-46" name="__codelineno-2-46" href="#__codelineno-2-46"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span>
+</span><span id="__span-2-47"><a id="__codelineno-2-47" name="__codelineno-2-47" href="#__codelineno-2-47"></a><span class="w">                </span><span class="nt">&lt;&lt;</span><span class="p">:</span><span class="w"> </span><span class="nv">*vs2022_v17</span><span class="l l-Scalar l-Scalar-Plain">+_CompileFlags</span>
+</span><span id="__span-2-48"><a id="__codelineno-2-48" name="__codelineno-2-48" href="#__codelineno-2-48"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;CL.exe&quot;</span>
+</span><span id="__span-2-49"><a id="__codelineno-2-49" name="__codelineno-2-49" href="#__codelineno-2-49"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span><span class="w"> </span><span class="nv">*vs2022_v17</span><span class="l l-Scalar l-Scalar-Plain">+_CompileRunParts</span>
+</span><span id="__span-2-50"><a id="__codelineno-2-50" name="__codelineno-2-50" href="#__codelineno-2-50"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="nv">*vs2022_v17</span><span class="l l-Scalar l-Scalar-Plain">+_CompileExpectedOutputFiles</span>
+</span><span id="__span-2-51"><a id="__codelineno-2-51" name="__codelineno-2-51" href="#__codelineno-2-51"></a><span class="w">        </span><span class="nt">ExecutableShared</span><span class="p">:</span>
+</span><span id="__span-2-52"><a id="__codelineno-2-52" name="__codelineno-2-52" href="#__codelineno-2-52"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span>
+</span><span id="__span-2-53"><a id="__codelineno-2-53" name="__codelineno-2-53" href="#__codelineno-2-53"></a><span class="w">                </span><span class="nt">&lt;&lt;</span><span class="p">:</span><span class="w"> </span><span class="nv">*vs2022_v17</span><span class="l l-Scalar l-Scalar-Plain">+_CompileFlags</span>
+</span><span id="__span-2-54"><a id="__codelineno-2-54" name="__codelineno-2-54" href="#__codelineno-2-54"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;CL.exe&quot;</span>
+</span><span id="__span-2-55"><a id="__codelineno-2-55" name="__codelineno-2-55" href="#__codelineno-2-55"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span><span class="w"> </span><span class="nv">*vs2022_v17</span><span class="l l-Scalar l-Scalar-Plain">+_CompileRunParts</span>
+</span><span id="__span-2-56"><a id="__codelineno-2-56" name="__codelineno-2-56" href="#__codelineno-2-56"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="nv">*vs2022_v17</span><span class="l l-Scalar l-Scalar-Plain">+_CompileExpectedOutputFiles</span>
+</span><span id="__span-2-57"><a id="__codelineno-2-57" name="__codelineno-2-57" href="#__codelineno-2-57"></a><span class="w">        </span><span class="nt">Static</span><span class="p">:</span>
+</span><span id="__span-2-58"><a id="__codelineno-2-58" name="__codelineno-2-58" href="#__codelineno-2-58"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span>
+</span><span id="__span-2-59"><a id="__codelineno-2-59" name="__codelineno-2-59" href="#__codelineno-2-59"></a><span class="w">                </span><span class="nt">&lt;&lt;</span><span class="p">:</span><span class="w"> </span><span class="nv">*vs2022_v17</span><span class="l l-Scalar l-Scalar-Plain">+_CompileFlags</span>
+</span><span id="__span-2-60"><a id="__codelineno-2-60" name="__codelineno-2-60" href="#__codelineno-2-60"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;CL.exe&quot;</span>
+</span><span id="__span-2-61"><a id="__codelineno-2-61" name="__codelineno-2-61" href="#__codelineno-2-61"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span><span class="w"> </span><span class="nv">*vs2022_v17</span><span class="l l-Scalar l-Scalar-Plain">+_CompileRunParts</span>
+</span><span id="__span-2-62"><a id="__codelineno-2-62" name="__codelineno-2-62" href="#__codelineno-2-62"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="nv">*vs2022_v17</span><span class="l l-Scalar l-Scalar-Plain">+_CompileExpectedOutputFiles</span>
+</span><span id="__span-2-63"><a id="__codelineno-2-63" name="__codelineno-2-63" href="#__codelineno-2-63"></a><span class="w">        </span><span class="nt">Shared</span><span class="p">:</span>
+</span><span id="__span-2-64"><a id="__codelineno-2-64" name="__codelineno-2-64" href="#__codelineno-2-64"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span>
+</span><span id="__span-2-65"><a id="__codelineno-2-65" name="__codelineno-2-65" href="#__codelineno-2-65"></a><span class="w">                </span><span class="nt">&lt;&lt;</span><span class="p">:</span><span class="w"> </span><span class="nv">*vs2022_v17</span><span class="l l-Scalar l-Scalar-Plain">+_CompileFlags</span>
+</span><span id="__span-2-66"><a id="__codelineno-2-66" name="__codelineno-2-66" href="#__codelineno-2-66"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;CL.exe&quot;</span>
+</span><span id="__span-2-67"><a id="__codelineno-2-67" name="__codelineno-2-67" href="#__codelineno-2-67"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span><span class="w"> </span><span class="nv">*vs2022_v17</span><span class="l l-Scalar l-Scalar-Plain">+_CompileRunParts</span>
+</span><span id="__span-2-68"><a id="__codelineno-2-68" name="__codelineno-2-68" href="#__codelineno-2-68"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="nv">*vs2022_v17</span><span class="l l-Scalar l-Scalar-Plain">+_CompileExpectedOutputFiles</span>
+</span><span id="__span-2-69"><a id="__codelineno-2-69" name="__codelineno-2-69" href="#__codelineno-2-69"></a><span class="nt">Linker</span><span class="p">:</span>
+</span><span id="__span-2-70"><a id="__codelineno-2-70" name="__codelineno-2-70" href="#__codelineno-2-70"></a><span class="w">    </span><span class="nt">PreRun</span><span class="p">:</span><span class="w"> </span>
+</span><span id="__span-2-71"><a id="__codelineno-2-71" name="__codelineno-2-71" href="#__codelineno-2-71"></a><span class="w">        </span><span class="nt">Windows</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.\\prerun.bat&quot;</span>
+</span><span id="__span-2-72"><a id="__codelineno-2-72" name="__codelineno-2-72" href="#__codelineno-2-72"></a><span class="w">    </span><span class="nt">CheckExistence</span><span class="p">:</span>
+</span><span id="__span-2-73"><a id="__codelineno-2-73" name="__codelineno-2-73" href="#__codelineno-2-73"></a><span class="w">        </span><span class="nt">Windows</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;where.exe</span><span class="nv"> </span><span class="s">link.exe&quot;</span>
+</span><span id="__span-2-74"><a id="__codelineno-2-74" name="__codelineno-2-74" href="#__codelineno-2-74"></a><span class="w">    </span><span class="nt">LinkTypes</span><span class="p">:</span>
+</span><span id="__span-2-75"><a id="__codelineno-2-75" name="__codelineno-2-75" href="#__codelineno-2-75"></a><span class="w">        </span><span class="nt">Executable</span><span class="p">:</span>
+</span><span id="__span-2-76"><a id="__codelineno-2-76" name="__codelineno-2-76" href="#__codelineno-2-76"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span>
+</span><span id="__span-2-77"><a id="__codelineno-2-77" name="__codelineno-2-77" href="#__codelineno-2-77"></a><span class="w">                </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+</span><span id="__span-2-78"><a id="__codelineno-2-78" name="__codelineno-2-78" href="#__codelineno-2-78"></a><span class="w">                    </span><span class="no">/NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib</span>
+</span><span id="__span-2-79"><a id="__codelineno-2-79" name="__codelineno-2-79" href="#__codelineno-2-79"></a><span class="w">                    </span><span class="no">oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /manifest:embed /SUBSYSTEM:CONSOLE</span>
+</span><span id="__span-2-80"><a id="__codelineno-2-80" name="__codelineno-2-80" href="#__codelineno-2-80"></a><span class="w">                    </span><span class="no">/DEBUG /MANIFESTUAC:&quot;level=&#39;asInvoker&#39;&quot;</span>
+</span><span id="__span-2-81"><a id="__codelineno-2-81" name="__codelineno-2-81" href="#__codelineno-2-81"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;link.exe&quot;</span>
+</span><span id="__span-2-82"><a id="__codelineno-2-82" name="__codelineno-2-82" href="#__codelineno-2-82"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span>
+</span><span id="__span-2-83"><a id="__codelineno-2-83" name="__codelineno-2-83" href="#__codelineno-2-83"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Once</span>
+</span><span id="__span-2-84"><a id="__codelineno-2-84" name="__codelineno-2-84" href="#__codelineno-2-84"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+</span><span id="__span-2-85"><a id="__codelineno-2-85" name="__codelineno-2-85" href="#__codelineno-2-85"></a><span class="w">                        </span><span class="no">{Executable} {LinkFlags}</span>
+</span><span id="__span-2-86"><a id="__codelineno-2-86" name="__codelineno-2-86" href="#__codelineno-2-86"></a><span class="w">                        </span><span class="no">/OUT:&quot;{OutputFileDirectory}{/}{OutputFileName}.exe&quot;</span>
+</span><span id="__span-2-87"><a id="__codelineno-2-87" name="__codelineno-2-87" href="#__codelineno-2-87"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Repeats</span>
+</span><span id="__span-2-88"><a id="__codelineno-2-88" name="__codelineno-2-88" href="#__codelineno-2-88"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">\&quot;{LinkFilePath}\&quot;&quot;</span>
+</span><span id="__span-2-89"><a id="__codelineno-2-89" name="__codelineno-2-89" href="#__codelineno-2-89"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;{OutputFileDirectory}{/}{OutputFileName}.exe&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-2-90"><a id="__codelineno-2-90" name="__codelineno-2-90" href="#__codelineno-2-90"></a><span class="w">        </span><span class="nt">ExecutableShared</span><span class="p">:</span>
+</span><span id="__span-2-91"><a id="__codelineno-2-91" name="__codelineno-2-91" href="#__codelineno-2-91"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span>
+</span><span id="__span-2-92"><a id="__codelineno-2-92" name="__codelineno-2-92" href="#__codelineno-2-92"></a><span class="w">                </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+</span><span id="__span-2-93"><a id="__codelineno-2-93" name="__codelineno-2-93" href="#__codelineno-2-93"></a><span class="w">                    </span><span class="no">/NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib</span>
+</span><span id="__span-2-94"><a id="__codelineno-2-94" name="__codelineno-2-94" href="#__codelineno-2-94"></a><span class="w">                    </span><span class="no">oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /manifest:embed /SUBSYSTEM:CONSOLE</span>
+</span><span id="__span-2-95"><a id="__codelineno-2-95" name="__codelineno-2-95" href="#__codelineno-2-95"></a><span class="w">                    </span><span class="no">/DEBUG /DLL /MANIFESTUAC:&quot;level=&#39;asInvoker&#39;&quot;</span>
+</span><span id="__span-2-96"><a id="__codelineno-2-96" name="__codelineno-2-96" href="#__codelineno-2-96"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;link.exe&quot;</span>
+</span><span id="__span-2-97"><a id="__codelineno-2-97" name="__codelineno-2-97" href="#__codelineno-2-97"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span>
+</span><span id="__span-2-98"><a id="__codelineno-2-98" name="__codelineno-2-98" href="#__codelineno-2-98"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Once</span>
+</span><span id="__span-2-99"><a id="__codelineno-2-99" name="__codelineno-2-99" href="#__codelineno-2-99"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+</span><span id="__span-2-100"><a id="__codelineno-2-100" name="__codelineno-2-100" href="#__codelineno-2-100"></a><span class="w">                        </span><span class="no">{Executable} {LinkFlags}</span>
+</span><span id="__span-2-101"><a id="__codelineno-2-101" name="__codelineno-2-101" href="#__codelineno-2-101"></a><span class="w">                        </span><span class="no">/OUT:&quot;{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}&quot;</span>
+</span><span id="__span-2-102"><a id="__codelineno-2-102" name="__codelineno-2-102" href="#__codelineno-2-102"></a><span class="w">                        </span><span class="no">/IMPLIB:&quot;{OutputFileDirectory}{/}{SharedLinkFile.Prefix}{OutputFileName}{SharedLinkFile.Extension}&quot;</span>
+</span><span id="__span-2-103"><a id="__codelineno-2-103" name="__codelineno-2-103" href="#__codelineno-2-103"></a><span class="w">                        </span><span class="no">/DEF:&quot;.\temp.def&quot;</span>
+</span><span id="__span-2-104"><a id="__codelineno-2-104" name="__codelineno-2-104" href="#__codelineno-2-104"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Repeats</span>
+</span><span id="__span-2-105"><a id="__codelineno-2-105" name="__codelineno-2-105" href="#__codelineno-2-105"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">\&quot;{LinkFilePath}\&quot;&quot;</span>
+</span><span id="__span-2-106"><a id="__codelineno-2-106" name="__codelineno-2-106" href="#__codelineno-2-106"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-2-107"><a id="__codelineno-2-107" name="__codelineno-2-107" href="#__codelineno-2-107"></a><span class="w">                </span><span class="nt">Setup</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">&quot;echo</span><span class="nv"> </span><span class="s">EXPORTS</span><span class="nv"> </span><span class="s">&gt;</span><span class="nv"> </span><span class="s">.\\temp.def&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;echo.</span><span class="nv">   </span><span class="s">main</span><span class="nv"> </span><span class="s">@1</span><span class="nv"> </span><span class="s">&gt;&gt;</span><span class="nv"> </span><span class="s">.\\temp.def&quot;</span><span class="w"> </span><span class="p p-Indicator">]</span>
+</span><span id="__span-2-108"><a id="__codelineno-2-108" name="__codelineno-2-108" href="#__codelineno-2-108"></a><span class="w">                </span><span class="nt">Cleanup</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="s">&quot;del</span><span class="nv"> </span><span class="s">.\\temp.def&quot;</span><span class="w"> </span><span class="p p-Indicator">]</span>
+</span><span id="__span-2-109"><a id="__codelineno-2-109" name="__codelineno-2-109" href="#__codelineno-2-109"></a><span class="w">        </span><span class="nt">Static</span><span class="p">:</span>
+</span><span id="__span-2-110"><a id="__codelineno-2-110" name="__codelineno-2-110" href="#__codelineno-2-110"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span>
+</span><span id="__span-2-111"><a id="__codelineno-2-111" name="__codelineno-2-111" href="#__codelineno-2-111"></a><span class="w">                </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/NOLOGO&quot;</span>
+</span><span id="__span-2-112"><a id="__codelineno-2-112" name="__codelineno-2-112" href="#__codelineno-2-112"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;lib.exe&quot;</span>
+</span><span id="__span-2-113"><a id="__codelineno-2-113" name="__codelineno-2-113" href="#__codelineno-2-113"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span>
+</span><span id="__span-2-114"><a id="__codelineno-2-114" name="__codelineno-2-114" href="#__codelineno-2-114"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Once</span>
+</span><span id="__span-2-115"><a id="__codelineno-2-115" name="__codelineno-2-115" href="#__codelineno-2-115"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+</span><span id="__span-2-116"><a id="__codelineno-2-116" name="__codelineno-2-116" href="#__codelineno-2-116"></a><span class="w">                        </span><span class="no">{Executable} {LinkFlags}</span>
+</span><span id="__span-2-117"><a id="__codelineno-2-117" name="__codelineno-2-117" href="#__codelineno-2-117"></a><span class="w">                        </span><span class="no">/OUT:&quot;{OutputFileDirectory}{/}{StaticLinkFile.Prefix}{OutputFileName}{StaticLinkFile.Extension}&quot;</span>
+</span><span id="__span-2-118"><a id="__codelineno-2-118" name="__codelineno-2-118" href="#__codelineno-2-118"></a><span class="w">                        </span><span class="no">/IMPLIB:&quot;{OutputFileDirectory}{/}{SharedLinkFile.Prefix}{OutputFileName}{SharedLinkFile.Extension}&quot;</span>
+</span><span id="__span-2-119"><a id="__codelineno-2-119" name="__codelineno-2-119" href="#__codelineno-2-119"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Repeats</span>
+</span><span id="__span-2-120"><a id="__codelineno-2-120" name="__codelineno-2-120" href="#__codelineno-2-120"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">\&quot;{LinkFilePath}\&quot;&quot;</span>
+</span><span id="__span-2-121"><a id="__codelineno-2-121" name="__codelineno-2-121" href="#__codelineno-2-121"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;{OutputFileDirectory}{/}{StaticLinkFile.Prefix}{OutputFileName}{StaticLinkFile.Extension}&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-2-122"><a id="__codelineno-2-122" name="__codelineno-2-122" href="#__codelineno-2-122"></a><span class="w">        </span><span class="nt">Shared</span><span class="p">:</span>
+</span><span id="__span-2-123"><a id="__codelineno-2-123" name="__codelineno-2-123" href="#__codelineno-2-123"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span>
+</span><span id="__span-2-124"><a id="__codelineno-2-124" name="__codelineno-2-124" href="#__codelineno-2-124"></a><span class="w">                </span><span class="nt">Flags</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+</span><span id="__span-2-125"><a id="__codelineno-2-125" name="__codelineno-2-125" href="#__codelineno-2-125"></a><span class="w">                    </span><span class="no">/NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib</span>
+</span><span id="__span-2-126"><a id="__codelineno-2-126" name="__codelineno-2-126" href="#__codelineno-2-126"></a><span class="w">                    </span><span class="no">oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /manifest:embed /SUBSYSTEM:CONSOLE</span>
+</span><span id="__span-2-127"><a id="__codelineno-2-127" name="__codelineno-2-127" href="#__codelineno-2-127"></a><span class="w">                    </span><span class="no">/DEBUG /DLL /MANIFESTUAC:&quot;level=&#39;asInvoker&#39;&quot;</span>
+</span><span id="__span-2-128"><a id="__codelineno-2-128" name="__codelineno-2-128" href="#__codelineno-2-128"></a><span class="w">                </span><span class="nt">Executable</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;link.exe&quot;</span>
+</span><span id="__span-2-129"><a id="__codelineno-2-129" name="__codelineno-2-129" href="#__codelineno-2-129"></a><span class="w">                </span><span class="nt">RunParts</span><span class="p">:</span>
+</span><span id="__span-2-130"><a id="__codelineno-2-130" name="__codelineno-2-130" href="#__codelineno-2-130"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Once</span>
+</span><span id="__span-2-131"><a id="__codelineno-2-131" name="__codelineno-2-131" href="#__codelineno-2-131"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+</span><span id="__span-2-132"><a id="__codelineno-2-132" name="__codelineno-2-132" href="#__codelineno-2-132"></a><span class="w">                        </span><span class="no">{Executable} {LinkFlags}</span>
+</span><span id="__span-2-133"><a id="__codelineno-2-133" name="__codelineno-2-133" href="#__codelineno-2-133"></a><span class="w">                        </span><span class="no">/OUT:&quot;{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}&quot;</span>
+</span><span id="__span-2-134"><a id="__codelineno-2-134" name="__codelineno-2-134" href="#__codelineno-2-134"></a><span class="w">                        </span><span class="no">/IMPLIB:&quot;{OutputFileDirectory}{/}{SharedLinkFile.Prefix}{OutputFileName}{SharedLinkFile.Extension}&quot;</span>
+</span><span id="__span-2-135"><a id="__codelineno-2-135" name="__codelineno-2-135" href="#__codelineno-2-135"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Repeats</span>
+</span><span id="__span-2-136"><a id="__codelineno-2-136" name="__codelineno-2-136" href="#__codelineno-2-136"></a><span class="w">                    </span><span class="nt">CommandPart</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;</span><span class="nv"> </span><span class="s">\&quot;{LinkFilePath}\&quot;&quot;</span>
+</span><span id="__span-2-137"><a id="__codelineno-2-137" name="__codelineno-2-137" href="#__codelineno-2-137"></a><span class="w">                </span><span class="nt">ExpectedOutputFiles</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}&quot;</span><span class="p p-Indicator">]</span>
+</span></code></pre></div>
+<h2 id="defaultcommonfiletypesyaml"><code>Default/CommonFileTypes.yaml</code></h2>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># DO NOT modify this file. Changes will be overwritten when there&#39;s a reset or update</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="nt">FilesTypes</span><span class="p">:</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="c1"># The file properties for the files to be **linked** as object file for each platform</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="nt">ObjectLinkFile</span><span class="p">:</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">        </span><span class="nt">Prefix</span><span class="p">:</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">            </span><span class="nt">DefaultPlatform</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">        </span><span class="nt">Extension</span><span class="p">:</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.obj&quot;</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">            </span><span class="nt">Unix</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.o&quot;</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">    </span><span class="c1"># The file properties for the files to be **linked** as shared libraries for each platform</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">    </span><span class="nt">SharedLinkFile</span><span class="p">:</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">        </span><span class="nt">Prefix</span><span class="p">:</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">            </span><span class="nt">Linux</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;lib&quot;</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">            </span><span class="nt">MacOS</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">        </span><span class="nt">Extension</span><span class="p">:</span>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.lib&quot;</span>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">            </span><span class="nt">Linux</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.so&quot;</span>
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">            </span><span class="nt">MacOS</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.dylib&quot;</span>
+</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">    </span><span class="c1"># The file properties for the files to be **copied** as shared libraries for each platform</span>
+</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="w">    </span><span class="nt">SharedLibraryFile</span><span class="p">:</span>
+</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="w">        </span><span class="nt">Prefix</span><span class="p">:</span>
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="w">            </span><span class="nt">Linux</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;lib&quot;</span>
+</span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="w">            </span><span class="nt">MacOS</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="w">        </span><span class="nt">Extension</span><span class="p">:</span>
+</span><span id="__span-3-28"><a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.dll&quot;</span>
+</span><span id="__span-3-29"><a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span class="w">            </span><span class="nt">Linux</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.so&quot;</span>
+</span><span id="__span-3-30"><a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="w">            </span><span class="nt">MacOS</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.dylib&quot;</span>
+</span><span id="__span-3-31"><a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="w">    </span><span class="c1"># The file properties for the files to be linked as static libraries for each platform</span>
+</span><span id="__span-3-32"><a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="w">    </span><span class="nt">StaticLinkFile</span><span class="p">:</span>
+</span><span id="__span-3-33"><a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span class="w">        </span><span class="nt">Prefix</span><span class="p">:</span>
+</span><span id="__span-3-34"><a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a><span class="w">            </span><span class="nt">Unix</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;lib&quot;</span>
+</span><span id="__span-3-35"><a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+</span><span id="__span-3-36"><a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a><span class="w">        </span><span class="nt">Extension</span><span class="p">:</span>
+</span><span id="__span-3-37"><a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.lib&quot;</span>
+</span><span id="__span-3-38"><a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a><span class="w">            </span><span class="nt">Unix</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.a&quot;</span>
+</span><span id="__span-3-39"><a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a><span class="w">    </span><span class="c1"># (Optional) The file properties for debug symbols to be copied alongside the binary </span>
+</span><span id="__span-3-40"><a id="__codelineno-3-40" name="__codelineno-3-40" href="#__codelineno-3-40"></a><span class="w">    </span><span class="c1">#               for each platform</span>
+</span><span id="__span-3-41"><a id="__codelineno-3-41" name="__codelineno-3-41" href="#__codelineno-3-41"></a><span class="w">    </span><span class="nt">DebugSymbolFile</span><span class="p">:</span>
+</span><span id="__span-3-42"><a id="__codelineno-3-42" name="__codelineno-3-42" href="#__codelineno-3-42"></a><span class="w">        </span><span class="nt">Prefix</span><span class="p">:</span>
+</span><span id="__span-3-43"><a id="__codelineno-3-43" name="__codelineno-3-43" href="#__codelineno-3-43"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+</span><span id="__span-3-44"><a id="__codelineno-3-44" name="__codelineno-3-44" href="#__codelineno-3-44"></a><span class="w">            </span><span class="nt">Unix</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+</span><span id="__span-3-45"><a id="__codelineno-3-45" name="__codelineno-3-45" href="#__codelineno-3-45"></a><span class="w">        </span><span class="nt">Extension</span><span class="p">:</span>
+</span><span id="__span-3-46"><a id="__codelineno-3-46" name="__codelineno-3-46" href="#__codelineno-3-46"></a><span class="w">            </span><span class="nt">Windows</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.pdb&quot;</span>
+</span><span id="__span-3-47"><a id="__codelineno-3-47" name="__codelineno-3-47" href="#__codelineno-3-47"></a><span class="w">            </span><span class="nt">Unix</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+</span></code></pre></div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["toc.follow", "toc.integrate", "content.code.copy", "content.code.select", "navigation.sections", "navigation.expand", "navigation.tabs", "navigation.tabs.sticky"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.88dd0f4e.min.js"></script>
+      
+    
+  </body>
+</html>
