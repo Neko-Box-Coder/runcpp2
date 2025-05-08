@@ -112,7 +112,7 @@ can be spcified inlined inside a source file or as a separate yaml file in the f
     runcpp2 script.cpp
     ```
 
-For a complete list of build settings, see [Build Settings](build_settings.md) or generate the template with
+For a complete list of build settings, see [Build Settings](../build_settings.md) or generate the template with
 ```shell
 runcpp2 --create-script-template ./script.cpp   # Embeds the build settings template as comment
 runcpp2 --create-script-template ./script.yaml  # Creates the build settings template as dedicated yaml file
