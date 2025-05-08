@@ -22,6 +22,8 @@ You can either build from source or use the binary release
 Binary Release (Only Linux and Windows for now): 
 [https://github.com/Neko-Box-Coder/runcpp2/releases](https://github.com/Neko-Box-Coder/runcpp2/releases)
 
+Nightly Release:
+[https://github.com/Neko-Box-Coder/runcpp2/releases/tag/nightly](https://github.com/Neko-Box-Coder/runcpp2/releases/tag/nightly)
 
 Finally, you just need to add runcpp2 binary location to the `PATH` environment variable and 
 you can run c++ files anywhere you want.
