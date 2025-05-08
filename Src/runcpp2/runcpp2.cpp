@@ -848,7 +848,7 @@ bool runcpp2::DownloadTutorial(char* runcppPath)
     #ifdef _WIN32
         if(!RunCommand( "powershell -Command \""
                         "Invoke-WebRequest https://github.com/Neko-Box-Coder/runcpp2/raw/"
-                        "refs/heads/InteractiveTutorial/Examples/InteractiveTutorial.cpp "
+                        "refs/heads/master/Examples/InteractiveTutorial.cpp "
                         "-OutFile InteractiveTutorial.cpp\"",
                         false,
                         "./",
@@ -858,9 +858,9 @@ bool runcpp2::DownloadTutorial(char* runcppPath)
             return false;
         }    
     #else
-        if(!RunCommand( "curl -L -o tutorial/Logging.cpp "
+        if(!RunCommand( "curl -L -o InteractiveTutorial.cpp "
                         "https://github.com/Neko-Box-Coder/runcpp2/raw/refs/heads/"
-                        "InteractiveTutorial/Examples/InteractiveTutorial.cpp",
+                        "master/Examples/InteractiveTutorial.cpp",
                         false,
                         "./",
                         dummy,

@@ -782,7 +782,7 @@ bool Chapter3_ExternalDependencies()
     #ifdef _WIN32
         if(!RunCommandWithPrompt(   "powershell -Command \""
                                     "Invoke-WebRequest https://github.com/Neko-Box-Coder/runcpp2/raw/"
-                                    "refs/heads/InteractiveTutorial/Examples/Logging.cpp "
+                                    "refs/heads/master/Examples/Logging.cpp "
                                     "-OutFile tutorial/Logging.cpp\"", true, false))
         {
             return false;
@@ -790,7 +790,7 @@ bool Chapter3_ExternalDependencies()
     #else
         if(!RunCommandWithPrompt(   "curl -L -o tutorial/Logging.cpp "
                                     "https://github.com/Neko-Box-Coder/runcpp2/raw/refs/heads/"
-                                    "InteractiveTutorial/Examples/Logging.cpp"))
+                                    "master/Examples/Logging.cpp"))
         {
             return false;
         }
@@ -818,7 +818,7 @@ bool Chapter3_ExternalDependencies()
     #ifdef _WIN32
         if(!RunCommandWithPrompt(   "powershell -Command \""
                                     "Invoke-WebRequest https://github.com/Neko-Box-Coder/runcpp2/raw/"
-                                    "refs/heads/InteractiveTutorial/Examples/SDLWindow.cpp "
+                                    "refs/heads/master/Examples/SDLWindow.cpp "
                                     "-OutFile tutorial/SDLWindow.cpp\"", true, false))
         {
             return false;
@@ -827,7 +827,7 @@ bool Chapter3_ExternalDependencies()
     #else
         if(!RunCommandWithPrompt(   "curl -L -o tutorial/SDLWindow.cpp "
                                     "https://github.com/Neko-Box-Coder/runcpp2/raw/refs/heads/"
-                                    "InteractiveTutorial/Examples/SDLWindow.cpp"))
+                                    "master/Examples/SDLWindow.cpp"))
         {
             return false;
         }
