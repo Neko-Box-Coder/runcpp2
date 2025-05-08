@@ -47,27 +47,21 @@ int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& long
             continue;
         }
         
-        //Checking for options
+        //Matched long or short options
         if(longOptionsMap.count(currentArg) || shortOptionsMap.count(currentArg))
         {
             currentArgIndex = i;
             ssLOG_DEBUG("currentArgIndex: " << currentArgIndex);
             ssLOG_DEBUG("argv: " << argv[i]);
-            
             const runcpp2::OptionInfo& currentInfo =    longOptionsMap.count(currentArg) ?
                                                         longOptionsMap.at(currentArg) :
                                                         shortOptionsMap.at(currentArg);
-            
-            if(currentInfo.HasValue)
-            {
+            if(currentInfo.ValueExists)
                 optionForCapturingValue = currentInfo.Option;
-                continue;
-            }
             else
-            {
                 outOptions[currentInfo.Option] = "";
-                continue;
-            }
+            
+            continue;
         }
         else if(!currentArg.empty() && currentArg[0] == '-')
         {
@@ -174,11 +168,11 @@ int main(int argc, char* argv[])
     int currentArgIndex = 0;
     std::unordered_map<runcpp2::CmdOptions, std::string> currentOptions;
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 17, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 19, "Update this");
         std::unordered_map<std::string, runcpp2::OptionInfo> longOptionsMap =
         {
             {
-                "--reset-cache", 
+                "--rebuild", 
                 runcpp2::OptionInfo(runcpp2::CmdOptions::RESET_CACHE, false)
             },
             {
@@ -218,6 +212,10 @@ int main(int argc, char* argv[])
                 runcpp2::OptionInfo(runcpp2::CmdOptions::BUILD, false)
             },
             {
+                "--output",
+                runcpp2::OptionInfo(runcpp2::CmdOptions::OUTPUT, true)
+            },
+            {
                 "--version",
                 runcpp2::OptionInfo(runcpp2::CmdOptions::VERSION, false)
             },
@@ -234,19 +232,23 @@ int main(int argc, char* argv[])
                 runcpp2::OptionInfo(runcpp2::CmdOptions::CLEANUP, false)
             },
             {
-                "--build-source-only",
+                "--source-only",
                 runcpp2::OptionInfo(runcpp2::CmdOptions::BUILD_SOURCE_ONLY, false)
             },
             {
                 "--jobs",
                 runcpp2::OptionInfo(runcpp2::CmdOptions::THREADS, true)
             },
+            {
+                "--tutorial",
+                runcpp2::OptionInfo(runcpp2::CmdOptions::TUTORIAL, false)
+            },
         };
         
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 17, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 19, "Update this");
         std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
         {
-            {"-rc", longOptionsMap.at("--reset-cache")},
+            {"-rb", longOptionsMap.at("--rebuild")},
             {"-ru", longOptionsMap.at("--reset-user-config")},
             {"-e", longOptionsMap.at("--executable")},
             {"-h", longOptionsMap.at("--help")},
@@ -256,10 +258,11 @@ int main(int argc, char* argv[])
             {"-t", longOptionsMap.at("--create-script-template")},
             {"-w", longOptionsMap.at("--watch")},
             {"-b", longOptionsMap.at("--build")},
+            {"-o", longOptionsMap.at("--output")},
             {"-v", longOptionsMap.at("--version")},
             {"-c", longOptionsMap.at("--config")},
             {"-cu", longOptionsMap.at("--cleanup")},
-            {"-s", longOptionsMap.at("--build-source-only")},
+            {"-s", longOptionsMap.at("--source-only")},
             {"-j", longOptionsMap.at("--jobs")},
         };
         
@@ -267,7 +270,7 @@ int main(int argc, char* argv[])
         
         if(currentArgIndex == -1)
         {
-            ssLOG_ERROR("Invalid option");
+            ssLOG_ERROR("Failed to parse arguments. See --help for details");
             return -1;
         }
         
@@ -277,22 +280,23 @@ int main(int argc, char* argv[])
     //Help message
     if(currentOptions.count(runcpp2::CmdOptions::HELP))
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 17, "Update this");
+        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 19, "Update this");
         ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
         ssLOG_BASE("Options:");
         ssLOG_BASE("  Run/Build:");
-        ssLOG_BASE("    -b,  --[b]uild                          Build the script and copy output files to the working directory");
+        ssLOG_BASE("    -b,  --[b]uild                          Build the script but don't run it");
+        ssLOG_BASE("    -o,  --[o]utput <Output Dir>            Output files to the directory specified, must be used with --build");
         ssLOG_BASE("    -w,  --[w]atch                          Watch script changes and output any compiling errors");
         ssLOG_BASE("    -l,  --[l]ocal                          Build in the current working directory under .runcpp2 directory");
         ssLOG_BASE("    -e,  --[e]xecutable                     Runs as executable instead of shared library");
         ssLOG_BASE("    -c,  --[c]onfig <file>                  Use specified config file instead of default");
         ssLOG_BASE("    -t,  --create-script-[t]emplate <file>  Creates/prepend runcpp2 script info template");
-        ssLOG_BASE("    -s,  --build-[s]ource-only              (Re)Builds source files only without building dependencies.");
+        ssLOG_BASE("    -s,  --[s]ource-only                    (Re)Builds source files only without building dependencies.");
         ssLOG_BASE("                                                The previous built binaries will be used for dependencies.");
         ssLOG_BASE("                                                Requires dependencies to be built already.");
         ssLOG_BASE("    -j,  --[j]obs                           Maximum number of threads running. Defaults to 8");
         ssLOG_BASE("  Reset/Cleanup:");
-        ssLOG_BASE("    -rc, --[r]eset-[c]ache                  Deletes compiled source files cache only");
+        ssLOG_BASE("    -rb, --[r]e[b]uild                      Deletes compiled source files cache and rebuild");
         ssLOG_BASE("    -ru, --[r]eset-[u]ser-config            Replace current user config with the default one");
         ssLOG_BASE("    -rd, --[r]eset-[d]ependencies <names>   Reset dependencies (comma-separated names, or \"all\" for all)");
         ssLOG_BASE("    -cu, --[c]lean[u]p                      Run cleanup commands and remove build directory");
@@ -300,8 +304,9 @@ int main(int argc, char* argv[])
         ssLOG_BASE("    -sc, --[s]how-[c]onfig-path             Show where runcpp2 is reading the config from");
         ssLOG_BASE("    -v,  --[v]ersion                        Show the version of runcpp2");
         ssLOG_BASE("    -h,  --[h]elp                           Show this help message");
-        ssLOG_BASE("         --log-level <level>                Sets the log level (Normal, Info, Debug) for runcpp2.");
-        
+        ssLOG_BASE("         --log-level <level>                Sets the log level (Normal, Info, Debug) for runcpp2");
+        ssLOG_BASE("  Others:");
+        ssLOG_BASE("         --tutorial                         Start interactive tutorial");
         return 0;
     }
     
@@ -327,6 +332,7 @@ int main(int argc, char* argv[])
     }
     
     ssLOG_FUNC_INFO();
+    INTERNAL_RUNCPP2_SAFE_START();
     
     //Show user config path
     if(currentOptions.count(runcpp2::CmdOptions::SHOW_USER_CONFIG))
@@ -342,6 +348,14 @@ int main(int argc, char* argv[])
         return 0;
     }
     
+    //Download tutorial
+    if(currentOptions.count(runcpp2::CmdOptions::TUTORIAL))
+    {
+        if(!runcpp2::DownloadTutorial(argv[0]))
+            return -1;
+        return 0;
+    }
+    
     //Resetting user config
     if(currentOptions.count(runcpp2::CmdOptions::RESET_USER_CONFIG))
     {
@@ -351,7 +365,7 @@ int main(int argc, char* argv[])
             ssLOG_ERROR("Failed reset user config");
             return -1;
         }
-        ssLOG_LINE("User config reset successful");
+        ssLOG_BASE("User config reset successful");
         return 0;
     }
     
@@ -363,7 +377,7 @@ int main(int argc, char* argv[])
             return -1;
         else
         {
-            ssLOG_LINE("Script template generated");
+            ssLOG_BASE("Script template generated");
             return 0;
         }
     }
@@ -388,7 +402,7 @@ int main(int argc, char* argv[])
     std::vector<std::string> scriptArgs;
     if(currentArgIndex >= argc)
     {
-        ssLOG_ERROR("An input file is required");
+        ssLOG_ERROR("An input file is required. See --help for details");
         return 1;
     }
     
@@ -409,6 +423,13 @@ int main(int argc, char* argv[])
         currentOptions.count(runcpp2::CmdOptions::WATCH) > 0)
     {
         ssLOG_ERROR("--build option is not compatible with --watch option");
+        return -1;
+    }
+    
+    if( currentOptions.count(runcpp2::CmdOptions::OUTPUT) > 0 &&
+        currentOptions.count(runcpp2::CmdOptions::BUILD) == 0)
+    {
+        ssLOG_ERROR("--build option must be supplied when specifying output directory");
         return -1;
     }
     
@@ -515,18 +536,24 @@ int main(int argc, char* argv[])
             }
 
             std::this_thread::sleep_for(std::chrono::seconds(5));
-        }
-    }
+        } //while(true)
+    } //if(currentOptions.count(runcpp2::CmdOptions::WATCH))
     
     int result = 0;
     
     std::string outputDir;
-    if(currentOptions.count(runcpp2::CmdOptions::BUILD) > 0)
-        outputDir = ghc::filesystem::current_path().string();
+    if( currentOptions.count(runcpp2::CmdOptions::BUILD) > 0 &&
+        currentOptions.count(runcpp2::CmdOptions::OUTPUT) > 0)
+    {
+        auto buildOutputDir = ghc::filesystem::path(currentOptions.at(runcpp2::CmdOptions::OUTPUT));
+        if(buildOutputDir.is_absolute())
+            outputDir = buildOutputDir.string();
+        else
+            outputDir = (ghc::filesystem::current_path() / buildOutputDir).string();
+    }
     
     ghc::filesystem::file_time_type finalSourceWriteTime;
     ghc::filesystem::file_time_type finalIncludeWriteTime;
-    
     if(runcpp2::StartPipeline(  script, 
                                 profiles, 
                                 preferredProfile, 
@@ -542,9 +569,27 @@ int main(int argc, char* argv[])
         return -1;
     }
     
+    std::vector<std::string> actions;
+    if(currentOptions.count(runcpp2::CmdOptions::RESET_CACHE) > 0)
+        actions.push_back("Rebuild");
     if(currentOptions.count(runcpp2::CmdOptions::CLEANUP) > 0)
-        ssLOG_LINE("Cleanup successful");
+        actions.push_back("Cleanup");
+    if(currentOptions.count(runcpp2::CmdOptions::RESET_DEPENDENCIES) > 0)
+        actions.push_back("Dependencies Reset");
+    if(currentOptions.count(runcpp2::CmdOptions::BUILD) > 0)
+        actions.push_back("Build");
     
+    std::string action;
+    if(!actions.empty())
+    {
+        action = actions.front();
+        for(int i = 1; i < actions.size(); ++i)
+            action += ", " + actions[i];
+        
+        ssLOG_BASE(action << " success");
+    }
     return result;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(-1);
 }
 

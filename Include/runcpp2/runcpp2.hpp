@@ -14,11 +14,15 @@ namespace runcpp2
     struct OptionInfo
     {
         CmdOptions Option;
-        bool HasValue;
+        bool ValueExists;
         std::string Value;
         
-        OptionInfo(CmdOptions option, bool hasValue = false, const std::string& value = "")
-            : Option(option), HasValue(hasValue), Value(value) {}
+        inline OptionInfo(  CmdOptions option, 
+                            bool valueExists = false, 
+                            const std::string& value = "") :    Option(option), 
+                                                                ValueExists(valueExists), 
+                                                                Value(value)
+        {}
     };
 
     void GetDefaultScriptInfo(std::string& scriptInfo);
@@ -51,6 +55,8 @@ namespace runcpp2
                                     int& returnStatus);
 
     std::string PipelineResultToString(PipelineResult result);
+    
+    bool DownloadTutorial(char* runcppPath);
 }
 
 #endif

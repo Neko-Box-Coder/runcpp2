@@ -791,10 +791,7 @@ runcpp2::ProcessDependencies(   Data::ScriptInfo& scriptInfo,
     }
     
     if(currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0)
-    {
-        ssLOG_LINE("Removed script dependencies");
         return PipelineResult::SUCCESS;
-    }
     
     if(!SetupDependenciesIfNeeded(  profile, 
                                     buildDir,
@@ -825,7 +822,8 @@ runcpp2::ProcessDependencies(   Data::ScriptInfo& scriptInfo,
                                 dependenciesLocalCopiesPaths,
                                 maxThreads))
         {
-            ssLOG_ERROR("Failed to build script dependencies");
+            ssLOG_ERROR("Failed to build script dependencies. Maybe try resetting dependencies "
+                        "with \"-rd all\" and run again?");
             return PipelineResult::DEPENDENCIES_FAILED;
         }
     }
@@ -974,50 +972,6 @@ runcpp2::RunCompiledOutput( const ghc::filesystem::path& target,
         }
     }
     
-    return PipelineResult::SUCCESS;
-    
-    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
-}
-
-runcpp2::PipelineResult 
-runcpp2::HandleBuildOutput( const std::vector<ghc::filesystem::path>& targets,
-                            const std::vector<std::string>& filesToCopyPaths,
-                            const Data::ScriptInfo& scriptInfo,
-                            const Data::Profile& profile,
-                            const std::string& buildOutputDir,
-                            const std::unordered_map<CmdOptions, std::string>& currentOptions)
-{
-    ssLOG_FUNC_INFO();
-    INTERNAL_RUNCPP2_SAFE_START();
-    
-    if(targets.empty())
-    {
-        ssLOG_WARNING("No target files found");
-        return PipelineResult::SUCCESS;
-    }
-    
-    //Copy all output files and dependency files
-    std::vector<std::string> filesToCopy = filesToCopyPaths;
-    for(const ghc::filesystem::path& target : targets)
-        filesToCopy.push_back(target.string());
-    
-    std::vector<std::string> copiedPaths;
-    if(!CopyFiles(buildOutputDir, filesToCopy, copiedPaths))
-    {
-        ssLOG_ERROR("Failed to copy binaries before running the script");
-        return PipelineResult::UNEXPECTED_FAILURE;
-    }
-    
-    //Run PostBuild commands after successful compilation
-    PipelineResult result = HandlePostBuild(scriptInfo, profile, buildOutputDir);
-    if(result != PipelineResult::SUCCESS)
-        return result;
-    
-    //Don't output anything here if we are just watching
-    if(currentOptions.count(CmdOptions::WATCH) > 0)
-        return PipelineResult::SUCCESS;
-    
-    ssLOG_BASE("Build completed. Files copied to " << buildOutputDir);
     return PipelineResult::SUCCESS;
     
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);

@@ -6,22 +6,14 @@ Dependencies:
     Source:
         Git:
             URL: "https://github.com/libsdl-org/SDL.git"
-            Branch: "release-2.32.2"
-
+            Branch: "release-2.32.6"
     LibraryType: Shared
     IncludePaths:
     -   "./include"
     LinkProperties:
-        Windows:
-            DefaultProfile:
-                SearchLibraryNames: ["SDL2"]
-                SearchDirectories: ["./build/debug"]
-                ExcludeLibraryNames: ["SDL2-static", "SDL2_test"]
-        Unix:
-            DefaultProfile:
-                SearchLibraryNames: ["SDL2"]
-                SearchDirectories: ["./build"]
-                ExcludeLibraryNames: ["SDL2-static", "SDL2_test"]
+        SearchLibraryNames: ["SDL2"]
+        ExcludeLibraryNames: ["SDL2-static", "SDL2_test"] # On Windows
+        SearchDirectories: ["./build", "./build/debug"]
     Setup: ["mkdir build", "cd build && cmake .."]
     Build: ["cd build && cmake --build . -j 16"]
 

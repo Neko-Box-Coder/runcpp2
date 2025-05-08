@@ -16,12 +16,14 @@ namespace runcpp2
         SCRIPT_TEMPLATE,
         WATCH,
         BUILD,
+        OUTPUT,
         VERSION,
         LOG_LEVEL,
         CONFIG_FILE,
         CLEANUP,
         BUILD_SOURCE_ONLY,
         THREADS,
+        TUTORIAL,
         COUNT
     };
 }
