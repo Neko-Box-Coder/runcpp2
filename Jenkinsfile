@@ -360,7 +360,7 @@ pipeline
                         bash    "cd ./Build && ./runcpp2 -l " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "--log-level info ../Tests/test.cpp"
-                        bash    "cd ./Build && ./runcpp2 -l -b " + 
+                        bash    "cd ./Build && ./runcpp2 -l -b -o . " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "--log-level info ../Tests/test.cpp"
                         bash "ls -lah ./Build"
@@ -371,7 +371,7 @@ pipeline
                         unstash 'linux_build'
                         bash "ls -lah"
                         bash "ls -lah ./Build/Src/Tests"
-                        bash    "cd ./Build && ./runcpp2 -l -b " + 
+                        bash    "cd ./Build && ./runcpp2 -l -b -o . " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "--log-level info ../Tests/test_static.cpp"
                         bash "ls -lah ./Build"
@@ -385,6 +385,17 @@ pipeline
                         bash    "cd ./Build && ./runcpp2 -l " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "--log-level info ../Tests/testLocalDependency.cpp"
+                        
+                        
+                        cleanWs()
+                        bash "ls -lah"
+                        unstash 'linux_build'
+                        bash "ls -lah"
+                        bash "ls -lah ./Build/Src/Tests"
+                        bash    "cd ./Build && ./runcpp2 -l " + 
+                                "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
+                                "../Examples/InteractiveTutorial.cpp --test " + 
+                                "./runcpp2 ../DefaultYAMLs/DefaultUserConfig.yaml"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
@@ -416,7 +427,7 @@ pipeline
                         bat "cd .\\Build\\Debug && .\\runcpp2.exe -l " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
                             "--log-level info ..\\..\\Tests\\test.cpp"
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l -b " + 
+                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l -b -o . " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
                             "--log-level info ..\\..\\Tests\\test.cpp"
                         bat "dir .\\Build\\Debug"
@@ -426,7 +437,7 @@ pipeline
                         bat 'dir'
                         unstash 'windows_build'
                         bat 'dir'
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l -b " + 
+                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l -b -o . " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
                             "--log-level info ..\\..\\Tests\\test_static.cpp"
                         bat "dir .\\Build\\Debug"
@@ -439,6 +450,16 @@ pipeline
                         bat "cd .\\Build\\Debug && .\\runcpp2.exe -l " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
                             "--log-level info ..\\..\\Tests\\testLocalDependency.cpp"
+                    
+                    
+                        cleanWs()
+                        bat 'dir'
+                        unstash 'windows_build'
+                        bat 'dir'
+                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l " + 
+                            "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
+                            "..\\..\\Examples\\InteractiveTutorial.cpp --test " + 
+                            ".\\runcpp2.exe ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
