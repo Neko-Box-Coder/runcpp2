@@ -11,7 +11,7 @@
         <link rel="canonical" href="https://neko-box-coder.github.io/runcpp2/latest/guides/building_project_sources/">
       
       
-        <link rel="prev" href="../basic_concepts/">
+        <link rel="prev" href="../basics/">
       
       
         <link rel="next" href="../external_dependencies/">
@@ -239,7 +239,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../basic_concepts/" class="md-tabs__link">
+        <a href="../basics/" class="md-tabs__link">
           
   
   Guides
@@ -442,11 +442,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../basic_concepts/" class="md-nav__link">
+      <a href="../basics/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Basic Concepts
+    Basics
   </span>
   
 
@@ -760,6 +760,19 @@
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If not specified, the default build type is Executable.</p>
+</div>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>When you specify <code>BuildType</code> as <code>Executable</code>, it will still produce a <strong>shared library</strong>.
+Under the hood, runcpp2 simply loads the shared library and call the <code>main()</code> function.</p>
+<p>The reason of this behavior is because this makes it possible to "catch" if there's any
+missing external (shared) libraries that failed to be resolved, either because of missing
+<code>.dll</code>/<code>.so</code> or misconfigured search path. </p>
+<p>This allows runcpp2 to differentiate a failure on resolving shared library and if the program
+just returns a non-zero exit code.</p>
+<p>Therefore, when calling with the build flag <code>--build</code>, the output of the binary is <strong>shared 
+library instead of an executable</strong>. This behavior can be <strong>overridden</strong> by passing the 
+<code>--executable</code>/<code>-e</code> flag to force runcpp2 to produce the executable.</p>
 </div>
 <hr />
 <h2 id="editing-compile-and-link-flags">Editing Compile And Link Flags</h2>

@@ -8,7 +8,7 @@
       
       
       
-        <link rel="canonical" href="https://neko-box-coder.github.io/runcpp2/latest/guides/basic_concepts/">
+        <link rel="canonical" href="https://neko-box-coder.github.io/runcpp2/latest/guides/basics/">
       
       
         <link rel="prev" href="../..">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Basic Concepts - runcpp2</title>
+        <title>Basics - runcpp2</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#basic-concepts" class="md-skip">
+        <a href="#basics" class="md-skip">
           Skip to content
         </a>
       
@@ -117,7 +117,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Basic Concepts
+              Basics
             
           </span>
         </div>
@@ -455,7 +455,7 @@
           
   
   <span class="md-ellipsis">
-    Basic Concepts
+    Basics
   </span>
   
 
@@ -466,7 +466,7 @@
         
   
   <span class="md-ellipsis">
-    Basic Concepts
+    Basics
   </span>
   
 
@@ -491,6 +491,24 @@
   <a href="#script-file" class="md-nav__link">
     <span class="md-ellipsis">
       Script File
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-feedback" class="md-nav__link">
+    <span class="md-ellipsis">
+      Error Feedback
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#spcifying-build-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      Spcifying Build Config
     </span>
   </a>
   
@@ -715,10 +733,10 @@
   
 
 
-<h1 id="basic-concepts">Basic Concepts</h1>
+<h1 id="basics">Basics</h1>
 <h2 id="script-file">Script File</h2>
 <p>A script file is your entry point source file (typically a .cpp file) that runcpp2 uses to build 
-with the settings specified either:</p>
+with the config specified either:</p>
 <ul>
 <li>
 <p>As inline comments in the source file:
@@ -741,18 +759,100 @@ with the settings specified either:</p>
 always have a 1 to 1 relationship with the linker output, even if multiple sources are specified in 
 the script file build settings. </p>
 <p>You can use any of your source files as a script file, or a dedicated .cpp file for building.</p>
+<p>Suppose you have a c++ file called <code>script.cpp</code>, you can run it immediately by doing </p>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>runcpp2<span class="w"> </span>./script.cpp<span class="w"> </span>&lt;any<span class="w"> </span>arguments&gt;
+</span></code></pre></div>
+<details class="example">
+<summary>Example</summary>
+<div class="language-cpp highlight"><span class="filename">script.cpp</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="w"> </span><span class="n">argv</span><span class="p">)</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="p">{</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">argc</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="p">{</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Usage: runcpp2 ./script.cpp &lt;Name&gt;&quot;</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Hello &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="p">}</span>
+</span></code></pre></div>
+</details>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>On Unix, if you have added runcpp2 to your PATH and add this line <code>//bin/true;runcpp2 "$0" "$@"; exit $?;</code> 
+to the top of your script, you can run the script directly by <code>./script.cpp &lt;arguments&gt;</code></p>
+<details class="example">
+<summary>Example</summary>
+<div class="language-cpp highlight"><span class="filename">script.cpp</span><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1">//bin/true;runcpp2 &quot;$0&quot; &quot;$@&quot;; exit $?;</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Hello World&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+</details>
+</div>
+<hr />
+<h2 id="error-feedback">Error Feedback</h2>
+<p>If you want to edit the script but want to have feedback for any error, you can use "watch" mode.</p>
+<div class="language-shell highlight"><span class="filename">shell</span><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>runcpp2<span class="w"> </span>--watch<span class="w"> </span>./script.cpp
+</span></code></pre></div>
+<hr />
+<h2 id="spcifying-build-config">Spcifying Build Config</h2>
+<p>Build config such as compile/link flags, external dependencies, command hooks, etc.
+can be spcified inlined inside a source file or as a separate yaml file in the format of YAML</p>
+<ul>
+<li>To specify build config in a dedicated yaml file:<ul>
+<li>The yaml file in the same directory and share the same as the source file being run will be used</li>
+</ul>
+</li>
+<li>To specify inline build config inside a source file: <ul>
+<li>Put them inside a comment with <code>runcpp2</code> at the beginning of the build config</li>
+<li>The inline build config can exist in anywhere of the source file</li>
+<li>Both inline (but continuous) comments (<code class="language-cpp highlight"><span class="c1">//</span></code>) and block comments are supported (<code class="language-cpp highlight"><span class="cm">/* */</span></code>)</li>
+</ul>
+</li>
+</ul>
+<details class="example">
+<summary>Example Inline Build Config</summary>
+<p><div class="language-cpp highlight"><span class="filename">script.cpp</span><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="cm">/*runcpp2</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="cm">OverrideCompileFlags:</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="cm">    DefaultPlatform:</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="cm">        &quot;g++&quot;:</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="cm">            Append: &quot;-Wfloat-equal -Wextra&quot;</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="cm">*/</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="p">;</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-shell highlight"><span class="filename">shell</span><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>runcpp2<span class="w"> </span>script.cpp
+</span></code></pre></div></p>
+</details>
+<details class="example">
+<summary>Example Dedicated Build Config</summary>
+<p><div class="language-yaml highlight"><span class="filename">script.yaml</span><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">    </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">        </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wfloat-equal</span><span class="nv"> </span><span class="s">-Wextra&quot;</span>
+</span></code></pre></div>
+<div class="language-cpp highlight"><span class="filename">script.cpp</span><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="p">;</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-shell highlight"><span class="filename">shell</span><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>runcpp2<span class="w"> </span>script.cpp
+</span></code></pre></div></p>
+</details>
+<p>For a complete list of build settings, see <a href="build_settings.md">Build Settings</a> or generate the template with
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>runcpp2<span class="w"> </span>--create-script-template<span class="w"> </span>./script.cpp<span class="w">   </span><span class="c1"># Embeds the build settings template as comment</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>runcpp2<span class="w"> </span>--create-script-template<span class="w"> </span>./script.yaml<span class="w">  </span><span class="c1"># Creates the build settings template as dedicated yaml file</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>runcpp2<span class="w"> </span>-t<span class="w"> </span>./script.cpp<span class="w">                         </span><span class="c1"># Short form</span>
+</span></code></pre></div></p>
 <hr />
 <h2 id="platforms-and-profiles">Platforms And Profiles</h2>
 <p>runcpp2 uses platforms and profiles to organize build settings. </p>
-<p>Platforms represent different host operating systems (not the target platform), while profiles 
-represent different compilers toolchains and their configurations.</p>
+<p>A platform represents a single host operating systems (not the target platform).</p>
+<p>A profile represents a single configuration of compiler/linker toolchain.</p>
 <h3 id="list-of-platforms">List Of Platforms</h3>
 <p>runcpp2 supports the following platforms:</p>
 <ul>
 <li>Windows</li>
 <li>Linux</li>
 <li>MacOS</li>
-<li>Unix (applies to Linux and MacOS)</li>
+<li>Unix (Linux and MacOS)</li>
 </ul>
 <details class="todo">
 <summary>Todo</summary>
@@ -766,25 +866,25 @@ represent different compilers toolchains and their configurations.</p>
 </ul>
 <h3 id="specifying-platformprofile-dependent-settings">Specifying Platform/Profile Dependent Settings</h3>
 <p>Most build settings in runcpp2 follow this structure:
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">&lt;Setting Name&gt;</span><span class="p">:</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="nt">&lt;Platform A&gt;</span><span class="p">:</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">        </span><span class="nt">&lt;Profile A&gt;</span><span class="p">:</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">            </span><span class="l l-Scalar l-Scalar-Plain">...</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">&lt;Platform B&gt;</span><span class="p">:</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">        </span><span class="nt">&lt;Profile B&gt;</span><span class="p">:</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">            </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nt">&lt;Setting Name&gt;</span><span class="p">:</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">    </span><span class="nt">&lt;Platform A&gt;</span><span class="p">:</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">        </span><span class="nt">&lt;Profile A&gt;</span><span class="p">:</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">            </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">    </span><span class="nt">&lt;Platform B&gt;</span><span class="p">:</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">        </span><span class="nt">&lt;Profile B&gt;</span><span class="p">:</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">            </span><span class="l l-Scalar l-Scalar-Plain">...</span>
 </span></code></pre></div></p>
 <details class="example" open="open">
 <summary>Example</summary>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="nt">Windows</span><span class="p">:</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O2</span><span class="nv"> </span><span class="s">-Wall&quot;</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="s">&quot;msvc&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/O2&quot;</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="nt">Linux</span><span class="p">:</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">        </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O3&quot;</span>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">    </span><span class="nt">Windows</span><span class="p">:</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">        </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O2</span><span class="nv"> </span><span class="s">-Wall&quot;</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">        </span><span class="s">&quot;msvc&quot;</span><span class="p p-Indicator">:</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/O2&quot;</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">    </span><span class="nt">Linux</span><span class="p">:</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">        </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O3&quot;</span>
 </span></code></pre></div>
 </details>
 <p>There are two special keywords for more flexible configuration:</p>
@@ -795,31 +895,35 @@ represent different compilers toolchains and their configurations.</p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
 <p>DefaultPlatform and DefaultProfile settings are not additive. For example:
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="nt">DefaultProfile</span><span class="p">:</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wall&quot;</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">        </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O2&quot;</span>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">    </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">        </span><span class="nt">DefaultProfile</span><span class="p">:</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wall&quot;</span>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">        </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-O2&quot;</span>
 </span></code></pre></div>
 When using g++, only <code>-O2</code> will be used, not <code>-Wall -O2</code>.
 When using any other profile, only <code>-Wall</code> will be used.</p>
 </div>
-<div class="admonition info">
-<p class="admonition-title">This requires <code>latest</code> version</p>
+<div class="admonition info inline end">
+<p class="admonition-title">This requires <code>v0.3.0</code> version</p>
+</div>
 <p>If you have a setting that <strong>only</strong> has DefaultPlatform and DefaultProfile, you can directly 
 specify the settings without listing it under DefaultPlatform and DefaultProfile.</p>
-<p>For example:
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wall&quot;</span>
+<div class="admonition info inline end"></div>
+<p>For example:</p>
+<div class="admonition info inline end"></div>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="w">    </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wall&quot;</span>
 </span></code></pre></div>
-is equivalent to:
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">        </span><span class="nt">DefaultProfile</span><span class="p">:</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wall&quot;</span>
-</span></code></pre></div></p>
-</div>
+<div class="admonition info inline end"></div>
+<p>is equivalent to:</p>
+<div class="admonition info inline end"></div>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">    </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">        </span><span class="nt">DefaultProfile</span><span class="p">:</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wall&quot;</span>
+</span></code></pre></div>
 
 
 

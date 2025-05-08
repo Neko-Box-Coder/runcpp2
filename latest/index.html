@@ -12,7 +12,7 @@
       
       
       
-        <link rel="next" href="guides/basic_concepts/">
+        <link rel="next" href="guides/basics/">
       
       
       <link rel="icon" href="favicon.png">
@@ -237,7 +237,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="guides/basic_concepts/" class="md-tabs__link">
+        <a href="guides/basics/" class="md-tabs__link">
           
   
   Guides
@@ -449,27 +449,27 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#1-running-source-file-directly" class="md-nav__link">
+  <a href="#interactive-tutorial" class="md-nav__link">
     <span class="md-ellipsis">
-      1. Running source file directly
+      Interactive Tutorial
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-watch-and-give-compile-errors" class="md-nav__link">
+  <a href="#user-guide" class="md-nav__link">
     <span class="md-ellipsis">
-      2. Watch and give compile errors
+      User Guide
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#3-sepcifying-build-settings" class="md-nav__link">
+  <a href="#examples" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Sepcifying Build Settings
+      Examples
     </span>
   </a>
   
@@ -537,11 +537,11 @@
   
   
     <li class="md-nav__item">
-      <a href="guides/basic_concepts/" class="md-nav__link">
+      <a href="guides/basics/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Basic Concepts
+    Basics
   </span>
   
 
@@ -738,92 +738,18 @@ add other compilers.</li>
 <p>You can either build from source or use the binary release</p>
 <p>Binary Release (Only Linux and Windows for now): 
 <a href="https://github.com/Neko-Box-Coder/runcpp2/releases">https://github.com/Neko-Box-Coder/runcpp2/releases</a></p>
+<p>Nightly Release:
+<a href="https://github.com/Neko-Box-Coder/runcpp2/releases/tag/nightly">https://github.com/Neko-Box-Coder/runcpp2/releases/tag/nightly</a></p>
 <p>Finally, you just need to add runcpp2 binary location to the <code>PATH</code> environment variable and 
 you can run c++ files anywhere you want.</p>
 <h2 id="getting-started">⚡️ Getting Started</h2>
-<h3 id="1-running-source-file-directly">1. Running source file directly</h3>
-<p>Suppose you have a c++ file called <code>script.cpp</code>, you can run it immediately by doing </p>
-<div class="language-shell highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>runcpp2<span class="w"> </span>./script.cpp<span class="w"> </span>&lt;any<span class="w"> </span>arguments&gt;
-</span></code></pre></div>
-<details class="example">
-<summary>Example</summary>
-<div class="language-cpp highlight"><span class="filename">script.cpp</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="w"> </span><span class="n">argv</span><span class="p">)</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="p">{</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">argc</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="p">{</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Usage: runcpp2 ./script.cpp &lt;Name&gt;&quot;</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Hello &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="p">}</span>
-</span></code></pre></div>
-</details>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>On Unix, if you have added runcpp2 to your PATH and add this line <code>//bin/true;runcpp2 "$0" "$@"; exit $?;</code> 
-to the top of your script, you can run the script directly by <code>./script.cpp &lt;arguments&gt;</code></p>
-<details class="example">
-<summary>Example</summary>
-<div class="language-cpp highlight"><span class="filename">script.cpp</span><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">//bin/true;runcpp2 &quot;$0&quot; &quot;$@&quot;; exit $?;</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Hello World&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
-</span></code></pre></div>
-</details>
-</div>
-<hr />
-<h3 id="2-watch-and-give-compile-errors">2. Watch and give compile errors</h3>
-<p>If you want to edit the script but want to have feedback for any error, you can use "watch" mode.</p>
-<div class="language-shell highlight"><span class="filename">shell</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>runcpp2<span class="w"> </span>--watch<span class="w"> </span>./script.cpp
-</span></code></pre></div>
-<hr />
-<h3 id="3-sepcifying-build-settings">3. Sepcifying Build Settings</h3>
-<p>Build settings such as compile/link flags, external dependencies, command hooks, etc.
-can be spcified inlined inside a source file or as a separate yaml file in the format of YAML</p>
-<ul>
-<li>To specify build settings in a dedicated yaml file:<ul>
-<li>The yaml file in the same directory and share the same as the source file being run will be used</li>
-</ul>
-</li>
-<li>To specify inline build settings inside a source file: <ul>
-<li>Put them inside a comment with <code>runcpp2</code> at the beginning of the build settings</li>
-<li>The inline build settings can exist in anywhere of the source file</li>
-<li>Both inline (but continuous) comments (<code class="language-cpp highlight"><span class="c1">//</span></code>) and block comments are supported (<code class="language-cpp highlight"><span class="cm">/* */</span></code>)</li>
-</ul>
-</li>
-</ul>
-<details class="example">
-<summary>Example Inline Build Settings</summary>
-<p><div class="language-cpp highlight"><span class="filename">script.cpp</span><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="cm">/*runcpp2</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="cm">OverrideCompileFlags:</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="cm">    DefaultPlatform:</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="cm">        &quot;g++&quot;:</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="cm">            Append: &quot;-Wfloat-equal -Wextra&quot;</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="cm">*/</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="p">;</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
-</span></code></pre></div>
-<div class="language-shell highlight"><span class="filename">shell</span><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>runcpp2<span class="w"> </span>script.cpp
-</span></code></pre></div></p>
-</details>
-<details class="example">
-<summary>Example Dedicated Build Settings</summary>
-<p><div class="language-yaml highlight"><span class="filename">script.yaml</span><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">OverrideCompileFlags</span><span class="p">:</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">        </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">            </span><span class="nt">Append</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;-Wfloat-equal</span><span class="nv"> </span><span class="s">-Wextra&quot;</span>
-</span></code></pre></div>
-<div class="language-cpp highlight"><span class="filename">script.cpp</span><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="p">;</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.f</span><span class="p">;</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
-</span></code></pre></div>
-<div class="language-shell highlight"><span class="filename">shell</span><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>runcpp2<span class="w"> </span>script.cpp
-</span></code></pre></div></p>
-</details>
-<p>For a complete list of build settings, see <a href="build_settings/">Build Settings</a> or generate the template with
-<div class="language-shell highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>runcpp2<span class="w"> </span>--create-script-template<span class="w"> </span>./script.cpp<span class="w">   </span><span class="c1"># Embeds the build settings template as comment</span>
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>runcpp2<span class="w"> </span>--create-script-template<span class="w"> </span>./script.yaml<span class="w">  </span><span class="c1"># Creates the build settings template as dedicated yaml file</span>
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>runcpp2<span class="w"> </span>-t<span class="w"> </span>./script.cpp<span class="w">                         </span><span class="c1"># Short form</span>
-</span></code></pre></div></p>
+<h3 id="interactive-tutorial">Interactive Tutorial</h3>
+<p>You can get started by running the tutorial with <code>runcpp2 --tutorial</code> and follow the instructions</p>
+<h3 id="user-guide">User Guide</h3>
+<p>You can also follow the documentation guide on 
+<a href="https://neko-box-coder.github.io/runcpp2/latest/guides/basics/">https://neko-box-coder.github.io/runcpp2/latest/guides/basics/</a></p>
+<h3 id="examples">Examples</h3>
+<p>You can find all the examples you can run out of the box in <a href="https://github.com/Neko-Box-Coder/runcpp2/tree/master/Examples">https://github.com/Neko-Box-Coder/runcpp2/tree/master/Examples</a></p>
 
 
 

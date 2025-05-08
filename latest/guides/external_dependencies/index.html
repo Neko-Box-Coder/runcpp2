@@ -239,7 +239,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../basic_concepts/" class="md-tabs__link">
+        <a href="../basics/" class="md-tabs__link">
           
   
   Guides
@@ -442,11 +442,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../basic_concepts/" class="md-nav__link">
+      <a href="../basics/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Basic Concepts
+    Basics
   </span>
   
 
@@ -810,7 +810,7 @@
 <hr />
 <h2 id="specifying-git-clone-options">Specifying Git Clone Options</h2>
 <div class="admonition info">
-<p class="admonition-title">This requires <code>latest</code> version</p>
+<p class="admonition-title">This requires <code>v0.3.0</code> version</p>
 <p>You can specify the target branch/tag name and to clone whole git history or not with:
 <code>Branch</code> and <code>FullHistory</code>. </p>
 <p>You can also specify if you want to clone all the submodules full history or not with 
@@ -871,9 +871,15 @@ These paths are relative to the dependency's root directory:</p>
 <div class="admonition tip">
 <p class="admonition-title">Library Name Patterns</p>
 <ul>
-<li>The library name should be specified without extensions</li>
+<li>The library name can be matched without extensions to allow cross-platform compatibility<ul>
 <li>For Windows: <code>MyLibrary</code> will match <code>MyLibrary.lib</code> and <code>MyLibrary.dll</code></li>
 <li>For Unix: <code>MyLibrary</code> will match <code>libMyLibrary.a</code> and <code>libMyLibrary.so</code></li>
+</ul>
+</li>
+<li>The whole name can also be matched if needed<ul>
+<li>For example, <code>MyLibrary.lib</code> will match <code>MyLibrary.lib</code></li>
+</ul>
+</li>
 </ul>
 </div>
 <h3 id="excluding-libraries">Excluding Libraries</h3>
@@ -910,20 +916,20 @@ to specify different command hooks similar to
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="nt">Setup</span><span class="p">:</span>
 </span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">        </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
 </span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">            </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;mkdir</span><span class="nv"> </span><span class="s">build&quot;</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;mkdir</span><span class="nv"> </span><span class="s">build&quot;</span>
 </span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">    </span><span class="nt">Build</span><span class="p">:</span>
 </span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">        </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
 </span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">            </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;cmake</span><span class="nv"> </span><span class="s">--build</span><span class="nv"> </span><span class="s">build&quot;</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;cmake</span><span class="nv"> </span><span class="s">--build</span><span class="nv"> </span><span class="s">build&quot;</span>
 </span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">    </span><span class="nt">Cleanup</span><span class="p">:</span>
 </span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">        </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
 </span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">            </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="w">                </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;rm</span><span class="nv"> </span><span class="s">-rf</span><span class="nv"> </span><span class="s">build&quot;</span>
+</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;rm</span><span class="nv"> </span><span class="s">-rf</span><span class="nv"> </span><span class="s">build&quot;</span>
 </span></code></pre></div>
 </details>
 <hr />
 <h2 id="copying-files">Copying Files</h2>
-<p>Sometimes dependencies need additional files (like DLLs, shaders, or assets) to be copied next 
+<p>Sometimes dependencies need additional files (like binaries, shaders, or assets) to be copied next 
 to your executable. You can specify these files using the <code>FilesToCopy</code> field.</p>
 <p>All paths are relative to the dependency's root directory. 
 The files are copied to the output directory where the executable is located.</p>
