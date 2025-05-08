@@ -44,7 +44,7 @@
 
 ## TBD
 
-- Smoother CMake support by reading cmake target properties (https://stackoverflow.com/a/56738858/23479578)
+- Smoother CMake support by reading cmake target properties (https://stackoverflow.com/a/56738858)
 <!--
 if(NOT CMAKE_PROPERTY_LIST)
     execute_process(COMMAND cmake --help-property-list OUTPUT_VARIABLE CMAKE_PROPERTY_LIST)
