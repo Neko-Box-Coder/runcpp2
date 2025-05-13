@@ -295,22 +295,22 @@ std::string runcpp2::Data::ScriptInfo::ToString(std::string indentation) const
     return out;
 }
 
-bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
+bool runcpp2::Data::ScriptInfo::CanUseCompiledCache(const ScriptInfo& other) const
 {
     if( Language != other.Language || 
         PassScriptPath != other.PassScriptPath ||
         CurrentBuildType != other.CurrentBuildType ||
         RequiredProfiles.size() != other.RequiredProfiles.size() ||
         OverrideCompileFlags.size() != other.OverrideCompileFlags.size() ||
-        OverrideLinkFlags.size() != other.OverrideLinkFlags.size() ||
+        //OverrideLinkFlags.size() != other.OverrideLinkFlags.size() ||
         OtherFilesToBeCompiled.size() != other.OtherFilesToBeCompiled.size() ||
         IncludePaths.size() != other.IncludePaths.size() ||
         Dependencies.size() != other.Dependencies.size() ||
         Defines.size() != other.Defines.size() ||
-        Setup.size() != other.Setup.size() ||
-        PreBuild.size() != other.PreBuild.size() ||
-        PostBuild.size() != other.PostBuild.size() ||
-        Cleanup.size() != other.Cleanup.size() ||
+        //Setup.size() != other.Setup.size() ||
+        //PreBuild.size() != other.PreBuild.size() ||
+        //PostBuild.size() != other.PostBuild.size() ||
+        //Cleanup.size() != other.Cleanup.size() ||
         Populated != other.Populated)
     {
         return false;
@@ -334,14 +334,14 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
         }
     }
 
-    for(const auto& it : OverrideLinkFlags)
-    {
-        if( other.OverrideLinkFlags.count(it.first) == 0 || 
-            !other.OverrideLinkFlags.at(it.first).Equals(it.second))
-        {
-            return false;
-        }
-    }
+    //for(const auto& it : OverrideLinkFlags)
+    //{
+    //    if( other.OverrideLinkFlags.count(it.first) == 0 || 
+    //        !other.OverrideLinkFlags.at(it.first).Equals(it.second))
+    //    {
+    //        return false;
+    //    }
+    //}
 
     for(const auto& it : OtherFilesToBeCompiled)
     {
@@ -373,6 +373,56 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
             return false;
     }
 
+//    for(const auto& it : Setup)
+//    {
+//        if(other.Setup.count(it.first) == 0 || !other.Setup.at(it.first).Equals(it.second))
+//            return false;
+//    }
+//
+//    for(const auto& it : PreBuild)
+//    {
+//        if(other.PreBuild.count(it.first) == 0 || !other.PreBuild.at(it.first).Equals(it.second))
+//            return false;
+//    }
+//
+//    for(const auto& it : PostBuild)
+//    {
+//        if(other.PostBuild.count(it.first) == 0 || !other.PostBuild.at(it.first).Equals(it.second))
+//            return false;
+//    }
+//
+//    for(const auto& it : Cleanup)
+//    {
+//        if(other.Cleanup.count(it.first) == 0 || !other.Cleanup.at(it.first).Equals(it.second))
+//            return false;
+//    }
+
+    return true;
+}
+
+bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
+{
+    if(!CanUseCompiledCache(other))
+        return false;
+    
+    if( OverrideLinkFlags.size() != other.OverrideLinkFlags.size() ||
+        Setup.size() != other.Setup.size() ||
+        PreBuild.size() != other.PreBuild.size() ||
+        PostBuild.size() != other.PostBuild.size() ||
+        Cleanup.size() != other.Cleanup.size())
+    {
+        return false;
+    }
+    
+    for(const auto& it : OverrideLinkFlags)
+    {
+        if( other.OverrideLinkFlags.count(it.first) == 0 || 
+            !other.OverrideLinkFlags.at(it.first).Equals(it.second))
+        {
+            return false;
+        }
+    }
+    
     for(const auto& it : Setup)
     {
         if(other.Setup.count(it.first) == 0 || !other.Setup.at(it.first).Equals(it.second))
@@ -396,6 +446,6 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
         if(other.Cleanup.count(it.first) == 0 || !other.Cleanup.at(it.first).Equals(it.second))
             return false;
     }
-
+    
     return true;
 }

@@ -54,6 +54,7 @@ namespace runcpp2
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef node);
                 std::string ToString(std::string indentation) const;
+                bool CanUseCompiledCache(const ScriptInfo& other) const;
                 bool Equals(const ScriptInfo& other) const;
         };
     }

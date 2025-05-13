@@ -150,7 +150,6 @@ namespace
                             const ghc::filesystem::path& buildDir,
                             const runcpp2::Data::Profile& currentProfile,
                             const runcpp2::Data::ScriptInfo& scriptInfo,
-                            bool buildExecutable,
                             const std::string& scriptName,
                             const std::vector<std::string>& copiedBinariesPaths,
                             const ghc::filesystem::file_time_type& finalBinaryWriteTime,
@@ -172,11 +171,11 @@ namespace
         {
             if(ghc::filesystem::exists(copiedBinariesPaths.at(i), e))
             {
-                ghc::filesystem::file_time_type lastObjectWriteTime = 
+                ghc::filesystem::file_time_type lastBinaryWriteTime = 
                     ghc::filesystem::last_write_time(copiedBinariesPaths.at(i), e);
             
-                if(lastObjectWriteTime > currentFinalBinaryWriteTime)
-                    currentFinalBinaryWriteTime = lastObjectWriteTime;
+                if(lastBinaryWriteTime > currentFinalBinaryWriteTime)
+                    currentFinalBinaryWriteTime = lastBinaryWriteTime;
             }
             else
             {
@@ -195,7 +194,6 @@ namespace
                                                                     scriptName,
                                                                     currentProfile,
                                                                     scriptInfo.CurrentBuildType,
-                                                                    buildExecutable,
                                                                     outputPaths,
                                                                     runnable))
         {
@@ -211,10 +209,10 @@ namespace
                 ghc::filesystem::file_size(outputPath, e) > 0)
             {
                 ++existCount;
-                ghc::filesystem::file_time_type lastSharedLibWriteTime = 
+                ghc::filesystem::file_time_type lastOutputBinary = 
                     ghc::filesystem::last_write_time(outputPath, e);
                 
-                if(lastSharedLibWriteTime >= currentFinalBinaryWriteTime)
+                if(lastOutputBinary >= currentFinalBinaryWriteTime)
                 {
                     ssLOG_INFO("Using output cache for " << outputPath.string());
                     continue;
@@ -222,8 +220,8 @@ namespace
                 else
                 {
                     ssLOG_INFO("Object files have more recent write time");
-                    ssLOG_DEBUG("lastSharedLibWriteTime: " << 
-                                lastSharedLibWriteTime.time_since_epoch().count());
+                    ssLOG_DEBUG("lastOutputBinary: " << 
+                                lastOutputBinary.time_since_epoch().count());
                     ssLOG_DEBUG("currentFinalBinaryWriteTime: " << 
                                 currentFinalBinaryWriteTime.time_since_epoch().count());
                     outOutputCache = false;
@@ -430,6 +428,7 @@ runcpp2::StartPipeline( const std::string& scriptPath,
     result = ParseAndValidateScriptInfo(absoluteScriptPath,
                                         scriptDirectory,
                                         scriptName,
+                                        currentOptions.count(CmdOptions::EXECUTABLE) > 0,
                                         scriptInfo);
     
     if(result != PipelineResult::SUCCESS)
@@ -656,7 +655,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                             buildDir, 
                             profiles.at(profileIndex),
                             scriptInfo,
-                            currentOptions.count(CmdOptions::EXECUTABLE) > 0,
                             scriptName,
                             linkFilesPaths,
                             finalBinaryWriteTime,
@@ -682,7 +680,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                         scriptInfo,
                                         availableDependencies,
                                         profiles.at(profileIndex),
-                                        currentOptions.count(CmdOptions::EXECUTABLE) > 0,
                                         maxThreads))
                 {
                     return PipelineResult::COMPILE_LINK_FAILED;
@@ -700,7 +697,6 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                                             availableDependencies,
                                             profiles.at(profileIndex),
                                             linkFilesPaths,
-                                            currentOptions.count(CmdOptions::EXECUTABLE) > 0,
                                             maxThreads))
             {
                 ssLOG_ERROR("Failed to compile or link script");

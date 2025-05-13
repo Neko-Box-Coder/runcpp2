@@ -18,7 +18,6 @@ namespace runcpp2
                                         const std::string& scriptName,
                                         const Profile& profile,
                                         const BuildType buildType,
-                                        const bool asExecutable,
                                         std::vector<ghc::filesystem::path>& outPaths,
                                         std::vector<bool>& outIsRunnable);
         }

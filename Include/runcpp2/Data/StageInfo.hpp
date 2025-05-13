@@ -58,7 +58,6 @@ namespace runcpp2
                                             std::string& inOutSubstitutedString) const;
                 
                 bool ConstructCommand(  const SubstitutionMap& substitutionMap, 
-                                        const bool isExecutable,
                                         const BuildType buildType,
                                         std::string& outCommand) const;
                 
