@@ -3,6 +3,9 @@
 
 ## Done
 
+### Nightly
+- Check last run is shared lib or executable. Reset cache when necessary if different type
+
 ### v0.3.0
 - More git options
     - Add branch/tag option for git
@@ -18,8 +21,6 @@
 - Add platform map for PreferredProfile for user config
 - Add ability to reference local YAML file for config profiles
 - Add interactive tutorials and redo documentations
-
-### Nightly
 
 ## Planned
 
@@ -37,7 +38,6 @@
     - Merge `SharedLinkFile` and `SharedLibraryFile`
 - Add the ability for user to specify custom substitution options which applies to all fields
 - Add the ability to append defines coming from the dependencies
-- Check last run is shared lib or executable. Reset cache when necessary if different type (`Src/runcpp2/CompilingLinking.cpp:502 LinkScript()`)
 - Add wildcard support for filenames and extensions (Files Globbing)
 - Add the ability to query script build directory
 - Add the ability to list script dependencies

@@ -22,7 +22,6 @@ namespace runcpp2
                             const Data::ScriptInfo& scriptInfo,
                             const std::vector<Data::DependencyInfo*>& availableDependencies,
                             const Data::Profile& profile,
-                            bool buildExecutable,
                             const int maxThreads);
     
     //TODO: Convert string paths to filesystem paths
@@ -36,7 +35,6 @@ namespace runcpp2
                                 const std::vector<Data::DependencyInfo*>& availableDependencies,
                                 const Data::Profile& profile,
                                 const std::vector<std::string>& compiledObjectsPaths,
-                                bool buildExecutable,
                                 const int maxThreads);
 }
 
