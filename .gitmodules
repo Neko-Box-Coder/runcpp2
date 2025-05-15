@@ -28,3 +28,6 @@
 [submodule "variant"]
 	path = External/variant
 	url = https://github.com/mpark/variant.git
+[submodule "MacroPowerToys"]
+	path = External/MacroPowerToys
+	url = https://github.com/Neko-Box-Coder/MacroPowerToys.git
