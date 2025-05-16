@@ -272,7 +272,7 @@ pipeline
                         }
                     }
                     
-                    stash 'source'
+                    stash name: 'source', useDefaultExcludes: false
                 }
             }
             post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }

@@ -4,6 +4,8 @@
 ## Done
 
 ### Nightly
+
+### v0.3.1
 - Check last run is shared lib or executable. Reset cache when necessary if different type
 
 ### v0.3.0

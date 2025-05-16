@@ -22,6 +22,12 @@ endif()
 # =========================================================================
 
 function(get_version_from_git OUTPUT_VARIABLE)
+    execute_process(
+        COMMAND git tag -d nightly
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    
     # Get the latest tag
     execute_process(
         COMMAND git describe --tags --abbrev=0
@@ -55,7 +61,8 @@ function(get_version_from_git OUTPUT_VARIABLE)
         endif()
     else()
         # No tags found, use v0.0.0 with commit hash
-        set(VERSION "v0.0.0-${GIT_COMMIT_HASH}")
+        # set(VERSION "v0.0.0-${GIT_COMMIT_HASH}")
+        message(FATAL_ERROR "Failed to get tag: ${GIT_TAG}")
     endif()
 
     set(${OUTPUT_VARIABLE} ${VERSION} PARENT_SCOPE)

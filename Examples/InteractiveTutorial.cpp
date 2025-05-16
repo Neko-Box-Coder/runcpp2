@@ -1125,8 +1125,12 @@ int main(int argc, char* argv[])
             return 1;
         }
         
-        downloadBranch = "tags/" + versionOutput.substr(versionStartPos);
+        versionOutput = versionOutput.substr(versionStartPos);
+        size_t dashPos = versionOutput.find("-");
+        if(dashPos != std::string::npos)
+            versionOutput = versionOutput.substr(0, dashPos);
         
+        downloadBranch = "tags/" + versionOutput;
     }
 
     DELAYED_OUTPUT("The whole tutorial is about 15 minutes long.");
