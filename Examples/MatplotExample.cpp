@@ -15,15 +15,9 @@ Dependencies:
     LibraryType: Shared
     IncludePaths: ["./source", "./build/source/matplot"]
     LinkProperties:
-        Unix:
-            DefaultProfile:
-                SearchLibraryNames: ["libmatplot.so.1"]
-                ExcludeLibraryNames: ["libmatplot.so.1.2.0"]
-                SearchDirectories: ["./build/source/matplot"]
-        Windows:
-            DefaultProfile:
-                SearchLibraryNames: ["matplot"]
-                SearchDirectories: ["./build/source/matplot/debug"]
+        SearchLibraryNames: ["matplot"]
+        ExcludeLibraryNames: ["libmatplot.so.1.2.0"]
+        SearchDirectories: ["./build/source/matplot", "./build/source/matplot/debug"]
     Setup:
     -   "mkdir build"
     -   "cd build && cmake .. -DMATPLOTPP_BUILD_WITH_SANITIZERS=OFF -DMATPLOTPP_BUILD_EXAMPLES=OFF -DMATPLOTPP_BUILD_INSTALLER=OFF -DMATPLOTPP_BUILD_PACKAGE=OFF -DBUILD_SHARED_LIBS=ON"
