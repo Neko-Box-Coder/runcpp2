@@ -841,10 +841,15 @@ bool runcpp2::DownloadTutorial(char* runcppPath)
             break;
     }
     
+    std::string targetBranch = RUNCPP2_VERSION;
+    size_t dashPos = targetBranch.find("-");
+    if(dashPos != std::string::npos)
+        targetBranch = targetBranch.substr(0, dashPos);
+
     #ifdef _WIN32
         if(!RunCommand( "powershell -Command \""
                         "Invoke-WebRequest https://github.com/Neko-Box-Coder/runcpp2/raw/"
-                        "refs/heads/master/Examples/InteractiveTutorial.cpp "
+                        "refs/tags/" + targetBranch + "/Examples/InteractiveTutorial.cpp "
                         "-OutFile InteractiveTutorial.cpp\"",
                         false,
                         "./",
@@ -855,8 +860,8 @@ bool runcpp2::DownloadTutorial(char* runcppPath)
         }    
     #else
         if(!RunCommand( "curl -L -o InteractiveTutorial.cpp "
-                        "https://github.com/Neko-Box-Coder/runcpp2/raw/refs/heads/"
-                        "master/Examples/InteractiveTutorial.cpp",
+                        "https://github.com/Neko-Box-Coder/runcpp2/raw/refs/tags/" +
+                        targetBranch + "/Examples/InteractiveTutorial.cpp",
                         false,
                         "./",
                         dummy,
@@ -866,6 +871,7 @@ bool runcpp2::DownloadTutorial(char* runcppPath)
         }
     #endif
     
+    ssLOG_INFO("targetBranch: " << targetBranch);
     ssLOG_BASE("Downloaded InteractiveTutorial.cpp from github.");
     ssLOG_BASE("Do `" << runcppPath << " InteractiveTutorial.cpp to start the tutorial.");
     

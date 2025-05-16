@@ -38,6 +38,7 @@ Dependencies:
 #include <chrono>
 
 std::string runcpp2ExecutablePath = "";
+std::string downloadBranch = "heads/master";
 bool integrationTest = false;
 
 #define DELAYED_OUTPUT(str) \
@@ -325,12 +326,9 @@ int main(int, char**)
                     "See https://neko-box-coder.github.io/runcpp2/latest/guides/"
                     "building_project_sources/ for more details.\n");
     
-    //TODO: Remove this when the cache bug is fixed
-    DELAYED_OUTPUT("`--rebuild` is just resetting the build cache");
-
     DELAYED_OUTPUT("Let's try it");
     if(!RunCommandWithPrompt(   runcpp2ExecutablePath + 
-                                " --build --output ./tutorial --executable --rebuild "
+                                " --build --output ./tutorial --executable "
                                 "tutorial/main.cpp"))
     {
         return false;
@@ -782,15 +780,15 @@ bool Chapter3_ExternalDependencies()
     #ifdef _WIN32
         if(!RunCommandWithPrompt(   "powershell -Command \""
                                     "Invoke-WebRequest https://github.com/Neko-Box-Coder/runcpp2/raw/"
-                                    "refs/heads/master/Examples/Logging.cpp "
+                                    "refs/" + downloadBranch + "/Examples/Logging.cpp "
                                     "-OutFile tutorial/Logging.cpp\"", true, false))
         {
             return false;
         }    
     #else
         if(!RunCommandWithPrompt(   "curl -L -o tutorial/Logging.cpp "
-                                    "https://github.com/Neko-Box-Coder/runcpp2/raw/refs/heads/"
-                                    "master/Examples/Logging.cpp"))
+                                    "https://github.com/Neko-Box-Coder/runcpp2/raw/refs/" +
+                                    downloadBranch + "/Examples/Logging.cpp"))
         {
             return false;
         }
@@ -818,7 +816,7 @@ bool Chapter3_ExternalDependencies()
     #ifdef _WIN32
         if(!RunCommandWithPrompt(   "powershell -Command \""
                                     "Invoke-WebRequest https://github.com/Neko-Box-Coder/runcpp2/raw/"
-                                    "refs/heads/master/Examples/SDLWindow.cpp "
+                                    "refs/" + downloadBranch + "/Examples/SDLWindow.cpp "
                                     "-OutFile tutorial/SDLWindow.cpp\"", true, false))
         {
             return false;
@@ -826,8 +824,8 @@ bool Chapter3_ExternalDependencies()
             
     #else
         if(!RunCommandWithPrompt(   "curl -L -o tutorial/SDLWindow.cpp "
-                                    "https://github.com/Neko-Box-Coder/runcpp2/raw/refs/heads/"
-                                    "master/Examples/SDLWindow.cpp"))
+                                    "https://github.com/Neko-Box-Coder/runcpp2/raw/refs/" +
+                                    downloadBranch + "/Examples/SDLWindow.cpp"))
         {
             return false;
         }
@@ -1080,6 +1078,56 @@ int main(int argc, char* argv[])
         
         runcpp2ExecutablePath = exePath.string() + " -l -c " + configPath.string();
     }
+    
+    //Get runcpp2 version
+    {
+        System2CommandInfo commandInfo = {0};
+        commandInfo.RedirectOutput = true;
+        SYSTEM2_RESULT result = System2CppRun(runcpp2ExecutablePath + " --version", commandInfo);
+        #define CHECK_RESULT() \
+            if(result != SYSTEM2_RESULT_SUCCESS) \
+            { \
+                ssLOG_ERROR("Failed to get version"); \
+                ssLOG_ERROR("SYSTEM2_RESULT: " << result); \
+                return 1; \
+            }
+        
+        CHECK_RESULT();
+        
+        std::string versionOutput;
+        result = System2CppReadFromOutput(commandInfo, versionOutput);
+        CHECK_RESULT();
+        
+        int returnCode = 0;
+        result = System2CppGetCommandReturnValueSync(commandInfo, returnCode, false);
+        CHECK_RESULT();
+
+        if(returnCode != 0)
+        {
+            ssLOG_ERROR("Failed to get version with return code: " << returnCode);
+            return 1;
+        }
+        
+        #undef CHECK_RESULT
+        
+        {
+            size_t newlinePos = versionOutput.find("\r");
+            if(newlinePos == std::string::npos)
+                newlinePos = versionOutput.find("\n");
+            if(newlinePos != std::string::npos)
+                versionOutput = versionOutput.substr(0, newlinePos);
+        }
+        
+        size_t versionStartPos = versionOutput.rfind(" ");
+        if(versionStartPos == std::string::npos || ++versionStartPos >= versionOutput.size())
+        {
+            ssLOG_ERROR("Failed to extract runcpp2 version");
+            return 1;
+        }
+        
+        downloadBranch = "tags/" + versionOutput.substr(versionStartPos);
+        
+    }
 
     DELAYED_OUTPUT("The whole tutorial is about 15 minutes long.");
 
@@ -1127,7 +1175,7 @@ int main(int argc, char* argv[])
 
     DELAYED_OUTPUT("This concludes the tutorial.");
     DELAYED_OUTPUT("Feel free to check out the documentation for more details.");
-    DELAYED_OUTPUT("https://neko-box-coder.github.io/runcpp2/latest/guides/basic_concepts/");
+    DELAYED_OUTPUT( "https://neko-box-coder.github.io/runcpp2/master/guides/basic_concepts/");
     DELAYED_OUTPUT("");
     DELAYED_OUTPUT("As well as the examples in the repository.");
     DELAYED_OUTPUT("https://github.com/Neko-Box-Coder/runcpp2/tree/master/Examples");
