@@ -22,6 +22,12 @@ int main(int argc, char** argv)
                                 BuildTypeToString(BuildType::SHARED) == "Shared");
         ssTEST_OUTPUT_ASSERT(   "Objects string", 
                                 BuildTypeToString(BuildType::OBJECTS) == "Objects");
+        ssTEST_OUTPUT_ASSERT(   "InternalExecutable string", 
+                                BuildTypeToString(BuildType::INTERNAL_EXECUTABLE_EXECUTABLE) == 
+                                "InternalExecutable");
+        ssTEST_OUTPUT_ASSERT(   "InternalExecutableShared string", 
+                                BuildTypeToString(BuildType::INTERNAL_EXECUTABLE_SHARED) == 
+                                "InternalExecutableShared");
         ssTEST_OUTPUT_ASSERT("COUNT string", BuildTypeToString(BuildType::COUNT) == "");
 
         //Test StringToBuildType
@@ -33,7 +39,12 @@ int main(int argc, char** argv)
                                 StringToBuildType("Shared") == BuildType::SHARED);
         ssTEST_OUTPUT_ASSERT(   "Objects from string", 
                                 StringToBuildType("Objects") == BuildType::OBJECTS);
-
+        ssTEST_OUTPUT_ASSERT(   "InternalExecutable from string", 
+                                StringToBuildType("InternalExecutable") == 
+                                BuildType::INTERNAL_EXECUTABLE_EXECUTABLE);
+        ssTEST_OUTPUT_ASSERT(   "InternalExecutableShared from string", 
+                                StringToBuildType("InternalExecutableShared") == 
+                                BuildType::INTERNAL_EXECUTABLE_SHARED);
         //Test invalid strings
         ssTEST_OUTPUT_ASSERT("Empty string", StringToBuildType("") == BuildType::COUNT);
         ssTEST_OUTPUT_ASSERT("Invalid string", StringToBuildType("Invalid") == BuildType::COUNT);
@@ -42,7 +53,7 @@ int main(int argc, char** argv)
     
     ssTEST("BuildType COUNT Should Match Number of Types")
     {
-        ssTEST_OUTPUT_ASSERT("COUNT value", static_cast<int>(BuildType::COUNT) == 4);
+        ssTEST_OUTPUT_ASSERT("COUNT value", static_cast<int>(BuildType::COUNT), 6);
     };
     
     ssTEST("BuildType Should Generate Correct Output Paths")
@@ -72,7 +83,6 @@ int main(int argc, char** argv)
                                                                     scriptName, 
                                                                     profile, 
                                                                     BuildType::STATIC, 
-                                                                    false, 
                                                                     outTargets, 
                                                                     outIsRunnable);
         );

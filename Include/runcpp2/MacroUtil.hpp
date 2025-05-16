@@ -1,0 +1,20 @@
+#include "MacroPowerToys.h"
+
+#if !defined(RUNCPP2_CURRENT_CLASS_NAME)
+    #error "RUNCPP2_CURRENT_CLASS_NAME needs to be defined"
+#else
+    #if defined(RUNCPP2_FIELD_BEGIN) 
+        #undef RUNCPP2_FIELD_BEGIN
+        #undef RUNCPP2_FIELD
+        #undef RUNCPP2_FIELD_END
+    #endif
+    
+    #define RUNCPP2_FIELD_BEGIN() MPT_START_COUNTER_AND_INCREMENT( RUNCPP2_CURRENT_CLASS_NAME )
+
+    #define RUNCPP2_FIELD MPT_INCREMENT_COUNTER();
+
+    #define RUNCPP2_FIELD_COUNT MPT_GET_COUNT_AND_INCREMENT( RUNCPP2_CURRENT_CLASS_NAME ) - 1
+    
+    #undef RUNCPP2_CURRENT_CLASS_NAME
+#endif
+

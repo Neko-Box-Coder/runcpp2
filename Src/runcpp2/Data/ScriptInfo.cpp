@@ -9,6 +9,7 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef node)
     
     INTERNAL_RUNCPP2_SAFE_START();
     
+    static_assert(FieldsCount == 14, "Update this function when adding new fields");
     std::vector<NodeRequirement> requirements =
     {
         NodeRequirement("PassScriptPath", ryml::NodeType_e::KEYVAL, false, true),
@@ -164,6 +165,7 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef node)
 
 std::string runcpp2::Data::ScriptInfo::ToString(std::string indentation) const
 {
+    static_assert(FieldsCount == 14, "Update this function when adding new fields");
     std::string out;
     
     out += indentation + "PassScriptPath: " + (PassScriptPath ? "true" : "false") + "\n";
@@ -295,8 +297,76 @@ std::string runcpp2::Data::ScriptInfo::ToString(std::string indentation) const
     return out;
 }
 
+bool runcpp2::Data::ScriptInfo::IsAllCompiledCacheInvalidated(const ScriptInfo& other) const
+{
+    static_assert(FieldsCount == 14, "Update this function when adding new fields");
+    if( Language != other.Language || 
+        CurrentBuildType != other.CurrentBuildType ||
+        RequiredProfiles.size() != other.RequiredProfiles.size() ||
+        OverrideCompileFlags.size() != other.OverrideCompileFlags.size() ||
+        OtherFilesToBeCompiled.size() != other.OtherFilesToBeCompiled.size() ||
+        IncludePaths.size() != other.IncludePaths.size() ||
+        Dependencies.size() != other.Dependencies.size() ||
+        Defines.size() != other.Defines.size() ||
+        Populated != other.Populated)
+    {
+        return true;
+    }
+
+    for(const auto& it : RequiredProfiles)
+    {
+        if( other.RequiredProfiles.count(it.first) == 0 || 
+            other.RequiredProfiles.at(it.first) != it.second)
+        {
+            return true;
+        }
+    }
+
+    for(const auto& it : OverrideCompileFlags)
+    {
+        if( other.OverrideCompileFlags.count(it.first) == 0 || 
+            !other.OverrideCompileFlags.at(it.first).Equals(it.second))
+        {
+            return true;
+        }
+    }
+
+    for(const auto& it : OtherFilesToBeCompiled)
+    {
+        if( other.OtherFilesToBeCompiled.count(it.first) == 0 || 
+            !other.OtherFilesToBeCompiled.at(it.first).Equals(it.second))
+        {
+            return true;
+        }
+    }
+
+    for(const auto& it : IncludePaths)
+    {
+        if( other.IncludePaths.count(it.first) == 0 || 
+            !other.IncludePaths.at(it.first).Equals(it.second))
+        {
+            return true;
+        }
+    }
+
+    for(size_t i = 0; i < Dependencies.size(); ++i)
+    {
+        if(!Dependencies[i].Equals(other.Dependencies[i]))
+            return true;
+    }
+
+    for(const auto& it : Defines)
+    {
+        if(other.Defines.count(it.first) == 0 || !other.Defines.at(it.first).Equals(it.second))
+            return true;
+    }
+
+    return false;
+}
+
 bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
 {
+    static_assert(FieldsCount == 14, "Update this function when adding new fields");
     if( Language != other.Language || 
         PassScriptPath != other.PassScriptPath ||
         CurrentBuildType != other.CurrentBuildType ||
@@ -313,7 +383,7 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
         Cleanup.size() != other.Cleanup.size() ||
         Populated != other.Populated)
     {
-        return false;
+        return true;
     }
 
     for(const auto& it : RequiredProfiles)
@@ -321,7 +391,7 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
         if( other.RequiredProfiles.count(it.first) == 0 || 
             other.RequiredProfiles.at(it.first) != it.second)
         {
-            return false;
+            return true;
         }
     }
 
@@ -330,7 +400,7 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
         if( other.OverrideCompileFlags.count(it.first) == 0 || 
             !other.OverrideCompileFlags.at(it.first).Equals(it.second))
         {
-            return false;
+            return true;
         }
     }
 
@@ -339,7 +409,7 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
         if( other.OverrideLinkFlags.count(it.first) == 0 || 
             !other.OverrideLinkFlags.at(it.first).Equals(it.second))
         {
-            return false;
+            return true;
         }
     }
 
@@ -348,7 +418,7 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
         if( other.OtherFilesToBeCompiled.count(it.first) == 0 || 
             !other.OtherFilesToBeCompiled.at(it.first).Equals(it.second))
         {
-            return false;
+            return true;
         }
     }
 
@@ -357,45 +427,45 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
         if( other.IncludePaths.count(it.first) == 0 || 
             !other.IncludePaths.at(it.first).Equals(it.second))
         {
-            return false;
+            return true;
         }
     }
 
     for(size_t i = 0; i < Dependencies.size(); ++i)
     {
         if(!Dependencies[i].Equals(other.Dependencies[i]))
-            return false;
+            return true;
     }
 
     for(const auto& it : Defines)
     {
         if(other.Defines.count(it.first) == 0 || !other.Defines.at(it.first).Equals(it.second))
-            return false;
+            return true;
     }
 
     for(const auto& it : Setup)
     {
         if(other.Setup.count(it.first) == 0 || !other.Setup.at(it.first).Equals(it.second))
-            return false;
+            return true;
     }
 
     for(const auto& it : PreBuild)
     {
         if(other.PreBuild.count(it.first) == 0 || !other.PreBuild.at(it.first).Equals(it.second))
-            return false;
+            return true;
     }
 
     for(const auto& it : PostBuild)
     {
         if(other.PostBuild.count(it.first) == 0 || !other.PostBuild.at(it.first).Equals(it.second))
-            return false;
+            return true;
     }
 
     for(const auto& it : Cleanup)
     {
         if(other.Cleanup.count(it.first) == 0 || !other.Cleanup.at(it.first).Equals(it.second))
-            return false;
+            return true;
     }
-
+    
     return true;
 }

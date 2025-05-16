@@ -1,13 +1,15 @@
 #ifndef RUNCPP2_DATA_SCRIPT_INFO_HPP
 #define RUNCPP2_DATA_SCRIPT_INFO_HPP
 
-
 #include "runcpp2/Data/DependencyInfo.hpp"
 #include "runcpp2/Data/ProfilesFlagsOverride.hpp"
 #include "runcpp2/Data/ProfilesProcessPaths.hpp"
 #include "runcpp2/Data/ProfilesDefines.hpp"
 #include "runcpp2/Data/ProfilesCommands.hpp"
 #include "runcpp2/Data/BuildType.hpp"
+
+#define RUNCPP2_CURRENT_CLASS_NAME ScriptInfo
+#include "runcpp2/MacroUtil.hpp"
 
 #if !defined(NOMINMAX)
     #define NOMINMAX 1
@@ -26,25 +28,29 @@ namespace runcpp2
         class ScriptInfo
         {
             public:
-                std::string Language;
-                bool PassScriptPath = false;
-                BuildType CurrentBuildType = BuildType::EXECUTABLE;
-                std::unordered_map<PlatformName, std::vector<ProfileName>> RequiredProfiles;
+                RUNCPP2_FIELD_BEGIN();
                 
-                std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideCompileFlags;
-                std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideLinkFlags;
+                RUNCPP2_FIELD std::string Language;
+                RUNCPP2_FIELD bool PassScriptPath = false;
+                RUNCPP2_FIELD BuildType CurrentBuildType = BuildType::EXECUTABLE;
+                RUNCPP2_FIELD std::unordered_map<   PlatformName, 
+                                                    std::vector<ProfileName>> RequiredProfiles;
+                RUNCPP2_FIELD std::unordered_map<   PlatformName, 
+                                                    ProfilesFlagsOverride> OverrideCompileFlags;
+                RUNCPP2_FIELD std::unordered_map<   PlatformName, 
+                                                    ProfilesFlagsOverride> OverrideLinkFlags;
+                RUNCPP2_FIELD std::unordered_map<   PlatformName, 
+                                                    ProfilesProcessPaths> OtherFilesToBeCompiled;
+                RUNCPP2_FIELD std::unordered_map<   PlatformName, 
+                                                    ProfilesProcessPaths> IncludePaths;
+                RUNCPP2_FIELD std::vector<DependencyInfo> Dependencies;
+                RUNCPP2_FIELD std::unordered_map<PlatformName, ProfilesDefines> Defines;
+                RUNCPP2_FIELD std::unordered_map<PlatformName, ProfilesCommands> Setup;
+                RUNCPP2_FIELD std::unordered_map<PlatformName, ProfilesCommands> PreBuild;
+                RUNCPP2_FIELD std::unordered_map<PlatformName, ProfilesCommands> PostBuild;
+                RUNCPP2_FIELD std::unordered_map<PlatformName, ProfilesCommands> Cleanup;
                 
-                std::unordered_map<PlatformName, ProfilesProcessPaths> OtherFilesToBeCompiled;
-                std::unordered_map<PlatformName, ProfilesProcessPaths> IncludePaths;
-                
-                std::vector<DependencyInfo> Dependencies;
-                
-                std::unordered_map<PlatformName, ProfilesDefines> Defines;
-                
-                std::unordered_map<PlatformName, ProfilesCommands> Setup;
-                std::unordered_map<PlatformName, ProfilesCommands> PreBuild;
-                std::unordered_map<PlatformName, ProfilesCommands> PostBuild;
-                std::unordered_map<PlatformName, ProfilesCommands> Cleanup;
+                static constexpr int FieldsCount = RUNCPP2_FIELD_COUNT;
                 
                 //Internal tracking
                 bool Populated = false;
@@ -54,6 +60,7 @@ namespace runcpp2
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef node);
                 std::string ToString(std::string indentation) const;
+                bool IsAllCompiledCacheInvalidated(const ScriptInfo& other) const;
                 bool Equals(const ScriptInfo& other) const;
         };
     }

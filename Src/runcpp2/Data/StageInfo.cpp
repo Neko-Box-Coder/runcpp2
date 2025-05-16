@@ -375,22 +375,21 @@ bool runcpp2::Data::StageInfo::PerformSubstituions( const SubstitutionMap& subst
 }
 
 bool runcpp2::Data::StageInfo::ConstructCommand(const SubstitutionMap& substitutionMap, 
-                                                const bool isExecutable,
                                                 const BuildType buildType,
                                                 std::string& outCommand) const
 {
     ssLOG_FUNC_DEBUG();   
     
     
-    static_assert(static_cast<int>(BuildType::COUNT) == 4, "Add new type to be processed");
+    static_assert(static_cast<int>(BuildType::COUNT) == 6, "Add new type to be processed");
     const std::unordered_map<PlatformName, OutputTypeInfo>& currentOutputTypeMap = 
-        isExecutable ? 
+        buildType == BuildType::INTERNAL_EXECUTABLE_EXECUTABLE ? 
         OutputTypes.Executable :
         (
             buildType == BuildType::STATIC ? 
             OutputTypes.Static : 
             (
-                buildType == BuildType::EXECUTABLE ? 
+                buildType == BuildType::INTERNAL_EXECUTABLE_SHARED ? 
                 OutputTypes.ExecutableShared : 
                 OutputTypes.Shared
             )

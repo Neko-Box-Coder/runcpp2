@@ -308,6 +308,7 @@ runcpp2::PipelineResult
 runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptPath,
                                     const ghc::filesystem::path& scriptDirectory,
                                     const std::string& scriptName,
+                                    const bool buildExecutable,
                                     Data::ScriptInfo& outScriptInfo)
 {
     ssLOG_FUNC_INFO();
@@ -376,6 +377,15 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
     {
         ssLOG_DEBUG("Parsed script info YAML:");
         ssLOG_DEBUG("\n" << outScriptInfo.ToString(""));
+    }
+
+    //Replace build type with internal executable type to trigger recompiling when switching to 
+    //have or not have "--executable" option
+    if(outScriptInfo.CurrentBuildType == Data::BuildType::EXECUTABLE)
+    {
+        outScriptInfo.CurrentBuildType =    buildExecutable ? 
+                                            Data::BuildType::INTERNAL_EXECUTABLE_EXECUTABLE :
+                                            Data::BuildType::INTERNAL_EXECUTABLE_SHARED;
     }
 
     return PipelineResult::SUCCESS;
@@ -528,7 +538,7 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
                                 const ghc::filesystem::path& absoluteScriptPath,
                                 const Data::ScriptInfo* lastScriptInfo,
                                 const int maxThreads,
-                                bool& outRecompileNeeded,
+                                bool& outAllRecompileNeeded,
                                 bool& outRelinkNeeded,
                                 std::vector<std::string>& outChangedDependencies)
 {
@@ -573,11 +583,8 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
         
         do
         {
-            {
-                bool result = ParseScriptInfo(lastScriptInfoBuffer.str(), lastScriptInfoFromDisk);
-                if(!result)
-                    break;
-            }
+            if(!ParseScriptInfo(lastScriptInfoBuffer.str(), lastScriptInfoFromDisk))
+                break;
             
             //Resolve imports for last script info
             runcpp2::PipelineResult result = ResolveScriptImports(  lastScriptInfoFromDisk, 
@@ -601,90 +608,52 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
     //Check if the cached script info has changed
     if(lastInfo != nullptr)
     {
-        //Check link flags
-        const Data::ProfilesFlagsOverride* lastLinkFlags = 
-            runcpp2::GetValueFromPlatformMap(lastInfo->OverrideLinkFlags);
-        const Data::ProfilesFlagsOverride* currentLinkFlags = 
-            runcpp2::GetValueFromPlatformMap(scriptInfo.OverrideLinkFlags);
-        
-        outRelinkNeeded = (lastLinkFlags == nullptr) != (currentLinkFlags == nullptr) ||
-                        (
-                            lastLinkFlags != nullptr && 
-                            currentLinkFlags != nullptr && 
-                            !lastLinkFlags->Equals(*currentLinkFlags)
-                        );
-        
-        outRecompileNeeded = outRelinkNeeded;
-        
-        //Check dependencies
-        if(lastInfo->Dependencies.size() == scriptInfo.Dependencies.size())
+        //Relink if there are any changes to the link flags
         {
-            for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+            const Data::ProfilesFlagsOverride* lastLinkFlags = 
+                runcpp2::GetValueFromPlatformMap(lastInfo->OverrideLinkFlags);
+            const Data::ProfilesFlagsOverride* currentLinkFlags = 
+                runcpp2::GetValueFromPlatformMap(scriptInfo.OverrideLinkFlags);
+            
+            outRelinkNeeded =   (lastLinkFlags == nullptr) != (currentLinkFlags == nullptr) ||
+                                (
+                                    lastLinkFlags != nullptr && 
+                                    currentLinkFlags != nullptr && 
+                                    !lastLinkFlags->Equals(*currentLinkFlags)
+                                );
+        }
+        
+        outAllRecompileNeeded = scriptInfo.IsAllCompiledCacheInvalidated(*lastInfo);
+
+        //Check dependencies
+        for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+        {
+            if( lastInfo->Dependencies.size() <= i || 
+                !scriptInfo.Dependencies.at(i).Equals(lastInfo->Dependencies.at(i)))
             {
-                if(!scriptInfo.Dependencies.at(i).Equals(lastInfo->Dependencies.at(i)))
-                {
-                    outChangedDependencies.push_back(scriptInfo.Dependencies.at(i).Name);
-                    outRecompileNeeded = true;
-                }
+                outChangedDependencies.push_back(scriptInfo.Dependencies.at(i).Name);
             }
         }
-        else
+        
+        if(outAllRecompileNeeded || outRelinkNeeded)
         {
-            outRecompileNeeded = true;
-            //All dependencies need to be reset if count changed
-            outChangedDependencies.clear();
+            ssLOG_INFO( "Last script info is out of date, " << 
+                        (outAllRecompileNeeded ? "recompiling..." : "relinking..."));
         }
-        
-        if(!outRecompileNeeded)
-        {
-            //Other changes that require recompilation
-            const Data::ProfilesFlagsOverride* lastCompileFlags = 
-                runcpp2::GetValueFromPlatformMap(lastInfo->OverrideCompileFlags);
-            const Data::ProfilesFlagsOverride* currentCompileFlags = 
-                runcpp2::GetValueFromPlatformMap(scriptInfo.OverrideCompileFlags);
-            
-            const Data::ProfilesProcessPaths* lastCompileFiles = 
-                runcpp2::GetValueFromPlatformMap(lastInfo->OtherFilesToBeCompiled);
-            const Data::ProfilesProcessPaths* currentCompileFiles = 
-                runcpp2::GetValueFromPlatformMap(scriptInfo.OtherFilesToBeCompiled);
-            
-            const Data::ProfilesDefines* lastDefines = 
-                runcpp2::GetValueFromPlatformMap(lastInfo->Defines);
-            const Data::ProfilesDefines* currentDefines = 
-                runcpp2::GetValueFromPlatformMap(scriptInfo.Defines);
-        
-            outRecompileNeeded = 
-                (lastCompileFlags == nullptr) != (currentCompileFlags == nullptr) ||
-                (
-                    lastCompileFlags != nullptr && 
-                    currentCompileFlags != nullptr && 
-                    !lastCompileFlags->Equals(*currentCompileFlags)
-                ) ||
-                (lastCompileFiles == nullptr) != (currentCompileFiles == nullptr) ||
-                (
-                    lastCompileFiles != nullptr && 
-                    currentCompileFiles != nullptr && 
-                    !lastCompileFiles->Equals(*currentCompileFiles)
-                ) ||
-                (lastDefines == nullptr) != (currentDefines == nullptr) ||
-                (
-                    lastDefines != nullptr && 
-                    currentDefines != nullptr && 
-                    !lastDefines->Equals(*currentDefines)
-                );
-        }
-        
-        if(outRecompileNeeded || outRelinkNeeded)
-            ssLOG_INFO("Last script info is out of date, recompiling or relinking...");
     }
     else
-        outRecompileNeeded = true;
+        outAllRecompileNeeded = true;
     
-    ssLOG_DEBUG("recompileNeeded: " << outRecompileNeeded << 
+    ssLOG_DEBUG("recompileNeeded: " << outAllRecompileNeeded << 
                 ", changedDependencies.size(): " << outChangedDependencies.size() << 
                 ", relinkNeeded: " << outRelinkNeeded);
     
-    if(outRecompileNeeded || !outChangedDependencies.empty() || outRelinkNeeded)
+    //Write to file if there's any changes to the current script info
+    if( !lastInfo || 
+        outAllRecompileNeeded || 
+        !outChangedDependencies.empty() || 
+        outRelinkNeeded ||
+        !scriptInfo.Equals(*lastInfo))
     {
         std::ofstream writeOutputFile(lastScriptInfoFilePath);
         if(!writeOutputFile)
@@ -699,29 +668,6 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
 
     if(!lastInfo)
         return PipelineResult::SUCCESS;
-
-    //Check if include paths have changed
-    std::vector<ghc::filesystem::path> currentIncludePaths;
-    if(!GatherIncludePaths(scriptDirectory, scriptInfo, profile, {}, currentIncludePaths))
-    {
-        ssLOG_ERROR("Failed to gather current include paths");
-        return PipelineResult::UNEXPECTED_FAILURE;
-    }
-
-    std::vector<ghc::filesystem::path> lastIncludePaths;
-    if(!GatherIncludePaths(scriptDirectory, *lastInfo, profile, {}, lastIncludePaths))
-    {
-        ssLOG_WARNING("Failed to gather last include paths");
-        return PipelineResult::SUCCESS;
-    }
-
-    if(currentIncludePaths != lastIncludePaths)
-    {
-        ssLOG_INFO("Include paths have changed");
-        outRecompileNeeded = true;
-    }
-    else if(!outRecompileNeeded && !outRelinkNeeded)
-        ssLOG_INFO("Using script info cache");
 
     return PipelineResult::SUCCESS;
     
@@ -930,7 +876,8 @@ runcpp2::RunCompiledOutput( const ghc::filesystem::path& target,
     INTERNAL_RUNCPP2_SAFE_START();
 
     //Skip running if not executable
-    if(scriptInfo.CurrentBuildType != Data::BuildType::EXECUTABLE)
+    if( scriptInfo.CurrentBuildType != Data::BuildType::INTERNAL_EXECUTABLE_EXECUTABLE &&
+        scriptInfo.CurrentBuildType != Data::BuildType::INTERNAL_EXECUTABLE_SHARED)
     {
         ssLOG_INFO("Skipping run - output is not executable");
         return PipelineResult::SUCCESS;
@@ -953,7 +900,7 @@ runcpp2::RunCompiledOutput( const ghc::filesystem::path& target,
     for(size_t i = 0; i < runArgs.size(); ++i)
         finalRunArgs.push_back(runArgs[i]);
     
-    if(currentOptions.count(CmdOptions::EXECUTABLE) > 0)
+    if(scriptInfo.CurrentBuildType == Data::BuildType::INTERNAL_EXECUTABLE_EXECUTABLE)
     {
         //Running the script with modified args
         if(!RunCompiledScript(target, absoluteScriptPath, finalRunArgs, returnStatus))
@@ -994,7 +941,8 @@ runcpp2::GetBuiltTargetPaths(   const ghc::filesystem::path& buildDir,
 
     //Validate executable option against build type
     if( currentOptions.count(CmdOptions::EXECUTABLE) > 0 && 
-        scriptInfo.CurrentBuildType != Data::BuildType::EXECUTABLE)
+        scriptInfo.CurrentBuildType != Data::BuildType::INTERNAL_EXECUTABLE_SHARED &&
+        scriptInfo.CurrentBuildType != Data::BuildType::INTERNAL_EXECUTABLE_EXECUTABLE)
     {
         ssLOG_ERROR("Cannot run as executable - script is configured for " << 
                     Data::BuildTypeToString(scriptInfo.CurrentBuildType) << 
@@ -1008,7 +956,6 @@ runcpp2::GetBuiltTargetPaths(   const ghc::filesystem::path& buildDir,
                                                         scriptName,
                                                         profile,
                                                         scriptInfo.CurrentBuildType,
-                                                        currentOptions.count(CmdOptions::EXECUTABLE) > 0,
                                                         outTargets,
                                                         isRunnable))
     {

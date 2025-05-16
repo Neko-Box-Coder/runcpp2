@@ -40,6 +40,7 @@ namespace runcpp2
     ParseAndValidateScriptInfo( const ghc::filesystem::path& absoluteScriptPath,
                                 const ghc::filesystem::path& scriptDirectory,
                                 const std::string& scriptName,
+                                const bool buildExecutable,
                                 Data::ScriptInfo& outScriptInfo);
 
     PipelineResult HandleCleanup(   const Data::ScriptInfo& scriptInfo,
@@ -67,7 +68,7 @@ namespace runcpp2
                                             const ghc::filesystem::path& absoluteScriptPath,
                                             const Data::ScriptInfo* lastScriptInfo,
                                             const int maxThreads,
-                                            bool& outRecompileNeeded,
+                                            bool& outAllRecompileNeeded,
                                             bool& outRelinkNeeded,
                                             std::vector<std::string>& outChangedDependencies);
     

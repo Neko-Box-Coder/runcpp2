@@ -89,6 +89,8 @@ if(RUNCPP2_BUILD_TESTS)
 endif()
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/CppOverride")
 
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/MacroPowerToys")
+
 
 # =========================================================================
 # Generate yaml files as c
@@ -169,9 +171,12 @@ set(RUNCPP2_SOURCE_FILES    "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/Profile.
 
 add_library(runcpp2 STATIC ${RUNCPP2_SOURCE_FILES})
 
+set(RUNCPP2_PRIVATE_LINK_LIBS ssLogger System2 CppOverride dylib)
+set(RUNCPP2_PUBLIC_LINK_LIBS ghc_filesystem ryml::ryml mpark_variant MacroPowerToys)
+
 target_include_directories(runcpp2 PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
-target_link_libraries(runcpp2 PRIVATE ssLogger System2 CppOverride dylib)
-target_link_libraries(runcpp2 PUBLIC ghc_filesystem ryml::ryml mpark_variant)
+target_link_libraries(runcpp2 PRIVATE ${RUNCPP2_PRIVATE_LINK_LIBS})
+target_link_libraries(runcpp2 PUBLIC ${RUNCPP2_PUBLIC_LINK_LIBS})
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # TODO: Try to change to /Wall
@@ -208,7 +213,7 @@ target_compile_definitions(runcpp2 PUBLIC RUNCPP2_VERSION="${RUNCPP2_PROJECT_VER
 
 add_executable(runcpp2_main "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/main.cpp")
 target_compile_options(runcpp2_main PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
-target_link_libraries(runcpp2_main PRIVATE runcpp2 ssLogger ghc_filesystem)
+target_link_libraries(runcpp2_main PRIVATE runcpp2 ssLogger)
 set_target_properties(runcpp2_main PROPERTIES OUTPUT_NAME "runcpp2")
 
 # =========================================================================
@@ -217,8 +222,8 @@ set_target_properties(runcpp2_main PROPERTIES OUTPUT_NAME "runcpp2")
 
 add_library(runcpp2_override STATIC ${RUNCPP2_SOURCE_FILES})
 target_include_directories(runcpp2_override PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
-target_link_libraries(runcpp2_override PRIVATE ssLogger System2 CppOverride dylib)
-target_link_libraries(runcpp2_override PUBLIC ghc_filesystem ryml::ryml mpark_variant)
+target_link_libraries(runcpp2_override PRIVATE ${RUNCPP2_PRIVATE_LINK_LIBS})
+target_link_libraries(runcpp2_override PUBLIC ${RUNCPP2_PUBLIC_LINK_LIBS})
 target_compile_options(runcpp2_override PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
 target_compile_definitions(runcpp2_override PUBLIC  RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}" 
                                                     INTERNAL_RUNCPP2_UNIT_TESTS=1)

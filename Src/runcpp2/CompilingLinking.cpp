@@ -108,7 +108,6 @@ namespace
                         const runcpp2::Data::ScriptInfo& scriptInfo,
                         const std::vector<runcpp2::Data::DependencyInfo*>& availableDependencies,
                         const runcpp2::Data::Profile& profile,
-                        bool compileAsExecutable,
                         std::vector<ghc::filesystem::path>& outObjectsFilesPaths,
                         const int maxThreads)
     {
@@ -118,7 +117,7 @@ namespace
         
         using OutputTypeInfo = runcpp2::Data::StageInfo::OutputTypeInfo;
         OutputTypeInfo* tempOutputInfo = nullptr;
-        static_assert(  static_cast<int>(runcpp2::Data::BuildType::COUNT) == 4, 
+        static_assert(  static_cast<int>(runcpp2::Data::BuildType::COUNT) == 6, 
                         "Add new type to be processed");
         switch(scriptInfo.CurrentBuildType)
         {
@@ -134,24 +133,19 @@ namespace
                     runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.Shared)
                 );
                 break;
-            case runcpp2::Data::BuildType::EXECUTABLE:
-                if(compileAsExecutable)
-                {
-                    tempOutputInfo = const_cast<OutputTypeInfo*>
-                    (
-                        runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.Executable)
-                    );
-                }
-                else
-                {
-                    tempOutputInfo = const_cast<OutputTypeInfo*>
-                    (
-                        runcpp2::GetValueFromPlatformMap(profile.Compiler
-                                                                .OutputTypes
-                                                                .ExecutableShared)
-                    );
-                }
+            case runcpp2::Data::BuildType::INTERNAL_EXECUTABLE_EXECUTABLE:
+                tempOutputInfo = const_cast<OutputTypeInfo*>
+                (
+                    runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.Executable)
+                );
                 break;
+            case runcpp2::Data::BuildType::INTERNAL_EXECUTABLE_SHARED:
+                tempOutputInfo = const_cast<OutputTypeInfo*>
+                (
+                    runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.ExecutableShared)
+                );
+                break;
+            case runcpp2::Data::BuildType::EXECUTABLE:
             default:
                 ssLOG_ERROR("Unsupported build type for compiling: " << 
                             runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));
@@ -315,7 +309,6 @@ namespace
                         substitutionMap,    //NOTE: substitutionMap is used by the next source file, 
                                             //      therefore need to copy it.
                         &buildDir,
-                        compileAsExecutable,
                         &scriptInfo,
                         logLevel
                     ]()
@@ -363,7 +356,6 @@ namespace
                         {
                             std::string runPartSubstitutedCommand;
                             if(!profile.Compiler.ConstructCommand(  substitutionMap, 
-                                                                    compileAsExecutable,
                                                                     scriptInfo.CurrentBuildType,
                                                                     runPartSubstitutedCommand))
                             {
@@ -504,40 +496,37 @@ namespace
                     const runcpp2::Data::ScriptInfo& scriptInfo,
                     const std::string& additionalLinkFlags,
                     const runcpp2::Data::Profile& profile,
-                    const std::vector<ghc::filesystem::path>& objectsFilesPaths,
-                    bool linkAsExecutable)
+                    const std::vector<ghc::filesystem::path>& objectsFilesPaths)
     {
         ssLOG_FUNC_INFO();
         const runcpp2::Data::StageInfo::OutputTypeInfo* currentOutputTypeInfo = nullptr;
         
-        if(linkAsExecutable)
-            currentOutputTypeInfo = runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.Executable);
-        else
+        //Only use BuildType for non-executable builds
+        static_assert(static_cast<int>(runcpp2::Data::BuildType::COUNT) == 6, 
+                      "Add new type to be processed");
+        switch(scriptInfo.CurrentBuildType) 
         {
-            //Only use BuildType for non-executable builds
-            static_assert(static_cast<int>(runcpp2::Data::BuildType::COUNT) == 4, 
-                          "Add new type to be processed");
-            switch(scriptInfo.CurrentBuildType) 
-            {
-                case runcpp2::Data::BuildType::STATIC:
-                    currentOutputTypeInfo = 
-                        runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.Static);
-                    break;
-                case runcpp2::Data::BuildType::SHARED:
-                    currentOutputTypeInfo = 
-                        runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.Shared);
-                    break;
-                case runcpp2::Data::BuildType::EXECUTABLE:
-                    currentOutputTypeInfo = 
-                        runcpp2::GetValueFromPlatformMap(profile.Linker
-                                                                .OutputTypes
-                                                                .ExecutableShared);
-                    break;
-                default:
-                    ssLOG_ERROR("Unsupported build type for linking: " << 
-                                runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));
-                    return false;
-            }
+            case runcpp2::Data::BuildType::STATIC:
+                currentOutputTypeInfo = 
+                    runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.Static);
+                break;
+            case runcpp2::Data::BuildType::SHARED:
+                currentOutputTypeInfo = 
+                    runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.Shared);
+                break;
+            case runcpp2::Data::BuildType::INTERNAL_EXECUTABLE_EXECUTABLE:
+                currentOutputTypeInfo = 
+                    runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.Executable);
+                break;
+            case runcpp2::Data::BuildType::INTERNAL_EXECUTABLE_SHARED:
+                currentOutputTypeInfo = 
+                    runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.ExecutableShared);
+                break;
+            case runcpp2::Data::BuildType::EXECUTABLE:
+            default:
+                ssLOG_ERROR("Unsupported build type for linking: " << 
+                            runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));
+                return false;
         }
         
         if(currentOutputTypeInfo == nullptr)
@@ -621,14 +610,14 @@ namespace
                 {
                     currentLinkType = Data::DependencyLibraryType::STATIC;
                     
-                    if(!linkAsExecutable)
+                    if( scriptInfo.CurrentBuildType == 
+                        runcpp2::Data::BuildType::INTERNAL_EXECUTABLE_SHARED ||
+                        scriptInfo.CurrentBuildType == runcpp2::Data::BuildType::SHARED)
                     {
                         ssLOG_WARNING(  "Trying to link static dependency when script is being " <<
                                         "built as shared. Linking might not work on some platforms.");
                         
-                        //TODO: Bug where cache is not invalidated when running with a different type
                         //TODO: Maybe revert the default back to executable?
-                        ssLOG_WARNING("If linking fails, run with -rb instead");
                     }
                     
                     goto processLinkFile;
@@ -754,7 +743,6 @@ namespace
             {
                 std::string runPartSubstitutedCommand;
                 if(!profile.Linker.ConstructCommand(substitutionMap, 
-                                                    linkAsExecutable,
                                                     scriptInfo.CurrentBuildType,
                                                     runPartSubstitutedCommand))
                 {
@@ -868,7 +856,6 @@ bool runcpp2::CompileScriptOnly(const ghc::filesystem::path& buildDir,
                                 const Data::ScriptInfo& scriptInfo,
                                 const std::vector<Data::DependencyInfo*>& availableDependencies,
                                 const Data::Profile& profile,
-                                bool buildExecutable,
                                 const int maxThreads)
 {
     if(!RunGlobalSteps(buildDir, profile.Setup))
@@ -894,7 +881,6 @@ bool runcpp2::CompileScriptOnly(const ghc::filesystem::path& buildDir,
                         scriptInfo, 
                         availableDependencies, 
                         profile, 
-                        buildExecutable, 
                         objectsFilesPaths,
                         maxThreads))
     {
@@ -923,7 +909,6 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
                                     const std::vector<Data::DependencyInfo*>& availableDependencies,
                                     const Data::Profile& profile,
                                     const std::vector<std::string>& compiledObjectsPaths,
-                                    bool buildExecutable,
                                     const int maxThreads)
 {
     if(!RunGlobalSteps(buildDir, profile.Setup))
@@ -949,7 +934,6 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
                         scriptInfo, 
                         availableDependencies, 
                         profile, 
-                        buildExecutable, 
                         objectsFilesPaths,
                         maxThreads))
     {
@@ -999,8 +983,7 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
                     scriptInfo,
                     dependenciesLinkFlags,
                     profile,
-                    objectsFilesPaths, 
-                    buildExecutable))
+                    objectsFilesPaths))
     {
         ssLOG_ERROR("LinkScript failed");
         return false;
