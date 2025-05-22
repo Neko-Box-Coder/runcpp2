@@ -55,17 +55,18 @@ function(get_version_from_git OUTPUT_VARIABLE)
         )
 
         if(TAG_ON_COMMIT EQUAL 0)
-            set(VERSION ${GIT_TAG})
+            set(VERSION "${GIT_TAG}")
         else()
             set(VERSION "${GIT_TAG}-${GIT_COMMIT_HASH}")
         endif()
     else()
         # No tags found, use v0.0.0 with commit hash
         # set(VERSION "v0.0.0-${GIT_COMMIT_HASH}")
+        
         message(FATAL_ERROR "Failed to get tag: ${GIT_TAG}")
     endif()
 
-    set(${OUTPUT_VARIABLE} ${VERSION} PARENT_SCOPE)
+    set(${OUTPUT_VARIABLE} "${VERSION}" PARENT_SCOPE)
 endfunction()
 
 # Call the function and store the result
@@ -211,8 +212,9 @@ endif()
 
 target_compile_options(runcpp2 PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
 
-# Define the version macro
+# Define the runcpp2 and default config version macro
 target_compile_definitions(runcpp2 PUBLIC RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}")
+target_compile_definitions(runcpp2 PUBLIC RUNCPP2_CONFIG_VERSION=1)
 
 # =========================================================================
 # runcpp2 executable
