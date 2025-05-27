@@ -360,7 +360,7 @@ int main(int argc, char* argv[])
     if(currentOptions.count(runcpp2::CmdOptions::RESET_USER_CONFIG))
     {
         ssLOG_INFO("Resetting user config");
-        if(!runcpp2::WriteDefaultConfig(runcpp2::GetConfigFilePath()))
+        if(!runcpp2::WriteDefaultConfigs(runcpp2::GetConfigFilePath(), true, true))
         {
             ssLOG_ERROR("Failed reset user config");
             return -1;
