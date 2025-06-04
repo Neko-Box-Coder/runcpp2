@@ -3,6 +3,7 @@
 #include "ssTest.hpp"
 #include "CppOverride.hpp"
 #include "ssLogger/ssLog.hpp"
+#include "MacroPowerToys.h"
 
 CO_DECLARE_INSTANCE(OverrideInstance);
 
@@ -35,24 +36,37 @@ int main(int argc, char** argv)
     
     using namespace CppOverride;
     
-    std::string configPath;
-    std::shared_ptr<OverrideResult> existsResult;
+    const std::string configPath = "some/config/dir/UserConfig.yaml";
+    const std::string versionPath = "some/config/dir/.version";
+    #define STR(x) #x
+        const std::string versionString = MPT_COMPOSE(STR, (RUNCPP2_CONFIG_VERSION));
+    #undef STR
+    std::shared_ptr<OverrideResult> configExistsResult;
+    std::shared_ptr<OverrideResult> versionExistsResult;
     std::shared_ptr<OverrideResult> isDirResult;
-    std::shared_ptr<OverrideResult> ifstreamResult;
+    std::shared_ptr<OverrideResult> configIfstreamResult;
+    std::shared_ptr<OverrideResult> versionIfstreamResult;
+    
     std::shared_ptr<OverrideResult> ifstreamSucceedResult;
-    std::shared_ptr<OverrideResult> writeDefaultConfigResult;
-    std::shared_ptr<OverrideResult> rdbufResult;
+    std::shared_ptr<OverrideResult> configRdbufResult;
+    std::shared_ptr<OverrideResult> versionRdbufResult;
+    std::shared_ptr<OverrideResult> writeDefaultConfigsResult;
     void* userConfigIfstreamInstance = nullptr;
+    void* versionIfstreamInstance = nullptr;
     
     ssTEST_COMMON_SETUP
     {
         CO_CLEAR_ALL_OVERRIDE_SETUP(OverrideInstance);
         ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_WARNING);
         
-        configPath = "some/config/dir/UserConfig.yaml";
-        existsResult = 
+        configExistsResult = 
             CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
                                 .WhenCalledWith<const std::string&, CO_ANY_TYPE>(configPath, CO_ANY)
+                                .Returns<bool>(true)
+                                .ReturnsResult();
+        versionExistsResult = 
+            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
+                                .WhenCalledWith<const std::string&, CO_ANY_TYPE>(versionPath, CO_ANY)
                                 .Returns<bool>(true)
                                 .ReturnsResult();
         isDirResult = 
@@ -60,7 +74,7 @@ int main(int argc, char** argv)
                                 .WhenCalledWith<const std::string&, CO_ANY_TYPE>(configPath, CO_ANY)
                                 .Returns<bool>(false)
                                 .ReturnsResult();
-        ifstreamResult = 
+        configIfstreamResult = 
             CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ifstream)
                                 .WhenCalledWith<const ghc::filesystem::path&>(configPath)
                                 .WhenCalledExpectedly_Do
@@ -72,33 +86,62 @@ int main(int argc, char** argv)
                                     }
                                 )
                                 .ReturnsResult();
+        versionIfstreamResult = 
+            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ifstream)
+                                .WhenCalledWith<const ghc::filesystem::path&>(versionPath)
+                                .WhenCalledExpectedly_Do
+                                (
+                                    [&versionIfstreamInstance]
+                                    (void* instance, const std::vector<void*>&)
+                                    {
+                                        versionIfstreamInstance = instance;
+                                    }
+                                )
+                                .ReturnsResult();
         ifstreamSucceedResult = 
             CO_SETUP_OVERRIDE   (OverrideInstance, operator!)
                                 .If
                                 (
-                                    [&userConfigIfstreamInstance]
+                                    [&userConfigIfstreamInstance, &versionIfstreamInstance]
                                     (void* instance, const std::vector<void*>&) -> bool
                                     {
-                                        return instance == userConfigIfstreamInstance;
+                                        return  instance == userConfigIfstreamInstance ||
+                                                instance == versionIfstreamInstance;
                                     }
                                 )
                                 .Returns<bool>(false)
                                 .ReturnsResult();
-        writeDefaultConfigResult = 
-            CO_SETUP_OVERRIDE   (OverrideInstance, WriteDefaultConfig)
+        versionRdbufResult = 
+            CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
+                                .Returns<std::string>(versionString)
+                                .If
+                                (
+                                    [&versionIfstreamInstance]
+                                    (void* instance, const std::vector<void*>&) -> bool
+                                    {
+                                        return instance == versionIfstreamInstance;
+                                    }
+                                )
+                                .Times(1)
+                                .ReturnsResult();
+        writeDefaultConfigsResult = 
+            CO_SETUP_OVERRIDE   (OverrideInstance, WriteDefaultConfigs)
                                 .Returns<bool>(false)
                                 .ReturnsResult();
     };
     
     auto commonOverrideStatusCheck = [&]()
     {
-        ssTEST_OUTPUT_ASSERT("", existsResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT("", configExistsResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT("", versionExistsResult->GetSucceedCount(), 1);
         ssTEST_OUTPUT_ASSERT("", isDirResult->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT("", ifstreamResult->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT("", ifstreamSucceedResult->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT("", rdbufResult->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT(   "WriteDefaultConfig() should not be called", 
-                                writeDefaultConfigResult->GetStatusCount(), 0);
+        ssTEST_OUTPUT_ASSERT("", configIfstreamResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT("", versionIfstreamResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT("", ifstreamSucceedResult->GetSucceedCount(), 2);
+        ssTEST_OUTPUT_ASSERT("", configRdbufResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT("", versionRdbufResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT(   "WriteDefaultConfigs() should not be called", 
+                                writeDefaultConfigsResult->GetStatusCount(), 0);
     };
     
     auto commonDefaultOverrideSetup = [&]()
@@ -113,13 +156,16 @@ int main(int argc, char** argv)
     ssTEST_COMMON_CLEANUP
     {
         ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_WARNING);
-        configPath.clear();
-        existsResult = CreateOverrideResult();
+        configExistsResult = CreateOverrideResult();
+        versionExistsResult = CreateOverrideResult();
         isDirResult = CreateOverrideResult();
-        ifstreamResult = CreateOverrideResult();
+        configIfstreamResult = CreateOverrideResult();
         ifstreamSucceedResult = CreateOverrideResult();
-        writeDefaultConfigResult = CreateOverrideResult();
-        rdbufResult = CreateOverrideResult();
+        configIfstreamResult = CreateOverrideResult();
+        versionIfstreamResult = CreateOverrideResult();
+        configRdbufResult = CreateOverrideResult();
+        versionRdbufResult = CreateOverrideResult();
+        writeDefaultConfigsResult = CreateOverrideResult();
         userConfigIfstreamInstance = nullptr;
     };
 
@@ -167,10 +213,19 @@ int main(int argc, char** argv)
                     Name: "g++3"
             )";
             
-            rdbufResult = CO_SETUP_OVERRIDE (OverrideInstance, rdbuf)
-                                            .Returns<std::string>(yamlStr)
-                                            .Times(1)
-                                            .ReturnsResult();
+            configRdbufResult = 
+                CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
+                                    .Returns<std::string>(yamlStr)
+                                    .If
+                                    (
+                                        [&userConfigIfstreamInstance]
+                                        (void* instance, const std::vector<void*>&) -> bool
+                                        {
+                                            return instance == userConfigIfstreamInstance;
+                                        }
+                                    )
+                                    .Times(1)
+                                    .ReturnsResult();
             commonDefaultOverrideSetup();
             
             std::vector<runcpp2::Data::Profile> profiles;
@@ -234,10 +289,19 @@ int main(int argc, char** argv)
                     Name: "g++3"
             )";
             
-            rdbufResult = CO_SETUP_OVERRIDE (OverrideInstance, rdbuf)
-                                            .Returns<std::string>(yamlStr)
-                                            .Times(1)
-                                            .ReturnsResult();
+            configRdbufResult = 
+                CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
+                                    .Returns<std::string>(yamlStr)
+                                    .Times(1)
+                                    .If
+                                    (
+                                        [&userConfigIfstreamInstance]
+                                        (void* instance, const std::vector<void*>&) -> bool
+                                        {
+                                            return instance == userConfigIfstreamInstance;
+                                        }
+                                    )
+                                    .ReturnsResult();
             std::shared_ptr<OverrideResult> getPlatformNamesResult = 
                 CO_SETUP_OVERRIDE   (OverrideInstance, GetPlatformNames)
                                     .Returns<std::vector<std::string>>({"MacOS", 
@@ -272,7 +336,15 @@ int main(int argc, char** argv)
             CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
                                 .Returns<std::string>(yamlStr)
                                 .Times(1)
-                                .AssignsResult(rdbufResult);
+                                .If
+                                (
+                                    [&userConfigIfstreamInstance]
+                                    (void* instance, const std::vector<void*>&) -> bool
+                                    {
+                                        return instance == userConfigIfstreamInstance;
+                                    }
+                                )
+                                .AssignsResult(configRdbufResult);
             CO_SETUP_OVERRIDE   (OverrideInstance, GetPlatformNames)
                                 .Returns<std::vector<std::string>>({"Linux", 
                                                                     "Unix", 
@@ -377,18 +449,19 @@ int main(int argc, char** argv)
             )";
             
             //Mock for main config file 
-            rdbufResult = CO_SETUP_OVERRIDE (OverrideInstance, rdbuf)
-                                            .Returns<std::string>(mainConfigYamlStr)
-                                            .Times(1)
-                                            .If
-                                            (
-                                                [&userConfigIfstreamInstance]
-                                                (void* instance, const std::vector<void*>&) -> bool
-                                                {
-                                                    return instance == userConfigIfstreamInstance;
-                                                }
-                                            )
-                                            .ReturnsResult();
+            configRdbufResult = 
+                CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
+                                    .Returns<std::string>(mainConfigYamlStr)
+                                    .Times(1)
+                                    .If
+                                    (
+                                        [&userConfigIfstreamInstance]
+                                        (void* instance, const std::vector<void*>&) -> bool
+                                        {
+                                            return instance == userConfigIfstreamInstance;
+                                        }
+                                    )
+                                    .ReturnsResult();
             
             //Setup filesystem exist for the import yaml files
             std::string gccExpectedImportPath = "some/config/dir/Default/gcc.yaml";

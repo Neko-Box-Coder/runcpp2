@@ -18,8 +18,8 @@ The `BuildType` setting specifies what type of output to build. There are four s
 !!! note
     If not specified, the default build type is Executable.
 
-!!! important
-    When you specify `BuildType` as `Executable`, it will still produce a **shared library**.
+!!! warning
+    When you specify `BuildType` as `Executable`, it will still produce a **shared library** for running.
     Under the hood, runcpp2 simply loads the shared library and call the `main()` function.
     
     The reason of this behavior is because this makes it possible to "catch" if there's any
