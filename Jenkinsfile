@@ -146,7 +146,7 @@ pipeline
     
     Trigger:
         $GITHUB_PUSH_REF , $GITHUB_PR_REF , $GITHUB_PR_ACTION
-        ^refs/heads/master , , $|^ , .[a-zA-Z/]* , (opened|synchronize)$
+        ^refs/heads/master , , $|^ , .[a-zA-Z0-9/]* , (opened|synchronize)$
 
     Param:
         TARGET_REF
