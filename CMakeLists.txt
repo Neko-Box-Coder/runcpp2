@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 option(RUNCPP2_UPDATE_DEFAULT_YAMLS "Update default yaml files" OFF)
 
-set(RUNCPP2_CONFIG_VERSION 1 CACHE STRING "Default Config Version")
+set(RUNCPP2_CONFIG_VERSION "1" CACHE STRING "Default Config Version")
 
 if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     option(RUNCPP2_WARNINGS_AS_ERRORS "Treat warnings as errors" ON)
