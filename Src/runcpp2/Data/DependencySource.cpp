@@ -104,10 +104,7 @@ bool runcpp2::Data::DependencySource::Equals(const DependencySource& other) cons
             return git->Equals(*otherGit);
         }
         else
-        {
-            ssLOG_ERROR("Invalid DependencySource type");
             return false;
-        }
     }
     else if(mpark::get_if<LocalSource>(&Source))
     {
@@ -118,10 +115,7 @@ bool runcpp2::Data::DependencySource::Equals(const DependencySource& other) cons
             return local->Equals(*otherLocal);
         }
         else
-        {
-            ssLOG_ERROR("Invalid DependencySource type");
             return false;
-        }
     }
     
     ssLOG_ERROR("Invalid DependencySource type");
