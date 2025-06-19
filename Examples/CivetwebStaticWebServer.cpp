@@ -1,5 +1,7 @@
 /* runcpp2
 
+BuildType: InternalExecutable
+
 Dependencies:
 -   Name: civetweb
     Platforms: [DefaultPlatform]
@@ -18,8 +20,10 @@ Dependencies:
             DefaultProfile:
                 SearchLibraryNames: ["civetweb"]
                 SearchDirectories: ["./output/src"]
-    Setup: ["mkdir output", "cd output && cmake .. -DCIVETWEB_BUILD_TESTING=OFF -DCIVETWEB_ENABLE_ASAN=OFF"]
-    Build: ["cd output && cmake --build . -j 16"]
+    Setup:
+    -   "mkdir output"
+    -   "cd output && cmake .. -DCIVETWEB_BUILD_TESTING=OFF -DCIVETWEB_ENABLE_ASAN=OFF"
+    -   "cd output && cmake --build . -j 16"
 */
 
 extern "C" {
