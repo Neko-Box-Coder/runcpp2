@@ -383,7 +383,7 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
         Cleanup.size() != other.Cleanup.size() ||
         Populated != other.Populated)
     {
-        return true;
+        return false;
     }
 
     for(const auto& it : RequiredProfiles)
@@ -391,7 +391,7 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
         if( other.RequiredProfiles.count(it.first) == 0 || 
             other.RequiredProfiles.at(it.first) != it.second)
         {
-            return true;
+            return false;
         }
     }
 
@@ -400,7 +400,7 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
         if( other.OverrideCompileFlags.count(it.first) == 0 || 
             !other.OverrideCompileFlags.at(it.first).Equals(it.second))
         {
-            return true;
+            return false;
         }
     }
 
@@ -409,7 +409,7 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
         if( other.OverrideLinkFlags.count(it.first) == 0 || 
             !other.OverrideLinkFlags.at(it.first).Equals(it.second))
         {
-            return true;
+            return false;
         }
     }
 
@@ -418,7 +418,7 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
         if( other.OtherFilesToBeCompiled.count(it.first) == 0 || 
             !other.OtherFilesToBeCompiled.at(it.first).Equals(it.second))
         {
-            return true;
+            return false;
         }
     }
 
@@ -427,44 +427,44 @@ bool runcpp2::Data::ScriptInfo::Equals(const ScriptInfo& other) const
         if( other.IncludePaths.count(it.first) == 0 || 
             !other.IncludePaths.at(it.first).Equals(it.second))
         {
-            return true;
+            return false;
         }
     }
 
     for(size_t i = 0; i < Dependencies.size(); ++i)
     {
         if(!Dependencies[i].Equals(other.Dependencies[i]))
-            return true;
+            return false;
     }
 
     for(const auto& it : Defines)
     {
         if(other.Defines.count(it.first) == 0 || !other.Defines.at(it.first).Equals(it.second))
-            return true;
+            return false;
     }
 
     for(const auto& it : Setup)
     {
         if(other.Setup.count(it.first) == 0 || !other.Setup.at(it.first).Equals(it.second))
-            return true;
+            return false;
     }
 
     for(const auto& it : PreBuild)
     {
         if(other.PreBuild.count(it.first) == 0 || !other.PreBuild.at(it.first).Equals(it.second))
-            return true;
+            return false;
     }
 
     for(const auto& it : PostBuild)
     {
         if(other.PostBuild.count(it.first) == 0 || !other.PostBuild.at(it.first).Equals(it.second))
-            return true;
+            return false;
     }
 
     for(const auto& it : Cleanup)
     {
         if(other.Cleanup.count(it.first) == 0 || !other.Cleanup.at(it.first).Equals(it.second))
-            return true;
+            return false;
     }
     
     return true;
