@@ -616,7 +616,7 @@ namespace
                     {
                         ssLOG_WARNING(  "Trying to link static dependency when script is being " <<
                                         "built as shared. Linking might not work on some platforms.");
-                        
+                        ssLOG_WARNING(  "If failing to link, consider using --executable instead");
                         //TODO: Maybe revert the default back to executable?
                     }
                     

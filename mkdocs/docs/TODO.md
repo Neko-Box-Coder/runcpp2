@@ -36,6 +36,9 @@
 
 ## High Priority
 
+- Rename "OtherFilesToBeCompiled" to "SourceFiles"
+- Expose/rename "InternalExecutableShared" and change BuildType to be platform map
+    - This ties to the warning in `CompilingLinking.cpp:619`
 - Update `FileProperties.hpp` to use list of string for prefix and extension
     - Merge `SharedLinkFile` and `SharedLibraryFile`
 - Add the ability for user to specify custom substitution options which applies to all fields
