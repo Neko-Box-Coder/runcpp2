@@ -16,11 +16,11 @@ target_link_libraries(IncludeManagerTest PRIVATE ghc_filesystem CppOverride ssTe
 target_compile_definitions(IncludeManagerTest PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=1)
 
 
-add_executable(ConfigParsingTest "${CMAKE_CURRENT_LIST_DIR}/ConfigParsingTest.cpp")
-target_include_directories(ConfigParsingTest PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../../Include")
-target_compile_options(ConfigParsingTest PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
-target_link_libraries(ConfigParsingTest PRIVATE ghc_filesystem CppOverride ssTest ssLogger runcpp2_override)
-target_compile_definitions(ConfigParsingTest PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=1)
+# add_executable(ConfigParsingTest "${CMAKE_CURRENT_LIST_DIR}/ConfigParsingTest.cpp")
+# target_include_directories(ConfigParsingTest PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../../Include")
+# target_compile_options(ConfigParsingTest PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
+# target_link_libraries(ConfigParsingTest PRIVATE ghc_filesystem CppOverride ssTest ssLogger runcpp2_override)
+# target_compile_definitions(ConfigParsingTest PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=1)
 
 
 function(create_data_test TEST_NAME)

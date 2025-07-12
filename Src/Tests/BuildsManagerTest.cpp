@@ -74,25 +74,23 @@ int main(int argc, char** argv)
         )
         {
             //Checking mappings file path
-            returnMappingsPathExistsResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(mappingsFilePath, CO_ANY)
-                                    .Returns<bool>(true)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(mappingsFilePath, CO_ANY)
+                            .Returns<bool>(true)
+                            .Times(1)
+                            .AssignsResult(returnMappingsPathExistsResult);
             //Open mappings file
-            returnIfstreamResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ifstream)
-                                    .WhenCalledWith<const ghc::filesystem::path&>(mappingsFilePath)
-                                    .Returns<void>()
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_NO_REF  (OverrideInstance, Mock_ifstream)
+                                .WhenCalledWith<const ghc::filesystem::path&>(mappingsFilePath)
+                                .Returns<void>()
+                                .Times(1)
+                                .AssignsResult(returnIfstreamResult);
             //Checking if mappings file is opened
-            returnIsOpenResult = CO_SETUP_OVERRIDE  (OverrideInstance, is_open)
-                                                    .Returns<bool>(true)
-                                                    .Times(1)
-                                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, is_open)
+                            .Returns<bool>(true)
+                            .Times(1)
+                            .AssignsResult(returnIsOpenResult);
             //Return file content
             std::string mappingsContent;
             if(!customContent.empty())
@@ -103,10 +101,10 @@ int main(int argc, char** argv)
                     mappingsContent += scriptsPaths.at(i) + "," + scriptsBuildsPaths.at(i) + "\n";
             }
             
-            returnRdbufResult = CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
-                                                    .Returns<std::string>(mappingsContent)
-                                                    .Times(1)
-                                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+                            .Returns<std::string>(mappingsContent)
+                            .Times(1)
+                            .AssignsResult(returnRdbufResult);
         };
     
     ssTEST_INIT_TEST_GROUP();
@@ -114,7 +112,7 @@ int main(int argc, char** argv)
     ssTEST_COMMON_SETUP
     {
         buildsManager.reset(new runcpp2::BuildsManager(configDirPath));
-        CO_CLEAR_ALL_OVERRIDE_SETUP(OverrideInstance);
+        CO_CLEAR_ALL_INSTRUCTS(OverrideInstance);
     };
     
     ssTEST_COMMON_CLEANUP
@@ -128,11 +126,11 @@ int main(int argc, char** argv)
 
         ssTEST_OUTPUT_SETUP
         (
-            std::shared_ptr<OverrideResult> result = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_create_directories)
-                                    .Times(1)
-                                    .Returns<bool>(false)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> result;
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_create_directories)
+                            .Times(1)
+                            .Returns<bool>(false)
+                            .AssignsResult(result);
             ghc::filesystem::path outPath;
         );
         ssTEST_OUTPUT_ASSERT(buildsManager->CreateBuildMapping(scriptsPaths.front()) == false);
@@ -153,20 +151,20 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //Checking mappings file path
-            std::shared_ptr<OverrideResult> pathExistsResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(mappingsFilePath, CO_ANY)
-                                    .Returns<bool>(true)
-                                    .Times(1)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> pathExistsResult;
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(mappingsFilePath, CO_ANY)
+                            .Returns<bool>(true)
+                            .Times(1)
+                            .AssignsResult(pathExistsResult);
             //Open mappings file
-            std::shared_ptr<OverrideResult> ifstreamResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ifstream)
-                                    .WhenCalledWith<const ghc::filesystem::path&>(mappingsFilePath)
-                                    .Returns<void>()
-                                    .Times(1)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> ifstreamResult;
+            CO_INSTRUCT_NO_REF  (OverrideInstance, Mock_ifstream)
+                                .WhenCalledWith<const ghc::filesystem::path&>(mappingsFilePath)
+                                .Returns<void>()
+                                .Times(1)
+                                .AssignsResult(ifstreamResult);
         );
         ssTEST_OUTPUT_EXECUTION( buildsManager->Initialize(); );
         ssTEST_OUTPUT_ASSERT("Checking mappings file path", pathExistsResult->LastStatusSucceed());
@@ -179,48 +177,48 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //Checking mappings file path
-            std::shared_ptr<OverrideResult> mappingsPathExistsResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(mappingsFilePath, CO_ANY)
-                                    .Returns<bool>(false)
-                                    .Times(1)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> mappingsPathExistsResult;
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(mappingsFilePath, CO_ANY)
+                            .Returns<bool>(false)
+                            .Times(1)
+                            .AssignsResult(mappingsPathExistsResult);
             //Checking builds directory exist
-            std::shared_ptr<OverrideResult> buildsDirExistsResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(buildsDirPath, CO_ANY)
-                                    .Returns<bool>(false)
-                                    .Times(1)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> buildsDirExistsResult;
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(buildsDirPath, CO_ANY)
+                            .Returns<bool>(false)
+                            .Times(1)
+                            .AssignsResult(buildsDirExistsResult);
             //Create builds directory
-            std::shared_ptr<OverrideResult> createBuildsDirResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_create_directories)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(buildsDirPath, CO_ANY)
-                                    .Returns<bool>(true)
-                                    .Times(1)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> createBuildsDirResult;
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_create_directories)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(buildsDirPath, CO_ANY)
+                            .Returns<bool>(true)
+                            .Times(1)
+                            .AssignsResult(createBuildsDirResult);
             //Creating mappings file
-            std::shared_ptr<OverrideResult> ofstreamResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ofstream)
-                                    .WhenCalledWith<const ghc::filesystem::path&>(mappingsFilePath)
-                                    .Returns<void>()
-                                    .Times(1)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> ofstreamResult;
+            CO_INSTRUCT_NO_REF  (OverrideInstance, Mock_ofstream)
+                                .WhenCalledWith<const ghc::filesystem::path&>(mappingsFilePath)
+                                .Returns<void>()
+                                .Times(1)
+                                .AssignsResult(ofstreamResult);
             //Checking if mappings file is created
-            std::shared_ptr<OverrideResult> ofstreamIsOpenResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, is_open)
-                                    .Returns<bool>(true)
-                                    .Times(1)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> ofstreamIsOpenResult;
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ofstream, is_open)
+                            .Returns<bool>(true)
+                            .Times(1)
+                            .AssignsResult(ofstreamIsOpenResult);
             //Closing mappings file
-            std::shared_ptr<OverrideResult> ofstreamCloseResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, close)
-                                    .Returns<void>()
-                                    .Times(1)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> ofstreamCloseResult;
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ofstream, close)
+                            .Returns<void>()
+                            .Times(1)
+                            .AssignsResult(ofstreamCloseResult);
         );
         ssTEST_OUTPUT_ASSERT(   "Initialize should succeed", buildsManager->Initialize(), true);
         ssTEST_OUTPUT_ASSERT(   "Checking mappings file path",
@@ -242,43 +240,43 @@ int main(int argc, char** argv)
         using namespace CppOverride;
         ssTEST_OUTPUT_SETUP
         (
-            std::shared_ptr<OverrideResult> mappingsPathExistsResult = nullptr;
-            std::shared_ptr<OverrideResult> ifstreamResult = nullptr;
-            std::shared_ptr<OverrideResult> isOpenResult = nullptr;
-            std::shared_ptr<OverrideResult> rdbufResult = nullptr;
+            std::shared_ptr<OverrideResult> mappingsPathExistsResult;nullptr;
+            std::shared_ptr<OverrideResult> ifstreamResult;nullptr;
+            std::shared_ptr<OverrideResult> isOpenResult;nullptr;
+            std::shared_ptr<OverrideResult> rdbufResult;nullptr;
             prepareInitialization(  mappingsPathExistsResult, ifstreamResult, 
                                     isOpenResult, rdbufResult, "");
             
             //When mapped build path exists
-            std::shared_ptr<OverrideResult> mappedBuildPathExistsResult =
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith
-                                    <
-                                        const ghc::filesystem::path&, 
-                                        CO_ANY_TYPE
-                                    >
-                                    (
-                                        buildsDirPath + "/" + scriptsBuildsPaths.front(), 
-                                        CO_ANY
-                                    )
-                                    .Returns<bool>(true)
-                                    .Times(1)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> mappedBuildPathExistsResult;
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith
+                            <
+                                const ghc::filesystem::path&, 
+                                CO_ANY_TYPE
+                            >
+                            (
+                                buildsDirPath + "/" + scriptsBuildsPaths.front(), 
+                                CO_ANY
+                            )
+                            .Returns<bool>(true)
+                            .Times(1)
+                            .AssignsResult(mappedBuildPathExistsResult);
             //When mapped build path doesn't exist
-            std::shared_ptr<OverrideResult> mappedBuildPathNotExistsResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith
-                                    <
-                                        const ghc::filesystem::path&, 
-                                        CO_ANY_TYPE
-                                    >
-                                    (
-                                        buildsDirPath + "/" + scriptsBuildsPaths.at(1), 
-                                        CO_ANY
-                                    )
-                                    .Returns<bool>(false)
-                                    .Times(1)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> mappedBuildPathNotExistsResult;
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith
+                            <
+                                const ghc::filesystem::path&, 
+                                CO_ANY_TYPE
+                            >
+                            (
+                                buildsDirPath + "/" + scriptsBuildsPaths.at(1), 
+                                CO_ANY
+                            )
+                            .Returns<bool>(false)
+                            .Times(1)
+                            .AssignsResult(mappedBuildPathNotExistsResult);
             
             static_assert(defaultMappingsCount == 2, "Update test");
         );
@@ -345,7 +343,7 @@ int main(int argc, char** argv)
             //NOTE: This initializes the mapping for the first 2 scripts in scriptsPaths
             prepareInitialization(  initializeResults.at(0), initializeResults.at(1), 
                                     initializeResults.at(2), initializeResults.at(3), "");
-            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
                                 .Times(2)
                                 .Returns<bool>(true);
             static_assert(defaultMappingsCount == 2, "Update test");
@@ -363,29 +361,29 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //Hash script path
-            std::shared_ptr<OverrideResult> hashResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, operator())
-                                    .WhenCalledWith<std::string>(scriptsPaths.at(2) + "0")
-                                    .Returns<std::size_t>(15)
-                                    .Times(1)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> hashResult;
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_hash<std::string>, operator())
+                            .WhenCalledWith<std::string>(scriptsPaths.at(2) + "0")
+                            .Returns<std::size_t>(15)
+                            .Times(1)
+                            .AssignsResult(hashResult);
             
             //New build mapping doesn't exist
-            std::shared_ptr<OverrideResult> newMappedBuildPathExistsResult =
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith<const ghc::filesystem::path&, CO_ANY_TYPE>
-                                        (buildsDirPath + "/" + scriptsBuildsPaths.at(2), CO_ANY)
-                                    .Returns<bool>(false)
-                                    .Times(1)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> newMappedBuildPathExistsResult;
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, CO_ANY_TYPE>
+                                (buildsDirPath + "/" + scriptsBuildsPaths.at(2), CO_ANY)
+                            .Returns<bool>(false)
+                            .Times(1)
+                            .AssignsResult(newMappedBuildPathExistsResult);
             //Create new build mappings directory
-            std::shared_ptr<OverrideResult> createNewMappedBuildPathResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_create_directories)
-                                    .WhenCalledWith<const ghc::filesystem::path&, CO_ANY_TYPE>
-                                        (buildsDirPath + "/" + scriptsBuildsPaths.at(2), CO_ANY)
-                                    .Returns<bool>(true)
-                                    .Times(1)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> createNewMappedBuildPathResult;
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_create_directories)
+                            .WhenCalledWith<const ghc::filesystem::path&, CO_ANY_TYPE>
+                                (buildsDirPath + "/" + scriptsBuildsPaths.at(2), CO_ANY)
+                            .Returns<bool>(true)
+                            .Times(1)
+                            .AssignsResult(createNewMappedBuildPathResult);
         );
         ssTEST_OUTPUT_ASSERT(   "CreateBuildMapping should succeed",
                                 buildsManager->CreateBuildMapping(scriptsPaths.at(2)), true);
@@ -415,27 +413,27 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //Hash script path not unique (first attempt)
-            std::shared_ptr<OverrideResult> hashNotUniqueResult =
-                CO_SETUP_OVERRIDE   (OverrideInstance, operator())
-                                    .WhenCalledWith(scriptsPaths.at(2) + "0")
-                                    .Returns<std::size_t>(10)
-                                    .Times(1)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> hashNotUniqueResult;
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_hash<std::string>, operator())
+                            .WhenCalledWith(scriptsPaths.at(2) + "0")
+                            .Returns<std::size_t>(10)
+                            .Times(1)
+                            .AssignsResult(hashNotUniqueResult);
             //Hash script path unique (second attempt)
-            std::shared_ptr<OverrideResult> hashUniqueResult =
-                CO_SETUP_OVERRIDE   (OverrideInstance, operator())
-                                    .WhenCalledWith(scriptsPaths.at(2) + "1")
-                                    .Returns<std::size_t>(15)
-                                    .Times(1)
-                                    .ReturnsResult();
-            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                .WhenCalledWith<const ghc::filesystem::path&, CO_ANY_TYPE>
-                                    (buildsDirPath + "/" + scriptsBuildsPaths.at(2), CO_ANY)
-                                .Returns<bool>(false);
-            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_create_directories)
-                                .WhenCalledWith<const ghc::filesystem::path&, CO_ANY_TYPE>
-                                    (buildsDirPath + "/" + scriptsBuildsPaths.at(2), CO_ANY)
-                                .Returns<bool>(true);
+            std::shared_ptr<OverrideResult> hashUniqueResult;
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_hash<std::string>, operator())
+                            .WhenCalledWith(scriptsPaths.at(2) + "1")
+                            .Returns<std::size_t>(15)
+                            .Times(1)
+                            .AssignsResult(hashUniqueResult);
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, CO_ANY_TYPE>
+                                (buildsDirPath + "/" + scriptsBuildsPaths.at(2), CO_ANY)
+                            .Returns<bool>(false);
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_create_directories)
+                            .WhenCalledWith<const ghc::filesystem::path&, CO_ANY_TYPE>
+                                (buildsDirPath + "/" + scriptsBuildsPaths.at(2), CO_ANY)
+                            .Returns<bool>(true);
         );
         ssTEST_OUTPUT_ASSERT(   "CreateBuildMapping should succeed",
                                 buildsManager->CreateBuildMapping(scriptsPaths.at(2)), true);
@@ -512,11 +510,11 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //CreateBuildMapping should not be called
-            std::shared_ptr<OverrideResult> createBuildMappingResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, CreateBuildMapping)
-                                    .Returns<bool>(false)
-                                    .OverrideObject(buildsManager.get())
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> createBuildMappingResult;
+            CO_INSTRUCT_REF (OverrideInstance, runcpp2::BuildsManager, CreateBuildMapping)
+                            .Returns<bool>(false)
+                            .MatchesObject(buildsManager.get())
+                            .AssignsResult(createBuildMappingResult);
             ghc::filesystem::path outPath;
         );
         ssTEST_OUTPUT_ASSERT(   "GetBuildMapping should Succeed",
@@ -534,24 +532,24 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //CreateBuildMapping should be called
-            std::shared_ptr<OverrideResult> createBuildMappingResult =
-                CO_SETUP_OVERRIDE   (OverrideInstance, CreateBuildMapping)
-                                    .WhenCalledWith<const ghc::filesystem::path&>(scriptsPaths.at(2))
-                                    .Returns<bool>(true)
-                                    .Times(1)
-                                    .OverrideObject(buildsManager.get())
-                                    .WhenCalledExpectedly_Do
-                                    (
-                                        [&buildsManager, &scriptsPaths, &scriptsBuildsPaths](...)
-                                        {
-                                            BuildsManagerAccessor::GetMappings(*buildsManager)
-                                                [scriptsPaths.at(2)] = scriptsBuildsPaths.at(2);
-                                            
-                                            BuildsManagerAccessor::GetReverseMappings(*buildsManager)
-                                                [scriptsBuildsPaths.at(2)] = scriptsPaths.at(2);
-                                        }
-                                    )
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> createBuildMappingResult;
+            CO_INSTRUCT_REF (OverrideInstance, runcpp2::BuildsManager, CreateBuildMapping)
+                            .WhenCalledWith<const ghc::filesystem::path&>(scriptsPaths.at(2))
+                            .Returns<bool>(true)
+                            .Times(1)
+                            .MatchesObject(buildsManager.get())
+                            .WhenCalledExpectedly_Do
+                            (
+                                [&buildsManager, &scriptsPaths, &scriptsBuildsPaths](...)
+                                {
+                                    BuildsManagerAccessor::GetMappings(*buildsManager)
+                                        [scriptsPaths.at(2)] = scriptsBuildsPaths.at(2);
+                                    
+                                    BuildsManagerAccessor::GetReverseMappings(*buildsManager)
+                                        [scriptsBuildsPaths.at(2)] = scriptsPaths.at(2);
+                                }
+                            )
+                            .AssignsResult(createBuildMappingResult);
             ghc::filesystem::path outPath;
         );
         ssTEST_OUTPUT_ASSERT(   "GetBuildMapping should Succeed",
@@ -588,34 +586,33 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //Output to mappings file
-            std::shared_ptr<OverrideResult> ofstreamResult =
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ofstream)
-                                    .WhenCalledWith<const ghc::filesystem::path&>(mappingsFilePath)
-                                    .Returns<void>()
-                                    .Times(1)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> ofstreamResult;
+            CO_INSTRUCT_NO_REF  (OverrideInstance, Mock_ofstream)
+                                .WhenCalledWith<const ghc::filesystem::path&>(mappingsFilePath)
+                                .Returns<void>()
+                                .Times(1)
+                                .AssignsResult(ofstreamResult);
             //Checking if mappings file is created
-            std::shared_ptr<OverrideResult> ofstreamIsOpenResult =
-                CO_SETUP_OVERRIDE   (OverrideInstance, is_open)
-                                    .Returns<bool>(true)
-                                    .Times(1)
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> ofstreamIsOpenResult;
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ofstream, is_open)
+                            .Returns<bool>(true)
+                            .Times(1)
+                            .AssignsResult(ofstreamIsOpenResult);
             //Closing mappings file
             std::string writeResult;
-            std::shared_ptr<OverrideResult> ofstreamCloseResult =
-                CO_SETUP_OVERRIDE   (OverrideInstance, close)
-                                    .Returns<void>()
-                                    .Times(1)
-                                    .WhenCalledExpectedly_Do
-                                    (
-                                        [&](void* instance, const std::vector<void*>&)
-                                        {
-                                            writeResult = 
-                                                static_cast<std::Mock_ofstream*>(instance)->
-                                                StringStream.str();
-                                        }
-                                    )
-                                    .ReturnsResult();
+            std::shared_ptr<OverrideResult> ofstreamCloseResult;
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ofstream, close)
+                            .Returns<void>()
+                            .Times(1)
+                            .WhenCalledExpectedly_Do
+                            (
+                                [&](void* instance, const std::vector<CppOverride::TypedDataInfo>&)
+                                {
+                                    writeResult = 
+                                        static_cast<std::Mock_ofstream*>(instance)->StringStream.str();
+                                }
+                            )
+                            .AssignsResult(ofstreamCloseResult);
         );
         
         ssTEST_OUTPUT_ASSERT(   buildsManager->SaveBuildsMappings() == true);

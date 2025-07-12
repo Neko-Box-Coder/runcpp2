@@ -238,7 +238,7 @@ namespace
 
 std::string runcpp2::GetConfigFilePath()
 {
-    CO_OVERRIDE_IMPL(OverrideInstance, std::string, ());
+    CO_INSERT_IMPL(OverrideInstance, std::string, ());
     
     //Check if user config exists
     char configDirC_Str[MAX_PATH] = {0};
@@ -279,7 +279,7 @@ bool runcpp2::WriteDefaultConfigs(  const ghc::filesystem::path& userConfigPath,
                                     const bool writeUserConfig,
                                     const bool writeDefaultConfigs)
 {
-    CO_OVERRIDE_IMPL(OverrideInstance, bool, (userConfigPath, writeUserConfig, writeDefaultConfigs));
+    CO_INSERT_IMPL(OverrideInstance, bool, (userConfigPath, writeUserConfig, writeDefaultConfigs));
     
     //Backup existing user config
     std::error_code _;

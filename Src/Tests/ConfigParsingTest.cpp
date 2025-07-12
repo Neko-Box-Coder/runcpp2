@@ -59,23 +59,23 @@ int main(int argc, char** argv)
         CO_CLEAR_ALL_OVERRIDE_SETUP(OverrideInstance);
         ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_WARNING);
         
-        configExistsResult = 
-            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                .WhenCalledWith<const std::string&, CO_ANY_TYPE>(configPath, CO_ANY)
-                                .Returns<bool>(true)
-                                .ReturnsResult();
-        versionExistsResult = 
-            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                .WhenCalledWith<const std::string&, CO_ANY_TYPE>(versionPath, CO_ANY)
-                                .Returns<bool>(true)
-                                .ReturnsResult();
-        isDirResult = 
-            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_is_directory)
-                                .WhenCalledWith<const std::string&, CO_ANY_TYPE>(configPath, CO_ANY)
-                                .Returns<bool>(false)
-                                .ReturnsResult();
+        configExistsResult = nullptr;
+        CO_INSERT_REF   (OverrideInstance, ghc::filesystem, Mock_exists)
+                        .WhenCalledWith<const std::string&, CO_ANY_TYPE>(configPath, CO_ANY)
+                        .Returns<bool>(true)
+                        .AssignsResult(configExistsResult);
+        versionExistsResult = nullptr;
+        CO_INSERT_REF   (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const std::string&, CO_ANY_TYPE>(versionPath, CO_ANY)
+                            .Returns<bool>(true)
+                            .AssignsResult(versionExistsResult);
+        isDirResult = nullptr
+        CO_INSERT_REF   (OverrideInstance, ghc::filesystem, Mock_is_directory)
+                        .WhenCalledWith<const std::string&, CO_ANY_TYPE>(configPath, CO_ANY)
+                        .Returns<bool>(false)
+                        .AssignsResult(isDirResult);
         configIfstreamResult = 
-            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ifstream)
+            CO_INSERT_NO_REF(OverrideInstance, Mock_ifstream)
                                 .WhenCalledWith<const ghc::filesystem::path&>(configPath)
                                 .WhenCalledExpectedly_Do
                                 (
@@ -87,7 +87,7 @@ int main(int argc, char** argv)
                                 )
                                 .ReturnsResult();
         versionIfstreamResult = 
-            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ifstream)
+            CO_INSERT_NO_REF   (OverrideInstance, Mock_ifstream)
                                 .WhenCalledWith<const ghc::filesystem::path&>(versionPath)
                                 .WhenCalledExpectedly_Do
                                 (
@@ -99,7 +99,7 @@ int main(int argc, char** argv)
                                 )
                                 .ReturnsResult();
         ifstreamSucceedResult = 
-            CO_SETUP_OVERRIDE   (OverrideInstance, operator!)
+            CO_INSERT_REF   (OverrideInstance, std::Mock_ifstream, operator!)
                                 .If
                                 (
                                     [&userConfigIfstreamInstance, &versionIfstreamInstance]
@@ -112,7 +112,7 @@ int main(int argc, char** argv)
                                 .Returns<bool>(false)
                                 .ReturnsResult();
         versionRdbufResult = 
-            CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
+            CO_INSERT_REF   (OverrideInstance, std::Mock_ifstream, rdbuf)
                                 .Returns<std::string>(versionString)
                                 .If
                                 (
@@ -125,7 +125,7 @@ int main(int argc, char** argv)
                                 .Times(1)
                                 .ReturnsResult();
         writeDefaultConfigsResult = 
-            CO_SETUP_OVERRIDE   (OverrideInstance, WriteDefaultConfigs)
+            CO_INSERT_REF   (OverrideInstance, WriteDefaultConfigs)
                                 .Returns<bool>(false)
                                 .ReturnsResult();
     };
@@ -146,11 +146,11 @@ int main(int argc, char** argv)
     
     auto commonDefaultOverrideSetup = [&]()
     {
-        CO_SETUP_OVERRIDE(OverrideInstance, Mock_exists).Returns<bool>(false);
-        CO_SETUP_OVERRIDE(OverrideInstance, Mock_is_directory).Returns<bool>(false);
-        CO_SETUP_OVERRIDE(OverrideInstance, operator!).Returns<bool>(false);
-        CO_SETUP_OVERRIDE(OverrideInstance, WriteDefaultConfig).Returns<bool>(false);
-        CO_SETUP_OVERRIDE(OverrideInstance, rdbuf).Returns<std::string>("");
+        CO_INSERT_REF(OverrideInstance, ghc::filesystem, Mock_exists).Returns<bool>(false);
+        CO_INSERT_REF(OverrideInstance, ghc::filesystem, Mock_is_directory).Returns<bool>(false);
+        CO_INSERT_REF(OverrideInstance, operator!).Returns<bool>(false);
+        CO_INSERT_REF(OverrideInstance, runcpp2, WriteDefaultConfigs).Returns<bool>(false);
+        CO_INSERT_REF(OverrideInstance, std::Mock_ifstream, rdbuf).Returns<std::string>("");
     };
     
     ssTEST_COMMON_CLEANUP
@@ -214,7 +214,7 @@ int main(int argc, char** argv)
             )";
             
             configRdbufResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
+                CO_INSERT_REF   (OverrideInstance, std::Mock_ifstream, rdbuf)
                                     .Returns<std::string>(yamlStr)
                                     .If
                                     (
@@ -290,7 +290,7 @@ int main(int argc, char** argv)
             )";
             
             configRdbufResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
+                CO_INSERT_REF   (OverrideInstance, std::Mock_ifstream, rdbuf)
                                     .Returns<std::string>(yamlStr)
                                     .Times(1)
                                     .If
@@ -303,7 +303,7 @@ int main(int argc, char** argv)
                                     )
                                     .ReturnsResult();
             std::shared_ptr<OverrideResult> getPlatformNamesResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, GetPlatformNames)
+                CO_INSERT_REF   (OverrideInstance, runcpp2, GetPlatformNames)
                                     .Returns<std::vector<std::string>>({"MacOS", 
                                                                         "Unix", 
                                                                         "DefaultPlatform"})
@@ -333,7 +333,7 @@ int main(int argc, char** argv)
             profiles.clear();
             preferredProfile.clear();
             
-            CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
+            CO_INSERT_REF   (OverrideInstance, std::Mock_ifstream, rdbuf)
                                 .Returns<std::string>(yamlStr)
                                 .Times(1)
                                 .If
@@ -345,7 +345,7 @@ int main(int argc, char** argv)
                                     }
                                 )
                                 .AssignsResult(configRdbufResult);
-            CO_SETUP_OVERRIDE   (OverrideInstance, GetPlatformNames)
+            CO_INSERT_REF   (OverrideInstance, runcpp2, GetPlatformNames)
                                 .Returns<std::vector<std::string>>({"Linux", 
                                                                     "Unix", 
                                                                     "DefaultPlatform"})
@@ -450,7 +450,7 @@ int main(int argc, char** argv)
             
             //Mock for main config file 
             configRdbufResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
+                CO_INSERT_REF   (OverrideInstance, std::Mock_ifstream, rdbuf)
                                     .Returns<std::string>(mainConfigYamlStr)
                                     .Times(1)
                                     .If
@@ -470,21 +470,21 @@ int main(int argc, char** argv)
                 "some/config/dir/Default/gccCompilerLinker.yaml";
             
             std::shared_ptr<OverrideResult> gccImportFileExistResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
+                CO_INSERT_REF   (OverrideInstance, ghc::filesystem, Mock_exists)
                                     .WhenCalledWith<const std::string&, 
                                                     CO_ANY_TYPE>(   gccExpectedImportPath, 
                                                                     CO_ANY)
                                     .Returns<bool>(true)
                                     .ReturnsResult();
             std::shared_ptr<OverrideResult> filetypesImportFileExistResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
+                CO_INSERT_REF   (OverrideInstance, ghc::filesystem, Mock_exists)
                                     .WhenCalledWith<const std::string&, 
                                                     CO_ANY_TYPE>(   filetypesExpectedImportPath, 
                                                                     CO_ANY)
                                     .Returns<bool>(true)
                                     .ReturnsResult();
             std::shared_ptr<OverrideResult> gccCompilerLinkerImportFileExistResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
+                CO_INSERT_REF   (OverrideInstance, ghc::filesystem, Mock_exists)
                                     .WhenCalledWith
                                     <
                                         const std::string&, 
@@ -502,7 +502,7 @@ int main(int argc, char** argv)
             void* filetypesImportIfstreamInstance = nullptr;
             void* gccCompilerLinkerImportIfstreamInstance = nullptr;
             std::shared_ptr<OverrideResult> gccImportedFileStreamResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ifstream)
+                CO_INSERT_NO_REF(OverrideInstance, Mock_ifstream)
                                     .WhenCalledWith<const ghc::filesystem::path>
                                         (gccExpectedImportPath)
                                     .Times(1)
@@ -516,7 +516,7 @@ int main(int argc, char** argv)
                                     )
                                     .ReturnsResult();
             std::shared_ptr<OverrideResult> filetypesImportedFileStreamResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ifstream)
+                CO_INSERT_NO_REF(OverrideInstance, Mock_ifstream)
                                     .WhenCalledWith<const ghc::filesystem::path>
                                         (filetypesExpectedImportPath)
                                     .Times(1)
@@ -530,7 +530,7 @@ int main(int argc, char** argv)
                                     )
                                     .ReturnsResult();
             std::shared_ptr<OverrideResult> gccCompilerLinkerImportedFileStreamResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ifstream)
+                CO_INSERT_NO_REF(OverrideInstance, Mock_ifstream)
                                     .WhenCalledWith<const ghc::filesystem::path>
                                         (gccCompilerLinkerExpectedImportPath)
                                     .Times(1)
@@ -546,7 +546,7 @@ int main(int argc, char** argv)
             
             //Mock for rdbuf call with specific path check for import files
             std::shared_ptr<OverrideResult> gccImportedFileRdbufResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
+                CO_INSERT_REF   (OverrideInstance, std::Mock_ifstream, rdbuf)
                                     .Returns<std::string>(importedGccProfileYamlStr)
                                     .Times(1)
                                     .If
@@ -559,7 +559,7 @@ int main(int argc, char** argv)
                                     )
                                     .ReturnsResult();
             std::shared_ptr<OverrideResult> filetypesImportedFileRdbufResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
+                CO_INSERT_REF   (OverrideInstance, std::Mock_ifstream, rdbuf)
                                     .Returns<std::string>(importedFiletypesYamlStr)
                                     .Times(1)
                                     .If
@@ -572,7 +572,7 @@ int main(int argc, char** argv)
                                     )
                                     .ReturnsResult();
             std::shared_ptr<OverrideResult> gccCompilerLinkerImportedFileRdbufResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, rdbuf)
+                CO_INSERT_REF   (OverrideInstance, std::Mock_ifstream, rdbuf)
                                     .Returns<std::string>(importedCompilerLinkerYamlStr)
                                     .Times(1)
                                     .If
