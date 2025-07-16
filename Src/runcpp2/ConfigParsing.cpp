@@ -1,10 +1,10 @@
 #include "runcpp2/ConfigParsing.hpp"
 #include "runcpp2/ParseUtil.hpp"
+#include "runcpp2/StringUtil.hpp"
 #include "runcpp2/PlatformUtil.hpp"
 #include "runcpp2/YamlLib.hpp"
 
 #include "cfgpath.h"
-#include "ghc/filesystem.hpp"
 #include "ssLogger/ssLog.hpp"
 
 #if INTERNAL_RUNCPP2_UNIT_TESTS
@@ -27,7 +27,7 @@ extern "C" const size_t Vs2022_v17Plus_size;
 namespace 
 {
     bool ResovleProfileImport(  ryml::NodeRef currentProfileNode, 
-                                const std::string& configPath,
+                                const ghc::filesystem::path& configPath,
                                 std::vector<ryml::Tree>& importProfileTrees)
     {
         INTERNAL_RUNCPP2_SAFE_START();
@@ -124,7 +124,7 @@ namespace
     }
     
     bool ParseUserConfig(   const std::string& userConfigString, 
-                            const std::string& configPath,
+                            const ghc::filesystem::path& configPath,
                             std::vector<runcpp2::Data::Profile>& outProfiles,
                             std::string& outPreferredProfile)
     {
@@ -238,7 +238,7 @@ namespace
 
 std::string runcpp2::GetConfigFilePath()
 {
-    CO_OVERRIDE_IMPL(OverrideInstance, std::string, ());
+    CO_INSERT_IMPL(OverrideInstance, std::string, ());
     
     //Check if user config exists
     char configDirC_Str[MAX_PATH] = {0};
@@ -275,23 +275,26 @@ std::string runcpp2::GetConfigFilePath()
     return compilerConfigFilePaths[0];
 }
 
-bool runcpp2::WriteDefaultConfig(const std::string& userConfigPath)
+bool runcpp2::WriteDefaultConfigs(  const ghc::filesystem::path& userConfigPath, 
+                                    const bool writeUserConfig,
+                                    const bool writeDefaultConfigs)
 {
-    CO_OVERRIDE_IMPL(OverrideInstance, bool, (userConfigPath));
+    CO_INSERT_IMPL(OverrideInstance, bool, (userConfigPath, writeUserConfig, writeDefaultConfigs));
     
+    //Backup existing user config
     std::error_code _;
-    if(ghc::filesystem::exists(userConfigPath, _))
+    if(writeUserConfig && ghc::filesystem::exists(userConfigPath, _))
     {
         int backupCount = 0;
         do
         {
             if(backupCount > 10)
             {
-                ssLOG_ERROR("Failed to backup existing user config: " << userConfigPath);
+                ssLOG_ERROR("Failed to backup existing user config: " << userConfigPath.string());
                 return false;
             }
             
-            std::string backupPath = userConfigPath;
+            std::string backupPath = userConfigPath.string();
             
             if(backupCount > 0)
                 backupPath += "." + std::to_string(backupCount);
@@ -309,7 +312,7 @@ bool runcpp2::WriteDefaultConfig(const std::string& userConfigPath)
             ghc::filesystem::copy(userConfigPath, backupPath, copyErrorCode);
             if(copyErrorCode)
             {
-                ssLOG_ERROR("Failed to backup existing user config: " << userConfigPath <<
+                ssLOG_ERROR("Failed to backup existing user config: " << userConfigPath.string() <<
                             " with error: " << _.message());
                 
                 return false;
@@ -318,7 +321,7 @@ bool runcpp2::WriteDefaultConfig(const std::string& userConfigPath)
             ssLOG_INFO("Backed up existing user config: " << backupPath);
             if(!ghc::filesystem::remove(userConfigPath, _))
             {
-                ssLOG_ERROR("Failed to delete existing user config: " << userConfigPath);
+                ssLOG_ERROR("Failed to delete existing user config: " << userConfigPath.string());
                 return false;
             }
             
@@ -328,15 +331,19 @@ bool runcpp2::WriteDefaultConfig(const std::string& userConfigPath)
     }
     
     //Create user config
+    if(writeUserConfig)
     {
         std::ofstream configFile(userConfigPath, std::ios::binary);
         if(!configFile)
         {
-            ssLOG_ERROR("Failed to create default config file: " << userConfigPath);
+            ssLOG_ERROR("Failed to create default config file: " << userConfigPath.string());
             return false;
         }
         configFile.write((const char*)DefaultUserConfig, DefaultUserConfig_size);
     }
+    
+    if(!writeDefaultConfigs)
+        return true;
     
     ghc::filesystem::path userConfigDirectory = userConfigPath;
     userConfigDirectory = userConfigDirectory.parent_path();
@@ -358,7 +365,8 @@ bool runcpp2::WriteDefaultConfig(const std::string& userConfigPath)
         (ghc::filesystem::path outputPath, const uint8_t* outputContent, size_t outputSize)
         {
             const ghc::filesystem::path currentOutputPath = defaultYamlDirectory / outputPath;
-            std::ofstream defaultFile(currentOutputPath.string(), std::ios::binary);
+            std::ofstream defaultFile(  currentOutputPath.string(), 
+                                        std::ios::binary | std::ios_base::trunc);
             if(!defaultFile)
             {
                 ssLOG_ERROR("Failed to create default config file: " << currentOutputPath.string());
@@ -375,10 +383,22 @@ bool runcpp2::WriteDefaultConfig(const std::string& userConfigPath)
         return false;
     }
     
+    //Writing .version to indicate everything is up-to-date
+    std::ofstream configVersionFile(userConfigDirectory / ".version", 
+                                    std::ios::binary | std::ios_base::trunc);
+    if(!configVersionFile)
+    {
+        ssLOG_ERROR("Failed to open version file: " << 
+                    ghc::filesystem::path(userConfigDirectory / ".version").string());
+        return false;
+    }
+    
+    configVersionFile << std::to_string(RUNCPP2_CONFIG_VERSION);
+    
     return true;
 }
 
-
+//TODO(NOW): Update test
 bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles, 
                                 std::string& outPreferredProfile,
                                 const std::string& customConfigPath)
@@ -387,27 +407,64 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles,
 
     ssLOG_FUNC_INFO();
     
-    std::string configPath = !customConfigPath.empty() ? customConfigPath : GetConfigFilePath();
+    ghc::filesystem::path configPath =  !customConfigPath.empty() ? 
+                                        customConfigPath : 
+                                        GetConfigFilePath();
+    ghc::filesystem::path configVersionPath = configPath.parent_path() / ".version";
+    
     if(configPath.empty())
         return false;
     
     std::error_code e;
+    
+    bool writeUserConfig = false;
+    bool writeDefaultConfigs = false;
+    
+    //Create default config files if it doesn't exist
     if(!ghc::filesystem::exists(configPath, e))
     {
         if(!customConfigPath.empty())
         {
-            ssLOG_ERROR("Config file doesn't exist: " << configPath);
+            ssLOG_ERROR("Config file doesn't exist: " << configPath.string());
             return false;
         }
         
-        ssLOG_INFO("Config file doesn't exist. Creating one at: " << configPath);
-        if(!WriteDefaultConfig(configPath))
+        ssLOG_INFO("Config file doesn't exist. Creating one at: " << configPath.string());
+        writeUserConfig = true;
+        writeDefaultConfigs = true;
+    }
+    //Overwrite default config files if it is using old version
+    else if(ghc::filesystem::exists(configVersionPath, e))
+    {
+        std::ifstream configVersionFile(configVersionPath);
+        if(!configVersionFile)
+        {
+            ssLOG_ERROR("Failed to open version file: " << configVersionPath.string());
             return false;
+        }
+        std::string configVersionStr;
+        std::stringstream buffer;
+        buffer << configVersionFile.rdbuf();
+        configVersionStr = buffer.str();
+        
+        Trim(configVersionStr);
+        int configVersion = std::stoi(configVersionStr);
+        if(configVersion < RUNCPP2_CONFIG_VERSION)
+            writeDefaultConfigs = true;
+    }
+    //Overwrite default config files if missing version file
+    else
+        writeDefaultConfigs = true;
+    
+    if( (writeUserConfig || writeDefaultConfigs) && 
+        !WriteDefaultConfigs(configPath, writeUserConfig, writeDefaultConfigs))
+    {
+        return false;
     }
     
     if(ghc::filesystem::is_directory(configPath, e))
     {
-        ssLOG_ERROR("Config file path is a directory: " << configPath);
+        ssLOG_ERROR("Config file path is a directory: " << configPath.string());
         return false;
     }
     
@@ -417,7 +474,7 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles,
         std::ifstream userConfigFile(configPath);
         if(!userConfigFile)
         {
-            ssLOG_ERROR("Failed to open config file: " << configPath);
+            ssLOG_ERROR("Failed to open config file: " << configPath.string());
             return false;
         }
         std::stringstream buffer;
@@ -427,7 +484,7 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles,
     
     if(!ParseUserConfig(userConfigContent, configPath, outProfiles, outPreferredProfile))
     {
-        ssLOG_ERROR("Failed to parse config file: " << configPath);
+        ssLOG_ERROR("Failed to parse config file: " << configPath.string());
         return false;
     }
 

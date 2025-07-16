@@ -151,7 +151,7 @@ namespace runcpp2
     
     ghc::filesystem::path IncludeManager::GetRecordPath(const ghc::filesystem::path& sourceFile) const
     {
-        CO_OVERRIDE_MEMBER_IMPL(OverrideInstance, ghc::filesystem::path, (sourceFile));
+        CO_INSERT_MEMBER_IMPL(OverrideInstance, ghc::filesystem::path, (sourceFile));
         
         ghc::filesystem::path cleanSourceFile = sourceFile.lexically_normal();
         std::size_t pathHash = std::hash<std::string>{}(cleanSourceFile.string());

@@ -45,6 +45,22 @@
     ```yaml
     BuildType: Executable
     ```
+
+!!! warning
+    When you specify `BuildType` as `Executable`, it will still produce a **shared library** for running.
+    Under the hood, runcpp2 simply loads the shared library and call the `main()` function.
+    
+    The reason of this behavior is because this makes it possible to "catch" if there's any
+    missing external (shared) libraries that failed to be resolved, either because of missing
+    `.dll`/`.so` or misconfigured search path. 
+    
+    This allows runcpp2 to differentiate a failure on resolving shared library and if the program
+    just returns a non-zero exit code.
+    
+    Therefore, when calling with the build flag `--build`, the output of the binary is **shared 
+    library instead of an executable**. This behavior can be **overridden** by passing the 
+    `--executable`/`-e` flag to force runcpp2 to produce the executable.
+
 ### `RequiredProfiles`
 - Type: `Platform Profile List`
 - Optional: `true`
@@ -58,21 +74,21 @@
         MacOS: ["g++"]
     ```
 ### `OverrideCompileFlags`
-- Type: `Platform Profile Map`
+- Type: `Platform Profile Map` with child fields
 - Optional: `true`
 - Default: None
-- Description: The compile flags to override for each platform and profile.
+- Description: The compile flags to override for the profile being run under each platform.
 - Child Fields:
     - `Remove`
         - Type: `string`
         - Optional: `true`
         - Default: None
-        - Description: The compile flags to remove for each platform and profile.
+        - Description: The compile flags to remove for the profile being run.
     - `Append`
         - Type: `string`
         - Optional: `true`
         - Default: None
-        - Description: The compile flags to append for each platform and profile.
+        - Description: The compile flags to append for the profile being run.
 ??? example
     ```yaml
     OverrideCompileFlags:
@@ -85,18 +101,18 @@
 - Type: `Platform Profile Map` with child fields
 - Optional: `true`
 - Default: None
-- Description: The link flags to override for each platform and profile.
+- Description: The link flags to override for the profile being run under each platform.
 - Child Fields:
     - `Remove`
         - Type: `string`
         - Optional: `true`
         - Default: None
-        - Description: The link flags to remove for each platform and profile.
+        - Description: The link flags to remove for the profile being run.
     - `Append`
         - Type: `string`
         - Optional: `true`
         - Default: None
-        - Description: The link flags to append for each platform and profile.
+        - Description: The link flags to append for the profile being run.
 ??? example
     ```yaml
     OverrideLinkFlags:
@@ -147,7 +163,7 @@
 - Type: `Platform Profile Map` with `list` of `string`
 - Optional: `true`
 - Default: None
-- Description: The setup commands to be used for each platform and profile.
+- Description: The setup commands to be used for each platform and profile. This runs before the script built for the first time.
 ??? example
     ```yaml
     Setup:
@@ -159,7 +175,7 @@
 - Type: `Platform Profile Map` with `list` of `string`
 - Optional: `true`
 - Default: None
-- Description: The pre-build commands to be used for each platform and profile.
+- Description: The pre-build commands to be used for each platform and profile. This runs before each build.
 ??? example
     ```yaml
     PreBuild:
@@ -171,7 +187,7 @@
 - Type: `Platform Profile Map` with `list` of `string`
 - Optional: `true`
 - Default: None
-- Description: The post-build commands to be used for each platform and profile.
+- Description: The post-build commands to be used for each platform and profile. This runs after each build.
 ??? example
     ```yaml
     PostBuild:
@@ -183,7 +199,7 @@
 - Type: `Platform Profile Map` with `list` of `string`
 - Optional: `true`
 - Default: None
-- Description: The cleanup commands to be used for each platform and profile.
+- Description: The cleanup commands to be used for each platform and profile. This runs when `--cleanup` command is specified.
 ??? example
     ```yaml
     Cleanup:

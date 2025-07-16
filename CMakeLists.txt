@@ -9,6 +9,8 @@ set(CMAKE_CXX_STANDARD 11)
 
 option(RUNCPP2_UPDATE_DEFAULT_YAMLS "Update default yaml files" OFF)
 
+set(RUNCPP2_CONFIG_VERSION "1" CACHE STRING "Default Config Version")
+
 if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     option(RUNCPP2_WARNINGS_AS_ERRORS "Treat warnings as errors" ON)
     option(RUNCPP2_BUILD_TESTS "Build runcpp2 tests" ON)
@@ -55,17 +57,18 @@ function(get_version_from_git OUTPUT_VARIABLE)
         )
 
         if(TAG_ON_COMMIT EQUAL 0)
-            set(VERSION ${GIT_TAG})
+            set(VERSION "${GIT_TAG}")
         else()
             set(VERSION "${GIT_TAG}-${GIT_COMMIT_HASH}")
         endif()
     else()
         # No tags found, use v0.0.0 with commit hash
         # set(VERSION "v0.0.0-${GIT_COMMIT_HASH}")
+        
         message(FATAL_ERROR "Failed to get tag: ${GIT_TAG}")
     endif()
 
-    set(${OUTPUT_VARIABLE} ${VERSION} PARENT_SCOPE)
+    set(${OUTPUT_VARIABLE} "${VERSION}" PARENT_SCOPE)
 endfunction()
 
 # Call the function and store the result
@@ -211,8 +214,9 @@ endif()
 
 target_compile_options(runcpp2 PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
 
-# Define the version macro
-target_compile_definitions(runcpp2 PUBLIC RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}")
+# Define the runcpp2 and default config version macro
+target_compile_definitions(runcpp2 PUBLIC   RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}"
+                                            RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION})
 
 # =========================================================================
 # runcpp2 executable
@@ -233,6 +237,7 @@ target_link_libraries(runcpp2_override PRIVATE ${RUNCPP2_PRIVATE_LINK_LIBS})
 target_link_libraries(runcpp2_override PUBLIC ${RUNCPP2_PUBLIC_LINK_LIBS})
 target_compile_options(runcpp2_override PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
 target_compile_definitions(runcpp2_override PUBLIC  RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}" 
+                                                    RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION}
                                                     INTERNAL_RUNCPP2_UNIT_TESTS=1)
 if(RUNCPP2_BUILD_TESTS)
     add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Src/Tests")
