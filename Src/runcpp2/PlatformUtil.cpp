@@ -65,7 +65,7 @@ std::string runcpp2::ProcessPath(const std::string& path)
 
 std::vector<std::string> runcpp2::GetPlatformNames()
 {
-    CO_OVERRIDE_IMPL(OverrideInstance, std::vector<std::string>, ());
+    CO_INSERT_IMPL(OverrideInstance, std::vector<std::string>, ());
     
     #ifdef _WIN32
         return {"Windows", "DefaultPlatform"};

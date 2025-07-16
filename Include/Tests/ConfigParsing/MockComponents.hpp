@@ -16,14 +16,14 @@ namespace ghc
 {
     namespace filesystem
     {
-        CO_OVERRIDE_METHOD( OverrideInstance, 
+        CO_INSERT_METHOD(   OverrideInstance, 
                             bool, 
                             Mock_exists, 
                             (const std::string&, std::error_code&),
                             /* no prepend */,
                             noexcept)
         
-        CO_OVERRIDE_METHOD( OverrideInstance, 
+        CO_INSERT_METHOD(   OverrideInstance, 
                             bool, 
                             Mock_is_directory, 
                             (const std::string&, std::error_code&),
@@ -37,12 +37,12 @@ namespace std
     class Mock_ifstream
     {
         public:
-            CO_OVERRIDE_MEMBER_METHOD_CTOR( OverrideInstance, 
+            CO_INSERT_MEMBER_METHOD_CTOR(   OverrideInstance, 
                                             Mock_ifstream, 
                                             const ghc::filesystem::path&)
-            CO_OVERRIDE_MEMBER_METHOD(OverrideInstance, bool, operator!, ())
-            CO_OVERRIDE_MEMBER_METHOD(OverrideInstance, std::string, rdbuf, ())
-            CO_OVERRIDE_METHOD( OverrideInstance, 
+            CO_INSERT_MEMBER_METHOD(OverrideInstance, bool, operator!, ())
+            CO_INSERT_MEMBER_METHOD(OverrideInstance, std::string, rdbuf, ())
+            CO_INSERT_METHOD(   OverrideInstance, 
                                 Mock_ifstream&, 
                                 operator<<, 
                                 (Mock_ifstream&, T const&), 
