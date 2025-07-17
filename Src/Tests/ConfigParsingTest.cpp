@@ -156,6 +156,215 @@ int main(int argc, char** argv)
         versionIfstreamInstance = nullptr;
     };
 
+    const char* commonUserConfigForVersionFile = R"(
+        PreferredProfile: "g++"
+        Profiles:
+        -   Name: "g++"
+            FileExtensions: [.cpp, .cc, .cxx]
+            Languages: ["c++"]
+            FilesTypes:
+                ObjectLinkFile: &PrefixExtensionTemplate
+                    Prefix:
+                        DefaultPlatform: "prefix"
+                    Extension:
+                        DefaultPlatform: ".extension"
+                SharedLinkFile: *PrefixExtensionTemplate
+                SharedLibraryFile: *PrefixExtensionTemplate
+                StaticLinkFile: *PrefixExtensionTemplate
+                DebugSymbolFile: *PrefixExtensionTemplate
+            Compiler:
+                CheckExistence: 
+                    DefaultPlatform: "g++ -v"
+                CompileTypes: &TypeInfoEntries
+                    Executable: &DefaultTypeInfo
+                        DefaultPlatform:
+                            Flags: "Flags"
+                            Executable: "g++"
+                            RunParts: []
+                            ExpectedOutputFiles: []
+                    ExecutableShared: *DefaultTypeInfo
+                    Static: *DefaultTypeInfo
+                    Shared: *DefaultTypeInfo
+            Linker:
+                CheckExistence: 
+                    DefaultPlatform: "g++ -v"
+                LinkTypes: *TypeInfoEntries
+    )";
+
+    ssTEST("ReadUserConfig Should Not Write Default Configs When Updated Version File Exists")
+    {
+        ssTEST_OUTPUT_SETUP
+        (
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+                            .Returns<std::string>(commonUserConfigForVersionFile)
+                            .If
+                            (
+                                [&userConfigIfstreamInstance](void* instance, ...) -> bool
+                                {
+                                    return instance == userConfigIfstreamInstance;
+                                }
+                            )
+                            .Times(1)
+                            .Expected();
+            
+            std::vector<runcpp2::Data::Profile> profiles;
+            std::string preferredProfile;
+            commonDefaultOverrideSetup();
+        );
+        
+        ssTEST_OUTPUT_EXECUTION
+        (
+            bool parseResult = runcpp2::ReadUserConfig(profiles, preferredProfile, configPath);
+        );
+        
+        ssTEST_OUTPUT_ASSERT("ReadUserConfig should succeed", parseResult);
+        ssTEST_OUTPUT_ASSERT("Should parse 1 profiles", profiles.size(), 1);
+        ssTEST_OUTPUT_ASSERT(preferredProfile == "g++");
+        ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED(CO_GET_FAILED_REPORT(OverrideInstance));
+    };
+    
+    ssTEST("ReadUserConfig Should Write Default Configs When Outdated Version File Exists")
+    {
+        ssTEST_OUTPUT_SETUP
+        (
+            CO_REMOVE_INSTRUCT_REF(OverrideInstance, runcpp2, WriteDefaultConfigs);
+            CO_REMOVE_INSTRUCT_REF(OverrideInstance, std::Mock_ifstream, rdbuf);
+            
+            const std::string outdatedVersionString = std::to_string(RUNCPP2_CONFIG_VERSION - 1);
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+                            .Returns<std::string>(outdatedVersionString)
+                            .If
+                            (
+                                [&versionIfstreamInstance](void* instance, ...) -> bool
+                                {
+                                    return instance == versionIfstreamInstance;
+                                }
+                            )
+                            .Times(1)
+                            .Expected();
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+                            .Returns<std::string>(commonUserConfigForVersionFile)
+                            .If
+                            (
+                                [&userConfigIfstreamInstance](void* instance, ...) -> bool
+                                {
+                                    return instance == userConfigIfstreamInstance;
+                                }
+                            )
+                            .Times(1)
+                            .Expected();
+            CO_INSTRUCT_REF (OverrideInstance, runcpp2, WriteDefaultConfigs)
+                            .WhenCalledWith
+                            <
+                                const ghc::filesystem::path&, 
+                                bool, 
+                                bool
+                            >
+                            (
+                                configPath, 
+                                false,      //writeUserConfig
+                                true        //writeDefaultConfigs
+                            )
+                            .Returns<bool>(true)
+                            .Expected();
+            
+            std::vector<runcpp2::Data::Profile> profiles;
+            std::string preferredProfile;
+            commonDefaultOverrideSetup();
+        );
+        
+        ssTEST_OUTPUT_EXECUTION
+        (
+            bool parseResult = runcpp2::ReadUserConfig(profiles, preferredProfile, configPath);
+        );
+        
+        ssTEST_OUTPUT_ASSERT("ReadUserConfig should succeed", parseResult);
+        ssTEST_OUTPUT_ASSERT("Should parse 1 profile", profiles.size(), 1);
+        ssTEST_OUTPUT_ASSERT(preferredProfile == "g++");
+        ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED(CO_GET_FAILED_REPORT(OverrideInstance));
+    };
+    
+    ssTEST("ReadUserConfig Should Write Default Configs When Version File Doesn't Exists")
+    {
+        ssTEST_OUTPUT_SETUP
+        (
+            ssTEST_CALL_COMMON_CLEANUP();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const std::string&, CO_ANY_TYPE>(configPath, CO_ANY)
+                            .Times(1)
+                            .Returns<bool>(true)
+                            .Expected();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const std::string&, CO_ANY_TYPE>(versionPath, CO_ANY)
+                            .Times(1)
+                            .Returns<bool>(false)
+                            .Expected();
+            CO_INSTRUCT_REF (OverrideInstance, runcpp2, WriteDefaultConfigs)
+                            .WhenCalledWith
+                            <
+                                const ghc::filesystem::path&, 
+                                bool, 
+                                bool
+                            >
+                            (
+                                configPath, 
+                                false,      //writeUserConfig
+                                true        //writeDefaultConfigs
+                            )
+                            .Returns<bool>(true)
+                            .Expected();
+            CO_INSTRUCT_NO_REF  (OverrideInstance, Mock_ifstream)
+                                .WhenCalledWith<const ghc::filesystem::path&>(configPath)
+                                .WhenCalledExpectedly_Do
+                                (
+                                    [&userConfigIfstreamInstance](void* instance, ...)
+                                    {
+                                        userConfigIfstreamInstance = instance;
+                                    }
+                                )
+                                .Times(1)
+                                .Expected();
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, operator!)
+                            .If
+                            (
+                                [&userConfigIfstreamInstance, &versionIfstreamInstance]
+                                (void* instance, ...) -> bool
+                                {
+                                    return  instance == userConfigIfstreamInstance;
+                                }
+                            )
+                            .Times(1)
+                            .Returns<bool>(false)
+                            .Expected();
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+                            .Returns<std::string>(commonUserConfigForVersionFile)
+                            .If
+                            (
+                                [&userConfigIfstreamInstance](void* instance, ...) -> bool
+                                {
+                                    return instance == userConfigIfstreamInstance;
+                                }
+                            )
+                            .Times(1)
+                            .Expected();
+            
+            std::vector<runcpp2::Data::Profile> profiles;
+            std::string preferredProfile;
+            commonDefaultOverrideSetup();
+        );
+        
+        ssTEST_OUTPUT_EXECUTION
+        (
+            bool parseResult = runcpp2::ReadUserConfig(profiles, preferredProfile, configPath);
+        );
+        
+        ssTEST_OUTPUT_ASSERT("ReadUserConfig should succeed", parseResult);
+        ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED(CO_GET_FAILED_REPORT(OverrideInstance));
+    };
+
     ssTEST("ReadUserConfig Should Parse PreferredProfile As String Correctly")
     {
         ssTEST_OUTPUT_SETUP
