@@ -37,9 +37,8 @@ namespace std
     class Mock_ifstream
     {
         public:
-            CO_INSERT_MEMBER_METHOD_CTOR(   OverrideInstance, 
-                                            Mock_ifstream, 
-                                            const ghc::filesystem::path&)
+            CO_INSERT_MEMBER_METHOD_CTOR(OverrideInstance, Mock_ifstream, const ghc::filesystem::path&)
+            CO_INSERT_MEMBER_METHOD_DTOR(OverrideInstance, Mock_ifstream)
             CO_INSERT_MEMBER_METHOD(OverrideInstance, bool, operator!, ())
             CO_INSERT_MEMBER_METHOD(OverrideInstance, std::string, rdbuf, ())
             CO_INSERT_METHOD(   OverrideInstance, 

@@ -98,6 +98,19 @@ int main(int argc, char** argv)
                             )
                             .Times(1)
                             .Expected();
+        //Unassign ifstream pointers when done
+        CO_INSTRUCT_NO_REF  (OverrideInstance, ~Mock_ifstream)
+                            .WhenCalledExpectedly_Do
+                            (
+                                [&userConfigIfstreamInstance, &versionIfstreamInstance]
+                                (void* instance, std::vector<CppOverride::TypedDataInfo>&)
+                                {
+                                    if(instance == userConfigIfstreamInstance)
+                                        userConfigIfstreamInstance = nullptr;
+                                    else if(instance == versionIfstreamInstance)
+                                        versionIfstreamInstance = nullptr;
+                                }
+                            );
         CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, operator!)
                         .If
                         (
@@ -509,7 +522,32 @@ int main(int argc, char** argv)
                                     }
                                 )
                                 .Expected();
-            
+            //Unassign ifstream pointers when done
+            CO_REMOVE_INSTRUCT_NO_REF(OverrideInstance, ~Mock_ifstream);
+            CO_INSTRUCT_NO_REF  (OverrideInstance, ~Mock_ifstream)
+                                .WhenCalledExpectedly_Do
+                                (
+                                    [
+                                        &userConfigIfstreamInstance, 
+                                        &versionIfstreamInstance,
+                                        &gccImportIfstreamInstance,
+                                        &filetypesImportIfstreamInstance,
+                                        &gccCompilerLinkerImportIfstreamInstance
+                                    ]
+                                    (void* instance, ...)
+                                    {
+                                        if(instance == userConfigIfstreamInstance)
+                                            userConfigIfstreamInstance = nullptr;
+                                        else if(instance == versionIfstreamInstance)
+                                            versionIfstreamInstance = nullptr;
+                                        else if(instance == gccImportIfstreamInstance)
+                                            gccImportIfstreamInstance = nullptr;
+                                        else if(instance == filetypesImportIfstreamInstance)
+                                            filetypesImportIfstreamInstance = nullptr;
+                                        else if(instance == gccCompilerLinkerImportIfstreamInstance)
+                                            gccCompilerLinkerImportIfstreamInstance = nullptr;
+                                    }
+                                );
             //Mock for rdbuf call with specific path check for import files
             CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
                             .Returns<std::string>(importedGccProfileYamlStr)
