@@ -128,8 +128,7 @@ int main(int argc, char** argv)
                         .Returns<std::string>(versionString)
                         .If
                         (
-                            [&versionIfstreamInstance]
-                            (void* instance, ...) -> bool
+                            [&versionIfstreamInstance](void* instance, ...) -> bool
                             {
                                 return instance == versionIfstreamInstance;
                             }
@@ -489,8 +488,7 @@ int main(int argc, char** argv)
                                 .Times(1)
                                 .WhenCalledExpectedly_Do
                                 (
-                                    [&gccImportIfstreamInstance]
-                                    (void* instance, ...) 
+                                    [&gccImportIfstreamInstance](void* instance, ...) 
                                     {
                                         gccImportIfstreamInstance = instance;
                                     }
@@ -502,8 +500,7 @@ int main(int argc, char** argv)
                                 .Times(1)
                                 .WhenCalledExpectedly_Do
                                 (
-                                    [&filetypesImportIfstreamInstance]
-                                    (void* instance, ...) 
+                                    [&filetypesImportIfstreamInstance](void* instance, ...) 
                                     {
                                         filetypesImportIfstreamInstance = instance;
                                     }
@@ -515,8 +512,7 @@ int main(int argc, char** argv)
                                 .Times(1)
                                 .WhenCalledExpectedly_Do
                                 (
-                                    [&gccCompilerLinkerImportIfstreamInstance]
-                                    (void* instance, ...) 
+                                    [&gccCompilerLinkerImportIfstreamInstance](void* instance, ...) 
                                     {
                                         gccCompilerLinkerImportIfstreamInstance = instance;
                                     }
@@ -554,8 +550,7 @@ int main(int argc, char** argv)
                             .Times(1)
                             .If
                             (
-                                [&gccImportIfstreamInstance]
-                                (void* instance, ...) -> bool
+                                [&gccImportIfstreamInstance](void* instance, ...) -> bool
                                 {
                                     return instance == gccImportIfstreamInstance;
                                 }
@@ -566,8 +561,7 @@ int main(int argc, char** argv)
                             .Times(1)
                             .If
                             (
-                                [&filetypesImportIfstreamInstance]
-                                (void* instance, ...) -> bool
+                                [&filetypesImportIfstreamInstance](void* instance, ...) -> bool
                                 {
                                     return instance == filetypesImportIfstreamInstance;
                                 }
@@ -626,6 +620,7 @@ int main(int argc, char** argv)
                                     "imported-profile");
         }
         ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED(CO_GET_FAILED_REPORT(OverrideInstance));
     };
 
     ssTEST_END_TEST_GROUP();
