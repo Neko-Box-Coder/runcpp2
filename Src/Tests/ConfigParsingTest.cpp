@@ -46,7 +46,6 @@ int main(int argc, char** argv)
     
     ssTEST_COMMON_SETUP
     {
-        CO_CLEAR_ALL_INSTRUCTS(OverrideInstance);
         ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_WARNING);
         
         /*
@@ -140,8 +139,9 @@ int main(int argc, char** argv)
     
     ssTEST_COMMON_CLEANUP
     {
-        ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_WARNING);
+        CO_CLEAR_ALL_INSTRUCTS(OverrideInstance);
         userConfigIfstreamInstance = nullptr;
+        versionIfstreamInstance = nullptr;
     };
 
     ssTEST("ReadUserConfig Should Parse PreferredProfile As String Correctly")
