@@ -206,7 +206,7 @@ else()
                                         "-Wno-switch"
                                         "-Wno-gnu-zero-variadic-macro-arguments"
                                         "-Wextra"
-                                        "-pedantic")
+                                        "-Wpedantic")
     if (RUNCPP2_WARNINGS_AS_ERRORS)
         list(APPEND RUNCPP2_STANDARD_COMPILE_FLAGS "-Werror")
     endif()
