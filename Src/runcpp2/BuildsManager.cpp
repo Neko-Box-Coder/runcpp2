@@ -167,7 +167,7 @@ namespace runcpp2
     
     bool BuildsManager::CreateBuildMapping(const ghc::filesystem::path& scriptPath)
     {
-        CO_OVERRIDE_MEMBER_IMPL(OverrideInstance, bool, (scriptPath));
+        CO_INSERT_MEMBER_IMPL(OverrideInstance, bool, (scriptPath));
         
         ssLOG_FUNC_DEBUG();
         

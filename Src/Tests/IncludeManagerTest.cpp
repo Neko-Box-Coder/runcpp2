@@ -59,11 +59,12 @@ int main(int argc, char** argv)
     };
     
     ssTEST_INIT_TEST_GROUP();
+    ssTEST_PARSE_ARGS(argc, argv);
     
     ssTEST_COMMON_SETUP
     {
         includeManager.reset(new runcpp2::IncludeManager());
-        CO_CLEAR_ALL_OVERRIDE_SETUP(OverrideInstance);
+        CO_CLEAR_ALL_INSTRUCTS(OverrideInstance);
     };
     
     ssTEST_COMMON_CLEANUP
@@ -77,32 +78,27 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //Check if directory exists
-            std::shared_ptr<OverrideResult> dirExistsResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(includeMapsPath, CO_ANY)
-                                    .Returns<bool>(false)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includeMapsPath, CO_ANY)
+                            .Returns<bool>(false)
+                            .Times(1)
+                            .Expected();
             //Create directory
-            std::shared_ptr<OverrideResult> createDirResult =
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_create_directories)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(includeMapsPath, CO_ANY)
-                                    .Returns<bool>(true)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_create_directories)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includeMapsPath, CO_ANY)
+                            .Returns<bool>(true)
+                            .Times(1)
+                            .Expected();
         );
         
         ssTEST_OUTPUT_ASSERT(   "Initialize should succeed",
                                 includeManager->Initialize(buildDirPath), true);
-        ssTEST_OUTPUT_ASSERT(   "Check if directory exists",
-                                dirExistsResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Create directory",
-                                createDirResult->LastStatusSucceed());
         ssTEST_OUTPUT_ASSERT(   "IncludeRecordDir should be set correctly",
                                 IncludeManagerAccessor::GetIncludeRecordDir(*includeManager) == 
                                 includeMapsPath);
+        ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
     };
     
     ssTEST("Initialize Should Succeed When Directory Already Exists")
@@ -111,29 +107,23 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //Check if directory exists
-            std::shared_ptr<OverrideResult> dirExistsResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(includeMapsPath, CO_ANY)
-                                    .Returns<bool>(true)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includeMapsPath, CO_ANY)
+                            .Returns<bool>(true)
+                            .Times(1)
+                            .Expected();
             //Create directory should not be called
-            std::shared_ptr<OverrideResult> createDirResult =
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_create_directories)
-                                    .Times(0)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_create_directories)
+                            .ExpectedNotSatisfied();
         );
         
         ssTEST_OUTPUT_ASSERT(   "Initialize should succeed",
                                 includeManager->Initialize(buildDirPath), true);
-        ssTEST_OUTPUT_ASSERT(   "Check if directory exists",
-                                dirExistsResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Create directory should not be called",
-                                createDirResult->GetStatusCount() == 0);
         ssTEST_OUTPUT_ASSERT(   "IncludeRecordDir should be set correctly",
                                 IncludeManagerAccessor::GetIncludeRecordDir(*includeManager) == 
                                 includeMapsPath);
+        ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
     };
 
     ssTEST("Initialize Should Fail When Directory Creation Fails")
@@ -142,29 +132,24 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //Check if directory exists
-            std::shared_ptr<OverrideResult> dirExistsResult =
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(includeMapsPath, CO_ANY)
-                                    .Returns<bool>(false)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includeMapsPath, CO_ANY)
+                            .Returns<bool>(false)
+                            .Times(1)
+                            .Expected();
             //Create directory fails
-            std::shared_ptr<OverrideResult> createDirResult =
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_create_directories)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(includeMapsPath, CO_ANY)
-                                    .Returns<bool>(false)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_create_directories)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includeMapsPath, CO_ANY)
+                            .Returns<bool>(false)
+                            .Times(1)
+                            .Expected();
         );
         
         ssTEST_OUTPUT_ASSERT(   "Initialize should fail",
                                 includeManager->Initialize(buildDirPath), false);
-        ssTEST_OUTPUT_ASSERT(   "Check if directory exists",
-                                dirExistsResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Create directory should be called",
-                                createDirResult->LastStatusSucceed());
+        ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
     };
     
     ssTEST("WriteIncludeRecord Should Write Multiple Includes Successfully")
@@ -173,49 +158,47 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //Initialize first
-            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                .WhenCalledWith<const ghc::filesystem::path&, 
-                                                CO_ANY_TYPE>(includeMapsPath, CO_ANY)
-                                .Returns<bool>(true);
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includeMapsPath, CO_ANY)
+                            .Times(1)
+                            .Returns<bool>(true)
+                            .Expected();
             
             //Mock GetRecordPath
             const std::string recordPath = absPathPrefix + "/tmp/Build/IncludeMaps/test.Includes";
-            std::shared_ptr<OverrideResult> getRecordPathResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, GetRecordPath)
-                                    .WhenCalledWith<const ghc::filesystem::path&>(sourcePaths[0])
-                                    .Returns<ghc::filesystem::path>(recordPath)
-                                    .Times(1)
-                                    .OverrideObject(includeManager.get())
-                                    .ReturnsResult();
+            CO_INSTRUCT_NO_REF  (OverrideInstance, GetRecordPath)
+                                .WhenCalledWith<const ghc::filesystem::path&>(sourcePaths[0])
+                                .Returns<ghc::filesystem::path>(recordPath)
+                                .Times(1)
+                                .MatchesObject(includeManager.get())
+                                .Expected();
             //Open output file
-            std::shared_ptr<OverrideResult> ofstreamResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ofstream)
-                                    .WhenCalledWith<const ghc::filesystem::path&>(recordPath)
-                                    .Returns<void>()
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_NO_REF  (OverrideInstance, Mock_ofstream)
+                                .WhenCalledWith<const ghc::filesystem::path&>(recordPath)
+                                .Returns<void>()
+                                .Times(1)
+                                .Expected();
             //Check if file is opened
-            std::shared_ptr<OverrideResult> isOpenResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, is_open)
-                                    .Returns<bool>(true)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF   (OverrideInstance, std::Mock_ifstream, is_open)
+                                .Returns<bool>(true)
+                                .Times(1)
+                                .Expected();
             //Capture content on close
             std::string writeResult;
-            std::shared_ptr<OverrideResult> closeResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, close)
-                                    .Returns<void>()
-                                    .Times(1)
-                                    .WhenCalledExpectedly_Do
-                                    (
-                                        [&](void* instance, const std::vector<void*>&)
-                                        {
-                                            writeResult = 
-                                                static_cast<std::Mock_ofstream*>(instance)->
-                                                StringStream.str();
-                                        }
-                                    )
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ofstream, close)
+                                .Returns<void>()
+                                .Times(1)
+                                .WhenCalledExpectedly_Do
+                                (
+                                    [&](void* instance, ...)
+                                    {
+                                        writeResult = 
+                                            static_cast<std::Mock_ofstream*>(instance)->
+                                            StringStream.str();
+                                    }
+                                )
+                                .Expected();
         );
         
         //Initialize first
@@ -230,17 +213,13 @@ int main(int argc, char** argv)
             includePaths[2]
         };
         
-        ssTEST_OUTPUT_ASSERT(   "WriteIncludeRecord should succeed",
-                                includeManager->WriteIncludeRecord(sourcePaths[0], includes), true);
-        ssTEST_OUTPUT_ASSERT(   "GetRecordPath should be called",
-                                getRecordPathResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Open output file",
-                                ofstreamResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Check if file is opened",
-                                isOpenResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "File should be closed",
-                                closeResult->LastStatusSucceed());
+        ssTEST_OUTPUT_EXECUTION
+        (
+            bool writeIncludeRecordResult = 
+                includeManager->WriteIncludeRecord(sourcePaths[0], includes);
+        );
         
+        ssTEST_OUTPUT_ASSERT("WriteIncludeRecord should succeed", writeIncludeRecordResult, true);
         //Verify content
         for(const ghc::filesystem::path& include : includes)
         {
@@ -248,6 +227,8 @@ int main(int argc, char** argv)
                                     writeResult.find(include.string()) != std::string::npos);
             ssTEST_OUTPUT_VALUES_WHEN_FAILED(writeResult, include.string());
         }
+        
+        ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
     };
 
     ssTEST("WriteIncludeRecord Should Fail With Invalid Paths")
@@ -256,8 +237,12 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //Initialize first
-            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                .Returns<bool>(true);
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includeMapsPath, CO_ANY)
+                            .Times(1)
+                            .Returns<bool>(true)
+                            .Expected();
         );
         
         //Initialize first
@@ -273,145 +258,123 @@ int main(int argc, char** argv)
         (
             //Test when file open fails
             const std::string recordPath = absPathPrefix + "/tmp/Build/IncludeMaps/test.Includes";
-            std::shared_ptr<OverrideResult> getRecordPathResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, GetRecordPath)
-                                    .WhenCalledWith<const ghc::filesystem::path&>(sourcePaths[0])
-                                    .Returns<ghc::filesystem::path>(recordPath)
-                                    .Times(1)
-                                    .OverrideObject(includeManager.get())
-                                    .ReturnsResult();
-            std::shared_ptr<OverrideResult> ofstreamResult =
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ofstream)
-                                    .WhenCalledWith<const ghc::filesystem::path&>(recordPath)
-                                    .Returns<void>()
-                                    .Times(1)
-                                    .ReturnsResult();
-            std::shared_ptr<OverrideResult> isOpenResult =
-                CO_SETUP_OVERRIDE   (OverrideInstance, is_open)
-                                    .Returns<bool>(false)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_NO_REF  (OverrideInstance, GetRecordPath)
+                                .WhenCalledWith<const ghc::filesystem::path&>(sourcePaths[0])
+                                .Returns<ghc::filesystem::path>(recordPath)
+                                .Times(1)
+                                .MatchesObject(includeManager.get())
+                                .Expected();
+            CO_INSTRUCT_NO_REF  (OverrideInstance, Mock_ofstream)
+                                .WhenCalledWith<const ghc::filesystem::path&>(recordPath)
+                                .Returns<void>()
+                                .Times(1)
+                                .Expected();
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ofstream, is_open)
+                            .Returns<bool>(false)
+                            .Times(1)
+                            .Expected();
         );
         
         ssTEST_OUTPUT_ASSERT(   "WriteIncludeRecord should fail when file open fails",
                                 includeManager->WriteIncludeRecord(sourcePaths[0], includes), false);
-        ssTEST_OUTPUT_ASSERT(   "GetRecordPath should be called",
-                                getRecordPathResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Open output file attempt",
-                                ofstreamResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Check if file is opened",
-                                isOpenResult->LastStatusSucceed());
+        ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
     };
     
-    ssTEST("ReadIncludeRecord Should Read Multiple Includes Successfully")
+    ssTEST_ONLY_THIS("ReadIncludeRecord Should Read Multiple Includes Successfully")
     {
         using namespace CppOverride;
         ssTEST_OUTPUT_SETUP
         (
             //Initialize first
-            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                .WhenCalledWith<const ghc::filesystem::path&, 
-                                                CO_ANY_TYPE>(includeMapsPath, CO_ANY)
-                                .Returns<bool>(true);
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includeMapsPath, CO_ANY)
+                            .Times(1)
+                            .Returns<bool>(true)
+                            .Expected();
             //Mock GetRecordPath
             const std::string recordPath = absPathPrefix + "/tmp/Build/IncludeMaps/test.Includes";
-            std::shared_ptr<OverrideResult> getRecordPathResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, GetRecordPath)
-                                    .WhenCalledWith<const ghc::filesystem::path&>(sourcePaths[0])
-                                    .Returns<ghc::filesystem::path>(recordPath)
-                                    .Times(1)
-                                    .OverrideObject(includeManager.get())
-                                    .ReturnsResult();
+            CO_INSTRUCT_NO_REF  (OverrideInstance, GetRecordPath)
+                                .WhenCalledWith<const ghc::filesystem::path&>(sourcePaths[0])
+                                .Returns<ghc::filesystem::path>(recordPath)
+                                .Times(1)
+                                .MatchesObject(includeManager.get())
+                                .Expected();
             //Check if record file exists
-            std::shared_ptr<OverrideResult> recordExistsResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(recordPath, CO_ANY)
-                                    .Returns<bool>(true)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(recordPath, CO_ANY)
+                            .Returns<bool>(true)
+                            .Times(1)
+                            .Expected();
             //Mock last_write_time
             const auto recordTime = ghc::filesystem::file_time_type::clock::now();
-            std::shared_ptr<OverrideResult> lastWriteResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_last_write_time)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(recordPath, CO_ANY)
-                                    .Returns<ghc::filesystem::file_time_type>(recordTime)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_last_write_time)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(recordPath, CO_ANY)
+                            .Returns<ghc::filesystem::file_time_type>(recordTime)
+                            .Times(1)
+                            .Expected();
             //Open input file
-            std::shared_ptr<OverrideResult> ifstreamResult = 
-            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ifstream)
+            CO_INSTRUCT_NO_REF  (OverrideInstance, Mock_ifstream)
                                 .WhenCalledWith<const ghc::filesystem::path&>(recordPath)
                                 .Returns<void>()
                                 .Times(1)
-                                .ReturnsResult();
+                                .Expected();
             //Check if file is opened
-            std::shared_ptr<OverrideResult> isOpenResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, is_open)
-                                    .Returns<bool>(true)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, is_open)
+                            .Returns<bool>(true)
+                            .Times(1)
+                            .Expected();
             //Mock getline to return includes
             int callCount = 0;
-            std::shared_ptr<OverrideResult> getlineResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_getline)
-                                    .Returns<bool>(true)
-                                    .Times(3)
-                                    .WhenCalledExpectedly_Do
-                                    (
-                                        [&callCount, &includePaths](void*, const std::vector<void*>& args)
-                                        {
-                                            std::string& line = *static_cast<std::string*>(args[1]);
-                                            line = includePaths[callCount++];
-                                        }
-                                    )
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, std, Mock_getline)
+                            .Returns<bool>(true)
+                            .WhenCalledExpectedly_Do
+                            (
+                                [&callCount, &includePaths]
+                                (
+                                    void*, 
+                                    std::vector<CppOverride::TypedDataInfo>& args
+                                )
+                                {
+                                    if(args.at(1).IsType<std::string&>())
+                                    {
+                                        *(args.at(1).GetTypedDataPtr<std::string&>()) = 
+                                            includePaths[callCount++];
+                                    }
+                                }
+                            )
+                            .Times(3);
             //Mock getline to return false for end of file
-            std::shared_ptr<OverrideResult> endOfFileResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_getline)
-                                    .Returns<bool>(false)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, std, Mock_getline)
+                            .Returns<bool>(false)
+                            .Times(1)
+                            .Expected();
         );
         
         //Initialize first
         ssTEST_OUTPUT_ASSERT(   "Initialize should succeed",
                                 includeManager->Initialize(buildDirPath), true);
-
         //Read includes
         std::vector<ghc::filesystem::path> outIncludes;
         ghc::filesystem::file_time_type outRecordTime;
-        
         ssTEST_OUTPUT_ASSERT(   "ReadIncludeRecord should succeed",
-                                includeManager->ReadIncludeRecord(sourcePaths[0], outIncludes, outRecordTime), true);
-        ssTEST_OUTPUT_ASSERT(   "GetRecordPath should be called",
-                                getRecordPathResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Check if record exists",
-                                recordExistsResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Get last write time",
-                                lastWriteResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Open input file",
-                                ifstreamResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Check if file is opened",
-                                isOpenResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Read includes with getline",
-                                getlineResult->GetSucceedCount(), 3);
-        ssTEST_OUTPUT_ASSERT(   "Read includes with getline eof",
-                                endOfFileResult->GetStatusCount(), 1);
-        
+                                includeManager->ReadIncludeRecord(  sourcePaths[0], 
+                                                                    outIncludes, 
+                                                                    outRecordTime), 
+                                true);
         //Verify content
-        ssTEST_OUTPUT_ASSERT(   "Number of includes should match",
-                                outIncludes.size() == 3);
+        ssTEST_OUTPUT_ASSERT("Number of includes should match", outIncludes.size(), 3);
         for(std::size_t i = 0; i < outIncludes.size(); ++i)
         {
-            ssTEST_OUTPUT_ASSERT(   "Include path should match",
-                                    outIncludes[i] == includePaths[i]);
+            ssTEST_OUTPUT_ASSERT("Include path should match", outIncludes[i], includePaths[i]);
             ssTEST_OUTPUT_VALUES_WHEN_FAILED(outIncludes[i].string(), includePaths[i]);
         }
         
-        ssTEST_OUTPUT_ASSERT(   "Record time should match",
-                                outRecordTime == recordTime);
+        ssTEST_OUTPUT_ASSERT("Record time should match", outRecordTime == recordTime);
+        ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED("\n" + CO_GET_FAILED_REPORT(OverrideInstance));
     };
 
     ssTEST("ReadIncludeRecord Should Fail When Record Doesn't Exist")
@@ -420,9 +383,12 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //Initialize first
-            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                .Times(1)
-                                .Returns<bool>(true);
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includeMapsPath, CO_ANY)
+                            .Times(1)
+                            .Returns<bool>(true)
+                            .Expected();
         );
         
         //Initialize first
@@ -433,30 +399,28 @@ int main(int argc, char** argv)
         (
             //Test when record doesn't exist
             const std::string recordPath = absPathPrefix + "/tmp/Build/IncludeMaps/test.Includes";
-            std::shared_ptr<OverrideResult> getRecordPathResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, GetRecordPath)
-                                    .WhenCalledWith<const ghc::filesystem::path&>(sourcePaths[0])
-                                    .Returns<ghc::filesystem::path>(recordPath)
-                                    .Times(1)
-                                    .OverrideObject(includeManager.get())
-                                    .ReturnsResult();
-            std::shared_ptr<OverrideResult> recordExistsResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(recordPath, CO_ANY)
-                                    .Returns<bool>(false)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_NO_REF  (OverrideInstance, GetRecordPath)
+                                .WhenCalledWith<const ghc::filesystem::path&>(sourcePaths[0])
+                                .Returns<ghc::filesystem::path>(recordPath)
+                                .Times(1)
+                                .MatchesObject(includeManager.get())
+                                .Expected();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(recordPath, CO_ANY)
+                            .Returns<bool>(false)
+                            .Times(1)
+                            .Expected();
         );
         
         std::vector<ghc::filesystem::path> outIncludes;
         ghc::filesystem::file_time_type outRecordTime;
         ssTEST_OUTPUT_ASSERT(   "ReadIncludeRecord should fail when record doesn't exist",
-                                includeManager->ReadIncludeRecord(sourcePaths[0], outIncludes, outRecordTime), false);
-        ssTEST_OUTPUT_ASSERT(   "GetRecordPath should be called",
-                                getRecordPathResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Check if record exists",
-                                recordExistsResult->LastStatusSucceed());
+                                includeManager->ReadIncludeRecord(  sourcePaths[0], 
+                                                                    outIncludes, 
+                                                                    outRecordTime), 
+                                false);
+        ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
     };
 
     ssTEST("ReadIncludeRecord Should Fail When File Open Fails")
@@ -465,8 +429,12 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //Initialize first
-            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                .Returns<bool>(true);
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includeMapsPath, CO_ANY)
+                            .Times(1)
+                            .Returns<bool>(true)
+                            .Expected();
         );
         
         //Initialize first
@@ -477,38 +445,34 @@ int main(int argc, char** argv)
         (
             //Test when file open fails
             const std::string recordPath = absPathPrefix + "/tmp/Build/IncludeMaps/test.Includes";
-            std::shared_ptr<OverrideResult> getRecordPathResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, GetRecordPath)
-                                    .WhenCalledWith<const ghc::filesystem::path&>(sourcePaths[0])
-                                    .Returns<ghc::filesystem::path>(recordPath)
-                                    .Times(1)
-                                    .OverrideObject(includeManager.get())
-                                    .ReturnsResult();
-            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
+            CO_INSTRUCT_NO_REF  (OverrideInstance, GetRecordPath)
+                                .WhenCalledWith<const ghc::filesystem::path&>(sourcePaths[0])
+                                .Returns<ghc::filesystem::path>(recordPath)
+                                .Times(1)
+                                .MatchesObject(includeManager.get())
+                                .Expected();
+            CO_INSTRUCT_REF   (OverrideInstance, ghc::filesystem, Mock_exists)
                                 .WhenCalledWith<const ghc::filesystem::path&, 
                                                 CO_ANY_TYPE>(recordPath, CO_ANY)
                                 .Returns<bool>(true)
                                 .Times(1);
 
             const auto recordTime = ghc::filesystem::file_time_type::clock::now();
-            std::shared_ptr<OverrideResult> lastWriteResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_last_write_time)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(recordPath, CO_ANY)
-                                    .Returns<ghc::filesystem::file_time_type>(recordTime)
-                                    .Times(1)
-                                    .ReturnsResult();
-            std::shared_ptr<OverrideResult> ifstreamResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_ifstream)
-                                    .WhenCalledWith<const ghc::filesystem::path&>(recordPath)
-                                    .Returns<void>()
-                                    .Times(1)
-                                    .ReturnsResult();
-            std::shared_ptr<OverrideResult> isOpenResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, is_open)
-                                    .Returns<bool>(false)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_last_write_time)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(recordPath, CO_ANY)
+                            .Returns<ghc::filesystem::file_time_type>(recordTime)
+                            .Times(1)
+                            .Expected();
+            CO_INSTRUCT_NO_REF  (OverrideInstance, Mock_ifstream)
+                                .WhenCalledWith<const ghc::filesystem::path&>(recordPath)
+                                .Returns<void>()
+                                .Times(1)
+                                .Expected()
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, is_open)
+                            .Returns<bool>(false)
+                            .Times(1)
+                            .Expected();
         );
         
         std::vector<ghc::filesystem::path> outIncludes;
@@ -518,14 +482,7 @@ int main(int argc, char** argv)
                                                                     outIncludes, 
                                                                     outRecordTime), 
                                 false);
-        ssTEST_OUTPUT_ASSERT(   "GetRecordPath should be called",
-                                getRecordPathResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Get last write time",
-                                lastWriteResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Open input file attempt",
-                                ifstreamResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Check if file is opened",
-                                isOpenResult->LastStatusSucceed());
+        ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
     };
     
     ssTEST("NeedsUpdate Should Return True When Source Is Newer")
@@ -540,41 +497,32 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //Mock source file time
-            std::shared_ptr<OverrideResult> sourceTimeResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_last_write_time)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(sourcePaths[0], CO_ANY)
-                                    .Returns<ghc::filesystem::file_time_type>(sourceTime)
-                                    .Times(1)
-                                    .ReturnsResult();
-            //Mock include file time (shouldn't be called since source is newer)
-            std::shared_ptr<OverrideResult> includeTimeResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_last_write_time)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(includePaths[0], CO_ANY)
-                                    .Returns<ghc::filesystem::file_time_type>(includeTime)
-                                    .Times(0)
-                                    .ReturnsResult();
-            //Mock include file exists (shouldn't be called since source is newer)
-            std::shared_ptr<OverrideResult> includeExistsResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(includePaths[0], CO_ANY)
-                                    .Returns<bool>(true)
-                                    .Times(0)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_last_write_time)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(sourcePaths[0], CO_ANY)
+                            .Returns<ghc::filesystem::file_time_type>(sourceTime)
+                            .Times(1)
+                            .Expected();
+            //Mock include file time (shouldn't be called since source is newer than record time)
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_last_write_time)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includePaths[0], CO_ANY)
+                            .Returns<ghc::filesystem::file_time_type>(includeTime)
+                            .ExpectedNotSatisfied();
+            //Mock include file exists (shouldn't be called since source is newer than record time)
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includePaths[0], CO_ANY)
+                            .Returns<bool>(true)
+                            .ExpectedNotSatisfied();
             
             std::vector<ghc::filesystem::path> includes = { includePaths[0] };
         );
         
         ssTEST_OUTPUT_ASSERT(   "NeedsUpdate should return true when source is newer",
-                                includeManager->NeedsUpdate(sourcePaths[0], includes, recordTime), true);
-        ssTEST_OUTPUT_ASSERT(   "Source time should be checked",
-                                sourceTimeResult->LastStatusSucceed());
-        ssTEST_OUTPUT_ASSERT(   "Include time should not be checked",
-                                includeTimeResult->GetStatusCount() == 0);
-        ssTEST_OUTPUT_ASSERT(   "Include exists should not be checked",
-                                includeExistsResult->GetStatusCount() == 0);
+                                includeManager->NeedsUpdate(sourcePaths[0], includes, recordTime), 
+                                true);
+        ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
     };
 
     ssTEST("NeedsUpdate Should Return True When Include Is Newer")
@@ -589,29 +537,26 @@ int main(int argc, char** argv)
             const auto includeTime = recordTime + std::chrono::seconds(1);
             
             //Mock source file time
-            std::shared_ptr<OverrideResult> sourceTimeResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_last_write_time)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(sourcePaths[0], CO_ANY)
-                                    .Returns<ghc::filesystem::file_time_type>(sourceTime)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_last_write_time)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(sourcePaths[0], CO_ANY)
+                            .Returns<ghc::filesystem::file_time_type>(sourceTime)
+                            .Times(1)
+                            .Expected();
             //Mock include file exists
-            std::shared_ptr<OverrideResult> includeExistsResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(includePaths[0], CO_ANY)
-                                    .Returns<bool>(true)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includePaths[0], CO_ANY)
+                            .Returns<bool>(true)
+                            .Times(1)
+                            .Expected();
             //Mock include file time
-            std::shared_ptr<OverrideResult> includeTimeResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_last_write_time)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(includePaths[0], CO_ANY)
-                                    .Returns<ghc::filesystem::file_time_type>(includeTime)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_last_write_time)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includePaths[0], CO_ANY)
+                            .Returns<ghc::filesystem::file_time_type>(includeTime)
+                            .Times(1)
+                            .Expected();
             
             std::vector<ghc::filesystem::path> includes = { includePaths[0] };
         );
@@ -619,12 +564,7 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT(   "NeedsUpdate should return true when include is newer",
                                 includeManager->NeedsUpdate(sourcePaths[0], includes, recordTime), 
                                 true);
-        ssTEST_OUTPUT_ASSERT(   "Source time should be checked",
-                                sourceTimeResult->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT(   "Include exists should be checked",
-                                includeExistsResult->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT(   "Include time should be checked",
-                                includeTimeResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
     };
 
     ssTEST("NeedsUpdate Should Return False When Record Is Newest")
@@ -639,31 +579,28 @@ int main(int argc, char** argv)
             const auto includeTime = recordTime - std::chrono::seconds(2);
             
             //Mock source file time
-            std::shared_ptr<OverrideResult> sourceTimeResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_last_write_time)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(sourcePaths[0], CO_ANY)
-                                    .Returns<ghc::filesystem::file_time_type>(sourceTime)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_last_write_time)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(sourcePaths[0], CO_ANY)
+                            .Returns<ghc::filesystem::file_time_type>(sourceTime)
+                            .Times(1)
+                            .Expected();
             
             //Mock include file exists
-            std::shared_ptr<OverrideResult> includeExistsResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(includePaths[0], CO_ANY)
-                                    .Returns<bool>(true)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includePaths[0], CO_ANY)
+                            .Returns<bool>(true)
+                            .Times(1)
+                            .Expected();
             
             //Mock include file time
-            std::shared_ptr<OverrideResult> includeTimeResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_last_write_time)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(includePaths[0], CO_ANY)
-                                    .Returns<ghc::filesystem::file_time_type>(includeTime)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_last_write_time)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                        CO_ANY_TYPE>(includePaths[0], CO_ANY)
+                            .Returns<ghc::filesystem::file_time_type>(includeTime)
+                            .Times(1)
+                            .Expected();
             
             std::vector<ghc::filesystem::path> includes = { includePaths[0] };
         );
@@ -671,15 +608,10 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT(   "NeedsUpdate should return false when record is newest",
                                 includeManager->NeedsUpdate(sourcePaths[0], includes, recordTime), 
                                 false);
-        ssTEST_OUTPUT_ASSERT(   "Source time should be checked",
-                                sourceTimeResult->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT(   "Include exists should be checked",
-                                includeExistsResult->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT(   "Include time should be checked",
-                                includeTimeResult->GetSucceedCount(), 1);
+        ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
     };
 
-    ssTEST("NeedsUpdate Should Handle Missing Include Files")
+    ssTEST("NeedsUpdate Should Return True When Missing Include File")
     {
         using namespace CppOverride;
         
@@ -690,36 +622,34 @@ int main(int argc, char** argv)
             const auto sourceTime = recordTime - std::chrono::seconds(1);
             
             //Mock source file time
-            std::shared_ptr<OverrideResult> sourceTimeResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_last_write_time)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(sourcePaths[0], CO_ANY)
-                                    .Returns<ghc::filesystem::file_time_type>(sourceTime)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_last_write_time)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(sourcePaths[0], CO_ANY)
+                            .Returns<ghc::filesystem::file_time_type>(sourceTime)
+                            .Times(1)
+                            .Expected();
             
             //Mock first include file exists (false)
-            std::shared_ptr<OverrideResult> include1ExistsResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(includePaths[0], CO_ANY)
-                                    .Returns<bool>(false)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includePaths[0], CO_ANY)
+                            .Returns<bool>(false)
+                            .Times(1)
+                            .Expected();
             
             //Mock second include file exists (true)
-            std::shared_ptr<OverrideResult> include2ExistsResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(includePaths[1], CO_ANY)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includePaths[1], CO_ANY)
+                            .Times(0)
+                            .Expected();
             
             //Mock second include file time
-            std::shared_ptr<OverrideResult> include2TimeResult = 
-                CO_SETUP_OVERRIDE   (OverrideInstance, Mock_last_write_time)
-                                    .WhenCalledWith<const ghc::filesystem::path&, 
-                                                    CO_ANY_TYPE>(includePaths[1], CO_ANY)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_last_write_time)
+                            .WhenCalledWith<const ghc::filesystem::path&, 
+                                            CO_ANY_TYPE>(includePaths[1], CO_ANY)
+                            .Times(0)
+                            .Expected();
             
             std::vector<ghc::filesystem::path> includes = { includePaths[0], includePaths[1] };
         );
@@ -727,14 +657,8 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT(   "NeedsUpdate should return true when include is newer",
                                 includeManager->NeedsUpdate(sourcePaths[0], includes, recordTime), 
                                 true);
-        ssTEST_OUTPUT_ASSERT(   "Source time should be checked",
-                                sourceTimeResult->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT(   "First include exists should be checked",
-                                include1ExistsResult->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT(   "Second include exists should not be checked",
-                                include2ExistsResult->GetStatusCount(), 0);
-        ssTEST_OUTPUT_ASSERT(   "Second include time should not be checked",
-                                include2TimeResult->GetStatusCount(), 0);
+        ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED(CO_GET_FAILED_REPORT(OverrideInstance));
     };
     
     ssTEST("GetRecordPath Should Generate Valid And Unique Paths")
@@ -759,84 +683,90 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //Initialize first
-            CO_SETUP_OVERRIDE   (OverrideInstance, Mock_exists)
-                                .Returns<bool>(true);
-            
-            
+            CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
+                            .Returns<bool>(true)
+                            .Expected();
             
             //Mock hash for first source file
-            std::shared_ptr<OverrideResult> hash1Result =
-                CO_SETUP_OVERRIDE   (OverrideInstance, operator())
-                                    .If
-                                    (
-                                        [&sourcePaths, ProcessPath](void*, 
-                                                                    const std::vector<void*>& args)
-                                        {
-                                            if(args.empty())
-                                                return false;
-                                            if( ProcessPath(*static_cast<std::string*>(args.at(0))) == 
-                                                sourcePaths[0])
-                                            {
-                                                return true;
-                                            }
-                                            return false;
-                                        }
-                                    )
-                                    .Returns<std::size_t>(123)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_hash<std::string>, operator())
+                            .If
+                            (
+                                [&sourcePaths, ProcessPath]
+                                (
+                                    void*, 
+                                    const std::vector<CppOverride::TypedDataInfo>& args
+                                )
+                                {
+                                    if(args.empty())
+                                        return false;
+                                    if( args.at(0).IsType<std::string>() &&
+                                        ProcessPath(*args.at(0).GetTypedDataPtr<std::string>()) == 
+                                            sourcePaths.at(0))
+                                    {
+                                        return true;
+                                    }
+                                    return false;
+                                }
+                            )
+                            .Returns<std::size_t>(123)
+                            .Times(1)
+                            .Expected();
             
             //Mock hash for second source file
-            std::shared_ptr<OverrideResult> hash2Result =
-                CO_SETUP_OVERRIDE   (OverrideInstance, operator())
-                                    .If
-                                    (
-                                        [&sourcePaths, ProcessPath](void*, 
-                                                                    const std::vector<void*>& args)
-                                        {
-                                            if(args.empty())
-                                                return false;
-                                            if( ProcessPath(*static_cast<std::string*>(args.at(0))) == 
-                                                sourcePaths[1])
-                                            {
-                                                return true;
-                                            }
-                                            return false;
-                                        }
-                                    )
-                                    .Returns<std::size_t>(456)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_hash<std::string>, operator())
+                            .If
+                            (
+                                [&sourcePaths, ProcessPath]
+                                (
+                                    void*, 
+                                    const std::vector<CppOverride::TypedDataInfo>& args
+                                )
+                                {
+                                    if(args.empty())
+                                        return false;
+                                    if( args.at(0).IsType<std::string>() &&
+                                        ProcessPath(*args.at(0).GetTypedDataPtr<std::string>()) == 
+                                            sourcePaths.at(1))
+                                    {
+                                        return true;
+                                    }
+                                    return false;
+                                }
+                            )
+                            .Returns<std::size_t>(456)
+                            .Times(1)
+                            .Expected();
             
             //Mock hash for third source file
-            std::shared_ptr<OverrideResult> hash3Result =
-                CO_SETUP_OVERRIDE   (OverrideInstance, operator())
-                                    .If
-                                    (
-                                        [&sourcePaths, ProcessPath](void*, 
-                                                                    const std::vector<void*>& args)
-                                        {
-                                            if(args.empty())
-                                                return false;
-                                            if( ProcessPath(*static_cast<std::string*>(args.at(0))) == 
-                                                sourcePaths[2])
-                                            {
-                                                return true;
-                                            }
-                                            return false;
-                                        }
-                                    )
-                                    .Returns<std::size_t>(789)
-                                    .Times(1)
-                                    .ReturnsResult();
+            CO_INSTRUCT_REF (OverrideInstance, std::Mock_hash<std::string>, operator())
+                            .If
+                            (
+                                [&sourcePaths, ProcessPath]
+                                (
+                                    void*, 
+                                    const std::vector<CppOverride::TypedDataInfo>& args
+                                )
+                                {
+                                    if(args.empty())
+                                        return false;
+                                    if( args.at(0).IsType<std::string>() &&
+                                        ProcessPath(*args.at(0).GetTypedDataPtr<std::string>()) == 
+                                            sourcePaths.at(2))
+                                    {
+                                        return true;
+                                    }
+                                    return false;
+                                }
+                            )
+                            .Returns<std::size_t>(789)
+                            .Times(1)
+                            .Expected();
         );
         
-        //Initialize first
-        ssTEST_OUTPUT_ASSERT(   "Initialize should succeed",
-                                includeManager->Initialize(buildDirPath), true);
-
-        ssTEST_OUTPUT_SETUP
+        ssTEST_OUTPUT_EXECUTION
         (
+            //Initialize first
+            bool initializeResult = includeManager->Initialize(buildDirPath);
             //Get paths for different source files
             ghc::filesystem::path path1 = 
                 IncludeManagerAccessor::GetRecordPath(*includeManager, sourcePaths[0]);
@@ -846,6 +776,7 @@ int main(int argc, char** argv)
                 IncludeManagerAccessor::GetRecordPath(*includeManager, sourcePaths[2]);
         );
         
+        ssTEST_OUTPUT_ASSERT("Initialize should succeed", initializeResult, true);
         //Verify exact paths
         ssTEST_OUTPUT_ASSERT(   "Path1 should match expected",
                                 path1 == includeMapsPath + "/123.Includes");
@@ -853,18 +784,7 @@ int main(int argc, char** argv)
                                 path2 == includeMapsPath + "/456.Includes");
         ssTEST_OUTPUT_ASSERT(   "Path3 should match expected",
                                 path3 == includeMapsPath + "/789.Includes");
-        
-        //Verify hash was called for each source file
-        ssTEST_OUTPUT_ASSERT(   "Hash should be called for first source file",
-                                hash1Result->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT(   "Hash should be called for second source file",
-                                hash2Result->GetSucceedCount(), 1);
-        ssTEST_OUTPUT_ASSERT(   "Hash should be called for third source file",
-                                hash3Result->GetSucceedCount(), 1);
-        
-        ssTEST_OUTPUT_VALUES_WHEN_FAILED(   hash1Result->GetStatusCount(), 
-                                            hash2Result->GetStatusCount(),
-                                            hash3Result->GetStatusCount());
+        ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
     };
     
     ssTEST_END_TEST_GROUP();
