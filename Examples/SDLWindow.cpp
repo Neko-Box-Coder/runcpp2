@@ -14,8 +14,7 @@ Dependencies:
         SearchLibraryNames: ["SDL2"]
         ExcludeLibraryNames: ["SDL2-static", "SDL2_test"] # On Windows
         SearchDirectories: ["./build", "./build/debug"]
-    Setup: ["mkdir build", "cd build && cmake .."]
-    Build: ["cd build && cmake --build . -j 16"]
+    Setup: ["mkdir build", "cd build && cmake .. && cmake --build . -j 16"]
 
 # Or use system installed SDL on Unix...
 # OverrideLinkFlags:

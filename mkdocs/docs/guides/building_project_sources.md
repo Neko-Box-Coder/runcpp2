@@ -89,18 +89,14 @@ All paths are relative to the script file's location.
     
     ```yaml title="Build Settings"
     OtherFilesToBeCompiled:
-        DefaultPlatform:
-            DefaultProfile:
-            -   "./src/utils.cpp"
-            -   "./src/helper.cpp"
+    -   "./src/utils.cpp"
+    -   "./src/helper.cpp"
     IncludePaths:
-        DefaultPlatform:
-            DefaultProfile:
-            -   "./include"
+    -   "./include"
     ```
 
 !!! note
-    You can specify different source files for different platforms/profiles:
+    You can specify different source files for different platforms/profiles, same for IncludePaths:
     ```yaml
     OtherFilesToBeCompiled:
         Windows:
@@ -109,6 +105,13 @@ All paths are relative to the script file's location.
         Unix:
             "g++":
             -   "./src/unix_impl.cpp"
+    IncludePaths:
+        Windows:
+            "msvc":
+            -   "./include/win/msvc"
+        Unix:
+            "g++":
+            -   "./include/unix/gcc"
     ```
 
 ### Globbing Source Files
@@ -146,13 +149,9 @@ When building a project with a mixture of c and c++ files, the same profile will
         RequiredProfiles:
             DefaultPlatform: ["gcc"]
         OtherFilesToBeCompiled:
-            DefaultPlatform:
-                DefaultProfile:
-                -   "./math.c"
+        -   "./math.c"
         IncludePaths:
-            DefaultPlatform:
-                DefaultProfile:
-                -   "../include"
+        -   "../include"
         */
         #include "utils.h"
         int add(int a, int b) { return a + b; }
@@ -168,14 +167,10 @@ When building a project with a mixture of c and c++ files, the same profile will
             IncludePaths:
                 -   "./include"
             Build:
-                DefaultPlatform:
-                    DefaultProfile:
-                    -   "runcpp2 -b ./utils.c"
+            -   "runcpp2 -b ./utils.c"
             LinkProperties:
-                DefaultPlatform:
-                    DefaultProfile:
-                        SearchLibraryNames: ["utils"]
-                        SearchDirectories: ["./"]
+                SearchLibraryNames: ["utils"]
+                SearchDirectories: ["./"]
         ```
 
 ---
@@ -183,23 +178,23 @@ When building a project with a mixture of c and c++ files, the same profile will
 ## Adding Defines
 
 You can add preprocessor definitions using the `Defines` setting. Defines can be specified with or 
-without values:
+without values, for different platforms/profiles:
 
 ???+ example
     ```yaml
+    # For DefaultPlatform & DefaultProfile
     Defines:
-        DefaultPlatform:
-            DefaultProfile:
-            -   "DEBUG"                    # Define without value (#define DEBUG)
-            -   "VERSION_MAJOR=1"          # Define with value (#define VERSION_MAJOR 1)
-            -   "APP_NAME=\"MyApp\""       # Define with string value (#define APP_NAME "MyApp")
+    -   "DEBUG"                    # Define without value (#define DEBUG)
+    -   "VERSION_MAJOR=1"          # Define with value (#define VERSION_MAJOR 1)
+    -   "APP_NAME=\"MyApp\""       # Define with string value (#define APP_NAME "MyApp")
     ```
 
 ---
 
 ## Adding Command Hooks
 
-runcpp2 provides four types of command hooks that run at different stages of the build:
+runcpp2 provides four types of command hooks that run at different stages of the build, all of which
+can be configured per platform/profile:
 
 1. **Setup**: Run once before the script is first built
     - Runs at the script's location when no build directory exists
@@ -226,17 +221,15 @@ runcpp2 provides four types of command hooks that run at different stages of the
             -   "mkdir assets"
     
     PreBuild:
-        DefaultPlatform:
-            DefaultProfile:
-            -   "python generate_version.py"    # Generate version header
+    -   "python generate_version.py"    # Generate version header
     
     PostBuild:
-        DefaultPlatform:
+        Unix:
             DefaultProfile:
             -   "cp -r assets/* ."              # Copy assets to output
     
     Cleanup:
-        DefaultPlatform:
+        Unix:
             DefaultProfile:
             -   "rm -rf assets"                 # Clean up generated files
     ```

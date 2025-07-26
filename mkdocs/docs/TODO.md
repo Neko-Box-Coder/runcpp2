@@ -4,6 +4,7 @@
 ## Done
 
 ### Nightly
+- Add version for default user config and prompt for update
 
 ### v0.3.1
 - Check last run is shared lib or executable. Reset cache when necessary if different type
@@ -27,12 +28,10 @@
 ## Planned
 
 ### v0.4.0
-
 - Allow runcpp2 to be library for scriptable pipeline
-- Add version for default user config and prompt for update
 - Add more default profiles
 - Migrate to libyaml
-- Ability to compile runcpp2 as single cpp
+- Ability to compile runcpp2 as single cpp, to ditch cmake
 
 ## High Priority
 

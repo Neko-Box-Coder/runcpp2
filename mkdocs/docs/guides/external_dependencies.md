@@ -103,7 +103,8 @@ These paths are relative to the dependency's root directory:
 
 ### Link Settings
 
-For non-header libraries, you need to specify how to link against the library using `LinkProperties`:
+For non-header libraries, you need to specify how to link against the library using `LinkProperties` 
+which can be configured per platform/profile:
 
 ???+ example
     ```yaml
@@ -195,16 +196,16 @@ to your executable. You can specify these files using the `FilesToCopy` field.
 All paths are relative to the dependency's root directory. 
 The files are copied to the output directory where the executable is located.
 
+This can be configured per platform/profile.
+
 ???+ example
     ```yaml
     Dependencies:
     -   Name: MyLibraryA
         # ... other fields ...
         FilesToCopy:
-            DefaultPlatform:
-                DefaultProfile:
-                -   "assets/shaders/default.glsl"    # Copy shader file
-                -   "data/config.json"               # Copy config file
+        -   "assets/shaders/default.glsl"    # Copy shader file
+        -   "data/config.json"               # Copy config file
     -   Name: MyLibraryB
         # ... other fields ...
         FilesToCopy:
