@@ -761,9 +761,9 @@
 <p class="admonition-title">Note</p>
 <p>If not specified, the default build type is Executable.</p>
 </div>
-<div class="admonition important">
-<p class="admonition-title">Important</p>
-<p>When you specify <code>BuildType</code> as <code>Executable</code>, it will still produce a <strong>shared library</strong>.
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When you specify <code>BuildType</code> as <code>Executable</code>, it will still produce a <strong>shared library</strong> for running.
 Under the hood, runcpp2 simply loads the shared library and call the <code>main()</code> function.</p>
 <p>The reason of this behavior is because this makes it possible to "catch" if there's any
 missing external (shared) libraries that failed to be resolved, either because of missing
@@ -825,19 +825,15 @@ All paths are relative to the script file's location.</p>
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    └── helper.hpp
 </span></code></pre></div>
 <div class="language-yaml highlight"><span class="filename">Build Settings</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">OtherFilesToBeCompiled</span><span class="p">:</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">        </span><span class="nt">DefaultProfile</span><span class="p">:</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;./src/utils.cpp&quot;</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;./src/helper.cpp&quot;</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="nt">IncludePaths</span><span class="p">:</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">    </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">        </span><span class="nt">DefaultProfile</span><span class="p">:</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;./include&quot;</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;./src/utils.cpp&quot;</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;./src/helper.cpp&quot;</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="nt">IncludePaths</span><span class="p">:</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;./include&quot;</span>
 </span></code></pre></div>
 </details>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>You can specify different source files for different platforms/profiles:
+<p>You can specify different source files for different platforms/profiles, same for IncludePaths:
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">OtherFilesToBeCompiled</span><span class="p">:</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="nt">Windows</span><span class="p">:</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="s">&quot;msvc&quot;</span><span class="p p-Indicator">:</span>
@@ -845,6 +841,13 @@ All paths are relative to the script file's location.</p>
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="nt">Unix</span><span class="p">:</span>
 </span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">        </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
 </span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;./src/unix_impl.cpp&quot;</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="nt">IncludePaths</span><span class="p">:</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span><span class="nt">Windows</span><span class="p">:</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">        </span><span class="s">&quot;msvc&quot;</span><span class="p p-Indicator">:</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;./include/win/msvc&quot;</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">    </span><span class="nt">Unix</span><span class="p">:</span>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">        </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;./include/unix/gcc&quot;</span>
 </span></code></pre></div></p>
 </div>
 <h3 id="globbing-source-files">Globbing Source Files</h3>
@@ -875,16 +878,12 @@ files and the c++ compiler for c++ files. </p>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="cm">RequiredProfiles:</span>
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="cm">    DefaultPlatform: [&quot;gcc&quot;]</span>
 </span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="cm">OtherFilesToBeCompiled:</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="cm">    DefaultPlatform:</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="cm">        DefaultProfile:</span>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="cm">        -   &quot;./math.c&quot;</span>
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="cm">IncludePaths:</span>
-</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="cm">    DefaultPlatform:</span>
-</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="cm">        DefaultProfile:</span>
-</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="cm">        -   &quot;../include&quot;</span>
-</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="cm">*/</span>
-</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;utils.h&quot;</span>
-</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="kt">int</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="cm">-   &quot;./math.c&quot;</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="cm">IncludePaths:</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="cm">-   &quot;../include&quot;</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="cm">*/</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;utils.h&quot;</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="kt">int</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
 </span></code></pre></div>
 <div class="language-yaml highlight"><span class="filename">main.yaml</span><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nt">Dependencies</span><span class="p">:</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;utils&quot;</span>
@@ -895,34 +894,30 @@ files and the c++ compiler for c++ files. </p>
 </span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span><span class="nt">IncludePaths</span><span class="p">:</span>
 </span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;./include&quot;</span>
 </span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">    </span><span class="nt">Build</span><span class="p">:</span>
-</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">        </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
-</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">            </span><span class="nt">DefaultProfile</span><span class="p">:</span>
-</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;runcpp2</span><span class="nv"> </span><span class="s">-b</span><span class="nv"> </span><span class="s">./utils.c&quot;</span>
-</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="w">    </span><span class="nt">LinkProperties</span><span class="p">:</span>
-</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="w">        </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
-</span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="w">            </span><span class="nt">DefaultProfile</span><span class="p">:</span>
-</span><span id="__span-7-16"><a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="w">                </span><span class="nt">SearchLibraryNames</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;utils&quot;</span><span class="p p-Indicator">]</span>
-</span><span id="__span-7-17"><a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="w">                </span><span class="nt">SearchDirectories</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;./&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;runcpp2</span><span class="nv"> </span><span class="s">-b</span><span class="nv"> </span><span class="s">./utils.c&quot;</span>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">    </span><span class="nt">LinkProperties</span><span class="p">:</span>
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">        </span><span class="nt">SearchLibraryNames</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;utils&quot;</span><span class="p p-Indicator">]</span>
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="w">        </span><span class="nt">SearchDirectories</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;./&quot;</span><span class="p p-Indicator">]</span>
 </span></code></pre></div>
 </details>
 </div>
 <hr />
 <h2 id="adding-defines">Adding Defines</h2>
 <p>You can add preprocessor definitions using the <code>Defines</code> setting. Defines can be specified with or 
-without values:</p>
+without values, for different platforms/profiles:</p>
 <details class="example" open="open">
 <summary>Example</summary>
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nt">Defines</span><span class="p">:</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">    </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">        </span><span class="nt">DefaultProfile</span><span class="p">:</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;DEBUG&quot;</span><span class="w">                    </span><span class="c1"># Define without value (#define DEBUG)</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;VERSION_MAJOR=1&quot;</span><span class="w">          </span><span class="c1"># Define with value (#define VERSION_MAJOR 1)</span>
-</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;APP_NAME=\&quot;MyApp\&quot;&quot;</span><span class="w">       </span><span class="c1"># Define with string value (#define APP_NAME &quot;MyApp&quot;)</span>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># For DefaultPlatform &amp; DefaultProfile</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nt">Defines</span><span class="p">:</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;DEBUG&quot;</span><span class="w">                    </span><span class="c1"># Define without value (#define DEBUG)</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;VERSION_MAJOR=1&quot;</span><span class="w">          </span><span class="c1"># Define with value (#define VERSION_MAJOR 1)</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;APP_NAME=\&quot;MyApp\&quot;&quot;</span><span class="w">       </span><span class="c1"># Define with string value (#define APP_NAME &quot;MyApp&quot;)</span>
 </span></code></pre></div>
 </details>
 <hr />
 <h2 id="adding-command-hooks">Adding Command Hooks</h2>
-<p>runcpp2 provides four types of command hooks that run at different stages of the build:</p>
+<p>runcpp2 provides four types of command hooks that run at different stages of the build, all of which
+can be configured per platform/profile:</p>
 <ol>
 <li>
 <p><strong>Setup</strong>: Run once before the script is first built</p>
@@ -962,19 +957,17 @@ without values:</p>
 </span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;mkdir</span><span class="nv"> </span><span class="s">assets&quot;</span>
 </span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
 </span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="nt">PreBuild</span><span class="p">:</span>
-</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">    </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
-</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">        </span><span class="nt">DefaultProfile</span><span class="p">:</span>
-</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;python</span><span class="nv"> </span><span class="s">generate_version.py&quot;</span><span class="w">    </span><span class="c1"># Generate version header</span>
-</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>
-</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="nt">PostBuild</span><span class="p">:</span>
-</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">    </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
-</span><span id="__span-9-14"><a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="w">        </span><span class="nt">DefaultProfile</span><span class="p">:</span>
-</span><span id="__span-9-15"><a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;cp</span><span class="nv"> </span><span class="s">-r</span><span class="nv"> </span><span class="s">assets/*</span><span class="nv"> </span><span class="s">.&quot;</span><span class="w">              </span><span class="c1"># Copy assets to output</span>
-</span><span id="__span-9-16"><a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>
-</span><span id="__span-9-17"><a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="nt">Cleanup</span><span class="p">:</span>
-</span><span id="__span-9-18"><a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="w">    </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
-</span><span id="__span-9-19"><a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a><span class="w">        </span><span class="nt">DefaultProfile</span><span class="p">:</span>
-</span><span id="__span-9-20"><a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;rm</span><span class="nv"> </span><span class="s">-rf</span><span class="nv"> </span><span class="s">assets&quot;</span><span class="w">                 </span><span class="c1"># Clean up generated files</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;python</span><span class="nv"> </span><span class="s">generate_version.py&quot;</span><span class="w">    </span><span class="c1"># Generate version header</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="nt">PostBuild</span><span class="p">:</span>
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">    </span><span class="nt">Unix</span><span class="p">:</span>
+</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">        </span><span class="nt">DefaultProfile</span><span class="p">:</span>
+</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;cp</span><span class="nv"> </span><span class="s">-r</span><span class="nv"> </span><span class="s">assets/*</span><span class="nv"> </span><span class="s">.&quot;</span><span class="w">              </span><span class="c1"># Copy assets to output</span>
+</span><span id="__span-9-14"><a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>
+</span><span id="__span-9-15"><a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="nt">Cleanup</span><span class="p">:</span>
+</span><span id="__span-9-16"><a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="w">    </span><span class="nt">Unix</span><span class="p">:</span>
+</span><span id="__span-9-17"><a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="w">        </span><span class="nt">DefaultProfile</span><span class="p">:</span>
+</span><span id="__span-9-18"><a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;rm</span><span class="nv"> </span><span class="s">-rf</span><span class="nv"> </span><span class="s">assets&quot;</span><span class="w">                 </span><span class="c1"># Clean up generated files</span>
 </span></code></pre></div>
 </details>
 <div class="admonition warning">

@@ -644,18 +644,27 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#v030" class="md-nav__link">
+  <a href="#nightly" class="md-nav__link">
     <span class="md-ellipsis">
-      v0.3.0
+      Nightly
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#nightly" class="md-nav__link">
+  <a href="#v031" class="md-nav__link">
     <span class="md-ellipsis">
-      Nightly
+      v0.3.1
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#v030" class="md-nav__link">
+    <span class="md-ellipsis">
+      v0.3.0
     </span>
   </a>
   
@@ -736,6 +745,14 @@
 
 <h1 id="roadmap">Roadmap</h1>
 <h2 id="done">Done</h2>
+<h3 id="nightly">Nightly</h3>
+<ul>
+<li>Add version for default user config and prompt for update</li>
+</ul>
+<h3 id="v031">v0.3.1</h3>
+<ul>
+<li>Check last run is shared lib or executable. Reset cache when necessary if different type</li>
+</ul>
 <h3 id="v030">v0.3.0</h3>
 <ul>
 <li>More git options<ul>
@@ -761,25 +778,27 @@
 <li>Add ability to reference local YAML file for config profiles</li>
 <li>Add interactive tutorials and redo documentations</li>
 </ul>
-<h3 id="nightly">Nightly</h3>
 <h2 id="planned">Planned</h2>
 <h3 id="v040">v0.4.0</h3>
 <ul>
 <li>Allow runcpp2 to be library for scriptable pipeline</li>
-<li>Add version for default user config and prompt for update</li>
 <li>Add more default profiles</li>
 <li>Migrate to libyaml</li>
-<li>Ability to compile runcpp2 as single cpp</li>
+<li>Ability to compile runcpp2 as single cpp, to ditch cmake</li>
 </ul>
 <h2 id="high-priority">High Priority</h2>
 <ul>
+<li>Rename "OtherFilesToBeCompiled" to "SourceFiles"</li>
+<li>Expose/rename "InternalExecutableShared" and change BuildType to be platform map<ul>
+<li>This ties to the warning in <code>CompilingLinking.cpp:619</code></li>
+</ul>
+</li>
 <li>Update <code>FileProperties.hpp</code> to use list of string for prefix and extension<ul>
 <li>Merge <code>SharedLinkFile</code> and <code>SharedLibraryFile</code></li>
 </ul>
 </li>
 <li>Add the ability for user to specify custom substitution options which applies to all fields</li>
 <li>Add the ability to append defines coming from the dependencies</li>
-<li>Check last run is shared lib or executable. Reset cache when necessary if different type (<code>Src/runcpp2/CompilingLinking.cpp:502 LinkScript()</code>)</li>
 <li>Add wildcard support for filenames and extensions (Files Globbing)</li>
 <li>Add the ability to query script build directory</li>
 <li>Add the ability to list script dependencies</li>

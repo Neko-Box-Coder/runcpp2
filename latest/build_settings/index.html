@@ -1137,6 +1137,19 @@ PassScriptPath: false</code></p>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">BuildType</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Executable</span>
 </span></code></pre></div>
 </details>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When you specify <code>BuildType</code> as <code>Executable</code>, it will still produce a <strong>shared library</strong> for running.
+Under the hood, runcpp2 simply loads the shared library and call the <code>main()</code> function.</p>
+<p>The reason of this behavior is because this makes it possible to "catch" if there's any
+missing external (shared) libraries that failed to be resolved, either because of missing
+<code>.dll</code>/<code>.so</code> or misconfigured search path. </p>
+<p>This allows runcpp2 to differentiate a failure on resolving shared library and if the program
+just returns a non-zero exit code.</p>
+<p>Therefore, when calling with the build flag <code>--build</code>, the output of the binary is <strong>shared 
+library instead of an executable</strong>. This behavior can be <strong>overridden</strong> by passing the 
+<code>--executable</code>/<code>-e</code> flag to force runcpp2 to produce the executable.</p>
+</div>
 <h3 id="requiredprofiles"><code>RequiredProfiles</code></h3>
 <ul>
 <li>Type: <code>Platform Profile List</code></li>
@@ -1154,23 +1167,23 @@ PassScriptPath: false</code></p>
 </details>
 <h3 id="overridecompileflags"><code>OverrideCompileFlags</code></h3>
 <ul>
-<li>Type: <code>Platform Profile Map</code></li>
+<li>Type: <code>Platform Profile Map</code> with child fields</li>
 <li>Optional: <code>true</code></li>
 <li>Default: None</li>
-<li>Description: The compile flags to override for each platform and profile.</li>
+<li>Description: The compile flags to override for the profile being run under each platform.</li>
 <li>Child Fields:<ul>
 <li><code>Remove</code><ul>
 <li>Type: <code>string</code></li>
 <li>Optional: <code>true</code></li>
 <li>Default: None</li>
-<li>Description: The compile flags to remove for each platform and profile.</li>
+<li>Description: The compile flags to remove for the profile being run.</li>
 </ul>
 </li>
 <li><code>Append</code><ul>
 <li>Type: <code>string</code></li>
 <li>Optional: <code>true</code></li>
 <li>Default: None</li>
-<li>Description: The compile flags to append for each platform and profile.</li>
+<li>Description: The compile flags to append for the profile being run.</li>
 </ul>
 </li>
 </ul>
@@ -1190,20 +1203,20 @@ PassScriptPath: false</code></p>
 <li>Type: <code>Platform Profile Map</code> with child fields</li>
 <li>Optional: <code>true</code></li>
 <li>Default: None</li>
-<li>Description: The link flags to override for each platform and profile.</li>
+<li>Description: The link flags to override for the profile being run under each platform.</li>
 <li>Child Fields:<ul>
 <li><code>Remove</code><ul>
 <li>Type: <code>string</code></li>
 <li>Optional: <code>true</code></li>
 <li>Default: None</li>
-<li>Description: The link flags to remove for each platform and profile.</li>
+<li>Description: The link flags to remove for the profile being run.</li>
 </ul>
 </li>
 <li><code>Append</code><ul>
 <li>Type: <code>string</code></li>
 <li>Optional: <code>true</code></li>
 <li>Default: None</li>
-<li>Description: The link flags to append for each platform and profile.</li>
+<li>Description: The link flags to append for the profile being run.</li>
 </ul>
 </li>
 </ul>
@@ -1270,7 +1283,7 @@ PassScriptPath: false</code></p>
 <li>Type: <code>Platform Profile Map</code> with <code>list</code> of <code>string</code></li>
 <li>Optional: <code>true</code></li>
 <li>Default: None</li>
-<li>Description: The setup commands to be used for each platform and profile.</li>
+<li>Description: The setup commands to be used for each platform and profile. This runs before the script built for the first time.</li>
 </ul>
 <details class="example">
 <summary>Example</summary>
@@ -1285,7 +1298,7 @@ PassScriptPath: false</code></p>
 <li>Type: <code>Platform Profile Map</code> with <code>list</code> of <code>string</code></li>
 <li>Optional: <code>true</code></li>
 <li>Default: None</li>
-<li>Description: The pre-build commands to be used for each platform and profile.</li>
+<li>Description: The pre-build commands to be used for each platform and profile. This runs before each build.</li>
 </ul>
 <details class="example">
 <summary>Example</summary>
@@ -1300,7 +1313,7 @@ PassScriptPath: false</code></p>
 <li>Type: <code>Platform Profile Map</code> with <code>list</code> of <code>string</code></li>
 <li>Optional: <code>true</code></li>
 <li>Default: None</li>
-<li>Description: The post-build commands to be used for each platform and profile.</li>
+<li>Description: The post-build commands to be used for each platform and profile. This runs after each build.</li>
 </ul>
 <details class="example">
 <summary>Example</summary>
@@ -1315,7 +1328,7 @@ PassScriptPath: false</code></p>
 <li>Type: <code>Platform Profile Map</code> with <code>list</code> of <code>string</code></li>
 <li>Optional: <code>true</code></li>
 <li>Default: None</li>
-<li>Description: The cleanup commands to be used for each platform and profile.</li>
+<li>Description: The cleanup commands to be used for each platform and profile. This runs when <code>--cleanup</code> command is specified.</li>
 </ul>
 <details class="example">
 <summary>Example</summary>

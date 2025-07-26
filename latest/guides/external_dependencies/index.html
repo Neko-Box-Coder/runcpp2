@@ -847,7 +847,8 @@ These paths are relative to the dependency's root directory:</p>
 </span></code></pre></div>
 </details>
 <h3 id="link-settings">Link Settings</h3>
-<p>For non-header libraries, you need to specify how to link against the library using <code>LinkProperties</code>:</p>
+<p>For non-header libraries, you need to specify how to link against the library using <code>LinkProperties</code> 
+which can be configured per platform/profile:</p>
 <details class="example" open="open">
 <summary>Example</summary>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">Dependencies</span><span class="p">:</span>
@@ -933,25 +934,24 @@ to specify different command hooks similar to
 to your executable. You can specify these files using the <code>FilesToCopy</code> field.</p>
 <p>All paths are relative to the dependency's root directory. 
 The files are copied to the output directory where the executable is located.</p>
+<p>This can be configured per platform/profile.</p>
 <details class="example" open="open">
 <summary>Example</summary>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nt">Dependencies</span><span class="p">:</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MyLibraryA</span>
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="c1"># ... other fields ...</span>
 </span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="nt">FilesToCopy</span><span class="p">:</span>
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">        </span><span class="nt">DefaultPlatform</span><span class="p">:</span>
-</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">            </span><span class="nt">DefaultProfile</span><span class="p">:</span>
-</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;assets/shaders/default.glsl&quot;</span><span class="w">    </span><span class="c1"># Copy shader file</span>
-</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;data/config.json&quot;</span><span class="w">               </span><span class="c1"># Copy config file</span>
-</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MyLibraryB</span>
-</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">    </span><span class="c1"># ... other fields ...</span>
-</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">    </span><span class="nt">FilesToCopy</span><span class="p">:</span>
-</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">        </span><span class="nt">Windows</span><span class="p">:</span>
-</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="w">            </span><span class="s">&quot;msvc&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;assets/fonts/windows.ttf&quot;</span><span class="w">        </span><span class="c1"># Windows-specific font</span>
-</span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="w">        </span><span class="nt">Linux</span><span class="p">:</span>
-</span><span id="__span-7-16"><a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="w">            </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
-</span><span id="__span-7-17"><a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;assets/fonts/linux.ttf&quot;</span><span class="w">          </span><span class="c1"># Linux-specific font</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;assets/shaders/default.glsl&quot;</span><span class="w">    </span><span class="c1"># Copy shader file</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;data/config.json&quot;</span><span class="w">               </span><span class="c1"># Copy config file</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="p p-Indicator">-</span><span class="w">   </span><span class="nt">Name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">MyLibraryB</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">    </span><span class="c1"># ... other fields ...</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">    </span><span class="nt">FilesToCopy</span><span class="p">:</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">        </span><span class="nt">Windows</span><span class="p">:</span>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">            </span><span class="s">&quot;msvc&quot;</span><span class="p p-Indicator">:</span>
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;assets/fonts/windows.ttf&quot;</span><span class="w">        </span><span class="c1"># Windows-specific font</span>
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="w">        </span><span class="nt">Linux</span><span class="p">:</span>
+</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="w">            </span><span class="s">&quot;g++&quot;</span><span class="p p-Indicator">:</span>
+</span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;assets/fonts/linux.ttf&quot;</span><span class="w">          </span><span class="c1"># Linux-specific font</span>
 </span></code></pre></div>
 </details>
 <hr />
