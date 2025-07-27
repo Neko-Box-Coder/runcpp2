@@ -565,7 +565,8 @@ Defines:
 
     DELAYED_OUTPUT("");
     DELAYED_OUTPUT("A common build config is to specify other source files.");
-    DELAYED_OUTPUT("This can be done by adding the paths to the `OtherFilesToBeCompiled` field.");
+    DELAYED_OUTPUT("This can be done by adding the paths to the `SourceFiles` field.");
+    DELAYED_OUTPUT("The script file is implicitly added to this field so you don't need to specify it.");
     DELAYED_OUTPUT("Let me add a second C++ file (\"tutorial/Hello.cpp\").");
     DELAYED_OUTPUT("Press enter to continue...");
     GetInput(true);
@@ -678,7 +679,7 @@ IncludePaths:
 
     {
         const std::string yamlContent = R"(Defines: ["WORLD=42"]
-OtherFilesToBeCompiled: ["./Hello.cpp"]
+SourceFiles: ["./Hello.cpp"]
 IncludePaths: ["./"]
 )";
         WriteFile("tutorial/main.yaml", yamlContent);
@@ -700,7 +701,7 @@ IncludePaths: ["./"]
     
     {
         const std::string yamlContent = R"(Defines: ["WORLD=42"]
-OtherFilesToBeCompiled: ["./Hello.cpp"]
+SourceFiles: ["./Hello.cpp"]
 IncludePaths: ["./"]
 
 OverrideCompileFlags:
@@ -735,7 +736,7 @@ OverrideCompileFlags:
 
     {
         const std::string yamlContent = R"(Defines: ["WORLD=42"]
-OtherFilesToBeCompiled: ["./Hello.cpp"]
+SourceFiles: ["./Hello.cpp"]
 IncludePaths: ["./"]
 )";
         WriteFile("tutorial/main.yaml", yamlContent);

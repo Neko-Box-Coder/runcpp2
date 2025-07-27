@@ -119,6 +119,14 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef node)
     }
     
     if(!ParsePlatformProfileMap<ProfilesProcessPaths>(  node, 
+                                                        "SourceFiles", 
+                                                        OtherFilesToBeCompiled, 
+                                                        "SourceFiles"))
+    {
+        return false;
+    }
+    
+    if(!ParsePlatformProfileMap<ProfilesProcessPaths>(  node, 
                                                         "IncludePaths", 
                                                         IncludePaths, 
                                                         "IncludePaths"))
@@ -213,7 +221,7 @@ std::string runcpp2::Data::ScriptInfo::ToString(std::string indentation) const
     
     if(!OtherFilesToBeCompiled.empty())
     {
-        out += indentation + "OtherFilesToBeCompiled:\n";
+        out += indentation + "SourceFiles:\n";
         for(auto it = OtherFilesToBeCompiled.begin(); it != OtherFilesToBeCompiled.end(); ++it)
         {
             out += indentation + "    " + it->first + ":\n";
