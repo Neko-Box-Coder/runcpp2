@@ -121,14 +121,14 @@
                 Remove: "-flagA -flagB"
                 Append: "-flagC -flagD"
     ```
-### `OtherFilesToBeCompiled`
+### `SourceFiles`
 - Type: `Platform Profile Map` with `list` of `string`
 - Optional: `true`
 - Default: None
-- Description: The source files to be compiled for each platform and profile.
+- Description: The source files to be compiled for each platform and profile. The script file is added implicitly
 ??? example
     ```yaml
-    OtherFilesToBeCompiled:
+    SourceFiles:
         DefaultPlatform:
             DefaultProfile:
             -   "./AnotherSourceFile.cpp"
@@ -532,7 +532,7 @@ OverrideLinkFlags:
             Append: ""
 
 # (Optional) Other source files (relative to script file path) to be compiled.
-OtherFilesToBeCompiled:
+SourceFiles:
     # Target Platform
     DefaultPlatform:
         # Target Profile

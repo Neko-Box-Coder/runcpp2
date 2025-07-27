@@ -64,7 +64,7 @@ OverrideLinkFlags:
             Append: ""
 
 # (Optional) Other source files (relative to script file path) to be compiled.
-OtherFilesToBeCompiled:
+SourceFiles:
     # Target Platform
     DefaultPlatform:
         # Target Profile

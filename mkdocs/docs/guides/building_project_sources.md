@@ -72,7 +72,7 @@ Each setting supports two operations:
 
 ## Adding Source Files And Include Paths
 
-You can add additional source files and include paths using `OtherFilesToBeCompiled` and `IncludePaths`.
+You can add additional source files and include paths using `SourceFiles` and `IncludePaths`.
 All paths are relative to the script file's location.
 
 ???+ example
@@ -88,7 +88,7 @@ All paths are relative to the script file's location.
     ```
     
     ```yaml title="Build Settings"
-    OtherFilesToBeCompiled:
+    SourceFiles:
     -   "./src/utils.cpp"
     -   "./src/helper.cpp"
     IncludePaths:
@@ -98,7 +98,7 @@ All paths are relative to the script file's location.
 !!! note
     You can specify different source files for different platforms/profiles, same for IncludePaths:
     ```yaml
-    OtherFilesToBeCompiled:
+    SourceFiles:
         Windows:
             "msvc":
             -   "./src/windows_impl.cpp"
@@ -148,7 +148,7 @@ When building a project with a mixture of c and c++ files, the same profile will
         Language: "c"
         RequiredProfiles:
             DefaultPlatform: ["gcc"]
-        OtherFilesToBeCompiled:
+        SourceFiles:
         -   "./math.c"
         IncludePaths:
         -   "../include"

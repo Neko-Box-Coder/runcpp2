@@ -565,7 +565,8 @@ Defines:
 
     DELAYED_OUTPUT("");
     DELAYED_OUTPUT("A common build config is to specify other source files.");
-    DELAYED_OUTPUT("This can be done by adding the paths to the `OtherFilesToBeCompiled` field.");
+    DELAYED_OUTPUT("This can be done by adding the paths to the `SourceFiles` field.");
+    DELAYED_OUTPUT("The script file is implicitly added to this field so you don't need to specify it.");
     DELAYED_OUTPUT("Let me add a second C++ file (\"tutorial/Hello.cpp\").");
     DELAYED_OUTPUT("Press enter to continue...");
     GetInput(true);
@@ -596,7 +597,47 @@ void CallHello();
         WriteFile("tutorial/Hello.hpp", fileContent);
     }
 
-    DELAYED_OUTPUT("Turns out I still need to edit tutorial/main.cpp to call the function.");
+    DELAYED_OUTPUT("Now let me add the second C++ file to `SourceFiles` in the tutorial/main.yaml file.");
+    DELAYED_OUTPUT("Press enter to continue...");
+    GetInput(true);
+    
+    {
+        const std::string yamlContent = R"(Defines:
+    DefaultPlatform:
+        DefaultProfile: ["WORLD=42"]
+
+SourceFiles:
+    DefaultPlatform:
+        DefaultProfile: ["./Hello.cpp"]
+)";
+        
+        WriteFile("tutorial/main.yaml", yamlContent);
+    }
+
+    DELAYED_OUTPUT("The paths to the files are always __relative to the script file__.");
+    DELAYED_OUTPUT("You can also add include paths for the script to the `IncludePaths` field");
+    DELAYED_OUTPUT("Although unnecessary in this case, let me add \"./\" to the include paths.");
+    DELAYED_OUTPUT("Press enter to continue...");
+    GetInput(true);
+    
+    {
+        const std::string yamlContent = R"(Defines:
+    DefaultPlatform:
+        DefaultProfile: ["WORLD=42"]
+
+SourceFiles:
+    DefaultPlatform:
+        DefaultProfile: ["./Hello.cpp"]
+
+IncludePaths: 
+    DefaultPlatform:
+        DefaultProfile: ["./"]
+)";
+        
+        WriteFile("tutorial/main.yaml", yamlContent);
+    }
+
+    DELAYED_OUTPUT("Turns out, I still need to edit tutorial/main.cpp to call the function.");
     DELAYED_OUTPUT("Let me do that now.");
     DELAYED_OUTPUT("Press enter to continue...");
     GetInput(true);
@@ -622,46 +663,6 @@ void CallHello();
         WriteFile("tutorial/main.cpp", std::string("#include \"Hello.hpp\"\n") + fileContent);
     }
 
-    DELAYED_OUTPUT("Now let me add the second C++ file to `OtherFilesToBeCompiled` in the YAML file.");
-    DELAYED_OUTPUT("Press enter to continue...");
-    GetInput(true);
-    
-    {
-        const std::string yamlContent = R"(Defines:
-    DefaultPlatform:
-        DefaultProfile: ["WORLD=42"]
-
-OtherFilesToBeCompiled:
-    DefaultPlatform:
-        DefaultProfile: ["./Hello.cpp"]
-)";
-        
-        WriteFile("tutorial/main.yaml", yamlContent);
-    }
-
-    DELAYED_OUTPUT("The path to the other file is always **relative to the script file**.");
-    DELAYED_OUTPUT("You can also add include paths for the script to the `IncludePaths` field");
-    DELAYED_OUTPUT("Although unnecessary in this case, let me add \"./\" to the include paths.");
-    DELAYED_OUTPUT("Press enter to continue...");
-    GetInput(true);
-    
-    {
-        const std::string yamlContent = R"(Defines:
-    DefaultPlatform:
-        DefaultProfile: ["WORLD=42"]
-
-OtherFilesToBeCompiled:
-    DefaultPlatform:
-        DefaultProfile: ["./Hello.cpp"]
-
-IncludePaths: 
-    DefaultPlatform:
-        DefaultProfile: ["./"]
-)";
-        
-        WriteFile("tutorial/main.yaml", yamlContent);
-    }
-
     DELAYED_OUTPUT("Let's run the script again.");
     if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " main.cpp"))
         return false;
@@ -669,16 +670,16 @@ IncludePaths:
     DELAYED_OUTPUT("You should see the output `Hello from another C++ file`.");
     DELAYED_OUTPUT("");
     
-    DELAYED_OUTPUT( "If you **only** have a setting that applies to all platforms and profiles like "
+    DELAYED_OUTPUT( "If you **ONLY** have a setting that applies to all platforms and profiles like "
                     "what we have,");
     DELAYED_OUTPUT("you can specify the settings directly.");
-    DELAYED_OUTPUT("Let me update the YAML file and show you what I mean.");
+    DELAYED_OUTPUT("Let me update the tutorial/main.yaml file and show you what I mean.");
     DELAYED_OUTPUT("Press enter to continue...");
     GetInput(true);
 
     {
         const std::string yamlContent = R"(Defines: ["WORLD=42"]
-OtherFilesToBeCompiled: ["./Hello.cpp"]
+SourceFiles: ["./Hello.cpp"]
 IncludePaths: ["./"]
 )";
         WriteFile("tutorial/main.yaml", yamlContent);
@@ -700,7 +701,7 @@ IncludePaths: ["./"]
     
     {
         const std::string yamlContent = R"(Defines: ["WORLD=42"]
-OtherFilesToBeCompiled: ["./Hello.cpp"]
+SourceFiles: ["./Hello.cpp"]
 IncludePaths: ["./"]
 
 OverrideCompileFlags:
@@ -735,7 +736,7 @@ OverrideCompileFlags:
 
     {
         const std::string yamlContent = R"(Defines: ["WORLD=42"]
-OtherFilesToBeCompiled: ["./Hello.cpp"]
+SourceFiles: ["./Hello.cpp"]
 IncludePaths: ["./"]
 )";
         WriteFile("tutorial/main.yaml", yamlContent);
@@ -798,7 +799,7 @@ bool Chapter3_ExternalDependencies()
     DELAYED_OUTPUT("Press enter to continue...");
     GetInput(true);
     
-    DELAYED_OUTPUT("A dependency must contain a \"Source\" to determine where it is.");
+    DELAYED_OUTPUT("A dependency must contain a \"Source\" to determine where it is from.");
     DELAYED_OUTPUT("In this case, it is coming from a \"Git\" repository.");
     DELAYED_OUTPUT( "If you have a git submodule, you can point it to a local directory with "
                     "\"Local\" instead of \"Git\"");
@@ -807,7 +808,7 @@ bool Chapter3_ExternalDependencies()
 
     DELAYED_OUTPUT( "Next, you have \"LibraryType\" which tells runcpp2 what type of dependency "
                     "this is. Other options include \"Static\", \"Object\" and \"Shared\"");
-    DELAYED_OUTPUT("That's pretty much it for a header only library. Let's run it shell we?");
+    DELAYED_OUTPUT("That's pretty much it for a header only library. Let's run it shall we?");
     if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " Logging.cpp"))
         return false;
     
@@ -997,7 +998,7 @@ Dependencies:
             return false;
         }
         
-        DELAYED_OUTPUT("I have extracted the SDL2 dependency block to a standalone YAML file.");
+        DELAYED_OUTPUT("I have extracted the SDL2 dependency block to tutorial/SDL2.yaml file.");
         DELAYED_OUTPUT("Press enter to continue...");
         GetInput(true);
 

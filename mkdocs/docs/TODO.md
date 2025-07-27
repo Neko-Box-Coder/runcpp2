@@ -5,6 +5,7 @@
 
 ### Nightly
 - Add version for default user config and prompt for update
+- Rename "OtherFilesToBeCompiled" to "SourceFiles"
 
 ### v0.3.1
 - Check last run is shared lib or executable. Reset cache when necessary if different type
@@ -35,7 +36,6 @@
 
 ## High Priority
 
-- Rename "OtherFilesToBeCompiled" to "SourceFiles"
 - Expose/rename "InternalExecutableShared" and change BuildType to be platform map
     - This ties to the warning in `CompilingLinking.cpp:619`
 - Update `FileProperties.hpp` to use list of string for prefix and extension

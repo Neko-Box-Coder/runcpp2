@@ -9,6 +9,8 @@ int main(int argc, char** argv)
     
     ssTEST_INIT_TEST_GROUP();
     
+    ssTEST_PARSE_ARGS(argc, argv);
+    
     ssTEST("ScriptInfo Should Parse Valid YAML")
     {
         ssTEST_OUTPUT_SETUP
@@ -272,6 +274,41 @@ int main(int argc, char** argv)
         
         ssTEST_OUTPUT_ASSERT(   "Parsed output should equal original", 
                                 scriptInfo.Equals(parsedOutput));
+    };
+    
+    ssTEST("ScriptInfo Should Parse SourceFiles as OtherFilesToBeCompiled")
+    {
+        ssTEST_OUTPUT_SETUP
+        (
+            //NOTE: This is just a test YAML for validating parsing, don't use it for actual config
+            const char* yamlStr = R"(
+                SourceFiles:
+                    Windows:
+                        MSVC:
+                        -   src/extra.cpp
+                        -   src/debug.cpp
+            )";
+            
+            ryml::Tree tree = ryml::parse_in_arena(c4::to_csubstr(yamlStr));
+            ryml::ConstNodeRef root = tree.rootref();
+            runcpp2::Data::ScriptInfo scriptInfo;
+        );
+        
+        ssTEST_OUTPUT_EXECUTION
+        (
+            bool parseResult = scriptInfo.ParseYAML_Node(root);
+        );
+        
+        ssTEST_OUTPUT_ASSERT("ParseYAML_Node should succeed", parseResult);
+        
+        //Verify SourceFiles
+        ssTEST_OUTPUT_SETUP
+        (
+            const std::vector<ghc::filesystem::path>& msvcCompileFiles = 
+                scriptInfo.OtherFilesToBeCompiled.at("Windows").Paths.at("MSVC");
+        );
+        ssTEST_OUTPUT_ASSERT("MSVC files count", msvcCompileFiles.size() == 2);
+        ssTEST_OUTPUT_ASSERT("MSVC first file", msvcCompileFiles.at(0) == "src/extra.cpp");
     };
     
     ssTEST("ScriptInfo Should Parse Fields Without Platform And Profile As Default")
