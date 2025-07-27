@@ -811,7 +811,7 @@ Run <code>runcpp2 --show-config-path</code> to locate it.</p>
 </div>
 <hr />
 <h2 id="adding-source-files-and-include-paths">Adding Source Files And Include Paths</h2>
-<p>You can add additional source files and include paths using <code>OtherFilesToBeCompiled</code> and <code>IncludePaths</code>.
+<p>You can add additional source files and include paths using <code>SourceFiles</code> and <code>IncludePaths</code>.
 All paths are relative to the script file's location.</p>
 <details class="example" open="open">
 <summary>Example</summary>
@@ -824,7 +824,7 @@ All paths are relative to the script file's location.</p>
 </span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    └── utils.hpp
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    └── helper.hpp
 </span></code></pre></div>
-<div class="language-yaml highlight"><span class="filename">Build Settings</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">OtherFilesToBeCompiled</span><span class="p">:</span>
+<div class="language-yaml highlight"><span class="filename">Build Settings</span><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nt">SourceFiles</span><span class="p">:</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;./src/utils.cpp&quot;</span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;./src/helper.cpp&quot;</span>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="nt">IncludePaths</span><span class="p">:</span>
@@ -834,7 +834,7 @@ All paths are relative to the script file's location.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>You can specify different source files for different platforms/profiles, same for IncludePaths:
-<div class="language-yaml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">OtherFilesToBeCompiled</span><span class="p">:</span>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">SourceFiles</span><span class="p">:</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="nt">Windows</span><span class="p">:</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">        </span><span class="s">&quot;msvc&quot;</span><span class="p p-Indicator">:</span>
 </span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w">   </span><span class="s">&quot;./src/windows_impl.cpp&quot;</span>
@@ -877,7 +877,7 @@ files and the c++ compiler for c++ files. </p>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="cm">Language: &quot;c&quot;</span>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="cm">RequiredProfiles:</span>
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="cm">    DefaultPlatform: [&quot;gcc&quot;]</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="cm">OtherFilesToBeCompiled:</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="cm">SourceFiles:</span>
 </span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="cm">-   &quot;./math.c&quot;</span>
 </span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="cm">IncludePaths:</span>
 </span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="cm">-   &quot;../include&quot;</span>
