@@ -19,9 +19,19 @@ Dependencies:
         ExcludeLibraryNames: ["libmatplot.so.1.2.0"]
         SearchDirectories: ["./build/source/matplot", "./build/source/matplot/debug"]
     Setup:
-    -   "mkdir build"
-    -   "cd build && cmake .. -DMATPLOTPP_BUILD_WITH_SANITIZERS=OFF -DMATPLOTPP_BUILD_EXAMPLES=OFF -DMATPLOTPP_BUILD_INSTALLER=OFF -DMATPLOTPP_BUILD_PACKAGE=OFF -DBUILD_SHARED_LIBS=ON"
-    -   "cd build && cmake --build . -j 16"
+        DefaultPlatform:
+            "g++":
+            -   "mkdir build"
+            -   "cd build && cmake .. -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+                -DMATPLOTPP_BUILD_WITH_SANITIZERS=OFF -DMATPLOTPP_BUILD_EXAMPLES=OFF \
+                -DMATPLOTPP_BUILD_INSTALLER=OFF -DMATPLOTPP_BUILD_PACKAGE=OFF -DBUILD_SHARED_LIBS=ON"
+            -   "cd build && cmake --build . -j 8"
+            "msvc":
+            -   "mkdir build"
+            -   "cd build && cmake .. -G \"Visual Studio 17 2022\" \
+                -DMATPLOTPP_BUILD_WITH_SANITIZERS=OFF -DMATPLOTPP_BUILD_EXAMPLES=OFF \
+                -DMATPLOTPP_BUILD_INSTALLER=OFF -DMATPLOTPP_BUILD_PACKAGE=OFF -DBUILD_SHARED_LIBS=ON"
+            -   "cd build && cmake --build . -j 8"
 */
 
 #include "matplot/matplot.h"

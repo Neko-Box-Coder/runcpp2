@@ -21,9 +21,15 @@ Dependencies:
                 SearchLibraryNames: ["civetweb"]
                 SearchDirectories: ["./output/src"]
     Setup:
-    -   "mkdir output"
-    -   "cd output && cmake .. -DCIVETWEB_BUILD_TESTING=OFF -DCIVETWEB_ENABLE_ASAN=OFF"
-    -   "cd output && cmake --build . -j 16"
+        DefaultPlatform:
+            "g++":
+            -   "mkdir output"
+            -   "cd output && cmake .. -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ \
+                -DCIVETWEB_BUILD_TESTING=OFF -DCIVETWEB_ENABLE_ASAN=OFF && cmake --build . -j 8"
+            "msvc": 
+            -   "mkdir output"
+            -   "cd output && cmake .. -G \"Visual Studio 17 2022\" -DCIVETWEB_ENABLE_ASAN=OFF && \
+                cmake --build . -j 8"
 */
 
 extern "C" {

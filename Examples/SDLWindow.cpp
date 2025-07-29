@@ -14,7 +14,15 @@ Dependencies:
         SearchLibraryNames: ["SDL2"]
         ExcludeLibraryNames: ["SDL2-static", "SDL2_test"] # On Windows
         SearchDirectories: ["./build", "./build/debug"]
-    Setup: ["mkdir build", "cd build && cmake .. && cmake --build . -j 16"]
+    Setup: 
+        DefaultPlatform:
+            "g++": 
+            -   "mkdir build"
+            -   "cd build && cmake .. -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ && \
+                cmake --build . -j 8"
+            "msvc": 
+            -   "mkdir build"
+            -   "cd build && cmake .. -G \"Visual Studio 17 2022\" && cmake --build . -j 8"
 
 # Or use system installed SDL on Unix...
 # OverrideLinkFlags:
