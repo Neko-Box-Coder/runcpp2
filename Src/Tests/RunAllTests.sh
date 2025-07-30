@@ -9,7 +9,7 @@ function runTest()
         $1
     else
         echo "[Auto Test Warning] $1 doesn't exist, skipping"
-        echo ""
+        exit 1
     fi
 }
 
@@ -30,3 +30,4 @@ runTest ./DependencyInfoTest
 runTest ./ScriptInfoTest
 runTest ./ProfileTest
 runTest ./BuildTypeTest
+runTest ./ConfigParsingTest
