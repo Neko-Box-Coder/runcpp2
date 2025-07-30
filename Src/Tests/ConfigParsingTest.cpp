@@ -60,17 +60,19 @@ int main(int argc, char** argv)
         */
         
         CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
-                        .WhenCalledWith<const std::string&, CO_ANY_TYPE>(configPath, CO_ANY)
+                        .WhenCalledWith<const ghc::filesystem::path&, CO_ANY_TYPE>(configPath, CO_ANY)
                         .Times(1)
                         .Returns<bool>(true)
                         .Expected();
         CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
-                        .WhenCalledWith<const std::string&, CO_ANY_TYPE>(versionPath, CO_ANY)
+                        .WhenCalledWith<const ghc::filesystem::path&, CO_ANY_TYPE>( versionPath, 
+                                                                                    CO_ANY)
                         .Times(1)
                         .Returns<bool>(true)
                         .Expected();
         CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_is_directory)
-                        .WhenCalledWith<const std::string&, CO_ANY_TYPE>(configPath, CO_ANY)
+                        .WhenCalledWith<const ghc::filesystem::path&, CO_ANY_TYPE>( configPath, 
+                                                                                    CO_ANY)
                         .Times(1)
                         .Returns<bool>(false)
                         .Expected();
@@ -292,12 +294,14 @@ int main(int argc, char** argv)
         (
             ssTEST_CALL_COMMON_CLEANUP();
             CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
-                            .WhenCalledWith<const std::string&, CO_ANY_TYPE>(configPath, CO_ANY)
+                            .WhenCalledWith<const ghc::filesystem::path&, CO_ANY_TYPE>( configPath, 
+                                                                                        CO_ANY)
                             .Times(1)
                             .Returns<bool>(true)
                             .Expected();
             CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
-                            .WhenCalledWith<const std::string&, CO_ANY_TYPE>(versionPath, CO_ANY)
+                            .WhenCalledWith<const ghc::filesystem::path&, CO_ANY_TYPE>( versionPath, 
+                                                                                        CO_ANY)
                             .Times(1)
                             .Returns<bool>(false)
                             .Expected();
@@ -660,14 +664,14 @@ int main(int argc, char** argv)
                 "some/config/dir/Default/gccCompilerLinker.yaml";
             
             CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
-                            .WhenCalledWith<const std::string&, 
+                            .WhenCalledWith<const ghc::filesystem::path&, 
                                             CO_ANY_TYPE>(   gccExpectedImportPath, 
                                                             CO_ANY)
                             .Returns<bool>(true)
                             .Times(1)
                             .Expected();
             CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
-                            .WhenCalledWith<const std::string&, 
+                            .WhenCalledWith<const ghc::filesystem::path&, 
                                             CO_ANY_TYPE>(   filetypesExpectedImportPath, 
                                                             CO_ANY)
                             .Returns<bool>(true)
@@ -676,7 +680,7 @@ int main(int argc, char** argv)
             CO_INSTRUCT_REF (OverrideInstance, ghc::filesystem, Mock_exists)
                             .WhenCalledWith
                             <
-                                const std::string&, 
+                                const ghc::filesystem::path&, 
                                 CO_ANY_TYPE
                             >
                             (

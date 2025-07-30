@@ -19,14 +19,14 @@ namespace ghc
         CO_INSERT_METHOD(   OverrideInstance, 
                             bool, 
                             Mock_exists, 
-                            (const std::string&, std::error_code&),
+                            (const ghc::filesystem::path&, std::error_code&),
                             /* no prepend */,
                             noexcept)
         
         CO_INSERT_METHOD(   OverrideInstance, 
                             bool, 
                             Mock_is_directory, 
-                            (const std::string&, std::error_code&),
+                            (const ghc::filesystem::path&, std::error_code&),
                             /* no prepend */,
                             noexcept)
     }
