@@ -22,9 +22,9 @@ GOTO :FINAL
 :RUN_TEST <testFile>
     @REM Setlocal EnableDelayedExpansion
     IF NOT EXIST "%~1" (
-        ECHO "[Auto Test Warning] %~1 doesn't exist, skipping"
+        ECHO "%~1 doesn't exist"
         ECHO ""
-        EXIT /b
+        GOTO :FAILED
     )
     PUSHD "%~dp1"
     CALL "%~1"
@@ -54,6 +54,7 @@ CALL :RUN_TEST "%~dp0\%MODE%DependencyInfoTest.exe"
 CALL :RUN_TEST "%~dp0\%MODE%ScriptInfoTest.exe"
 CALL :RUN_TEST "%~dp0\%MODE%ProfileTest.exe"
 CALL :RUN_TEST "%~dp0\%MODE%BuildTypeTest.exe"
+CALL :RUN_TEST "%~dp0\%MODE%ConfigParsingTest.exe"
 
 EXIT 0
 
