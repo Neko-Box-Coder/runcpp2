@@ -76,7 +76,7 @@ int main(int argc, char** argv)
                                 .Times(1)
                                 .Expected();
             //Checking if mappings file is opened
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, is_open)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, is_open)
                             .Returns<bool>(true)
                             .Times(1)
                             .Expected();
@@ -90,7 +90,7 @@ int main(int argc, char** argv)
                     mappingsContent += scriptsPaths.at(i) + "," + scriptsBuildsPaths.at(i) + "\n";
             }
             
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, rdbuf)
                             .Returns<std::string>(mappingsContent)
                             .Times(1)
                             .Expected();
@@ -156,6 +156,7 @@ int main(int argc, char** argv)
         );
         ssTEST_OUTPUT_EXECUTION( buildsManager->Initialize(); );
         ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED("\n" + CO_GET_FAILED_REPORT(OverrideInstance));
     };
     
     ssTEST("Initialize Should Create Mappings File When It Doesn't Exists")
@@ -191,18 +192,19 @@ int main(int argc, char** argv)
                                 .Times(1)
                                 .Expected();
             //Checking if mappings file is created
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ofstream, is_open)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ofstream, is_open)
                             .Returns<bool>(true)
                             .Times(1)
                             .Expected();
             //Closing mappings file
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ofstream, close)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ofstream, close)
                             .Returns<void>()
                             .Times(1)
                             .Expected();
         );
         ssTEST_OUTPUT_ASSERT("Initialize should succeed", buildsManager->Initialize(), true);
         ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED("\n" + CO_GET_FAILED_REPORT(OverrideInstance));
     };
     
     ssTEST("Initialize Should Parse Mappings File Correctly When It Exists")
@@ -248,6 +250,7 @@ int main(int argc, char** argv)
                                                                     .count(scriptsPaths.at(1)), 
                                 0);
         ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED("\n" + CO_GET_FAILED_REPORT(OverrideInstance));
     };
 
     ssTEST("Initialize Should Return False When Failed to Parse Mappings File")
@@ -264,6 +267,7 @@ int main(int argc, char** argv)
         
         ssTEST_OUTPUT_ASSERT("Initialize should failed", buildsManager->Initialize(), false);
         ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED("\n" + CO_GET_FAILED_REPORT(OverrideInstance));
     };
 
     auto commonInitializeBuildsManager = [&]()
@@ -298,7 +302,7 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //Hash script path
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_hash<std::string>, operator())
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_hash<std::string>, operator())
                             .WhenCalledWith<std::string>(scriptsPaths.at(2) + "0")
                             .Returns<std::size_t>(15)
                             .Times(1)
@@ -338,13 +342,13 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             //Hash script path not unique (first attempt)
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_hash<std::string>, operator())
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_hash<std::string>, operator())
                             .WhenCalledWith(scriptsPaths.at(2) + "0")
                             .Returns<std::size_t>(10)
                             .Times(1)
                             .Expected();
             //Hash script path unique (second attempt)
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_hash<std::string>, operator())
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_hash<std::string>, operator())
                             .WhenCalledWith(scriptsPaths.at(2) + "1")
                             .Returns<std::size_t>(15)
                             .Times(1)
@@ -369,6 +373,7 @@ int main(int argc, char** argv)
                                                                     .at(scriptsPaths.at(2)),
                                 scriptsBuildsPaths.at(2));
         ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED("\n" + CO_GET_FAILED_REPORT(OverrideInstance));
     };
     
     ssTEST("CreateBuildMapping Should Return True When Mapping For Script Exists")
@@ -380,6 +385,7 @@ int main(int argc, char** argv)
                                 true);
         ssTEST_OUTPUT_ASSERT("", BuildsManagerAccessor::GetMappings(*buildsManager).size(), 2);
         ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED("\n" + CO_GET_FAILED_REPORT(OverrideInstance));
     };
     
     ssTEST("RemoveBuildMapping Should Remove Build Mapping When It Exists")
@@ -397,6 +403,7 @@ int main(int argc, char** argv)
                                     1);
         }
         ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED("\n" + CO_GET_FAILED_REPORT(OverrideInstance));
     };
     
     ssTEST("RemoveBuildMapping Should Return True When It Doesn't Exists")
@@ -408,6 +415,7 @@ int main(int argc, char** argv)
                                 true);
         ssTEST_OUTPUT_ASSERT("", BuildsManagerAccessor::GetMappings(*buildsManager).size(), 2);
         ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED("\n" + CO_GET_FAILED_REPORT(OverrideInstance));
     };
     
     ssTEST("HasBuildMapping Should Return True Where It Exists")
@@ -418,6 +426,7 @@ int main(int argc, char** argv)
                                 buildsManager->HasBuildMapping(scriptsPaths.at(1)), 
                                 true);
         ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED("\n" + CO_GET_FAILED_REPORT(OverrideInstance));
     };
     
     ssTEST("HasBuildMapping Should Return False Where It Doesn't Exist")
@@ -428,6 +437,7 @@ int main(int argc, char** argv)
                                 buildsManager->HasBuildMapping(scriptsPaths.at(2)), 
                                 false);
         ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED("\n" + CO_GET_FAILED_REPORT(OverrideInstance));
     };
     
     ssTEST("GetBuildMapping Should Return Correct Mapping When It Exists")
@@ -449,6 +459,7 @@ int main(int argc, char** argv)
                                 true);
         ssTEST_OUTPUT_ASSERT(outPath == buildsDirPath + "/" + scriptsBuildsPaths.at(0));
         ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED("\n" + CO_GET_FAILED_REPORT(OverrideInstance));
     };
     
     ssTEST("GetBuildMapping Should Create Build Mapping When It Doesn't Exists")
@@ -483,6 +494,7 @@ int main(int argc, char** argv)
                                 true);
         ssTEST_OUTPUT_ASSERT(outPath == buildsDirPath + "/" + scriptsBuildsPaths.at(2));
         ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED("\n" + CO_GET_FAILED_REPORT(OverrideInstance));
     };
     
     ssTEST("RemoveAllBuildsMappings Should Remove All Build Mappings")
@@ -493,6 +505,7 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT(BuildsManagerAccessor::GetMappings(*buildsManager).empty());
         ssTEST_OUTPUT_ASSERT(BuildsManagerAccessor::GetReverseMappings(*buildsManager).empty());
         ssTEST_OUTPUT_ASSERT("", CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
+        ssTEST_OUTPUT_VALUES_WHEN_FAILED("\n" + CO_GET_FAILED_REPORT(OverrideInstance));
     };
     
     ssTEST("SaveBuildsMappings Should Save Existing Mappings To Disk")
@@ -520,14 +533,14 @@ int main(int argc, char** argv)
                                 .Times(1)
                                 .Expected();
             //Removing previous override on is_open, checking if mappings file is created
-            CO_REMOVE_INSTRUCT_REF(OverrideInstance, std::Mock_ofstream, is_open);
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ofstream, is_open)
+            CO_REMOVE_INSTRUCT_REF(OverrideInstance, Mock_std::Mock_ofstream, is_open);
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ofstream, is_open)
                             .Returns<bool>(true)
                             .Times(1)
                             .Expected();
             //Closing mappings file
             std::string writeResult;
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ofstream, close)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ofstream, close)
                             .Returns<void>()
                             .Times(1)
                             .WhenCalledExpectedly_Do
@@ -535,7 +548,8 @@ int main(int argc, char** argv)
                                 [&](void* instance, const std::vector<CppOverride::TypedDataInfo>&)
                                 {
                                     writeResult = 
-                                        static_cast<std::Mock_ofstream*>(instance)->StringStream.str();
+                                        static_cast<Mock_std::Mock_ofstream*>(instance) ->StringStream
+                                                                                        .str();
                                 }
                             )
                             .Expected();
