@@ -15,20 +15,19 @@
 
 CO_DECLARE_INSTANCE(OverrideInstance);
 
-class BuildsManagerAccessor
+struct BuildsManagerAccessor
 {
-    public:
-        inline static std::unordered_map<std::string, std::string>& 
-        GetMappings(runcpp2::BuildsManager& buildsManager)
-        {
-            return buildsManager.Mappings;
-        }
-        
-        inline static std::unordered_map<std::string, std::string>& 
-        GetReverseMappings(runcpp2::BuildsManager& buildsManager)
-        {
-            return buildsManager.ReverseMappings;
-        }
+    inline static std::unordered_map<std::string, std::string>& 
+    GetMappings(runcpp2::BuildsManager& buildsManager)
+    {
+        return buildsManager.Mappings;
+    }
+    
+    inline static std::unordered_map<std::string, std::string>& 
+    GetReverseMappings(runcpp2::BuildsManager& buildsManager)
+    {
+        return buildsManager.ReverseMappings;
+    }
 };
 
 int main(int argc, char** argv)
