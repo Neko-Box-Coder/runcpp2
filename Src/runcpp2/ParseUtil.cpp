@@ -2,6 +2,8 @@
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/StringUtil.hpp"
 
+#include <unordered_set>
+
 runcpp2::NodeRequirement::NodeRequirement() :   Name(""),
                                                 NodeType(),
                                                 Required(false),
@@ -107,6 +109,22 @@ bool runcpp2::CheckNodeRequirements(ryml::ConstNodeRef node,
     {
         ssLOG_ERROR("Node is not a map: " << node.type().type_str());
         return false;
+    }
+    
+    //All keys must be unique
+    {
+        std::unordered_set<std::string> childKeys;
+        for(int i = 0; i < node.num_children(); ++i)
+        {
+            std::string currentKey = GetKey(node[i]);
+            if(childKeys.count(currentKey) != 0)
+            {
+                ssLOG_ERROR("Duplicate key found for: " << currentKey);
+                return false;
+            }
+            else
+                childKeys.insert(GetKey(node[i]));
+        }
     }
     
     for(int i = 0; i < requirements.size(); ++i)
