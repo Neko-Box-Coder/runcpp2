@@ -10,6 +10,8 @@
 
 #include <sstream>
 #include <type_traits>
+#include <string>
+#include <unordered_map>
 
 extern CO_DECLARE_INSTANCE(OverrideInstance);
 
@@ -20,27 +22,27 @@ namespace ghc
         CO_INSERT_METHOD(   OverrideInstance, 
                             bool, 
                             Mock_exists, 
-                            (const path&, std::error_code&),
+                            (const ghc::filesystem::path&, std::error_code&),
                             /* no prepend */,
                             noexcept)
         
         CO_INSERT_METHOD(   OverrideInstance,
                             bool,
                             Mock_create_directories,
-                            (const path&, std::error_code&),
+                            (const ghc::filesystem::path&, std::error_code&),
                             /* no prepend */,
                             noexcept)
         
         CO_INSERT_METHOD(   OverrideInstance,
                             bool,
                             Mock_remove_all,
-                            (const path&, std::error_code&),
+                            (const ghc::filesystem::path&, std::error_code&),
                             /* no prepend */,
                             noexcept)
     }
 }
 
-namespace std
+namespace Mock_std
 {
     class Mock_ifstream
     {
@@ -92,6 +94,36 @@ namespace std
         mockStream.StringStream << pf;
         return mockStream;
     }
+    
+    CO_FORWARD_TYPE(std, string);
+    CO_FORWARD_TYPE(std, stringstream);
+    CO_FORWARD_TYPE(std, istringstream);
+    CO_FORWARD_TYPE(std, error_code);
+    CO_FORWARD_TYPE(std, size_t);
+    CO_FORWARD_TEMPLATE_TYPE(std, unordered_map);
+    
+    namespace
+    {
+        auto& cout = std::cout;
+    }
+    
+    template< class CharT, class Traits >
+    std::basic_ostream<CharT, Traits>& endl( std::basic_ostream<CharT, Traits>& os )
+    {
+        return std::endl(os);
+    }
+    
+    template<typename T>
+    inline std::string to_string(T val)
+    {
+        return std::to_string(val);
+    }
+    
+    template<typename T>
+    std::istream& getline(std::istream& is, T& val)
+    {
+        return std::getline(is, val);
+    }
 }
 
 #define exists Mock_exists
@@ -100,6 +132,7 @@ namespace std
 #define ifstream Mock_ifstream
 #define ofstream Mock_ofstream
 #define hash Mock_hash
+#define std Mock_std
 
 #if INTERNAL_RUNCPP2_UNDEF_MOCKS
     #undef exists
@@ -108,6 +141,7 @@ namespace std
     #undef ifstream
     #undef ofstream
     #undef hash
+    #undef std
 #endif
 
 #endif

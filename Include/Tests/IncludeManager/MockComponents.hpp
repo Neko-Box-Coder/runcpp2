@@ -39,7 +39,7 @@ namespace ghc
     }
 }
 
-namespace std
+namespace Mock_std
 {
     class Mock_ifstream
     {
@@ -87,6 +87,30 @@ namespace std
         CO_INSERT_IMPL(OverrideInstance, bool, (stream, line));
         return false;
     }
+    
+    CO_FORWARD_TYPE(std, string);
+    CO_FORWARD_TYPE(std, stringstream);
+    CO_FORWARD_TYPE(std, error_code);
+    CO_FORWARD_TYPE(std, exception);
+    CO_FORWARD_TYPE(std, size_t);
+    CO_FORWARD_TEMPLATE_TYPE(std, vector);
+    
+    namespace
+    {
+        auto& cout = std::cout;
+    }
+    
+    template< class CharT, class Traits >
+    std::basic_ostream<CharT, Traits>& endl( std::basic_ostream<CharT, Traits>& os )
+    {
+        return std::endl(os);
+    }
+    
+    template<typename T>
+    inline std::string to_string(T val)
+    {
+        return std::to_string(val);
+    }
 }
 
 #define exists Mock_exists
@@ -96,6 +120,7 @@ namespace std
 #define ofstream Mock_ofstream
 #define hash Mock_hash
 #define getline Mock_getline
+#define std Mock_std
 
 #if INTERNAL_RUNCPP2_UNDEF_MOCKS
     #undef exists
@@ -105,6 +130,7 @@ namespace std
     #undef ofstream
     #undef hash
     #undef getline
+    #undef std
 #endif
 
 #endif 
