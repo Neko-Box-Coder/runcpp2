@@ -180,25 +180,25 @@ int main(int argc, char** argv)
                                 .Times(1)
                                 .Expected();
             //Check if file is opened
-            CO_INSTRUCT_REF   (OverrideInstance, std::Mock_ifstream, is_open)
-                                .Returns<bool>(true)
-                                .Times(1)
-                                .Expected();
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, is_open)
+                            .Returns<bool>(true)
+                            .Times(1)
+                            .Expected();
             //Capture content on close
             std::string writeResult;
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ofstream, close)
-                                .Returns<void>()
-                                .Times(1)
-                                .WhenCalledExpectedly_Do
-                                (
-                                    [&](void* instance, ...)
-                                    {
-                                        writeResult = 
-                                            static_cast<std::Mock_ofstream*>(instance)->
-                                            StringStream.str();
-                                    }
-                                )
-                                .Expected();
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ofstream, close)
+                            .Returns<void>()
+                            .Times(1)
+                            .WhenCalledExpectedly_Do
+                            (
+                                [&](void* instance, ...)
+                                {
+                                    writeResult = 
+                                        static_cast<Mock_std::Mock_ofstream*>(instance)->
+                                        StringStream.str();
+                                }
+                            )
+                            .Expected();
         );
         
         //Initialize first
@@ -269,7 +269,7 @@ int main(int argc, char** argv)
                                 .Returns<void>()
                                 .Times(1)
                                 .Expected();
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ofstream, is_open)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ofstream, is_open)
                             .Returns<bool>(false)
                             .Times(1)
                             .Expected();
@@ -322,13 +322,13 @@ int main(int argc, char** argv)
                                 .Times(1)
                                 .Expected();
             //Check if file is opened
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, is_open)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, is_open)
                             .Returns<bool>(true)
                             .Times(1)
                             .Expected();
             //Mock getline to return includes
             int callCount = 0;
-            CO_INSTRUCT_REF (OverrideInstance, std, Mock_getline)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std, Mock_getline)
                             .Returns<bool>(true)
                             .WhenCalledExpectedly_Do
                             (
@@ -347,7 +347,7 @@ int main(int argc, char** argv)
                             )
                             .Times(3);
             //Mock getline to return false for end of file
-            CO_INSTRUCT_REF (OverrideInstance, std, Mock_getline)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std, Mock_getline)
                             .Returns<bool>(false)
                             .Times(1)
                             .Expected();
@@ -469,7 +469,7 @@ int main(int argc, char** argv)
                                 .Returns<void>()
                                 .Times(1)
                                 .Expected()
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, is_open)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, is_open)
                             .Returns<bool>(false)
                             .Times(1)
                             .Expected();
@@ -688,7 +688,7 @@ int main(int argc, char** argv)
                             .Expected();
             
             //Mock hash for first source file
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_hash<std::string>, operator())
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_hash<std::string>, operator())
                             .If
                             (
                                 [&sourcePaths, ProcessPath]
@@ -713,7 +713,7 @@ int main(int argc, char** argv)
                             .Expected();
             
             //Mock hash for second source file
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_hash<std::string>, operator())
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_hash<std::string>, operator())
                             .If
                             (
                                 [&sourcePaths, ProcessPath]
@@ -738,7 +738,7 @@ int main(int argc, char** argv)
                             .Expected();
             
             //Mock hash for third source file
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_hash<std::string>, operator())
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_hash<std::string>, operator())
                             .If
                             (
                                 [&sourcePaths, ProcessPath]

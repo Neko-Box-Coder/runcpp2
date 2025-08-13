@@ -9,6 +9,7 @@
 
 #include <sstream>
 #include <type_traits>
+#include <vector>
 
 extern CO_DECLARE_INSTANCE(OverrideInstance);
 
@@ -32,7 +33,7 @@ namespace ghc
     }
 }
 
-namespace std
+namespace Mock_std
 {
     class Mock_ifstream
     {
@@ -47,16 +48,52 @@ namespace std
                                 (Mock_ifstream&, T const&), 
                                 template<typename T> friend)
     };
+    
+    CO_FORWARD_TEMPLATE_TYPE(std, vector);
+    CO_FORWARD_TYPE(std, stringstream);
+    CO_FORWARD_TYPE(std, string);
+    CO_FORWARD_TEMPLATE_TYPE(std, stack);
+    CO_FORWARD_TYPE(std, error_code);
+    CO_FORWARD_TYPE(std, exception);
+    CO_FORWARD_TEMPLATE_TYPE(std, unordered_map);
+    CO_FORWARD_TYPE(std, ofstream);
+    CO_FORWARD_TYPE(std, ios);
+    CO_FORWARD_TYPE(std, ios_base);
+    
+    template<typename T>
+    inline std::string to_string(T val)
+    {
+        return std::to_string(val);
+    }
+    
+    namespace
+    {
+        auto& cout = std::cout;
+    }
+    
+    template< class CharT, class Traits >
+    std::basic_ostream<CharT, Traits>& endl( std::basic_ostream<CharT, Traits>& os )
+    {
+        return std::endl(os);
+    }
+    
+    inline int stoi(const std::string& str, std::size_t* pos = nullptr, int base = 10)
+    {
+        return std::stoi(str, pos, base);
+    }
 }
+
 
 #define exists Mock_exists
 #define is_directory Mock_is_directory
 #define ifstream Mock_ifstream
+#define std Mock_std
 
 #if INTERNAL_RUNCPP2_UNDEF_MOCKS
     #undef exists
     #undef is_directory
     #undef ifstream
+    #undef std
 #endif
 
 #endif 

@@ -113,7 +113,7 @@ int main(int argc, char** argv)
                                         versionIfstreamInstance = nullptr;
                                 }
                             );
-        CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, operator!)
+        CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, operator!)
                         .If
                         (
                             [&userConfigIfstreamInstance, &versionIfstreamInstance]
@@ -126,7 +126,7 @@ int main(int argc, char** argv)
                         .Times(2)
                         .Returns<bool>(false)
                         .Expected();
-        CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+        CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, rdbuf)
                         .Returns<std::string>(versionString)
                         .If
                         (
@@ -146,8 +146,8 @@ int main(int argc, char** argv)
     {
         CO_INSTRUCT_REF(OverrideInstance, ghc::filesystem, Mock_exists).Returns<bool>(false);
         CO_INSTRUCT_REF(OverrideInstance, ghc::filesystem, Mock_is_directory).Returns<bool>(false);
-        CO_INSTRUCT_REF(OverrideInstance, std::Mock_ifstream, operator!).Returns<bool>(true);
-        CO_INSTRUCT_REF(OverrideInstance, std::Mock_ifstream, rdbuf).Returns<std::string>("");
+        CO_INSTRUCT_REF(OverrideInstance, Mock_std::Mock_ifstream, operator!).Returns<bool>(true);
+        CO_INSTRUCT_REF(OverrideInstance, Mock_std::Mock_ifstream, rdbuf).Returns<std::string>("");
         CO_INSTRUCT_REF(OverrideInstance, runcpp2, WriteDefaultConfigs).Returns<bool>(false);
     };
     
@@ -197,7 +197,7 @@ int main(int argc, char** argv)
     {
         ssTEST_OUTPUT_SETUP
         (
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, rdbuf)
                             .Returns<std::string>(commonUserConfigForVersionFile)
                             .If
                             (
@@ -231,10 +231,10 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_SETUP
         (
             CO_REMOVE_INSTRUCT_REF(OverrideInstance, runcpp2, WriteDefaultConfigs);
-            CO_REMOVE_INSTRUCT_REF(OverrideInstance, std::Mock_ifstream, rdbuf);
+            CO_REMOVE_INSTRUCT_REF(OverrideInstance, Mock_std::Mock_ifstream, rdbuf);
             
             const std::string outdatedVersionString = std::to_string(RUNCPP2_CONFIG_VERSION - 1);
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, rdbuf)
                             .Returns<std::string>(outdatedVersionString)
                             .If
                             (
@@ -245,7 +245,7 @@ int main(int argc, char** argv)
                             )
                             .Times(1)
                             .Expected();
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, rdbuf)
                             .Returns<std::string>(commonUserConfigForVersionFile)
                             .If
                             (
@@ -330,7 +330,7 @@ int main(int argc, char** argv)
                                 )
                                 .Times(1)
                                 .Expected();
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, operator!)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, operator!)
                             .If
                             (
                                 [&userConfigIfstreamInstance, &versionIfstreamInstance]
@@ -342,7 +342,7 @@ int main(int argc, char** argv)
                             .Times(1)
                             .Returns<bool>(false)
                             .Expected();
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, rdbuf)
                             .Returns<std::string>(commonUserConfigForVersionFile)
                             .If
                             (
@@ -413,7 +413,7 @@ int main(int argc, char** argv)
                     Name: "g++3"
             )";
             
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, rdbuf)
                             .Returns<std::string>(yamlStr)
                             .If
                             (
@@ -488,7 +488,7 @@ int main(int argc, char** argv)
                     Name: "g++3"
             )";
             
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, rdbuf)
                             .Returns<std::string>(yamlStr)
                             .Times(1)
                             .If
@@ -529,7 +529,7 @@ int main(int argc, char** argv)
             profiles.clear();
             preferredProfile.clear();
             
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, rdbuf)
                             .Returns<std::string>(yamlStr)
                             .Times(1)
                             .If
@@ -644,7 +644,7 @@ int main(int argc, char** argv)
             )";
             
             //Mock for main config file 
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, rdbuf)
                             .Returns<std::string>(mainConfigYamlStr)
                             .Times(1)
                             .If
@@ -758,7 +758,7 @@ int main(int argc, char** argv)
                                     }
                                 );
             //Mock for rdbuf call with specific path check for import files
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, rdbuf)
                             .Returns<std::string>(importedGccProfileYamlStr)
                             .Times(1)
                             .If
@@ -769,7 +769,7 @@ int main(int argc, char** argv)
                                 }
                             )
                             .Expected();
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, rdbuf)
                             .Returns<std::string>(importedFiletypesYamlStr)
                             .Times(1)
                             .If
@@ -780,7 +780,7 @@ int main(int argc, char** argv)
                                 }
                             )
                             .Expected();
-            CO_INSTRUCT_REF (OverrideInstance, std::Mock_ifstream, rdbuf)
+            CO_INSTRUCT_REF (OverrideInstance, Mock_std::Mock_ifstream, rdbuf)
                             .Returns<std::string>(importedCompilerLinkerYamlStr)
                             .Times(1)
                             .If
@@ -796,7 +796,7 @@ int main(int argc, char** argv)
             
             //Tracking each Mock_ifstream instance is too cumbersome, just return false for all 
             //operator! since rdbuf won't work anyway even if it passed the operator! check
-            CO_INSTRUCT_REF(OverrideInstance, std::Mock_ifstream, operator!).Returns<bool>(false);
+            CO_INSTRUCT_REF(OverrideInstance, Mock_std::Mock_ifstream, operator!).Returns<bool>(false);
             commonDefaultOverrideSetup();
             
             std::vector<runcpp2::Data::Profile> profiles;
