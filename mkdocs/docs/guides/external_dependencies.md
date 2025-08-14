@@ -173,17 +173,12 @@ The only difference is that `PreBuild` and `PostBuild` hooks are replaced with
     -   Name: MyLibrary
         # ... other fields ...
         Setup:
-            DefaultPlatform:
-                "g++":
-                -   "mkdir build"
+        -   "apt install cuda-toolkit"
+        -   "mkdir build"
         Build:
-            DefaultPlatform:
-                "g++":
-                -   "cmake --build build"
+        -   "cmake --build build"
         Cleanup:
-            DefaultPlatform:
-                "g++":
-                -   "rm -rf build"
+        -   "apt remove cuda-toolkit"
     ```
 
 ---

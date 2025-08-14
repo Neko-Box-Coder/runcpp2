@@ -31,3 +31,6 @@
 [submodule "MacroPowerToys"]
 	path = External/MacroPowerToys
 	url = https://github.com/Neko-Box-Coder/MacroPowerToys.git
+[submodule "libyaml"]
+	path = External/libyaml
+	url = https://github.com/yaml/libyaml.git
