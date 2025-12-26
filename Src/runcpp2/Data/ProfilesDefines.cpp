@@ -26,6 +26,27 @@ bool runcpp2::Data::ProfilesDefines::ParseYAML_Node(ryml::ConstNodeRef node)
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
+bool runcpp2::Data::ProfilesDefines::ParseYAML_Node(YAML::ConstNodePtr node)
+{
+    ssLOG_FUNC_DEBUG();
+    if(!node->IsMap())
+    {
+        ssLOG_ERROR("ProfilesDefines: Not a map type");
+        return false;
+    }
+    
+    for(int i = 0; i < node->GetChildrenCount(); ++i)
+    {
+        DS_UNWRAP_DECL_ACT( ProfileName profile, 
+                            node->GetMapKeyScalarAt<std::string>(i), 
+                            ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
+        if(!ParseYAML_NodeWithProfile_LibYaml(node->GetMapValueNodeAt(i), profile))
+            return false;
+    }
+    
+    return true;
+}
+
 bool runcpp2::Data::ProfilesDefines::ParseYAML_NodeWithProfile( ryml::ConstNodeRef node, 
                                                                 ProfileName profile)
 {
@@ -74,6 +95,50 @@ bool runcpp2::Data::ProfilesDefines::IsYAML_NodeParsableAsDefault(ryml::ConstNod
     
     return true;
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::Data::ProfilesDefines::ParseYAML_NodeWithProfile_LibYaml( YAML::ConstNodePtr node, 
+                                                                        ProfileName profile)
+{
+    ssLOG_FUNC_DEBUG();
+    
+    if(!node->IsSequence())
+    {
+        ssLOG_ERROR("ProfilesDefines: Paths type requires a list");
+        return false;
+    }
+    
+    for(int i = 0; i < node->GetChildrenCount(); ++i)
+    {
+        DS_UNWRAP_DECL_ACT( std::string defineStr, 
+                            node->GetSequenceChildScalar<std::string>(i), 
+                            ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
+        Define define;
+        size_t equalPos = defineStr.find('=');
+        if(equalPos != std::string::npos)
+        {
+            define.Name = defineStr.substr(0, equalPos);
+            define.Value = defineStr.substr(equalPos + 1);
+            define.HasValue = true;
+        }
+        else
+        {
+            define.Name = defineStr;
+            define.Value = "";
+            define.HasValue = false;
+        }
+        
+        Defines[profile].push_back(define);
+    }
+    
+    return true;
+}
+
+bool 
+runcpp2::Data::ProfilesDefines::IsYAML_NodeParsableAsDefault_LibYaml(YAML::ConstNodePtr node) const
+{
+    ssLOG_FUNC_DEBUG();
+    return node->IsSequence();
 }
 
 std::string runcpp2::Data::ProfilesDefines::ToString(std::string indentation) const

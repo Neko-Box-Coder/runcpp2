@@ -171,6 +171,174 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(ryml::ConstNodeRef node)
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
+bool runcpp2::Data::ScriptInfo::ParseYAML_Node(YAML::ConstNodePtr node)
+{
+    ssLOG_FUNC_DEBUG();
+    
+    static_assert(FieldsCount == 14, "Update this function when adding new fields");
+    std::vector<NodeRequirement> requirements =
+    {
+        NodeRequirement("PassScriptPath", YAML::NodeType::Scalar, false, true),
+        NodeRequirement("Language", YAML::NodeType::Scalar, false, true),
+        NodeRequirement("BuildType", YAML::NodeType::Scalar, false, true),
+        NodeRequirement("RequiredProfiles", YAML::NodeType::Map, false, true),
+        
+        //Expecting either platform profile map or remove append map
+        NodeRequirement("OverrideCompileFlags", YAML::NodeType::Map, false, true),
+        
+        //Expecting either platform profile map or remove append map
+        NodeRequirement("OverrideLinkFlags", YAML::NodeType::Map, false, true),
+        
+        //OtherFilesToBeCompiled can be platform profile map or sequence of paths, handle later
+        //IncludePaths can be platform profile map or sequence of paths, handle later
+        
+        NodeRequirement("Dependencies", YAML::NodeType::Sequence, false, true)
+        
+        //Defines can be platform profile map or sequence of defines, handle later
+        //Setup can be platform profile map or sequence of commands, handle later
+        //PreBuild can be platform profile map or sequence of commands, handle later
+        //PostBuild can be platform profile map or sequence of commands, handle later
+        //Cleanup can be platform profile map or sequence of commands, handle later
+    };
+    
+    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    {
+        ssLOG_ERROR("ScriptInfo: Failed to meet requirements");
+        return false;
+    }
+    
+    if(ExistAndHasChild_LibYaml(node, "PassScriptPath"))
+    {
+        std::string passScriptPathStr = node->GetMapValueScalar<std::string>("PassScriptPath")
+                                            .DS_TRY_ACT(return false);
+        for(size_t i = 0; i < passScriptPathStr.length(); ++i)
+            passScriptPathStr[i] = std::tolower(passScriptPathStr[i]);
+        
+        if(passScriptPathStr == "true" || passScriptPathStr == "1")
+            PassScriptPath = true;
+        else if(passScriptPathStr == "false" || passScriptPathStr == "0")
+            PassScriptPath = false;
+        else
+        {
+            ssLOG_ERROR("ScriptInfo: Invalid value for PassScriptPath: " << passScriptPathStr);
+            ssLOG_ERROR("Expected true/false or 1/0");
+            return false;
+        }
+    }
+    
+    if(ExistAndHasChild_LibYaml(node, "Language"))
+    {
+        Language = node->GetMapValueScalar<std::string>("Language").DS_TRY_ACT(return false);
+    }
+    
+    if(ExistAndHasChild_LibYaml(node, "BuildType"))
+    {
+        std::string typeStr = node  ->GetMapValueScalar<std::string>("BuildType")
+                                    .DS_TRY_ACT(return false);
+        BuildType buildType = StringToBuildType(typeStr);
+        if(buildType == BuildType::COUNT)
+        {
+            ssLOG_ERROR("ScriptInfo: Invalid build type: " << typeStr);
+            return false;
+        }
+        CurrentBuildType = buildType;
+    }
+    
+    if(ExistAndHasChild_LibYaml(node, "RequiredProfiles"))
+    {
+        YAML::ConstNodePtr requiredProfilesNode = node->GetMapValueNode("RequiredProfiles");
+        for(int i = 0; i < requiredProfilesNode->GetChildrenCount(); ++i)
+        {
+            PlatformName platform = requiredProfilesNode->GetMapKeyScalarAt<std::string>(i)
+                                                        .DS_TRY_ACT(return false);
+            std::vector<ProfileName> profiles;
+            YAML::ConstNodePtr platformNode = requiredProfilesNode->GetMapValueNodeAt(i);
+            for(int j = 0; j < platformNode->GetChildrenCount(); ++j)
+            {
+                std::string profile = platformNode  ->GetSequenceChildScalar<std::string>(j)
+                                                    .DS_TRY_ACT(return false);
+                profiles.push_back(profile);
+            }
+            
+            RequiredProfiles[platform] = profiles;
+        }
+    }
+     
+    if(!ParsePlatformProfileMap_LibYaml<ProfilesFlagsOverride>( node, 
+                                                                "OverrideCompileFlags", 
+                                                                OverrideCompileFlags, 
+                                                                "OverrideCompileFlags"))
+    {
+        return false;
+    }
+    
+    if(!ParsePlatformProfileMap_LibYaml<ProfilesFlagsOverride>( node, 
+                                                                "OverrideLinkFlags", 
+                                                                OverrideLinkFlags, 
+                                                                "OverrideLinkFlags"))
+    {
+        return false;
+    }
+    
+    if(!ParsePlatformProfileMap_LibYaml<ProfilesProcessPaths>(  node, 
+                                                                "OtherFilesToBeCompiled", 
+                                                                OtherFilesToBeCompiled, 
+                                                                "OtherFilesToBeCompiled"))
+    {
+        return false;
+    }
+    
+    if(!ParsePlatformProfileMap_LibYaml<ProfilesProcessPaths>(  node, 
+                                                                "SourceFiles", 
+                                                                OtherFilesToBeCompiled, 
+                                                                "SourceFiles"))
+    {
+        return false;
+    }
+    
+    if(!ParsePlatformProfileMap_LibYaml<ProfilesProcessPaths>(  node, 
+                                                                "IncludePaths", 
+                                                                IncludePaths, 
+                                                                "IncludePaths"))
+    {
+        return false;
+    }
+    
+    if(ExistAndHasChild_LibYaml(node, "Dependencies"))
+    {
+        YAML::ConstNodePtr dependenciesNode = node->GetMapValueNode("Dependencies");
+        for(int i = 0; i < dependenciesNode->GetChildrenCount(); ++i)
+        {
+            DependencyInfo info;
+            YAML::ConstNodePtr dependencyNode = dependenciesNode->GetSequenceChildNode(i);
+            if(!info.ParseYAML_Node(dependencyNode))
+            {
+                ssLOG_ERROR("ScriptInfo: Failed to parse DependencyInfo at index " << i);
+                return false;
+            }
+            
+            Dependencies.push_back(info);
+        }
+    }
+    
+    if(!ParsePlatformProfileMap_LibYaml<ProfilesDefines>(node, "Defines", Defines, "Defines"))
+        return false;
+    
+    if(!ParsePlatformProfileMap_LibYaml<ProfilesCommands>(node, "Setup", Setup, "Setup"))
+        return false;
+    
+    if(!ParsePlatformProfileMap_LibYaml<ProfilesCommands>(node, "PreBuild", PreBuild, "PreBuild"))
+        return false;
+    
+    if(!ParsePlatformProfileMap_LibYaml<ProfilesCommands>(node, "PostBuild", PostBuild, "PostBuild"))
+        return false;
+    
+    if(!ParsePlatformProfileMap_LibYaml<ProfilesCommands>(node, "Cleanup", Cleanup, "Cleanup"))
+        return false;
+    
+    return true;
+}
+
 std::string runcpp2::Data::ScriptInfo::ToString(std::string indentation) const
 {
     static_assert(FieldsCount == 14, "Update this function when adding new fields");

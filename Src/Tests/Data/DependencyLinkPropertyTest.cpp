@@ -2,6 +2,7 @@
 #include "ssTest.hpp"
 #include "runcpp2/YamlLib.hpp"
 #include "runcpp2/runcpp2.hpp"
+#include "runcpp2/DeferUtil.hpp"
 
 int main(int argc, char** argv)
 {
@@ -25,12 +26,16 @@ int main(int argc, char** argv)
                     SearchDirectories: ["/usr/local/lib"]
                     AdditionalLinkOptions: ["-Wl,-rpath=."]
             )";
-            
-            ryml::Tree tree = ryml::parse_in_arena(c4::to_csubstr(yamlStr));
-            ryml::ConstNodeRef root = tree.rootref();
-            
-            runcpp2::Data::DependencyLinkProperty dependencyLinkProperty;
         );
+        
+        runcpp2::YAML::ResourceHandle resource;
+        std::vector<runcpp2::YAML::NodePtr> roots = 
+            runcpp2::YAML::ParseYAML(yamlStr, resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
+        DEFER { FreeYAMLResource(resource); };
+        
+        ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
+        runcpp2::YAML::NodePtr root = roots.front();
+        runcpp2::Data::DependencyLinkProperty dependencyLinkProperty;
         
         ssTEST_OUTPUT_EXECUTION
         (

@@ -106,6 +106,125 @@ namespace
         return true;
     }
     
+    using Runcpp2OutputTypeInfo = runcpp2::Data::StageInfo::OutputTypeInfo;
+    
+    bool ParseOutputTypes_LibYaml(  const std::string& subNodeKey,
+                                    runcpp2::YAML::ConstNodePtr outputTypesSubNode, 
+                                    std::vector<runcpp2::NodeRequirement> requirements, 
+                                    std::unordered_map< PlatformName, 
+                                                        Runcpp2OutputTypeInfo>& outInfos)
+    {
+        ssLOG_FUNC_DEBUG();
+        using namespace runcpp2;
+        using namespace runcpp2::Data;
+        
+        const std::string& subNodeName = subNodeKey;
+        
+        for(int i = 0; i < outputTypesSubNode->GetChildrenCount(); ++i)
+        {
+            YAML::ConstNodePtr currentPlatformNode = outputTypesSubNode->GetMapValueNodeAt(i);
+            std::string platformName = outputTypesSubNode   ->GetMapKeyScalarAt<std::string>(i)
+                                                            .DS_TRY_ACT(return false);
+            if(!CheckNodeRequirements_LibYaml(currentPlatformNode, requirements))
+            {
+                ssLOG_ERROR("Failed to parse outputTypesSubNode in " << subNodeName << 
+                            " for platform " << platformName);
+                return false;
+            }
+
+            outInfos[platformName].Flags = 
+                currentPlatformNode->GetMapValueScalar<std::string>("Flags").DS_TRY_ACT(return false);
+            
+            outInfos[platformName].Executable = 
+                currentPlatformNode ->GetMapValueScalar<std::string>("Executable")
+                                    .DS_TRY_ACT(return false);
+            
+            //RunParts
+            if(!ExistAndHasChild_LibYaml(currentPlatformNode, "RunParts"))
+            {
+                ssLOG_ERROR("Failed to parse RunParts");
+                return false;
+            }
+            
+            YAML::ConstNodePtr runPartsNode = currentPlatformNode->GetMapValueNode("RunParts");
+            for(int j = 0; j < runPartsNode->GetChildrenCount(); ++j)
+            {
+                YAML::ConstNodePtr currentPartNode = runPartsNode->GetSequenceChildNode(j);
+                
+                std::vector<NodeRequirement> currentRunPartRequirements =
+                {
+                    NodeRequirement("Type", YAML::NodeType::Scalar, true, false),
+                    NodeRequirement("CommandPart", YAML::NodeType::Scalar, true, false)
+                };
+                
+                if(!CheckNodeRequirements_LibYaml(currentPartNode, currentRunPartRequirements))
+                {
+                    ssLOG_ERROR("Failed to parse RunPart at index " << j << " for " << platformName);
+                    return false;
+                }
+                
+                outInfos[platformName].RunParts.push_back({});
+                std::string currentType = currentPartNode   ->GetMapValueScalar<std::string>("Type")
+                                                            .DS_TRY_ACT(return false);
+                static_assert(  static_cast<int>(StageInfo::RunPart::RunType::COUNT) == 2, 
+                                "Add new RunType");
+                
+                if(currentType == "Once")
+                    outInfos[platformName].RunParts.back().Type = StageInfo::RunPart::RunType::ONCE;
+                else if(currentType == "Repeats")
+                    outInfos[platformName].RunParts.back().Type = StageInfo::RunPart::RunType::REPEATS;
+                else
+                {
+                    ssLOG_WARNING(  "Invalid RunPart type " << currentType << " at index " << j << 
+                                    " for " << platformName);
+                    ssLOG_DEBUG("Defaulting to Once");
+                    outInfos[platformName].RunParts.back().Type = StageInfo::RunPart::RunType::ONCE;
+                }
+                
+                outInfos[platformName].RunParts.back().CommandPart = 
+                    currentPartNode ->GetMapValueScalar<std::string>("CommandPart")
+                                    .DS_TRY_ACT(return false);
+            }
+            
+            //Setup
+            if(ExistAndHasChild_LibYaml(currentPlatformNode, "Setup"))
+            {
+                YAML::ConstNodePtr setupNode = currentPlatformNode->GetMapValueNode("Setup");
+                for(int j = 0; j < setupNode->GetChildrenCount(); ++j)
+                {
+                    std::string setupVal = setupNode->GetSequenceChildScalar<std::string>(j)
+                                                    .DS_TRY_ACT(return false);
+                    outInfos[platformName].Setup.push_back(setupVal);
+                }
+            }
+            
+            //Cleanup
+            if(ExistAndHasChild_LibYaml(currentPlatformNode, "Cleanup"))
+            {
+                YAML::ConstNodePtr cleanupNode = currentPlatformNode->GetMapValueNode("Cleanup");
+                for(int j = 0; j < cleanupNode->GetChildrenCount(); ++j)
+                {
+                    std::string cleanupVal = cleanupNode->GetSequenceChildScalar<std::string>(j)
+                                                        .DS_TRY_ACT(return false);
+                    outInfos[platformName].Cleanup.push_back(cleanupVal);
+                }
+            }
+            
+            //ExpectedOutputFiles
+            YAML::ConstNodePtr expectedOutputFilesNode = 
+                currentPlatformNode->GetMapValueNode("ExpectedOutputFiles");
+            for(int j = 0; j < expectedOutputFilesNode->GetChildrenCount(); ++j)
+            {
+                std::string outputFileVal = 
+                    expectedOutputFilesNode ->GetSequenceChildScalar<std::string>(j)
+                                            .DS_TRY_ACT(return false);
+                outInfos[platformName].ExpectedOutputFiles.push_back(outputFileVal);
+            }
+        }
+        
+        return true;
+    }
+    
     using OutputTypeInfo = runcpp2::Data::StageInfo::OutputTypeInfo;
     
     void OutputTypeInfoMapToString( const std::string& indentation,  
@@ -629,6 +748,122 @@ bool runcpp2::Data::StageInfo::ParseYAML_Node(  ryml::ConstNodeRef node,
     return true;
 
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::Data::StageInfo::ParseYAML_Node(  YAML::ConstNodePtr node, 
+                                                std::string outputTypeKeyName)
+{
+    ssLOG_FUNC_DEBUG();
+    
+    std::vector<NodeRequirement> requirements =
+    {
+        NodeRequirement("PreRun", YAML::NodeType::Map, false, true),
+        NodeRequirement("CheckExistence", YAML::NodeType::Map, true, false),
+        NodeRequirement(outputTypeKeyName, YAML::NodeType::Map, true, false)
+    };
+
+    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    {
+        ssLOG_ERROR("StageInfo: Failed to meet requirements");
+        return false;
+    }
+
+    if(ExistAndHasChild_LibYaml(node, "PreRun"))
+    {
+        YAML::ConstNodePtr preRunNode = node->GetMapValueNode("PreRun");
+        for(int i = 0; i < preRunNode->GetChildrenCount(); ++i)
+        {
+            std::string key = preRunNode->GetMapKeyScalarAt<std::string>(i).DS_TRY_ACT(return false);
+            std::string value = preRunNode  ->GetMapValueScalarAt<std::string>(i)
+                                            .DS_TRY_ACT(return false);
+            PreRun[key] = value;
+        }
+    }
+    
+    //CheckExistence
+    {
+        YAML::ConstNodePtr checkExistenceNode = node->GetMapValueNode("CheckExistence");
+        for(int i = 0; i < checkExistenceNode->GetChildrenCount(); ++i)
+        {
+            std::string key = checkExistenceNode->GetMapKeyScalarAt<std::string>(i)
+                                                .DS_TRY_ACT(return false);
+            std::string value = checkExistenceNode  ->GetMapValueScalarAt<std::string>(i)
+                                                    .DS_TRY_ACT(return false);
+            CheckExistence[key] = value;
+        }
+    }
+    
+    //OutputTypes
+    {
+        if(!ExistAndHasChild_LibYaml(node, outputTypeKeyName))
+        {
+            ssLOG_ERROR("Failed to parse " << outputTypeKeyName);
+            return false;
+        }
+        
+        YAML::ConstNodePtr outputTypeNode = node->GetMapValueNode(outputTypeKeyName);
+        std::vector<NodeRequirement> outputTypeRequirements =
+        {
+            NodeRequirement("Executable", YAML::NodeType::Map, true, false),
+            NodeRequirement("ExecutableShared", YAML::NodeType::Map, true, false),
+            NodeRequirement("Static", YAML::NodeType::Map, true, false),
+            NodeRequirement("Shared", YAML::NodeType::Map, true, false)
+        };
+        
+        if(!CheckNodeRequirements_LibYaml(outputTypeNode, outputTypeRequirements))
+        {
+            ssLOG_ERROR("Failed to parse " << outputTypeKeyName);
+            return false;
+        }
+
+        std::vector<NodeRequirement> outputTypeInfoRequirements =
+        {
+            NodeRequirement("Flags", YAML::NodeType::Scalar, true, true),
+            NodeRequirement("Executable", YAML::NodeType::Scalar, true, false),
+            NodeRequirement("RunParts", YAML::NodeType::Sequence, true, false),
+            NodeRequirement("Setup", YAML::NodeType::Sequence, false, false),
+            NodeRequirement("Cleanup", YAML::NodeType::Sequence, false, false),
+            NodeRequirement("ExpectedOutputFiles", YAML::NodeType::Sequence, true, false)
+        };
+        
+        YAML::ConstNodePtr executableNode = outputTypeNode->GetMapValueNode("Executable");
+        if(!ParseOutputTypes_LibYaml(   "Executable", 
+                                        executableNode, 
+                                        outputTypeInfoRequirements, 
+                                        OutputTypes.Executable))
+        {
+            return false;
+        }
+        
+        YAML::ConstNodePtr executableSharedNode = outputTypeNode->GetMapValueNode("ExecutableShared");
+        if(!ParseOutputTypes_LibYaml(   "ExecutableShared",
+                                        executableSharedNode, 
+                                        outputTypeInfoRequirements, 
+                                        OutputTypes.ExecutableShared))
+        {
+            return false;
+        }
+        
+        YAML::ConstNodePtr staticNode = outputTypeNode->GetMapValueNode("Static");
+        if(!ParseOutputTypes_LibYaml(   "Static",
+                                        staticNode, 
+                                        outputTypeInfoRequirements, 
+                                        OutputTypes.Static))
+        {
+            return false;
+        }
+        
+        YAML::ConstNodePtr sharedNode = outputTypeNode->GetMapValueNode("Shared");
+        if(!ParseOutputTypes_LibYaml(   "Shared", 
+                                        sharedNode, 
+                                        outputTypeInfoRequirements, 
+                                        OutputTypes.Shared))
+        {
+            return false;
+        }
+    }
+    
+    return true;
 }
 
 std::string runcpp2::Data::StageInfo::ToString( std::string indentation, 

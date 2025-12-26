@@ -16,6 +16,7 @@ namespace runcpp2
             std::unordered_map<PlatformName, std::string> Extension;
             
             bool ParseYAML_Node(ryml::ConstNodeRef node);
+            bool ParseYAML_Node(YAML::ConstNodePtr node);
 
             std::string ToString(std::string indentation) const;
             bool Equals(const FileProperties& other) const;

@@ -25,6 +25,26 @@ bool runcpp2::Data::ProfilesFlagsOverride::ParseYAML_Node(ryml::ConstNodeRef nod
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
+bool runcpp2::Data::ProfilesFlagsOverride::ParseYAML_Node(YAML::ConstNodePtr node)
+{
+    ssLOG_FUNC_DEBUG();
+    
+    if(!node->IsMap())
+    {
+        ssLOG_ERROR("ProfilesFlagsOverrides: Not a map type");
+        return false;
+    }
+    
+    for(int i = 0; i < node->GetChildrenCount(); ++i)
+    {
+        ProfileName profile = node->GetMapKeyScalarAt<ProfileName>(i).DS_TRY_ACT(return false);
+        if(!ParseYAML_NodeWithProfile_LibYaml(node->GetMapValueNodeAt(i), profile))
+            return false;
+    }
+    
+    return true;
+}
+
 bool runcpp2::Data::ProfilesFlagsOverride::ParseYAML_NodeWithProfile(   ryml::ConstNodeRef node, 
                                                                         ProfileName profile)
 {
@@ -61,6 +81,40 @@ bool runcpp2::Data::ProfilesFlagsOverride::IsYAML_NodeParsableAsDefault(ryml::Co
     return flags.IsYAML_NodeParsableAsDefault(node);
     
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool 
+runcpp2::Data::ProfilesFlagsOverride::ParseYAML_NodeWithProfile_LibYaml(YAML::ConstNodePtr node, 
+                                                                        ProfileName profile)
+{
+    ssLOG_FUNC_DEBUG();
+    
+    if(!node->IsMap())
+    {
+        ssLOG_ERROR("ProfilesFlagsOverrides: FlagsOverrideInfo type requires a map");
+        return false;
+    }
+    
+    FlagsOverrideInfo flags;
+    YAML::ConstNodePtr flagsOverrideNode = node;
+    
+    if(!flags.ParseYAML_Node(flagsOverrideNode))
+    {
+        ssLOG_ERROR("ProfilesFlagsOverrides: Unable to parse FlagsOverride.");
+        return false;
+    }
+    
+    FlagsOverrides[profile] = flags;
+    
+    return true;
+}
+
+bool 
+runcpp2::Data::ProfilesFlagsOverride::IsYAML_NodeParsableAsDefault_LibYaml(YAML::ConstNodePtr node) const
+{
+    ssLOG_FUNC_DEBUG();
+    FlagsOverrideInfo flags;
+    return flags.IsYAML_NodeParsableAsDefault_LibYaml(node);
 }
 
 std::string runcpp2::Data::ProfilesFlagsOverride::ToString(std::string indentation) const

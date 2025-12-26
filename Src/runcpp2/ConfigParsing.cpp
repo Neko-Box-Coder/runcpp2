@@ -4,6 +4,9 @@
 #include "runcpp2/PlatformUtil.hpp"
 #include "runcpp2/YamlLib.hpp"
 
+#include "runcpp2/LibYAML_Wrapper.hpp"
+#include "runcpp2/DeferUtil.hpp"
+
 #include "cfgpath.h"
 #include "ssLogger/ssLog.hpp"
 
@@ -123,6 +126,124 @@ namespace
         INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
     }
     
+    bool ResovleProfileImport_LibYaml(  runcpp2::YAML::NodePtr currentProfileNode, 
+                                        const ghc::filesystem::path& configPath,
+                                        runcpp2::YAML::ResourceHandle& currentYamlResources)
+    {
+        using namespace runcpp2;
+        
+        ssLOG_FUNC_INFO();
+        
+        ghc::filesystem::path currentImportFilePath = configPath;
+        std::stack<ghc::filesystem::path> pathsToImport;
+        while(  runcpp2::ExistAndHasChild_LibYaml(currentProfileNode, "Import") || 
+                !pathsToImport.empty())
+        {
+            //If we import field, we should deal with it instead
+            if(runcpp2::ExistAndHasChild_LibYaml(currentProfileNode, "Import"))
+            {
+                const YAML::ConstNodePtr importNode = currentProfileNode->GetMapValueNode("Import");
+                if( importNode->GetType() != YAML::NodeType::Scalar && 
+                    importNode->GetType() != YAML::NodeType::Sequence)
+                {
+                    ssLOG_ERROR("Import must be a path or sequence of paths of YAML file(s)");
+                    return false;
+                }
+                
+                ghc::filesystem::path currentImportDir = currentImportFilePath;
+                currentImportDir = currentImportDir.parent_path();
+                if(importNode->GetType() == YAML::NodeType::Scalar)
+                {
+                    std::string importPath = importNode ->GetScalar<std::string>()
+                                                        .DS_TRY_ACT(return false);
+                    pathsToImport.push(currentImportDir / importPath);
+                }
+                else
+                {
+                    if(importNode->GetChildrenCount() == 0)
+                    {
+                        ssLOG_ERROR("An import sequence cannot be an empty");
+                        return false;
+                    }
+                    
+                    for(int i = 0; i < importNode->GetChildrenCount(); ++i)
+                    {
+                        if(importNode->GetSequenceChildNode(i)->GetType() != YAML::NodeType::Scalar)
+                        {
+                            ssLOG_ERROR("It must be a sequence of paths");
+                            return false;
+                        }
+                        
+                        std::string importPath = importNode ->GetSequenceChildScalar<std::string>(i)
+                                                            .DS_TRY_ACT(return false);
+                        pathsToImport.push(currentImportDir / importPath);
+                    }
+                }
+            }
+            
+            currentImportFilePath = pathsToImport.top();
+            pathsToImport.pop();
+            
+            std::error_code ec;
+            if(!ghc::filesystem::exists(currentImportFilePath, ec))
+            {
+                ssLOG_ERROR("Import path doesn't exist: " << currentImportFilePath.string());
+                return false;
+            }
+            
+            //Read compiler profiles
+            std::stringstream buffer;
+            {
+                std::ifstream importProfileFile(currentImportFilePath);
+                if(!importProfileFile)
+                {
+                    ssLOG_ERROR("Failed to open profile import file: " << currentImportFilePath);
+                    return false;
+                }
+                buffer << importProfileFile.rdbuf();
+            }
+            
+            YAML::ResourceHandle yamlResources;
+            DEFER { YAML::FreeYAMLResource(yamlResources); };
+            
+            std::vector<YAML::NodePtr> yamlRootNodes = 
+                YAML::ParseYAML(buffer.str(), yamlResources).DS_TRY_ACT(return false);
+            
+            if(yamlRootNodes.empty())
+                return false;
+            
+            for(int i = 0; i < yamlRootNodes.size(); ++i)
+            {
+                YAML::ResolveAnchors(yamlRootNodes[i]).DS_TRY_ACT(return false);
+                YAML::NodePtr importProfileNode = yamlRootNodes[i];
+                
+                if(!MergeYAML_NodeChildren_LibYaml( importProfileNode, 
+                                                    currentProfileNode, 
+                                                    currentYamlResources))
+                {
+                    return false;
+                }
+                
+                if(ExistAndHasChild_LibYaml(importProfileNode, "Import"))
+                {
+                    currentProfileNode->RemoveMapChild("Import").DS_TRY_ACT(return false);
+                    importProfileNode   ->GetMapValueNode("Import")
+                                        ->CloneToMapChild(  "Import", 
+                                                            currentProfileNode,
+                                                            currentYamlResources)
+                                        .DS_TRY_ACT(return false);
+                }
+                else
+                {
+                    currentProfileNode->RemoveMapChild("Import").DS_TRY_ACT(return false);
+                }
+            }
+        }   //while(  runcpp2::ExistAndHasChild_LibYaml(currentProfileNode, "Import") || 
+            //        !pathsToImport.empty())
+        
+        return true;
+    }
+
     bool ParseUserConfig(   const std::string& userConfigString, 
                             const ghc::filesystem::path& configPath,
                             std::vector<runcpp2::Data::Profile>& outProfiles,
@@ -233,6 +354,138 @@ namespace
         return true;
         
         INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+    }
+    
+    DS::Result<void> GetPreferredProfile(   runcpp2::YAML::NodePtr configNode, 
+                                            std::string& outPreferredProfile)
+    {
+        using namespace runcpp2;
+        
+        if(!ExistAndHasChild_LibYaml(configNode, "PreferredProfile"))
+            return {};
+        
+        YAML::NodePtr preferredProfilesMapNode = configNode->GetMapValueNode("PreferredProfile");
+        
+        if(preferredProfilesMapNode->IsMap())
+        {
+            std::unordered_map<PlatformName, std::string> preferredProfiles;
+            for(int j = 0; j < preferredProfilesMapNode->GetChildrenCount(); ++j)
+            {
+                PlatformName platform = preferredProfilesMapNode->GetMapKeyScalarAt<PlatformName>(j)
+                                                                .DS_TRY();
+                
+                YAML::NodePtr valueNode = preferredProfilesMapNode->GetMapValueNodeAt(j);
+                if(!valueNode->IsScalar())
+                {
+                    return DS_ERROR_MSG("Failed to parse PreferredProfile map. "
+                                        "Keyval is expected in each platform");
+                }
+                preferredProfiles[platform] = valueNode ->GetScalar<std::string>().DS_TRY();
+            }
+            
+            const std::string* selectedProfile = GetValueFromPlatformMap(preferredProfiles);
+            if(!selectedProfile && !outPreferredProfile.empty())
+                ssLOG_WARNING("Multiple preferred profile is found...");
+
+            outPreferredProfile = selectedProfile != nullptr ? *selectedProfile : outPreferredProfile;
+        }
+        else if(preferredProfilesMapNode->IsScalar())
+        {
+            if(!outPreferredProfile.empty())
+                ssLOG_WARNING("Multiple preferred profile is found...");
+            
+            outPreferredProfile = preferredProfilesMapNode->GetScalar<std::string>().DS_TRY();
+        }
+        else
+        {
+            return DS_ERROR_MSG(DS_STR("PreferredProfile needs to be a map or string value: ") +
+                                DS_STR(YAML::NodeTypeToString(preferredProfilesMapNode->GetType())));
+        }
+        
+        return {};
+    }
+    
+    bool ParseUserConfig_LibYaml(   const std::string& userConfigString, 
+                                    const ghc::filesystem::path& configPath,
+                                    std::vector<runcpp2::Data::Profile>& outProfiles,
+                                    std::string& outPreferredProfile)
+    {
+        ssLOG_FUNC_INFO();
+        using namespace runcpp2;
+        
+        YAML::ResourceHandle parseResource;
+        std::vector<YAML::NodePtr> parsedNodes = 
+            YAML::ParseYAML(userConfigString, parseResource).DS_TRY_ACT(return false);
+        
+        DEFER { YAML::FreeYAMLResource(parseResource); };
+        
+        if(parsedNodes.empty())
+            return false;
+        
+        for(int i = 0; i < parsedNodes.size(); ++i)
+        {
+            YAML::NodePtr configNode = parsedNodes[i];
+            YAML::ResolveAnchors(configNode).DS_TRY_ACT(return false);
+            
+            if(!ExistAndHasChild_LibYaml(configNode, "Profiles"))
+                continue;
+            
+            if(!configNode->GetMapValueNode("Profiles")->IsSequence())
+            {
+                ssLOG_ERROR("Profiles must be a sequence");
+                return false;
+            }
+            
+            YAML::NodePtr profilesNode = configNode->GetMapValueNode("Profiles");
+            
+            if(profilesNode->GetChildrenCount() == 0)
+            {
+                ssLOG_ERROR("No compiler profiles found");
+                return false;
+            }
+            
+            ssLOG_INFO(profilesNode->GetChildrenCount() << " profiles found in user config");
+            
+            for(int j = 0; j < profilesNode->GetChildrenCount(); ++j)
+            {
+                ssLOG_INFO("Parsing profile at index " << j);
+                
+                YAML::NodePtr currentProfileNode = profilesNode->GetSequenceChildNode(j);
+                
+                if(!currentProfileNode->IsMap())
+                {
+                    ssLOG_ERROR("Profile entry must be a map");
+                    return false;
+                }
+                
+                if(!ResovleProfileImport_LibYaml(currentProfileNode, configPath, parseResource))
+                    return false;
+
+                outProfiles.push_back({});
+                if(!outProfiles.back().ParseYAML_Node(currentProfileNode))
+                {
+                    outProfiles.erase(outProfiles.end() - 1);
+                    ssLOG_ERROR("Failed to parse compiler profile at index " << j);
+                    return false;
+                }
+            } //for(int j = 0; j < profilesNode->GetChildrenCount(); ++j)
+            
+            GetPreferredProfile(configNode, outPreferredProfile).DS_TRY_ACT(return false);
+        } //for(int i = 0; i < parsedNodes.size(); ++i)
+        
+        if(outPreferredProfile.empty())
+        {
+            outPreferredProfile = outProfiles.front().Name;
+            ssLOG_WARNING("PreferredProfile is empty. Using the first profile name");
+        }
+        
+        if(outProfiles.empty())
+        {
+            ssLOG_ERROR("No profiles registered");
+            return false;
+        }
+        
+        return true;
     }
 }
 
@@ -481,7 +734,8 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles,
         userConfigContent = buffer.str();
     }
     
-    if(!ParseUserConfig(userConfigContent, configPath, outProfiles, outPreferredProfile))
+    (void)&ParseUserConfig;
+    if(!ParseUserConfig_LibYaml(userConfigContent, configPath, outProfiles, outPreferredProfile))
     {
         ssLOG_ERROR("Failed to parse config file: " << configPath.string());
         return false;
@@ -507,6 +761,37 @@ bool runcpp2::ParseScriptInfo(  const std::string& scriptInfo,
     
     if(!runcpp2::ResolveYAML_Stream(scriptTree, rootScriptNode))
         return false;
+    
+    if(outScriptInfo.ParseYAML_Node(rootScriptNode))
+    {
+        outScriptInfo.Populated = true;
+        return true;
+    }
+    else
+        return false;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::ParseScriptInfo_LibYaml(  const std::string& scriptInfo, 
+                                        Data::ScriptInfo& outScriptInfo)
+{
+    INTERNAL_RUNCPP2_SAFE_START();
+
+    if(scriptInfo.empty())
+        return true;
+
+    YAML::ResourceHandle resourceHandle;
+    std::vector<YAML::NodePtr> scriptNodes = 
+        YAML::ParseYAML(scriptInfo, resourceHandle).DS_TRY_ACT(return false);
+    
+    DEFER { YAML::FreeYAMLResource(resourceHandle); };
+    if(scriptNodes.empty())
+        return false;
+    
+    //NOTE: Use the first one
+    YAML::ResolveAnchors(scriptNodes.front()).DS_TRY_ACT(return false);
+    YAML::NodePtr rootScriptNode = scriptNodes.front();
     
     if(outScriptInfo.ParseYAML_Node(rootScriptNode))
     {

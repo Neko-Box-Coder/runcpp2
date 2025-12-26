@@ -22,6 +22,9 @@ namespace runcpp2
     
     bool ParseScriptInfo(   const std::string& scriptInfo, 
                             Data::ScriptInfo& outScriptInfo);
+    
+    bool ParseScriptInfo_LibYaml(   const std::string& scriptInfo, 
+                                    Data::ScriptInfo& outScriptInfo);
 }
 
 #endif

@@ -34,6 +34,36 @@ bool runcpp2::Data::FilesToCopyInfo::ParseYAML_Node(ryml::ConstNodeRef node)
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
+bool runcpp2::Data::FilesToCopyInfo::ParseYAML_Node(YAML::ConstNodePtr node)
+{
+    if(!node->IsMap())
+    {
+        ssLOG_ERROR("FilesToCopyInfo: Node is not a Map");
+        return false;
+    }
+    
+    //If we skip platform profile
+    if(IsYAML_NodeParsableAsDefault_LibYaml(node))
+    {
+        if(!ParseYAML_NodeWithProfile_LibYaml(node, "DefaultProfile"))
+            return false;
+    }
+    else
+    {
+        for(int i = 0; i < node->GetChildrenCount(); ++i)
+        {
+            DS_UNWRAP_DECL_ACT( ProfileName profile, 
+                                node->GetMapKeyScalarAt<std::string>(i), 
+                                ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
+            
+            if(!ParseYAML_NodeWithProfile_LibYaml(node->GetMapValueNodeAt(i), profile))
+                return false;
+        }
+    }
+    
+    return true;
+}
+
 bool runcpp2::Data::FilesToCopyInfo::ParseYAML_NodeWithProfile( ryml::ConstNodeRef node, 
                                                                 ProfileName profile)
 {
@@ -64,6 +94,29 @@ bool runcpp2::Data::FilesToCopyInfo::IsYAML_NodeParsableAsDefault(ryml::ConstNod
     
     return true;
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::Data::FilesToCopyInfo::ParseYAML_NodeWithProfile_LibYaml( YAML::ConstNodePtr node, 
+                                                                        ProfileName profile)
+{
+    ssLOG_FUNC_DEBUG();
+    if(!node->IsSequence())
+    {
+        ssLOG_ERROR("FilesToCopyInfo: Node is not a sequence");
+        return false;
+    }
+    
+    for(int i = 0; i < node->GetChildrenCount(); i++)
+        ProfileFiles[profile].push_back(node->GetSequenceChildScalar<std::string>(i).value());
+    
+    return true;
+}
+
+bool 
+runcpp2::Data::FilesToCopyInfo::IsYAML_NodeParsableAsDefault_LibYaml(YAML::ConstNodePtr node) const
+{
+    ssLOG_FUNC_DEBUG();
+    return node->IsSequence();
 }
 
 std::string runcpp2::Data::FilesToCopyInfo::ToString(std::string indentation) const

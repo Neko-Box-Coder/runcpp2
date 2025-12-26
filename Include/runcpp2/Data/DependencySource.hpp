@@ -22,6 +22,7 @@ namespace runcpp2
                 std::vector<std::shared_ptr<DependencySource>> ImportedSources;
                 
                 bool ParseYAML_Node(ryml::ConstNodeRef node);
+                bool ParseYAML_Node(YAML::ConstNodePtr node);
                 std::string ToString(std::string indentation) const;
                 bool Equals(const DependencySource& other) const;
         };

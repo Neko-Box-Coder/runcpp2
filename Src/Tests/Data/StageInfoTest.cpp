@@ -2,6 +2,7 @@
 #include "ssTest.hpp"
 #include "runcpp2/YamlLib.hpp"
 #include "runcpp2/runcpp2.hpp"
+#include "runcpp2/DeferUtil.hpp"
 
 int main(int argc, char** argv)
 {
@@ -14,9 +15,9 @@ int main(int argc, char** argv)
         //NOTE: This is just a test YAML for validating parsing, don't use it for actual config
         const char* yamlStr = R"(
             PreRun:
-                GCC: source env.sh
+                Linux: source env.sh
             CheckExistence:
-                GCC: which gcc
+                Linux: which gcc
             LinkTypes:
                 Executable:
                     Unix:
@@ -62,13 +63,14 @@ int main(int argc, char** argv)
                         ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
         )";
         
-        ssTEST_OUTPUT_SETUP
-        (
-            ryml::Tree tree = ryml::parse_in_arena(c4::to_csubstr(yamlStr));
-            ryml::ConstNodeRef root = tree.rootref();
-            
-            runcpp2::Data::StageInfo stageInfo;
-        );
+        runcpp2::YAML::ResourceHandle resource;
+        std::vector<runcpp2::YAML::NodePtr> roots = 
+            runcpp2::YAML::ParseYAML(yamlStr, resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
+        DEFER { FreeYAMLResource(resource); };
+        
+        ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
+        runcpp2::YAML::NodePtr root = roots.front();
+        runcpp2::Data::StageInfo stageInfo;
         
         ssTEST_OUTPUT_EXECUTION
         (
@@ -78,7 +80,7 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_ASSERT("ParseYAML_Node should succeed", parseResult);
         
         //Verify PreRun and CheckExistence
-        ssTEST_OUTPUT_ASSERT("GCC CheckExistence", stageInfo.CheckExistence.at("GCC") == "which gcc");
+        ssTEST_OUTPUT_ASSERT("GCC CheckExistence", stageInfo.CheckExistence.at("Linux") == "which gcc");
         
         //Verify Unix OutputTypeInfo
         ssTEST_OUTPUT_SETUP
@@ -131,10 +133,13 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_EXECUTION
         (
             std::string yamlOutput = stageInfo.ToString("", "LinkTypes");
-            ryml::Tree outputTree = ryml::parse_in_arena(ryml::to_csubstr(yamlOutput));
+            roots = 
+                runcpp2::YAML::ParseYAML(   yamlOutput, 
+                                            resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
+            ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
             
             runcpp2::Data::StageInfo parsedOutput;
-            parsedOutput.ParseYAML_Node(outputTree.rootref(), "LinkTypes");
+            parsedOutput.ParseYAML_Node(roots.front(), "LinkTypes");
         );
         
         ssTEST_OUTPUT_ASSERT("Parsed output should equal original", stageInfo.Equals(parsedOutput));
@@ -151,13 +156,15 @@ int main(int argc, char** argv)
                         # Missing RunParts
         )";
         
-        ssTEST_OUTPUT_SETUP
-        (
-            ryml::Tree tree = ryml::parse_in_arena(c4::to_csubstr(malformedYamlStr));
-            ryml::ConstNodeRef root = tree.rootref();
-            
-            runcpp2::Data::StageInfo stageInfo;
-        );
+        runcpp2::YAML::ResourceHandle resource;
+        std::vector<runcpp2::YAML::NodePtr> roots = 
+            runcpp2::YAML::ParseYAML(   malformedYamlStr, 
+                                        resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
+        DEFER { FreeYAMLResource(resource); };
+        
+        ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
+        runcpp2::YAML::NodePtr root = roots.front();
+        runcpp2::Data::StageInfo stageInfo;
         
         ssTEST_OUTPUT_EXECUTION
         (
@@ -202,13 +209,14 @@ int main(int argc, char** argv)
                         ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
         )";
         
-        ssTEST_OUTPUT_SETUP
-        (
-            ryml::Tree tree = ryml::parse_in_arena(c4::to_csubstr(yamlStr));
-            ryml::ConstNodeRef root = tree.rootref();
-            
-            runcpp2::Data::StageInfo stageInfo;
-        );
+        runcpp2::YAML::ResourceHandle resource;
+        std::vector<runcpp2::YAML::NodePtr> roots = 
+            runcpp2::YAML::ParseYAML(yamlStr, resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
+        DEFER { FreeYAMLResource(resource); };
+        
+        ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
+        runcpp2::YAML::NodePtr root = roots.front();
+        runcpp2::Data::StageInfo stageInfo;
         
         ssTEST_OUTPUT_EXECUTION
         (

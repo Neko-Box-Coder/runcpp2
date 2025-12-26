@@ -116,6 +116,128 @@ bool runcpp2::Data::Profile::ParseYAML_Node(ryml::ConstNodeRef profileNode)
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
+bool runcpp2::Data::Profile::ParseYAML_Node(YAML::ConstNodePtr profileNode)
+{
+    ssLOG_FUNC_DEBUG();
+    
+    std::vector<NodeRequirement> requirements =
+    {
+        NodeRequirement("Name", YAML::NodeType::Scalar, true, false),
+        NodeRequirement("NameAliases", YAML::NodeType::Sequence, false, true),
+        NodeRequirement("FileExtensions", YAML::NodeType::Sequence, true, false),
+        NodeRequirement("Languages", YAML::NodeType::Sequence, false, true),
+        NodeRequirement("Setup", YAML::NodeType::Map, false, true),
+        NodeRequirement("Cleanup", YAML::NodeType::Map, false, true),
+        NodeRequirement("FilesTypes", YAML::NodeType::Map, true, false),
+        NodeRequirement("Compiler", YAML::NodeType::Map, true, false),
+        NodeRequirement("Linker", YAML::NodeType::Map, true, false)
+    };
+    
+    if(!CheckNodeRequirements_LibYaml(profileNode, requirements))
+    {
+        ssLOG_ERROR("Compiler profile: Failed to meet requirements");
+        return false;
+    }
+    
+    Name = profileNode->GetMapValueScalar<std::string>("Name").DS_TRY_ACT(return false);
+    
+    if(ExistAndHasChild_LibYaml(profileNode, "NameAliases"))
+    {
+        YAML::ConstNodePtr nameAliasesNode = profileNode->GetMapValueNode("NameAliases");
+        for(int i = 0; i < nameAliasesNode->GetChildrenCount(); ++i)
+        {
+            std::string nameAlias = nameAliasesNode ->GetSequenceChildScalar<std::string>(i)
+                                                    .DS_TRY_ACT(return false);
+            NameAliases.insert(nameAlias);
+        }
+    }
+
+    {
+        YAML::ConstNodePtr fileExtensionsNode = profileNode->GetMapValueNode("FileExtensions");
+        for(int i = 0; i < fileExtensionsNode->GetChildrenCount(); ++i)
+        {
+            std::string extension = fileExtensionsNode  ->GetSequenceChildScalar<std::string>(i)
+                                                        .DS_TRY_ACT(return false);
+            FileExtensions.insert(extension);
+        }
+    }
+    
+    if(ExistAndHasChild_LibYaml(profileNode, "Languages"))
+    {
+        YAML::ConstNodePtr languagesNode = profileNode->GetMapValueNode("Languages");
+        for(int i = 0; i < languagesNode->GetChildrenCount(); ++i)
+        {
+            std::string language = languagesNode->GetSequenceChildScalar<std::string>(i)
+                                                .DS_TRY_ACT(return false);
+            Languages.insert(language);
+        }
+    }
+    
+    if(ExistAndHasChild_LibYaml(profileNode, "Setup"))
+    {
+        YAML::ConstNodePtr setupNode = profileNode->GetMapValueNode("Setup");
+        for(int i = 0; i < setupNode->GetChildrenCount(); ++i)
+        {
+            YAML::ConstNodePtr currentPlatformNode = setupNode->GetMapValueNodeAt(i);
+            
+            std::string key = setupNode->GetMapKeyScalarAt<std::string>(i).DS_TRY_ACT(return false);
+            std::vector<std::string> setupSteps;
+            
+            for(int j = 0; j < currentPlatformNode->GetChildrenCount(); ++j)
+            {
+                std::string step = currentPlatformNode  ->GetSequenceChildScalar<std::string>(j)
+                                                        .DS_TRY_ACT(return false);
+                setupSteps.push_back(step);
+            }
+            
+            Setup[key] = setupSteps;
+        }
+    }
+    
+    if(ExistAndHasChild_LibYaml(profileNode, "Cleanup"))
+    {
+        YAML::ConstNodePtr cleanupNode = profileNode->GetMapValueNode("Cleanup");
+        for(int i = 0; i < cleanupNode->GetChildrenCount(); ++i)
+        {
+            YAML::ConstNodePtr currentPlatformNode = cleanupNode->GetMapValueNodeAt(i);
+            
+            std::string key = cleanupNode->GetMapKeyScalarAt<std::string>(i).DS_TRY_ACT(return false);
+            std::vector<std::string> cleanupSteps;
+            
+            for(int j = 0; j < currentPlatformNode->GetChildrenCount(); ++j)
+            {
+                std::string step = currentPlatformNode  ->GetSequenceChildScalar<std::string>(j)
+                                                        .DS_TRY_ACT(return false);
+                cleanupSteps.push_back(step);
+            }
+            
+            Cleanup[key] = cleanupSteps;
+        }
+    }
+    
+    if(!FilesTypes.ParseYAML_Node(profileNode->GetMapValueNode("FilesTypes")))
+    {
+        ssLOG_ERROR("Profile: FilesTypes is invalid");
+        return false;
+    }
+    
+    ssLOG_DEBUG("Parsing Compiler");
+    if(!Compiler.ParseYAML_Node(profileNode->GetMapValueNode("Compiler"), "CompileTypes"))
+    {
+        ssLOG_ERROR("Profile: Compiler is invalid");
+        return false;
+    }
+    
+    ssLOG_DEBUG("Parsing Linker");
+    if(!Linker.ParseYAML_Node(profileNode->GetMapValueNode("Linker"), "LinkTypes"))
+    {
+        ssLOG_ERROR("Profile: Linker is invalid");
+        return false;
+    }
+    
+    return true;
+}
+
 std::string runcpp2::Data::Profile::ToString(std::string indentation) const
 {
     std::string out;

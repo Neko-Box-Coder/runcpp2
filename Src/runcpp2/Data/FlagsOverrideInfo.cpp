@@ -31,6 +31,35 @@ bool runcpp2::Data::FlagsOverrideInfo::ParseYAML_Node(ryml::ConstNodeRef node)
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
+bool runcpp2::Data::FlagsOverrideInfo::ParseYAML_Node(YAML::ConstNodePtr node)
+{
+    ssLOG_FUNC_DEBUG();
+
+    std::vector<NodeRequirement> requirements =
+    {
+        NodeRequirement("Remove", YAML::NodeType::Scalar, false, true),
+        NodeRequirement("Append", YAML::NodeType::Scalar, false, true)
+    };
+    
+    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    {
+        ssLOG_ERROR("FlagsOverrideInfo: Failed to meet requirements");
+        return false;
+    }
+    
+    if(ExistAndHasChild_LibYaml(node, "Remove"))
+    {
+        Remove = node->GetMapValueScalar<std::string>("Remove").DS_TRY_ACT(return false);
+    }
+    
+    if(ExistAndHasChild_LibYaml(node, "Append"))
+    {
+        Append = node->GetMapValueScalar<std::string>("Append").DS_TRY_ACT(return false);
+    }
+    
+    return true;
+}
+
 bool runcpp2::Data::FlagsOverrideInfo::IsYAML_NodeParsableAsDefault(ryml::ConstNodeRef node) const
 {
     ssLOG_FUNC_DEBUG();
@@ -58,6 +87,34 @@ bool runcpp2::Data::FlagsOverrideInfo::IsYAML_NodeParsableAsDefault(ryml::ConstN
     
     return false;
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool 
+runcpp2::Data::FlagsOverrideInfo::IsYAML_NodeParsableAsDefault_LibYaml(YAML::ConstNodePtr node) const
+{
+    ssLOG_FUNC_DEBUG();
+    
+    if(!node->IsMap())
+    {
+        ssLOG_ERROR("FlagsOverrideInfo type requires a map");
+        return false;
+    }
+    
+    if(ExistAndHasChild_LibYaml(node, "Remove") || ExistAndHasChild_LibYaml(node, "Append"))
+    {
+        std::vector<NodeRequirement> requirements =
+        {
+            NodeRequirement("Remove", YAML::NodeType::Scalar, false, true),
+            NodeRequirement("Append", YAML::NodeType::Scalar, false, true)
+        };
+        
+        if(!CheckNodeRequirements_LibYaml(node, requirements))
+            return false;
+        
+        return true;
+    }
+    
+    return false;
 }
 
 std::string runcpp2::Data::FlagsOverrideInfo::ToString(std::string indentation) const

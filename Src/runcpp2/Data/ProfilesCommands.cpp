@@ -26,6 +26,26 @@ bool runcpp2::Data::ProfilesCommands::ParseYAML_Node(ryml::ConstNodeRef node)
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
+bool runcpp2::Data::ProfilesCommands::ParseYAML_Node(YAML::ConstNodePtr node)
+{
+    ssLOG_FUNC_DEBUG();
+    
+    if(!node->IsMap())
+    {
+        ssLOG_ERROR("ProfilesCommands: Node is not a Map");
+        return false;
+    }
+    
+    for(int i = 0; i < node->GetChildrenCount(); ++i)
+    {
+        ProfileName profile = node->GetMapKeyScalarAt<ProfileName>(i).DS_TRY_ACT(return false);
+        if(!ParseYAML_NodeWithProfile_LibYaml(node->GetMapValueNodeAt(i), profile))
+            return false;
+    }
+    
+    return true;
+}
+
 bool runcpp2::Data::ProfilesCommands::ParseYAML_NodeWithProfile(ryml::ConstNodeRef node, 
                                                                 ProfileName profile)
 {
@@ -55,6 +75,32 @@ bool runcpp2::Data::ProfilesCommands::IsYAML_NodeParsableAsDefault(ryml::ConstNo
     
     return true;
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool runcpp2::Data::ProfilesCommands::ParseYAML_NodeWithProfile_LibYaml(YAML::ConstNodePtr node, 
+                                                                        ProfileName profile)
+{
+    ssLOG_FUNC_DEBUG();
+    
+    if(!node->IsSequence())
+    {
+        ssLOG_ERROR("ProfilesDefines: Paths type requires a list");
+        return false;
+    }
+    
+    for(int i = 0; i < node->GetChildrenCount(); ++i)
+    {
+        std::string command = node->GetSequenceChildScalar<std::string>(i).DS_TRY_ACT(return false);
+        CommandSteps[profile].push_back(command);
+    }
+    
+    return true;
+}
+
+bool 
+runcpp2::Data::ProfilesCommands::IsYAML_NodeParsableAsDefault_LibYaml(YAML::ConstNodePtr node) const
+{
+    return node->IsSequence();
 }
 
 std::string runcpp2::Data::ProfilesCommands::ToString(std::string indentation) const

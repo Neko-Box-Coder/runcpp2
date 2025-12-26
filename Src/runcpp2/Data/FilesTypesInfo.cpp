@@ -66,6 +66,66 @@ bool runcpp2::Data::FilesTypesInfo::ParseYAML_Node(ryml::ConstNodeRef node)
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
+bool runcpp2::Data::FilesTypesInfo::ParseYAML_Node(YAML::ConstNodePtr node)
+{
+    ssLOG_FUNC_DEBUG();
+
+    std::vector<NodeRequirement> requirements =
+    {
+        NodeRequirement("ObjectLinkFile", YAML::NodeType::Map, true, false),
+        NodeRequirement("SharedLinkFile", YAML::NodeType::Map, true, false),
+        NodeRequirement("SharedLibraryFile", YAML::NodeType::Map, true, false),
+        NodeRequirement("StaticLinkFile", YAML::NodeType::Map, true, false),
+        NodeRequirement("DebugSymbolFile", YAML::NodeType::Map, false, false),
+    };
+
+    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    {
+        ssLOG_ERROR("FilesTypesInfo: Failed to meet requirements");
+        return false;
+    }
+
+    YAML::ConstNodePtr objectLinkFileNode = node->GetMapValueNode("ObjectLinkFile");
+    if(!ObjectLinkFile.ParseYAML_Node(objectLinkFileNode))
+    {
+        ssLOG_ERROR("Compiler profile: ObjectLinkFile is invalid");
+        return false;
+    }
+    
+    YAML::ConstNodePtr sharedLinkFileNode = node->GetMapValueNode("SharedLinkFile");
+    if(!SharedLinkFile.ParseYAML_Node(sharedLinkFileNode))
+    {
+        ssLOG_ERROR("Compiler profile: SharedLinkFile is invalid");
+        return false;
+    }
+    
+    YAML::ConstNodePtr sharedLibraryFileNode = node->GetMapValueNode("SharedLibraryFile");
+    if(!SharedLibraryFile.ParseYAML_Node(sharedLibraryFileNode))
+    {
+        ssLOG_ERROR("Compiler profile: SharedLibraryFile is invalid");
+        return false;
+    }
+    
+    YAML::ConstNodePtr staticLinkFileNode = node->GetMapValueNode("StaticLinkFile");
+    if(!StaticLinkFile.ParseYAML_Node(staticLinkFileNode))
+    {
+        ssLOG_ERROR("Compiler profile: StaticLinkFile is invalid");
+        return false;
+    }
+    
+    if(ExistAndHasChild_LibYaml(node, "DebugSymbolFile"))
+    {
+        YAML::ConstNodePtr debugSymbolFileNode = node->GetMapValueNode("DebugSymbolFile");
+        if(!DebugSymbolFile.ParseYAML_Node(debugSymbolFileNode))
+        {
+            ssLOG_ERROR("Compiler profile: DebugSymbolFile is invalid");
+            return false;
+        }
+    }
+    
+    return true;
+}
+
 std::string runcpp2::Data::FilesTypesInfo::ToString(std::string indentation) const
 {
     ssLOG_FUNC_DEBUG();
