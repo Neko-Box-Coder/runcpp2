@@ -5,6 +5,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(runcpp2)
 
+# if(TARGET runcpp2)
+#     message("runcpp2 cmake target has been added before. Skipping cmake...")
+#     return()
+# endif()
+
 set(CMAKE_CXX_STANDARD 11)
 
 option(RUNCPP2_UPDATE_DEFAULT_YAMLS "Update default yaml files" OFF)
@@ -78,6 +83,20 @@ message("RUNCPP2_PROJECT_VERSION: ${RUNCPP2_PROJECT_VERSION}")
 # =========================================================================
 # External Dependencies
 # =========================================================================
+
+# runcpp2 doesn't rely on install at all. Disabling it.
+# if(NOT DEFINED RUNCPP2_DISABLE_INSTALLATION)
+#     # This variable is responsible for installation disabling.
+#     set(RUNCPP2_DISABLE_INSTALLATION ON)
+# 
+#     # Replace install() with conditional installation.
+#     macro(install)
+#         if(NOT RUNCPP2_DISABLE_INSTALLATION)
+#             _install(${ARGN})
+#         endif()
+#     endmacro()
+# endif()
+
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/ssLogger")
 
 set(RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS ON CACHE BOOL "" FORCE)
@@ -88,11 +107,23 @@ add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/System2")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/dylib")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/variant")
 
+set(EXPECTED_BUILD_PACKAGE OFF)
+set(BUILD_TESTING OFF)
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/DSResult")
+
+set(BUILD_TESTING ON)
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/libyaml")
+set(BUILD_TESTING OFF)
+
+# NOTE: Just include the file. Can't add subdirectory since it install stuff
+# add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/string-view-lite")
+add_library(string-view-lite INTERFACE)
+target_include_directories( string-view-lite INTERFACE 
+                            "${CMAKE_CURRENT_LIST_DIR}/External/string-view-lite/include")
+
 # Copy cfgpath.h
 configure_file( "${CMAKE_CURRENT_LIST_DIR}/External/cfgpath/cfgpath.h" 
                 "${CMAKE_CURRENT_LIST_DIR}/Include/cfgpath.h" COPYONLY)
-
-
 
 if(RUNCPP2_BUILD_TESTS)
     add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/ssTest")
@@ -177,16 +208,17 @@ set(RUNCPP2_SOURCE_FILES    "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/Profile.
                             "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/runcpp2.cpp"
                             "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/BuildsManager.cpp"
                             "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/PipelineSteps.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/IncludeManager.cpp")
+                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/IncludeManager.cpp"
+                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/LibYAML_Wrapper.cpp")
 
-add_library(runcpp2 STATIC ${RUNCPP2_SOURCE_FILES})
+add_library(runcpp2Lib STATIC ${RUNCPP2_SOURCE_FILES})
 
 set(RUNCPP2_PRIVATE_LINK_LIBS ssLogger System2 CppOverride dylib)
-set(RUNCPP2_PUBLIC_LINK_LIBS ghc_filesystem ryml::ryml mpark_variant MacroPowerToys)
+set(RUNCPP2_PUBLIC_LINK_LIBS ghc_filesystem ryml::ryml mpark_variant MacroPowerToys string-view-lite yaml DSResult)
 
-target_include_directories(runcpp2 PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
-target_link_libraries(runcpp2 PRIVATE ${RUNCPP2_PRIVATE_LINK_LIBS})
-target_link_libraries(runcpp2 PUBLIC ${RUNCPP2_PUBLIC_LINK_LIBS})
+target_include_directories(runcpp2Lib PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
+target_link_libraries(runcpp2Lib PRIVATE ${RUNCPP2_PRIVATE_LINK_LIBS})
+target_link_libraries(runcpp2Lib PUBLIC ${RUNCPP2_PUBLIC_LINK_LIBS})
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # TODO: Try to change to /Wall
@@ -212,35 +244,35 @@ else()
     endif()
 endif()
 
-target_compile_options(runcpp2 PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
+target_compile_options(runcpp2Lib PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
 
 # Define the runcpp2 and default config version macro
-target_compile_definitions(runcpp2 PUBLIC   RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}"
-                                            RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION})
+target_compile_definitions(runcpp2Lib PUBLIC    RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}"
+                                                RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION})
 
 # =========================================================================
 # runcpp2 executable
 # =========================================================================
 
-add_executable(runcpp2_main "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/main.cpp")
-target_compile_options(runcpp2_main PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
-target_link_libraries(runcpp2_main PRIVATE runcpp2 ssLogger)
-set_target_properties(runcpp2_main PROPERTIES OUTPUT_NAME "runcpp2")
+add_executable(runcpp2 "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/main.cpp")
+target_compile_options(runcpp2 PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
+target_link_libraries(runcpp2 PUBLIC runcpp2Lib ssLogger)
 
 # =========================================================================
 # runcpp2 library override
 # =========================================================================
 
-add_library(runcpp2_override STATIC ${RUNCPP2_SOURCE_FILES})
-target_include_directories(runcpp2_override PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
-target_link_libraries(runcpp2_override PRIVATE ${RUNCPP2_PRIVATE_LINK_LIBS})
-target_link_libraries(runcpp2_override PUBLIC ${RUNCPP2_PUBLIC_LINK_LIBS})
-target_compile_options(runcpp2_override PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
-target_compile_definitions(runcpp2_override PUBLIC  RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}" 
-                                                    RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION}
-                                                    INTERNAL_RUNCPP2_UNIT_TESTS=1)
 if(RUNCPP2_BUILD_TESTS)
+    add_library(runcpp2Override STATIC ${RUNCPP2_SOURCE_FILES})
+    target_include_directories(runcpp2Override PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
+    target_link_libraries(runcpp2Override PRIVATE ${RUNCPP2_PRIVATE_LINK_LIBS})
+    target_link_libraries(runcpp2Override PUBLIC ${RUNCPP2_PUBLIC_LINK_LIBS})
+    target_compile_options(runcpp2Override PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
+    target_compile_definitions( runcpp2Override PUBLIC   
+                                RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}" 
+                                RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION}
+                                INTERNAL_RUNCPP2_UNIT_TESTS=1)
     add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Src/Tests")
 endif()
 
-
+# set(RUNCPP2_DISABLE_INSTALLATION OFF)

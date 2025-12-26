@@ -1,4 +1,18 @@
+/* :not([data-md-state="blur"]) + :not(input:checked) + nav { */
+/*     display: none; */
+/* } */
+/*  */
+/* :not([data-md-state="blur"]) + input:checked + nav { */
+/*     display: block; */
+/* } */
 
+/* .md-nav__item :not(input:checked) + nav { */
+/*     display: none; */
+/* } */
+
+:not([data-md-state="blur"]) + input:checked + nav {
+    display: block;
+}
 
 .md-header__button.md-logo {
     // margin-top: 0;

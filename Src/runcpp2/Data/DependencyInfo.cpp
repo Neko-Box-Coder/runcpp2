@@ -126,6 +126,139 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(ryml::ConstNodeRef node)
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
+bool runcpp2::Data::DependencyInfo::ParseYAML_Node(YAML::ConstNodePtr node)
+{
+    //If import is needed, we only need to parse the Source section
+    do
+    {
+        if(!ExistAndHasChild_LibYaml(node, "Source"))
+        {
+            ssLOG_ERROR("DependencyInfo: Missing Source");
+            return false;
+        }
+
+        YAML::ConstNodePtr sourceNode = node->GetMapValueNode("Source");
+        if(!ExistAndHasChild_LibYaml(sourceNode, "ImportPath"))
+            break;
+
+        if(!Source.ParseYAML_Node(sourceNode))
+        {
+            ssLOG_ERROR("DependencyInfo: Failed to parse Source");
+            return false;
+        }
+
+        ssLOG_DEBUG("DependencyInfo: Importing from " << Source.ImportPath.string());
+        ssLOG_DEBUG("Skipping the rest of the DependencyInfo");
+        return true;
+    }
+    while(false);
+
+    std::vector<NodeRequirement> requirements =
+    {
+        NodeRequirement("Name", YAML::NodeType::Scalar, true, false),
+        NodeRequirement("Platforms", YAML::NodeType::Sequence, true, false),
+        NodeRequirement("Source", YAML::NodeType::Map, true, false),
+        NodeRequirement("LibraryType", YAML::NodeType::Scalar, true, false),
+        NodeRequirement("IncludePaths", YAML::NodeType::Sequence, false, true),
+        
+        //Expecting either platform profile map or ProfileLinkProperty map
+        NodeRequirement("LinkProperties", YAML::NodeType::Map, false, false),
+        
+        //Setup can be platform profile map or sequence of commands, handle later
+        //Cleanup can be platform profile map or sequence of commands, handle later
+        //Build can be platform profile map or sequence of commands, handle later
+        //FilesToCopy can be platform profile map or sequence of paths, handle later
+    };
+    
+    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    {
+        ssLOG_ERROR("DependencyInfo: Failed to meet requirements");
+        return false;
+    }
+    
+    Name = node->GetMapValueScalar<std::string>("Name").DS_TRY_ACT(return false);
+    
+    YAML::ConstNodePtr platformsNode = node->GetMapValueNode("Platforms");
+    for(int i = 0; i < platformsNode->GetChildrenCount(); ++i)
+    {
+        std::string platform = platformsNode->GetSequenceChildScalar<std::string>(i)
+                                            .DS_TRY_ACT(return false);
+        Platforms.insert(platform);
+    }
+        
+    YAML::ConstNodePtr sourceNode = node->GetMapValueNode("Source");
+    if(!Source.ParseYAML_Node(sourceNode))
+    {
+        ssLOG_ERROR("DependencyInfo: Failed to parse Source");
+        return false;
+    }
+    
+    static_assert((int)DependencyLibraryType::COUNT == 4, "");
+    
+    std::string libType = node->GetMapValueScalar<std::string>("LibraryType").DS_TRY_ACT(return false);
+    if(libType == "Static")
+        LibraryType = DependencyLibraryType::STATIC;
+    else if(libType == "Shared")
+        LibraryType = DependencyLibraryType::SHARED;
+    else if(libType == "Object")
+        LibraryType = DependencyLibraryType::OBJECT;
+    else if(libType == "Header")
+        LibraryType = DependencyLibraryType::HEADER;
+    else
+    {
+        ssLOG_ERROR("DependencyInfo: LibraryType is invalid");
+        return false;
+    }
+    
+    if(ExistAndHasChild_LibYaml(node, "IncludePaths"))
+    {
+        YAML::ConstNodePtr includePathsNode = node->GetMapValueNode("IncludePaths");
+        
+        for(int i = 0; i < includePathsNode->GetChildrenCount(); ++i)
+        {
+            std::string includePath = includePathsNode  ->GetSequenceChildScalar<std::string>(i)
+                                                        .DS_TRY_ACT(return false);
+            IncludePaths.push_back(includePath);
+        }
+    }
+    
+    if(ExistAndHasChild_LibYaml(node, "LinkProperties"))
+    {
+        if(!ParsePlatformProfileMap_LibYaml<DependencyLinkProperty>(node, 
+                                                                    "LinkProperties", 
+                                                                    LinkProperties, 
+                                                                    "LinkProperties"))
+        {
+            return false;
+        }
+    }
+    else if(LibraryType != DependencyLibraryType::HEADER)
+    {
+        ssLOG_ERROR("DependencyInfo: Missing LinkProperties with library type " << 
+                    Data::DependencyLibraryTypeToString(LibraryType));
+        return false;
+    }
+
+    if(!ParsePlatformProfileMap_LibYaml<ProfilesCommands>(node, "Setup", Setup, "Setup"))
+        return false;
+
+    if(!ParsePlatformProfileMap_LibYaml<ProfilesCommands>(node, "Cleanup", Cleanup, "Cleanup"))
+        return false;
+
+    if(!ParsePlatformProfileMap_LibYaml<ProfilesCommands>(node, "Build", Build, "Build"))
+        return false;
+
+    if(!ParsePlatformProfileMap_LibYaml<FilesToCopyInfo>(   node, 
+                                                            "FilesToCopy", 
+                                                            FilesToCopy, 
+                                                            "FilesToCopy"))
+    {
+        return false;
+    }
+
+    return true;
+}
+
 std::string runcpp2::Data::DependencyInfo::ToString(std::string indentation) const
 {
     std::string out;

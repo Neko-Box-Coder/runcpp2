@@ -16,24 +16,25 @@ namespace runcpp2
 {
     namespace Data
     {
-        class DependencyInfo
+        struct DependencyInfo
         {
-            public:
-                std::string Name;
-                std::unordered_set<PlatformName> Platforms;
-                DependencySource Source;
-                DependencyLibraryType LibraryType;
-                std::vector<std::string> IncludePaths;
-                std::vector<std::string> AbsoluteIncludePaths;
-                std::unordered_map<PlatformName, DependencyLinkProperty> LinkProperties;
-                std::unordered_map<PlatformName, ProfilesCommands> Setup;
-                std::unordered_map<PlatformName, ProfilesCommands> Cleanup;
-                std::unordered_map<PlatformName, ProfilesCommands> Build;
-                std::unordered_map<PlatformName, FilesToCopyInfo> FilesToCopy;
-                
-                bool ParseYAML_Node(ryml::ConstNodeRef node);
-                std::string ToString(std::string indentation) const;
-                bool Equals(const DependencyInfo& other) const;
+            std::string Name;
+            std::unordered_set<PlatformName> Platforms;
+            DependencySource Source;
+            DependencyLibraryType LibraryType;
+            std::vector<std::string> IncludePaths;
+            std::vector<std::string> AbsoluteIncludePaths;
+            std::unordered_map<PlatformName, DependencyLinkProperty> LinkProperties;
+            std::unordered_map<PlatformName, ProfilesCommands> Setup;
+            std::unordered_map<PlatformName, ProfilesCommands> Cleanup;
+            std::unordered_map<PlatformName, ProfilesCommands> Build;
+            std::unordered_map<PlatformName, FilesToCopyInfo> FilesToCopy;
+            
+            bool ParseYAML_Node(ryml::ConstNodeRef node);
+            bool ParseYAML_Node(YAML::ConstNodePtr node);
+            
+            std::string ToString(std::string indentation) const;
+            bool Equals(const DependencyInfo& other) const;
         };
     }
 }

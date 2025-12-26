@@ -33,6 +33,7 @@
 - Add more default profiles
 - Migrate to libyaml
 - Ability to compile runcpp2 as single cpp, to ditch cmake
+- Migrate to DSResult and remove ssTest
 
 ## High Priority
 
@@ -45,6 +46,8 @@
 - Add wildcard support for filenames and extensions (Files Globbing)
 - Add the ability to query script build directory
 - Add the ability to list script dependencies
+- Show build directory for a given cpp
+- Refactor CLI arguments to be action based
 
 ## TBD
 

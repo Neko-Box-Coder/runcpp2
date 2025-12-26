@@ -2,6 +2,7 @@
 #include "ssTest.hpp"
 #include "runcpp2/YamlLib.hpp"
 #include "runcpp2/runcpp2.hpp"
+#include "runcpp2/DeferUtil.hpp"
 
 int main(int argc, char** argv)
 {
@@ -24,12 +25,16 @@ int main(int argc, char** argv)
                 -   DEBUG_LEVEL=2
                 -   ENABLE_LOGGING
             )";
-            
-            ryml::Tree tree = ryml::parse_in_arena(c4::to_csubstr(yamlStr));
-            ryml::ConstNodeRef root = tree.rootref();
-            
-            runcpp2::Data::ProfilesDefines profilesDefines;
         );
+        
+        runcpp2::YAML::ResourceHandle resource;
+        std::vector<runcpp2::YAML::NodePtr> roots = 
+            runcpp2::YAML::ParseYAML(yamlStr, resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
+        DEFER { FreeYAMLResource(resource); };
+        
+        ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
+        runcpp2::YAML::NodePtr root = roots.front();
+        runcpp2::Data::ProfilesDefines profilesDefines;
         
         ssTEST_OUTPUT_EXECUTION
         (
@@ -68,10 +73,13 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_EXECUTION
         (
             std::string yamlOutput = profilesDefines.ToString("");
-            ryml::Tree outputTree = ryml::parse_in_arena(ryml::to_csubstr(yamlOutput));
+            roots = 
+                runcpp2::YAML::ParseYAML(   yamlOutput, 
+                                            resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
+            ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
             
             runcpp2::Data::ProfilesDefines parsedOutput;
-            parsedOutput.ParseYAML_Node(outputTree.rootref());
+            parsedOutput.ParseYAML_Node(roots.front());
         );
         
         ssTEST_OUTPUT_ASSERT(   "Parsed output should equal original", 

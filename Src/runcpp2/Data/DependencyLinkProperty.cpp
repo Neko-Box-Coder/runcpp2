@@ -67,6 +67,95 @@ bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(ryml::ConstNodeRef no
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
+bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(YAML::ConstNodePtr node)
+{
+    ssLOG_FUNC_DEBUG();
+    
+    if(!node->IsMap())
+    {
+        ssLOG_ERROR("DependencyLinkProperty: Node is not a Map");
+        return false;
+    }
+    
+    for(int i = 0; i < node->GetChildrenCount(); ++i)
+    {
+        ProfileName profile = node->GetMapKeyScalarAt<ProfileName>(i).DS_TRY_ACT(return false);
+        YAML::ConstNodePtr profileNode = node->GetMapValueNodeAt(i);
+        
+        //TODO: Maybe use `ParseYAML_NodeWithProfile_LibYaml()`?
+        
+        ProfileLinkProperty& property = ProfileProperties[profile];
+        
+        std::vector<NodeRequirement> requirements =
+        {
+            NodeRequirement("SearchLibraryNames", YAML::NodeType::Sequence, true, false),
+            NodeRequirement("SearchDirectories", YAML::NodeType::Sequence, true, false),
+            NodeRequirement("ExcludeLibraryNames", YAML::NodeType::Sequence, false, true),
+            NodeRequirement("AdditionalLinkOptions", YAML::NodeType::Sequence, false, true)
+        };
+        
+        if(!CheckNodeRequirements_LibYaml(profileNode, requirements))
+        {
+            ssLOG_ERROR("DependencyLinkProperty: Failed to meet requirements for profile " << 
+                        profile);
+            return false;
+        }
+        
+        for(int j = 0; 
+            j < profileNode->GetMapValueNode("SearchLibraryNames")->GetChildrenCount(); 
+            ++j)
+        {
+            std::string searchLibraryName = 
+                profileNode ->GetMapValueNode("SearchLibraryNames")
+                            ->GetSequenceChildScalar<std::string>(j)
+                            .DS_TRY_ACT(return false);
+            
+            property.SearchLibraryNames.push_back(searchLibraryName);
+        }
+        
+        for(int j = 0; 
+            j < profileNode->GetMapValueNode("SearchDirectories")->GetChildrenCount(); 
+            ++j)
+        {
+            std::string searchPath = 
+                profileNode ->GetMapValueNode("SearchDirectories")
+                            ->GetSequenceChildScalar<std::string>(j)
+                            .DS_TRY_ACT(return false);
+            property.SearchDirectories.push_back(searchPath);
+        }
+
+        if(ExistAndHasChild_LibYaml(profileNode, "ExcludeLibraryNames"))
+        {
+            for(int j = 0; 
+                j < profileNode->GetMapValueNode("ExcludeLibraryNames")->GetChildrenCount(); 
+                ++j)
+            {
+                std::string excludeName =
+                    profileNode ->GetMapValueNode("ExcludeLibraryNames")
+                                ->GetSequenceChildScalar<std::string>(j)
+                                .DS_TRY_ACT(return false);
+                property.ExcludeLibraryNames.push_back(excludeName);
+            }
+        }
+
+        if(ExistAndHasChild_LibYaml(profileNode, "AdditionalLinkOptions"))
+        {
+            for(int j = 0; 
+                j < profileNode->GetMapValueNode("AdditionalLinkOptions")->GetChildrenCount();
+                ++j)
+            {
+                std::string linkOption =
+                    profileNode ->GetMapValueNode("AdditionalLinkOptions")
+                                ->GetSequenceChildScalar<std::string>(j)
+                                .DS_TRY_ACT(return false);
+                property.AdditionalLinkOptions.push_back(linkOption);
+            }
+        }
+    }
+
+    return true;
+}
+
 bool runcpp2::Data::DependencyLinkProperty::ParseYAML_NodeWithProfile(  ryml::ConstNodeRef node, 
                                                                         ProfileName profile)
 {
@@ -146,6 +235,103 @@ runcpp2::Data::DependencyLinkProperty::IsYAML_NodeParsableAsDefault(ryml::ConstN
     
     return false;
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+}
+
+bool 
+runcpp2::Data::DependencyLinkProperty::ParseYAML_NodeWithProfile_LibYaml(   YAML::ConstNodePtr node, 
+                                                                            ProfileName profile)
+{
+    ssLOG_FUNC_DEBUG();
+    
+    ProfileLinkProperty& property = ProfileProperties[profile];
+    
+    std::vector<NodeRequirement> requirements =
+    {
+        NodeRequirement("SearchLibraryNames", YAML::NodeType::Sequence, true, false),
+        NodeRequirement("SearchDirectories", YAML::NodeType::Sequence, true, false),
+        NodeRequirement("ExcludeLibraryNames", YAML::NodeType::Sequence, false, true),
+        NodeRequirement("AdditionalLinkOptions", YAML::NodeType::Sequence, false, true)
+    };
+    
+    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    {
+        ssLOG_ERROR("DependencyLinkProperty: Failed to meet requirements for profile " << 
+                    profile);
+        return false;
+    }
+    
+    for(int j = 0; j < node->GetMapValueNode("SearchLibraryNames")->GetChildrenCount(); ++j)
+    {
+        std::string searchLibraryName = 
+            node->GetMapValueNode("SearchLibraryNames")
+                ->GetSequenceChildScalar<std::string>(j)
+                .DS_TRY_ACT(return false);
+        
+        property.SearchLibraryNames.push_back(searchLibraryName);
+    }
+    
+    for(int j = 0; j < node->GetMapValueNode("SearchDirectories")->GetChildrenCount(); ++j)
+    {
+        std::string searchPath = 
+            node->GetMapValueNode("SearchDirectories")
+                ->GetSequenceChildScalar<std::string>(j)
+                .DS_TRY_ACT(return false);
+        property.SearchDirectories.push_back(searchPath);
+    }
+
+    if(ExistAndHasChild_LibYaml(node, "ExcludeLibraryNames"))
+    {
+        for(int j = 0; j < node->GetMapValueNode("ExcludeLibraryNames")->GetChildrenCount(); ++j)
+        {
+            std::string excludeName =
+                node->GetMapValueNode("ExcludeLibraryNames")
+                    ->GetSequenceChildScalar<std::string>(j)
+                    .DS_TRY_ACT(return false);
+            property.ExcludeLibraryNames.push_back(excludeName);
+        }
+    }
+
+    if(ExistAndHasChild_LibYaml(node, "AdditionalLinkOptions"))
+    {
+        for(int j = 0; j < node->GetMapValueNode("AdditionalLinkOptions")->GetChildrenCount(); ++j)
+        {
+            std::string linkOption =
+                node->GetMapValueNode("AdditionalLinkOptions")
+                    ->GetSequenceChildScalar<std::string>(j)
+                    .DS_TRY_ACT(return false);
+            property.AdditionalLinkOptions.push_back(linkOption);
+        }
+    }
+    
+    ProfileProperties[profile] = property;
+    
+    return true;
+}
+
+bool 
+runcpp2::Data::DependencyLinkProperty::IsYAML_NodeParsableAsDefault_LibYaml(YAML::ConstNodePtr node) const
+{
+    ssLOG_FUNC_DEBUG();
+
+    if(!node->IsMap())
+    {
+        ssLOG_ERROR("DependencyLinkProperty type requires a map");
+        return false;
+    }
+
+    if( ExistAndHasChild_LibYaml(node, "SearchLibraryNames") && 
+        ExistAndHasChild_LibYaml(node, "SearchDirectories"))
+    {
+        std::vector<NodeRequirement> requirements =
+        {
+            NodeRequirement("SearchLibraryNames", YAML::NodeType::Sequence, true, false),
+            NodeRequirement("SearchDirectories", YAML::NodeType::Sequence, true, false)
+        };
+        
+        return CheckNodeRequirements_LibYaml(node, requirements);
+    }
+    
+    return false;
 }
 
 std::string runcpp2::Data::DependencyLinkProperty::ToString(std::string indentation) const

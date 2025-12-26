@@ -90,6 +90,32 @@ bool runcpp2::Data::LocalSource::ParseYAML_Node(ryml::ConstNodeRef node)
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
+bool runcpp2::Data::LocalSource::ParseYAML_Node(YAML::ConstNodePtr node)
+{
+    std::vector<NodeRequirement> requirements =
+    {
+        NodeRequirement("Path", YAML::NodeType::Scalar, true, false)
+    };
+    
+    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    {
+        ssLOG_ERROR("LocalSource: Failed to meet requirements");
+        return false;
+    }
+    
+    Path = node->GetMapValueScalar<std::string>("Path").DS_TRY_ACT(return false);
+    if(ExistAndHasChild_LibYaml(node, "CopyMode"))
+    {
+        bool success = false;
+        CopyMode = StringToCopyMode(node->GetMapValueScalar<std::string>("CopyMode").DefaultOr(), 
+                                    success);
+        if(!success)
+            return false;
+    }
+    
+    return true;
+}
+
 std::string runcpp2::Data::LocalSource::ToString(std::string indentation) const
 {
     std::string out;

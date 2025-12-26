@@ -44,6 +44,48 @@ bool runcpp2::Data::FileProperties::ParseYAML_Node(ryml::ConstNodeRef node)
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
 }
 
+bool runcpp2::Data::FileProperties::ParseYAML_Node(YAML::ConstNodePtr node)
+{
+    std::vector<NodeRequirement> requirements =
+    {
+        NodeRequirement("Prefix", YAML::NodeType::Map, true, true),
+        NodeRequirement("Extension", YAML::NodeType::Map, true, false)
+    };
+    
+    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    {
+        ssLOG_ERROR("File Properties: Failed to meet requirements");
+        return false;
+    }
+    
+    if(ExistAndHasChild_LibYaml(node, "Prefix"))
+    {
+        YAML::ConstNodePtr prefixNode = node->GetMapValueNode("Prefix");
+        for(int i = 0; i < prefixNode->GetChildrenCount(); ++i)
+        {
+            std::string key = prefixNode->GetMapKeyScalarAt<std::string>(i).DS_TRY_ACT(return false);
+            std::string value = prefixNode  ->GetMapValueScalarAt<std::string>(i)
+                                            .DS_TRY_ACT(return false);
+            Prefix[key] = value;
+        }
+    }
+    
+    if(ExistAndHasChild_LibYaml(node, "Extension"))
+    {
+        YAML::ConstNodePtr extensionNode = node->GetMapValueNode("Extension");
+        for(int i = 0; i < extensionNode->GetChildrenCount(); ++i)
+        {
+            std::string key = extensionNode ->GetMapKeyScalarAt<std::string>(i)
+                                            .DS_TRY_ACT(return false);
+            std::string value = extensionNode   ->GetMapValueScalarAt<std::string>(i)
+                                                .DS_TRY_ACT(return false);
+            Extension[key] = value;
+        }
+    }
+    
+    return true;
+}
+
 std::string runcpp2::Data::FileProperties::ToString(std::string indentation) const
 {
     std::string out;
