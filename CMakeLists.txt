@@ -106,8 +106,6 @@ target_include_directories( string-view-lite INTERFACE
 configure_file( "${CMAKE_CURRENT_LIST_DIR}/External/cfgpath/cfgpath.h" 
                 "${CMAKE_CURRENT_LIST_DIR}/Include/cfgpath.h" COPYONLY)
 
-
-
 if(RUNCPP2_BUILD_TESTS)
     add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/ssTest")
 endif()
@@ -193,14 +191,14 @@ set(RUNCPP2_SOURCE_FILES    "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/Profile.
                             "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/PipelineSteps.cpp"
                             "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/IncludeManager.cpp")
 
-add_library(runcpp2 STATIC ${RUNCPP2_SOURCE_FILES})
+add_library(runcpp2Lib STATIC ${RUNCPP2_SOURCE_FILES})
 
 set(RUNCPP2_PRIVATE_LINK_LIBS ssLogger System2 CppOverride dylib)
 set(RUNCPP2_PUBLIC_LINK_LIBS ghc_filesystem ryml::ryml mpark_variant MacroPowerToys string-view-lite yaml DSResult)
 
-target_include_directories(runcpp2 PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
-target_link_libraries(runcpp2 PRIVATE ${RUNCPP2_PRIVATE_LINK_LIBS})
-target_link_libraries(runcpp2 PUBLIC ${RUNCPP2_PUBLIC_LINK_LIBS})
+target_include_directories(runcpp2Lib PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
+target_link_libraries(runcpp2Lib PRIVATE ${RUNCPP2_PRIVATE_LINK_LIBS})
+target_link_libraries(runcpp2Lib PUBLIC ${RUNCPP2_PUBLIC_LINK_LIBS})
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # TODO: Try to change to /Wall
@@ -226,34 +224,34 @@ else()
     endif()
 endif()
 
-target_compile_options(runcpp2 PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
+target_compile_options(runcpp2Lib PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
 
 # Define the runcpp2 and default config version macro
-target_compile_definitions(runcpp2 PUBLIC   RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}"
-                                            RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION})
+target_compile_definitions(runcpp2Lib PUBLIC    RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}"
+                                                RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION})
 
 # =========================================================================
 # runcpp2 executable
 # =========================================================================
 
-add_executable(runcpp2_main "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/main.cpp")
-target_compile_options(runcpp2_main PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
-target_link_libraries(runcpp2_main PRIVATE runcpp2 ssLogger)
-set_target_properties(runcpp2_main PROPERTIES OUTPUT_NAME "runcpp2")
+add_executable(runcpp2 "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/main.cpp")
+target_compile_options(runcpp2 PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
+target_link_libraries(runcpp2 PUBLIC runcpp2Lib ssLogger)
 
 # =========================================================================
 # runcpp2 library override
 # =========================================================================
 
-add_library(runcpp2_override STATIC ${RUNCPP2_SOURCE_FILES})
-target_include_directories(runcpp2_override PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
-target_link_libraries(runcpp2_override PRIVATE ${RUNCPP2_PRIVATE_LINK_LIBS})
-target_link_libraries(runcpp2_override PUBLIC ${RUNCPP2_PUBLIC_LINK_LIBS})
-target_compile_options(runcpp2_override PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
-target_compile_definitions(runcpp2_override PUBLIC  RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}" 
-                                                    RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION}
-                                                    INTERNAL_RUNCPP2_UNIT_TESTS=1)
 if(RUNCPP2_BUILD_TESTS)
+    add_library(runcpp2Override STATIC ${RUNCPP2_SOURCE_FILES})
+    target_include_directories(runcpp2Override PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
+    target_link_libraries(runcpp2Override PRIVATE ${RUNCPP2_PRIVATE_LINK_LIBS})
+    target_link_libraries(runcpp2Override PUBLIC ${RUNCPP2_PUBLIC_LINK_LIBS})
+    target_compile_options(runcpp2Override PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
+    target_compile_definitions( runcpp2Override PUBLIC   
+                                RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}" 
+                                RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION}
+                                INTERNAL_RUNCPP2_UNIT_TESTS=1)
     add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Src/Tests")
 endif()
 
