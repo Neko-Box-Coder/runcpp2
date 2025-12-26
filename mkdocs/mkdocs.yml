@@ -19,7 +19,7 @@ theme:
             name: Switch to dark mode
     features:
     -   toc.follow
-    -   toc.integrate
+    # -   toc.integrate
     -   content.code.copy
     -   content.code.select
     -   navigation.sections
@@ -28,17 +28,17 @@ theme:
     -   navigation.tabs.sticky
 
 nav:
-    -   index.md
-    # -   guides.md
-    -   Guides:
-        -   guides/basics.md
-        -   guides/building_project_sources.md
-        -   guides/external_dependencies.md
-        -   guides/scriptable_pipeline.md
-    -   program_manual.md
-    -   build_settings.md
-    -   user_config.md
-    -   TODO.md
+-   index.md
+# -   guides.md
+-   Guides:
+    -   guides/basics.md
+    -   guides/building_project_sources.md
+    -   guides/external_dependencies.md
+    -   guides/scriptable_pipeline.md
+-   program_manual.md
+-   build_settings.md
+-   user_config.md
+-   TODO.md
 
 repo_url: https://github.com/Neko-Box-Coder/runcpp2
 repo_name: Neko-Box-Coder/runcpp2

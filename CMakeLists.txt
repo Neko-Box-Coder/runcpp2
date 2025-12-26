@@ -5,6 +5,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(runcpp2)
 
+# if(TARGET runcpp2)
+#     message("runcpp2 cmake target has been added before. Skipping cmake...")
+#     return()
+# endif()
+
 set(CMAKE_CXX_STANDARD 11)
 
 option(RUNCPP2_UPDATE_DEFAULT_YAMLS "Update default yaml files" OFF)
@@ -78,6 +83,20 @@ message("RUNCPP2_PROJECT_VERSION: ${RUNCPP2_PROJECT_VERSION}")
 # =========================================================================
 # External Dependencies
 # =========================================================================
+
+# runcpp2 doesn't rely on install at all. Disabling it.
+# if(NOT DEFINED RUNCPP2_DISABLE_INSTALLATION)
+#     # This variable is responsible for installation disabling.
+#     set(RUNCPP2_DISABLE_INSTALLATION ON)
+# 
+#     # Replace install() with conditional installation.
+#     macro(install)
+#         if(NOT RUNCPP2_DISABLE_INSTALLATION)
+#             _install(${ARGN})
+#         endif()
+#     endmacro()
+# endif()
+
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/ssLogger")
 
 set(RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS ON CACHE BOOL "" FORCE)
@@ -256,4 +275,4 @@ if(RUNCPP2_BUILD_TESTS)
     add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Src/Tests")
 endif()
 
-
+# set(RUNCPP2_DISABLE_INSTALLATION OFF)

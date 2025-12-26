@@ -13,7 +13,6 @@ Templates:
         CommandPart: " -I\"{IncludeDirectoryPath}\""
     -   Type: Once
         CommandPart: " \"{InputFilePath}\" -o \"{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}\""
-    
     "g++_CompileExpectedOutputFiles": &g++_CompileExpectedOutputFiles
     -   "{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}"
 
