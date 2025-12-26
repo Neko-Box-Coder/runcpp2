@@ -8,4 +8,6 @@
 #include "c4/std/string.hpp"
 #include "ryml.hpp"
 
+#include "LibYAML_Wrapper.hpp"
+
 #endif

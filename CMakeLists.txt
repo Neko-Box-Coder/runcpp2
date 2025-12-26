@@ -189,7 +189,8 @@ set(RUNCPP2_SOURCE_FILES    "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/Profile.
                             "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/runcpp2.cpp"
                             "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/BuildsManager.cpp"
                             "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/PipelineSteps.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/IncludeManager.cpp")
+                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/IncludeManager.cpp"
+                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/LibYAML_Wrapper.cpp")
 
 add_library(runcpp2Lib STATIC ${RUNCPP2_SOURCE_FILES})
 
