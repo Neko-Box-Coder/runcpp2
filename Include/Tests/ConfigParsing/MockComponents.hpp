@@ -10,6 +10,7 @@
 #include <sstream>
 #include <type_traits>
 #include <vector>
+#include <utility>
 
 extern CO_DECLARE_INSTANCE(OverrideInstance);
 
@@ -80,6 +81,12 @@ namespace Mock_std
     inline int stoi(const std::string& str, std::size_t* pos = nullptr, int base = 10)
     {
         return std::stoi(str, pos, base);
+    }
+    
+    template<class T>
+    typename std::remove_reference<T>::type&& move( T&& t ) noexcept
+    {
+        return std::move(t);
     }
 }
 
