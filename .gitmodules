@@ -31,3 +31,12 @@
 [submodule "MacroPowerToys"]
 	path = External/MacroPowerToys
 	url = https://github.com/Neko-Box-Coder/MacroPowerToys.git
+[submodule "libyaml"]
+	path = External/libyaml
+	url = https://github.com/Neko-Box-Coder/libyaml.git
+[submodule "string-view-lite"]
+	path = External/string-view-lite
+	url = https://github.com/martinmoene/string-view-lite.git
+[submodule "DSResult"]
+	path = External/DSResult
+	url = https://github.com/Neko-Box-Coder/DSResult.git

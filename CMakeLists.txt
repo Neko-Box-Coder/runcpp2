@@ -88,6 +88,20 @@ add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/System2")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/dylib")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/variant")
 
+set(EXPECTED_BUILD_PACKAGE OFF)
+set(BUILD_TESTING OFF)
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/DSResult")
+
+set(BUILD_TESTING ON)
+add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/libyaml")
+set(BUILD_TESTING OFF)
+
+# NOTE: Just include the file. Can't add subdirectory since it install stuff
+# add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/string-view-lite")
+add_library(string-view-lite INTERFACE)
+target_include_directories( string-view-lite INTERFACE 
+                            "${CMAKE_CURRENT_LIST_DIR}/External/string-view-lite/include")
+
 # Copy cfgpath.h
 configure_file( "${CMAKE_CURRENT_LIST_DIR}/External/cfgpath/cfgpath.h" 
                 "${CMAKE_CURRENT_LIST_DIR}/Include/cfgpath.h" COPYONLY)
@@ -182,7 +196,7 @@ set(RUNCPP2_SOURCE_FILES    "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/Profile.
 add_library(runcpp2 STATIC ${RUNCPP2_SOURCE_FILES})
 
 set(RUNCPP2_PRIVATE_LINK_LIBS ssLogger System2 CppOverride dylib)
-set(RUNCPP2_PUBLIC_LINK_LIBS ghc_filesystem ryml::ryml mpark_variant MacroPowerToys)
+set(RUNCPP2_PUBLIC_LINK_LIBS ghc_filesystem ryml::ryml mpark_variant MacroPowerToys string-view-lite yaml DSResult)
 
 target_include_directories(runcpp2 PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
 target_link_libraries(runcpp2 PRIVATE ${RUNCPP2_PRIVATE_LINK_LIBS})
