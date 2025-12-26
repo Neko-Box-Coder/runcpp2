@@ -9,16 +9,16 @@ namespace runcpp2
 {
     namespace Data
     {
-        class FilesTypesInfo
+        struct FilesTypesInfo
         {
-            public:
-                FileProperties ObjectLinkFile;
-                FileProperties SharedLinkFile;
-                FileProperties SharedLibraryFile;
-                FileProperties StaticLinkFile;
-                FileProperties DebugSymbolFile;
+            FileProperties ObjectLinkFile;
+            FileProperties SharedLinkFile;
+            FileProperties SharedLibraryFile;
+            FileProperties StaticLinkFile;
+            FileProperties DebugSymbolFile;
             
             bool ParseYAML_Node(ryml::ConstNodeRef node);
+            
             std::string ToString(std::string indentation) const;
             bool Equals(const FilesTypesInfo& other) const;
         };
