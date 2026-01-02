@@ -31,7 +31,6 @@ namespace runcpp2
                 StageInfo Linker;
                 
                 void GetNames(std::vector<std::string>& outNames) const;
-                bool ParseYAML_Node(ryml::ConstNodeRef profileNode);
                 bool ParseYAML_Node(YAML::ConstNodePtr profileNode);
                 
                 std::string ToString(std::string indentation) const;

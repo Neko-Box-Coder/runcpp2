@@ -58,38 +58,6 @@ namespace
     }
 }
 
-bool runcpp2::Data::LocalSource::ParseYAML_Node(ryml::ConstNodeRef node)
-{
-    INTERNAL_RUNCPP2_SAFE_START();
-    
-    std::vector<NodeRequirement> requirements =
-    {
-        NodeRequirement("Path", ryml::NodeType_e::KEYVAL, true, false)
-    };
-    
-    if(!CheckNodeRequirements(node, requirements))
-    {
-        ssLOG_ERROR("LocalSource: Failed to meet requirements");
-        return false;
-    }
-    
-    node["Path"] >> Path;
-
-    if(ExistAndHasChild(node, "CopyMode"))
-    {
-        std::string modeStr;
-        node["CopyMode"] >> modeStr;
-        bool success = false;
-        CopyMode = StringToCopyMode(modeStr, success);
-        if (!success)
-            return false;
-    }
-    
-    return true;
-    
-    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
-}
-
 bool runcpp2::Data::LocalSource::ParseYAML_Node(YAML::ConstNodePtr node)
 {
     std::vector<NodeRequirement> requirements =

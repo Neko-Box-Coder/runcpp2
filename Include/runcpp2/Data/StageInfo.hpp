@@ -61,7 +61,6 @@ namespace runcpp2
                                         const BuildType buildType,
                                         std::string& outCommand) const;
                 
-                bool ParseYAML_Node(ryml::ConstNodeRef node, std::string outputTypeKeyName);
                 bool ParseYAML_Node(YAML::ConstNodePtr node, std::string outputTypeKeyName);
                 
                 std::string ToString(   std::string indentation,

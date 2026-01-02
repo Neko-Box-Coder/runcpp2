@@ -3,48 +3,6 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
-bool runcpp2::Data::GitSource::ParseYAML_Node(ryml::ConstNodeRef node)
-{
-    INTERNAL_RUNCPP2_SAFE_START();
-    
-    std::vector<NodeRequirement> requirements =
-    {
-        NodeRequirement("URL", ryml::NodeType_e::KEYVAL, true, false),
-        NodeRequirement("Branch", ryml::NodeType_e::KEYVAL, false, false),
-        NodeRequirement("FullHistory", ryml::NodeType_e::KEYVAL, false, false),
-        NodeRequirement("SubmoduleInitType", ryml::NodeType_e::KEYVAL, false, false)
-    };
-    
-    if(!CheckNodeRequirements(node, requirements))
-    {
-        ssLOG_ERROR("GitSource: Failed to meet requirements");
-        return false;
-    }
-    
-    node["URL"] >> URL;
-    if(ExistAndHasChild(node, "Branch"))
-        node["Branch"] >> Branch;
-    
-    if(ExistAndHasChild(node, "FullHistory"))
-        node["FullHistory"] >> FullHistory;
-    
-    if(ExistAndHasChild(node, "SubmoduleInitType"))
-    {
-        std::string submoduleTypeString;
-        node["SubmoduleInitType"] >> submoduleTypeString;
-        CurrentSubmoduleInitType = StringToSubmoduleInitType(submoduleTypeString);
-        if(CurrentSubmoduleInitType == SubmoduleInitType::COUNT)
-        {
-            ssLOG_ERROR("GitSource: Invalid submodule init type " << submoduleTypeString);
-            return false;
-        }
-    }
-    
-    return true;
-    
-    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
-}
-
 bool runcpp2::Data::GitSource::ParseYAML_Node(YAML::ConstNodePtr node)
 {
     std::vector<NodeRequirement> requirements =

@@ -30,7 +30,6 @@ namespace runcpp2
             std::unordered_map<PlatformName, ProfilesCommands> Build;
             std::unordered_map<PlatformName, FilesToCopyInfo> FilesToCopy;
             
-            bool ParseYAML_Node(ryml::ConstNodeRef node);
             bool ParseYAML_Node(YAML::ConstNodePtr node);
             
             std::string ToString(std::string indentation) const;

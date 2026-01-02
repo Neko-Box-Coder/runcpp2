@@ -13,9 +13,6 @@
 [submodule "System2"]
 	path = External/System2
 	url = https://github.com/Neko-Box-Coder/System2.git
-[submodule "rapidyaml"]
-	path = External/rapidyaml
-	url = https://github.com/biojppm/rapidyaml.git
 [submodule "dylib"]
 	path = External/dylib
 	url = https://github.com/martin-olivier/dylib.git

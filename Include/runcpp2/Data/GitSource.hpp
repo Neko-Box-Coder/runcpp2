@@ -18,7 +18,6 @@ namespace runcpp2
                 bool FullHistory = false;
                 SubmoduleInitType CurrentSubmoduleInitType = SubmoduleInitType::SHALLOW;
                 
-                bool ParseYAML_Node(ryml::ConstNodeRef node);
                 bool ParseYAML_Node(YAML::ConstNodePtr node);
                 
                 std::string ToString(std::string indentation) const;
