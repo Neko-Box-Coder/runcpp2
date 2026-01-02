@@ -72,10 +72,13 @@ int main(int argc, char** argv)
         ssTEST_OUTPUT_EXECUTION
         (
             std::string yamlOutput = dependencyLinkProperty.ToString("");
-            ryml::Tree outputTree = ryml::parse_in_arena(ryml::to_csubstr(yamlOutput));
+            roots = 
+                runcpp2::YAML::ParseYAML(   yamlOutput, 
+                                            resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
+            ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
             
             runcpp2::Data::DependencyLinkProperty parsedOutput;
-            parsedOutput.ParseYAML_Node(outputTree.rootref());
+            parsedOutput.ParseYAML_Node(roots.front());
         );
         
         ssTEST_OUTPUT_ASSERT(   "Parsed output should equal original", 

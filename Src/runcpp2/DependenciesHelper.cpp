@@ -2,6 +2,7 @@
 #include "runcpp2/PlatformUtil.hpp"
 #include "runcpp2/StringUtil.hpp"
 #include "runcpp2/ParseUtil.hpp"
+#include "runcpp2/DeferUtil.hpp"
 
 #include "ghc/filesystem.hpp"
 #include "ssLogger/ssLog.hpp"
@@ -996,9 +997,8 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
     return true;
 }
 
-
-bool runcpp2::HandleImport( Data::DependencyInfo& dependency,
-                            const ghc::filesystem::path& basePath)
+bool runcpp2::HandleImport_LibYaml( Data::DependencyInfo& dependency,
+                                    const ghc::filesystem::path& basePath)
 {
     ssLOG_FUNC_DEBUG();
     
@@ -1020,8 +1020,9 @@ bool runcpp2::HandleImport( Data::DependencyInfo& dependency,
     }
 
     //Parse the YAML file
-    ryml::NodeRef resolvedRootNode;
-    ryml::Tree importedTree;
+    YAML::ResourceHandle resource;
+    std::vector<YAML::NodePtr> rootNodes;
+    
     std::string content;
     {
         std::ifstream file(fullPath);
@@ -1033,13 +1034,17 @@ bool runcpp2::HandleImport( Data::DependencyInfo& dependency,
         std::stringstream buffer;
         buffer << file.rdbuf();
         content = buffer.str();
-
-        importedTree = ryml::parse_in_place(c4::to_substr(content));
-        
-        if(!runcpp2::ResolveYAML_Stream(importedTree, resolvedRootNode))
-            return false;
     }
 
+    rootNodes = YAML::ParseYAML(content, resource).DS_TRY_ACT(ssLOG_ERROR("Failed"); return false);
+    DEFER { YAML::FreeYAMLResource(resource); };
+    
+    if(rootNodes.empty())
+    {
+        ssLOG_ERROR("rootNodes.empty()");
+        return false;
+    }
+    
     //Store the imported sources as copies for traciblity if needed
     std::vector<std::shared_ptr<Data::DependencySource>> previouslyImportedSources;
     {
@@ -1052,28 +1057,40 @@ bool runcpp2::HandleImport( Data::DependencyInfo& dependency,
         currentImportSource->ImportedSources.clear();
         
         previouslyImportedSources.push_back(currentImportSource);
+        
+        //Reset the current dependency before we parse the import dependency
+        dependency = Data::DependencyInfo();
     }
     
-    //Reset the current dependency before we parse the import dependency
-    dependency = Data::DependencyInfo();
-    
-    //Parse the imported dependency
-    if(!dependency.ParseYAML_Node(resolvedRootNode))
+    for(int i = 0; i < rootNodes.size(); ++i)
     {
-        ssLOG_ERROR("Failed to parse imported dependency: " << fullPath);
+        YAML::ResolveAnchors(rootNodes[i]).DS_TRY_ACT(ssLOG_ERROR("Failed"); return false);
         
-        //Print the list of imported sources
-        for(int i = 0; i < previouslyImportedSources.size(); ++i)
+        //Parse the imported dependency
+        if(!dependency.ParseYAML_Node(rootNodes[i]))
         {
-            ssLOG_ERROR("Imported source[" << i << "]: " << 
-                        previouslyImportedSources.at(i)->ImportPath.string());
+            //If failed to parse document, fail only if we reach the last one
+            if(i != rootNodes.size() - 1)
+                continue;
+            
+            ssLOG_ERROR("Failed to parse imported dependency: " << fullPath);
+            
+            //Print the list of imported sources
+            for(int j = 0; j < previouslyImportedSources.size(); ++j)
+            {
+                ssLOG_ERROR("Imported source[" << j << "]: " << 
+                            previouslyImportedSources.at(j)->ImportPath.string());
+            }
+
+            return false;
         }
 
-        return false;
+        dependency.Source.ImportedSources = previouslyImportedSources;
+        return true;
     }
-
-    dependency.Source.ImportedSources = previouslyImportedSources;
-    return true;
+    
+    ssLOG_ERROR("This should never be reached");
+    return false;
 }
 
 bool runcpp2::ResolveImports(   Data::ScriptInfo& scriptInfo,
@@ -1110,7 +1127,7 @@ bool runcpp2::ResolveImports(   Data::ScriptInfo& scriptInfo,
             return false;
         
         //Parse the import file
-        if(!HandleImport(dependency, copyPath))
+        if(!HandleImport_LibYaml(dependency, copyPath))
             return false;
 
         //Check do we still have import path in the dependency. If so, we need to parse it again

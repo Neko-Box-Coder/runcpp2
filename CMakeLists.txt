@@ -98,10 +98,6 @@ message("RUNCPP2_PROJECT_VERSION: ${RUNCPP2_PROJECT_VERSION}")
 # endif()
 
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/ssLogger")
-
-set(RYML_DEFAULT_CALLBACK_USES_EXCEPTIONS ON CACHE BOOL "" FORCE)
-add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/rapidyaml")
-
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/filesystem")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/System2")
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/dylib")
@@ -214,7 +210,7 @@ set(RUNCPP2_SOURCE_FILES    "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/Profile.
 add_library(runcpp2Lib STATIC ${RUNCPP2_SOURCE_FILES})
 
 set(RUNCPP2_PRIVATE_LINK_LIBS ssLogger System2 CppOverride dylib)
-set(RUNCPP2_PUBLIC_LINK_LIBS ghc_filesystem ryml::ryml mpark_variant MacroPowerToys string-view-lite yaml DSResult)
+set(RUNCPP2_PUBLIC_LINK_LIBS ghc_filesystem mpark_variant MacroPowerToys string-view-lite yaml DSResult)
 
 target_include_directories(runcpp2Lib PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
 target_link_libraries(runcpp2Lib PRIVATE ${RUNCPP2_PRIVATE_LINK_LIBS})
