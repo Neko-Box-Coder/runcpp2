@@ -13,7 +13,7 @@ namespace runcpp2
     struct NodeRequirement
     {
         std::string Name;
-        YAML::NodeType NodeType_LibYaml;
+        YAML::NodeType NodeType;
         bool Required;
         bool Nullable;
         
@@ -24,25 +24,25 @@ namespace runcpp2
                         bool nullable);
     };
     
-    bool CheckNodeRequirement_LibYaml(  YAML::ConstNodePtr parentNode, 
-                                        const std::string childName, 
-                                        YAML::NodeType childType,
-                                        bool required,
-                                        bool nullable);
+    bool CheckNodeRequirement(  YAML::ConstNodePtr parentNode, 
+                                const std::string childName, 
+                                YAML::NodeType childType,
+                                bool required,
+                                bool nullable);
     
-    bool CheckNodeRequirements_LibYaml( YAML::ConstNodePtr node, 
-                                        const std::vector<NodeRequirement>& requirements);
+    bool CheckNodeRequirements( YAML::ConstNodePtr node, 
+                                const std::vector<NodeRequirement>& requirements);
 
 
     bool GetParsableInfo(const std::string& contentToParse, std::string& outParsableInfo);
     
-    bool MergeYAML_NodeChildren_LibYaml(YAML::NodePtr nodeToMergeFrom, 
+    bool MergeYAML_NodeChildren(YAML::NodePtr nodeToMergeFrom, 
                                         YAML::NodePtr nodeToMergeTo,
                                         YAML::ResourceHandle& yamlResouce);
     
-    bool ExistAndHasChild_LibYaml(  YAML::ConstNodePtr node, 
-                                    const std::string& childName,
-                                    bool nullable = false);
+    bool ExistAndHasChild(  YAML::ConstNodePtr node, 
+                            const std::string& childName,
+                            bool nullable = false);
     
     
     std::string GetEscapedYAMLString(const std::string& input);
@@ -50,27 +50,27 @@ namespace runcpp2
     bool ParseIncludes(const std::string& line, std::string& outIncludePath);
 
     template<typename T>
-    bool ParsePlatformProfileMap_LibYaml(   YAML::ConstNodePtr node, 
-                                            const std::string& key,
-                                            std::unordered_map<PlatformName, T>& result,
-                                            const std::string& errorMessage)
+    bool ParsePlatformProfileMap(   YAML::ConstNodePtr node, 
+                                    const std::string& key,
+                                    std::unordered_map<PlatformName, T>& result,
+                                    const std::string& errorMessage)
     {
-        if(ExistAndHasChild_LibYaml(node, key))
+        if(ExistAndHasChild(node, key))
         {
             YAML::ConstNodePtr mapNode = node->GetMapValueNode(key);
             
             //If we skip platform profile
             T defaultValue;
-            if(defaultValue.IsYAML_NodeParsableAsDefault_LibYaml(mapNode))
+            if(defaultValue.IsYAML_NodeParsableAsDefault(mapNode))
             {
-                if(defaultValue.ParseYAML_NodeWithProfile_LibYaml(mapNode, "DefaultProfile"))
+                if(defaultValue.ParseYAML_NodeWithProfile(mapNode, "DefaultProfile"))
                     result["DefaultPlatform"] = defaultValue;
                 else
                     return false;
             }
             else
             {
-                if(!CheckNodeRequirement_LibYaml(node, key, YAML::NodeType::Map, false, true))
+                if(!CheckNodeRequirement(node, key, YAML::NodeType::Map, false, true))
                     return false;
                 
                 for(int i = 0; i < mapNode->GetChildrenCount(); ++i)

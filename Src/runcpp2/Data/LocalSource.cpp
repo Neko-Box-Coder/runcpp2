@@ -65,14 +65,14 @@ bool runcpp2::Data::LocalSource::ParseYAML_Node(YAML::ConstNodePtr node)
         NodeRequirement("Path", YAML::NodeType::Scalar, true, false)
     };
     
-    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    if(!CheckNodeRequirements(node, requirements))
     {
         ssLOG_ERROR("LocalSource: Failed to meet requirements");
         return false;
     }
     
     Path = node->GetMapValueScalar<std::string>("Path").DS_TRY_ACT(return false);
-    if(ExistAndHasChild_LibYaml(node, "CopyMode"))
+    if(ExistAndHasChild(node, "CopyMode"))
     {
         bool success = false;
         CopyMode = StringToCopyMode(node->GetMapValueScalar<std::string>("CopyMode").DefaultOr(), 

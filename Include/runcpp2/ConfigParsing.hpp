@@ -20,11 +20,7 @@ namespace runcpp2
                         std::string& outPreferredProfile,
                         const std::string& customConfigPath = "");
     
-    bool ParseScriptInfo(   const std::string& scriptInfo, 
-                            Data::ScriptInfo& outScriptInfo);
-    
-    bool ParseScriptInfo_LibYaml(   const std::string& scriptInfo, 
-                                    Data::ScriptInfo& outScriptInfo);
+    bool ParseScriptInfo(const std::string& scriptInfo, Data::ScriptInfo& outScriptInfo);
 }
 
 #endif

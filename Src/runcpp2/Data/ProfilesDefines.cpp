@@ -17,15 +17,15 @@ bool runcpp2::Data::ProfilesDefines::ParseYAML_Node(YAML::ConstNodePtr node)
         DS_UNWRAP_DECL_ACT( ProfileName profile, 
                             node->GetMapKeyScalarAt<std::string>(i), 
                             ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
-        if(!ParseYAML_NodeWithProfile_LibYaml(node->GetMapValueNodeAt(i), profile))
+        if(!ParseYAML_NodeWithProfile(node->GetMapValueNodeAt(i), profile))
             return false;
     }
     
     return true;
 }
 
-bool runcpp2::Data::ProfilesDefines::ParseYAML_NodeWithProfile_LibYaml( YAML::ConstNodePtr node, 
-                                                                        ProfileName profile)
+bool runcpp2::Data::ProfilesDefines::ParseYAML_NodeWithProfile( YAML::ConstNodePtr node, 
+                                                                ProfileName profile)
 {
     ssLOG_FUNC_DEBUG();
     
@@ -62,7 +62,7 @@ bool runcpp2::Data::ProfilesDefines::ParseYAML_NodeWithProfile_LibYaml( YAML::Co
 }
 
 bool 
-runcpp2::Data::ProfilesDefines::IsYAML_NodeParsableAsDefault_LibYaml(YAML::ConstNodePtr node) const
+runcpp2::Data::ProfilesDefines::IsYAML_NodeParsableAsDefault(YAML::ConstNodePtr node) const
 {
     ssLOG_FUNC_DEBUG();
     return node->IsSequence();

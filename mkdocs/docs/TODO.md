@@ -6,6 +6,7 @@
 ### Nightly
 - Add version for default user config and prompt for update
 - Rename "OtherFilesToBeCompiled" to "SourceFiles"
+- Migrate to libyaml
 
 ### v0.3.1
 - Check last run is shared lib or executable. Reset cache when necessary if different type
@@ -31,7 +32,6 @@
 ### v0.4.0
 - Allow runcpp2 to be library for scriptable pipeline
 - Add more default profiles
-- Migrate to libyaml
 - Ability to compile runcpp2 as single cpp, to ditch cmake
 - Migrate to DSResult and remove ssTest
 

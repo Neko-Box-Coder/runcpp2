@@ -11,9 +11,9 @@ bool runcpp2::Data::FilesToCopyInfo::ParseYAML_Node(YAML::ConstNodePtr node)
     }
     
     //If we skip platform profile
-    if(IsYAML_NodeParsableAsDefault_LibYaml(node))
+    if(IsYAML_NodeParsableAsDefault(node))
     {
-        if(!ParseYAML_NodeWithProfile_LibYaml(node, "DefaultProfile"))
+        if(!ParseYAML_NodeWithProfile(node, "DefaultProfile"))
             return false;
     }
     else
@@ -24,7 +24,7 @@ bool runcpp2::Data::FilesToCopyInfo::ParseYAML_Node(YAML::ConstNodePtr node)
                                 node->GetMapKeyScalarAt<std::string>(i), 
                                 ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
             
-            if(!ParseYAML_NodeWithProfile_LibYaml(node->GetMapValueNodeAt(i), profile))
+            if(!ParseYAML_NodeWithProfile(node->GetMapValueNodeAt(i), profile))
                 return false;
         }
     }
@@ -32,7 +32,7 @@ bool runcpp2::Data::FilesToCopyInfo::ParseYAML_Node(YAML::ConstNodePtr node)
     return true;
 }
 
-bool runcpp2::Data::FilesToCopyInfo::ParseYAML_NodeWithProfile_LibYaml( YAML::ConstNodePtr node, 
+bool runcpp2::Data::FilesToCopyInfo::ParseYAML_NodeWithProfile( YAML::ConstNodePtr node, 
                                                                         ProfileName profile)
 {
     ssLOG_FUNC_DEBUG();
@@ -49,7 +49,7 @@ bool runcpp2::Data::FilesToCopyInfo::ParseYAML_NodeWithProfile_LibYaml( YAML::Co
 }
 
 bool 
-runcpp2::Data::FilesToCopyInfo::IsYAML_NodeParsableAsDefault_LibYaml(YAML::ConstNodePtr node) const
+runcpp2::Data::FilesToCopyInfo::IsYAML_NodeParsableAsDefault(YAML::ConstNodePtr node) const
 {
     ssLOG_FUNC_DEBUG();
     return node->IsSequence();

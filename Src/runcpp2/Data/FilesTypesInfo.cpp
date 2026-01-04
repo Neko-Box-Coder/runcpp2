@@ -15,7 +15,7 @@ bool runcpp2::Data::FilesTypesInfo::ParseYAML_Node(YAML::ConstNodePtr node)
         NodeRequirement("DebugSymbolFile", YAML::NodeType::Map, false, false),
     };
 
-    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    if(!CheckNodeRequirements(node, requirements))
     {
         ssLOG_ERROR("FilesTypesInfo: Failed to meet requirements");
         return false;
@@ -49,7 +49,7 @@ bool runcpp2::Data::FilesTypesInfo::ParseYAML_Node(YAML::ConstNodePtr node)
         return false;
     }
     
-    if(ExistAndHasChild_LibYaml(node, "DebugSymbolFile"))
+    if(ExistAndHasChild(node, "DebugSymbolFile"))
     {
         YAML::ConstNodePtr debugSymbolFileNode = node->GetMapValueNode("DebugSymbolFile");
         if(!DebugSymbolFile.ParseYAML_Node(debugSymbolFileNode))

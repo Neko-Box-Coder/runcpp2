@@ -16,15 +16,15 @@ bool runcpp2::Data::ProfilesCommands::ParseYAML_Node(YAML::ConstNodePtr node)
     for(int i = 0; i < node->GetChildrenCount(); ++i)
     {
         ProfileName profile = node->GetMapKeyScalarAt<ProfileName>(i).DS_TRY_ACT(return false);
-        if(!ParseYAML_NodeWithProfile_LibYaml(node->GetMapValueNodeAt(i), profile))
+        if(!ParseYAML_NodeWithProfile(node->GetMapValueNodeAt(i), profile))
             return false;
     }
     
     return true;
 }
 
-bool runcpp2::Data::ProfilesCommands::ParseYAML_NodeWithProfile_LibYaml(YAML::ConstNodePtr node, 
-                                                                        ProfileName profile)
+bool runcpp2::Data::ProfilesCommands::ParseYAML_NodeWithProfile(YAML::ConstNodePtr node, 
+                                                                ProfileName profile)
 {
     ssLOG_FUNC_DEBUG();
     
@@ -44,7 +44,7 @@ bool runcpp2::Data::ProfilesCommands::ParseYAML_NodeWithProfile_LibYaml(YAML::Co
 }
 
 bool 
-runcpp2::Data::ProfilesCommands::IsYAML_NodeParsableAsDefault_LibYaml(YAML::ConstNodePtr node) const
+runcpp2::Data::ProfilesCommands::IsYAML_NodeParsableAsDefault(YAML::ConstNodePtr node) const
 {
     return node->IsSequence();
 }

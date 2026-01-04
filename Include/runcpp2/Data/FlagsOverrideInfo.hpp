@@ -16,7 +16,7 @@ namespace runcpp2
                 
                 bool ParseYAML_Node(YAML::ConstNodePtr node);
                 
-                bool IsYAML_NodeParsableAsDefault_LibYaml(YAML::ConstNodePtr node) const;
+                bool IsYAML_NodeParsableAsDefault(YAML::ConstNodePtr node) const;
                 
                 std::string ToString(std::string indentation) const;
                 bool Equals(const FlagsOverrideInfo& other) const;

@@ -997,8 +997,7 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
     return true;
 }
 
-bool runcpp2::HandleImport_LibYaml( Data::DependencyInfo& dependency,
-                                    const ghc::filesystem::path& basePath)
+bool runcpp2::HandleImport(Data::DependencyInfo& dependency, const ghc::filesystem::path& basePath)
 {
     ssLOG_FUNC_DEBUG();
     
@@ -1127,7 +1126,7 @@ bool runcpp2::ResolveImports(   Data::ScriptInfo& scriptInfo,
             return false;
         
         //Parse the import file
-        if(!HandleImport_LibYaml(dependency, copyPath))
+        if(!HandleImport(dependency, copyPath))
             return false;
 
         //Check do we still have import path in the dependency. If so, we need to parse it again

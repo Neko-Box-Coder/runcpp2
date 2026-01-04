@@ -19,8 +19,8 @@ namespace runcpp2
                 std::unordered_map<ProfileName, std::vector<std::string>> CommandSteps;
                 
                 bool ParseYAML_Node(YAML::ConstNodePtr node);
-                bool ParseYAML_NodeWithProfile_LibYaml(YAML::ConstNodePtr node, ProfileName profile);
-                bool IsYAML_NodeParsableAsDefault_LibYaml(YAML::ConstNodePtr node) const;
+                bool ParseYAML_NodeWithProfile(YAML::ConstNodePtr node, ProfileName profile);
+                bool IsYAML_NodeParsableAsDefault(YAML::ConstNodePtr node) const;
                 
                 std::string ToString(std::string indentation) const;
                 bool Equals(const ProfilesCommands& other) const;

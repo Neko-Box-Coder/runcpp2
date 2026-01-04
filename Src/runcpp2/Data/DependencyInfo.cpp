@@ -8,14 +8,14 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(YAML::ConstNodePtr node)
     //If import is needed, we only need to parse the Source section
     do
     {
-        if(!ExistAndHasChild_LibYaml(node, "Source"))
+        if(!ExistAndHasChild(node, "Source"))
         {
             ssLOG_ERROR("DependencyInfo: Missing Source");
             return false;
         }
 
         YAML::ConstNodePtr sourceNode = node->GetMapValueNode("Source");
-        if(!ExistAndHasChild_LibYaml(sourceNode, "ImportPath"))
+        if(!ExistAndHasChild(sourceNode, "ImportPath"))
             break;
 
         if(!Source.ParseYAML_Node(sourceNode))
@@ -47,7 +47,7 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(YAML::ConstNodePtr node)
         //FilesToCopy can be platform profile map or sequence of paths, handle later
     };
     
-    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    if(!CheckNodeRequirements(node, requirements))
     {
         ssLOG_ERROR("DependencyInfo: Failed to meet requirements");
         return false;
@@ -87,7 +87,7 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(YAML::ConstNodePtr node)
         return false;
     }
     
-    if(ExistAndHasChild_LibYaml(node, "IncludePaths"))
+    if(ExistAndHasChild(node, "IncludePaths"))
     {
         YAML::ConstNodePtr includePathsNode = node->GetMapValueNode("IncludePaths");
         
@@ -99,12 +99,12 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(YAML::ConstNodePtr node)
         }
     }
     
-    if(ExistAndHasChild_LibYaml(node, "LinkProperties"))
+    if(ExistAndHasChild(node, "LinkProperties"))
     {
-        if(!ParsePlatformProfileMap_LibYaml<DependencyLinkProperty>(node, 
-                                                                    "LinkProperties", 
-                                                                    LinkProperties, 
-                                                                    "LinkProperties"))
+        if(!ParsePlatformProfileMap<DependencyLinkProperty>(node, 
+                                                            "LinkProperties", 
+                                                            LinkProperties, 
+                                                            "LinkProperties"))
         {
             return false;
         }
@@ -116,22 +116,17 @@ bool runcpp2::Data::DependencyInfo::ParseYAML_Node(YAML::ConstNodePtr node)
         return false;
     }
 
-    if(!ParsePlatformProfileMap_LibYaml<ProfilesCommands>(node, "Setup", Setup, "Setup"))
+    if(!ParsePlatformProfileMap<ProfilesCommands>(node, "Setup", Setup, "Setup"))
         return false;
 
-    if(!ParsePlatformProfileMap_LibYaml<ProfilesCommands>(node, "Cleanup", Cleanup, "Cleanup"))
+    if(!ParsePlatformProfileMap<ProfilesCommands>(node, "Cleanup", Cleanup, "Cleanup"))
         return false;
 
-    if(!ParsePlatformProfileMap_LibYaml<ProfilesCommands>(node, "Build", Build, "Build"))
+    if(!ParsePlatformProfileMap<ProfilesCommands>(node, "Build", Build, "Build"))
         return false;
 
-    if(!ParsePlatformProfileMap_LibYaml<FilesToCopyInfo>(   node, 
-                                                            "FilesToCopy", 
-                                                            FilesToCopy, 
-                                                            "FilesToCopy"))
-    {
+    if(!ParsePlatformProfileMap<FilesToCopyInfo>(node, "FilesToCopy", FilesToCopy, "FilesToCopy"))
         return false;
-    }
 
     return true;
 }

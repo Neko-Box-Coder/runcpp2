@@ -13,7 +13,7 @@ bool runcpp2::Data::GitSource::ParseYAML_Node(YAML::ConstNodePtr node)
         NodeRequirement("SubmoduleInitType", YAML::NodeType::Scalar, false, false)
     };
     
-    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    if(!CheckNodeRequirements(node, requirements))
     {
         ssLOG_ERROR("GitSource: Failed to meet requirements");
         return false;
@@ -21,15 +21,15 @@ bool runcpp2::Data::GitSource::ParseYAML_Node(YAML::ConstNodePtr node)
     
     URL = node->GetMapValueScalar<std::string>("URL").value();
     
-    if(ExistAndHasChild_LibYaml(node, "Branch"))
+    if(ExistAndHasChild(node, "Branch"))
     {
         Branch = node->GetMapValueScalar<std::string>("Branch").DS_TRY_ACT(return false);
     }
-    if(ExistAndHasChild_LibYaml(node, "FullHistory"))
+    if(ExistAndHasChild(node, "FullHistory"))
     {
         FullHistory = node->GetMapValueScalar<bool>("FullHistory").DS_TRY_ACT(return false);
     }
-    if(ExistAndHasChild_LibYaml(node, "SubmoduleInitType"))
+    if(ExistAndHasChild(node, "SubmoduleInitType"))
     {
         std::string submoduleTypeString = 
             node->GetMapValueScalar<std::string>("SubmoduleInitType").value();

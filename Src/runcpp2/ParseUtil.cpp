@@ -5,7 +5,7 @@
 #include <unordered_set>
 
 runcpp2::NodeRequirement::NodeRequirement() :   Name(""),
-                                                NodeType_LibYaml(YAML::NodeType::Scalar),
+                                                NodeType(YAML::NodeType::Scalar),
                                                 Required(false),
                                                 Nullable(true)
 {
@@ -15,16 +15,16 @@ runcpp2::NodeRequirement::NodeRequirement(  const std::string& name,
                                             YAML::NodeType nodeType, 
                                             bool required,
                                             bool nullable) :    Name(name), 
-                                                                NodeType_LibYaml(nodeType),
+                                                                NodeType(nodeType),
                                                                 Required(required), 
                                                                 Nullable(nullable)
 {}
 
-bool runcpp2::CheckNodeRequirement_LibYaml( YAML::ConstNodePtr parentNode, 
-                                            const std::string childName, 
-                                            YAML::NodeType childType,
-                                            bool required,
-                                            bool nullable)
+bool runcpp2::CheckNodeRequirement( YAML::ConstNodePtr parentNode, 
+                                    const std::string childName, 
+                                    YAML::NodeType childType,
+                                    bool required,
+                                    bool nullable)
 {
     ssLOG_FUNC_DEBUG();
     
@@ -35,7 +35,7 @@ bool runcpp2::CheckNodeRequirement_LibYaml( YAML::ConstNodePtr parentNode,
     }
     
     ssLOG_DEBUG("Checking: " << childName << " exists");
-    if(!ExistAndHasChild_LibYaml(parentNode, childName, nullable))
+    if(!ExistAndHasChild(parentNode, childName, nullable))
     {
         if(required)
         {
@@ -68,8 +68,8 @@ bool runcpp2::CheckNodeRequirement_LibYaml( YAML::ConstNodePtr parentNode,
     return true;
 }
     
-bool runcpp2::CheckNodeRequirements_LibYaml(YAML::ConstNodePtr node, 
-                                            const std::vector<NodeRequirement>& requirements)
+bool runcpp2::CheckNodeRequirements(YAML::ConstNodePtr node, 
+                                    const std::vector<NodeRequirement>& requirements)
 {
     ssLOG_FUNC_DEBUG();
     
@@ -105,11 +105,11 @@ bool runcpp2::CheckNodeRequirements_LibYaml(YAML::ConstNodePtr node,
     
     for(int i = 0; i < requirements.size(); ++i)
     {
-        if(!CheckNodeRequirement_LibYaml(   node, 
-                                            requirements[i].Name, 
-                                            requirements[i].NodeType_LibYaml, 
-                                            requirements[i].Required, 
-                                            requirements[i].Nullable))
+        if(!CheckNodeRequirement(   node, 
+                                    requirements[i].Name, 
+                                    requirements[i].NodeType, 
+                                    requirements[i].Required, 
+                                    requirements[i].Nullable))
         {
             return false;
         }
@@ -287,9 +287,9 @@ bool runcpp2::GetParsableInfo(const std::string& contentToParse, std::string& ou
     return true;
 }
 
-bool runcpp2::MergeYAML_NodeChildren_LibYaml(   YAML::NodePtr nodeToMergeFrom, 
-                                                YAML::NodePtr nodeToMergeTo,
-                                                YAML::ResourceHandle& yamlResouce)
+bool runcpp2::MergeYAML_NodeChildren(   YAML::NodePtr nodeToMergeFrom, 
+                                        YAML::NodePtr nodeToMergeTo,
+                                        YAML::ResourceHandle& yamlResouce)
 {
     ssLOG_FUNC_DEBUG();
     
@@ -303,7 +303,7 @@ bool runcpp2::MergeYAML_NodeChildren_LibYaml(   YAML::NodePtr nodeToMergeFrom,
     {
         std::string key = nodeToMergeFrom->GetMapKeyScalarAt<std::string>(i).DS_TRY_ACT(return false);
         
-        if(!ExistAndHasChild_LibYaml(nodeToMergeTo, key, true))
+        if(!ExistAndHasChild(nodeToMergeTo, key, true))
         {
             YAML::NodePtr fromNode = nodeToMergeFrom->GetMapValueNodeAt(i);
             fromNode->CloneToMapChild(key, nodeToMergeTo, yamlResouce).DS_TRY_ACT(return false);
@@ -313,9 +313,9 @@ bool runcpp2::MergeYAML_NodeChildren_LibYaml(   YAML::NodePtr nodeToMergeFrom,
     return true;
 }
 
-bool runcpp2::ExistAndHasChild_LibYaml( runcpp2::YAML::ConstNodePtr node, 
-                                        const std::string& childName,
-                                        bool nullable)
+bool runcpp2::ExistAndHasChild( runcpp2::YAML::ConstNodePtr node, 
+                                const std::string& childName,
+                                bool nullable)
 {
     ssLOG_FUNC_DEBUG();
     
