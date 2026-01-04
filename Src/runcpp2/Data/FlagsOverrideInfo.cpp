@@ -13,18 +13,18 @@ bool runcpp2::Data::FlagsOverrideInfo::ParseYAML_Node(YAML::ConstNodePtr node)
         NodeRequirement("Append", YAML::NodeType::Scalar, false, true)
     };
     
-    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    if(!CheckNodeRequirements(node, requirements))
     {
         ssLOG_ERROR("FlagsOverrideInfo: Failed to meet requirements");
         return false;
     }
     
-    if(ExistAndHasChild_LibYaml(node, "Remove"))
+    if(ExistAndHasChild(node, "Remove"))
     {
         Remove = node->GetMapValueScalar<std::string>("Remove").DS_TRY_ACT(return false);
     }
     
-    if(ExistAndHasChild_LibYaml(node, "Append"))
+    if(ExistAndHasChild(node, "Append"))
     {
         Append = node->GetMapValueScalar<std::string>("Append").DS_TRY_ACT(return false);
     }
@@ -32,8 +32,7 @@ bool runcpp2::Data::FlagsOverrideInfo::ParseYAML_Node(YAML::ConstNodePtr node)
     return true;
 }
 
-bool 
-runcpp2::Data::FlagsOverrideInfo::IsYAML_NodeParsableAsDefault_LibYaml(YAML::ConstNodePtr node) const
+bool runcpp2::Data::FlagsOverrideInfo::IsYAML_NodeParsableAsDefault(YAML::ConstNodePtr node) const
 {
     ssLOG_FUNC_DEBUG();
     
@@ -43,7 +42,7 @@ runcpp2::Data::FlagsOverrideInfo::IsYAML_NodeParsableAsDefault_LibYaml(YAML::Con
         return false;
     }
     
-    if(ExistAndHasChild_LibYaml(node, "Remove") || ExistAndHasChild_LibYaml(node, "Append"))
+    if(ExistAndHasChild(node, "Remove") || ExistAndHasChild(node, "Append"))
     {
         std::vector<NodeRequirement> requirements =
         {
@@ -51,7 +50,7 @@ runcpp2::Data::FlagsOverrideInfo::IsYAML_NodeParsableAsDefault_LibYaml(YAML::Con
             NodeRequirement("Append", YAML::NodeType::Scalar, false, true)
         };
         
-        if(!CheckNodeRequirements_LibYaml(node, requirements))
+        if(!CheckNodeRequirements(node, requirements))
             return false;
         
         return true;

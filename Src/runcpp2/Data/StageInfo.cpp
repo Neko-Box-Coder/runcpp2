@@ -8,7 +8,7 @@ namespace
 {
     using Runcpp2OutputTypeInfo = runcpp2::Data::StageInfo::OutputTypeInfo;
     
-    bool ParseOutputTypes_LibYaml(  const std::string& subNodeKey,
+    bool ParseOutputTypes(  const std::string& subNodeKey,
                                     runcpp2::YAML::ConstNodePtr outputTypesSubNode, 
                                     std::vector<runcpp2::NodeRequirement> requirements, 
                                     std::unordered_map< PlatformName, 
@@ -25,7 +25,7 @@ namespace
             YAML::ConstNodePtr currentPlatformNode = outputTypesSubNode->GetMapValueNodeAt(i);
             std::string platformName = outputTypesSubNode   ->GetMapKeyScalarAt<std::string>(i)
                                                             .DS_TRY_ACT(return false);
-            if(!CheckNodeRequirements_LibYaml(currentPlatformNode, requirements))
+            if(!CheckNodeRequirements(currentPlatformNode, requirements))
             {
                 ssLOG_ERROR("Failed to parse outputTypesSubNode in " << subNodeName << 
                             " for platform " << platformName);
@@ -40,7 +40,7 @@ namespace
                                     .DS_TRY_ACT(return false);
             
             //RunParts
-            if(!ExistAndHasChild_LibYaml(currentPlatformNode, "RunParts"))
+            if(!ExistAndHasChild(currentPlatformNode, "RunParts"))
             {
                 ssLOG_ERROR("Failed to parse RunParts");
                 return false;
@@ -57,7 +57,7 @@ namespace
                     NodeRequirement("CommandPart", YAML::NodeType::Scalar, true, false)
                 };
                 
-                if(!CheckNodeRequirements_LibYaml(currentPartNode, currentRunPartRequirements))
+                if(!CheckNodeRequirements(currentPartNode, currentRunPartRequirements))
                 {
                     ssLOG_ERROR("Failed to parse RunPart at index " << j << " for " << platformName);
                     return false;
@@ -87,7 +87,7 @@ namespace
             }
             
             //Setup
-            if(ExistAndHasChild_LibYaml(currentPlatformNode, "Setup"))
+            if(ExistAndHasChild(currentPlatformNode, "Setup"))
             {
                 YAML::ConstNodePtr setupNode = currentPlatformNode->GetMapValueNode("Setup");
                 for(int j = 0; j < setupNode->GetChildrenCount(); ++j)
@@ -99,7 +99,7 @@ namespace
             }
             
             //Cleanup
-            if(ExistAndHasChild_LibYaml(currentPlatformNode, "Cleanup"))
+            if(ExistAndHasChild(currentPlatformNode, "Cleanup"))
             {
                 YAML::ConstNodePtr cleanupNode = currentPlatformNode->GetMapValueNode("Cleanup");
                 for(int j = 0; j < cleanupNode->GetChildrenCount(); ++j)
@@ -561,13 +561,13 @@ bool runcpp2::Data::StageInfo::ParseYAML_Node(  YAML::ConstNodePtr node,
         NodeRequirement(outputTypeKeyName, YAML::NodeType::Map, true, false)
     };
 
-    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    if(!CheckNodeRequirements(node, requirements))
     {
         ssLOG_ERROR("StageInfo: Failed to meet requirements");
         return false;
     }
 
-    if(ExistAndHasChild_LibYaml(node, "PreRun"))
+    if(ExistAndHasChild(node, "PreRun"))
     {
         YAML::ConstNodePtr preRunNode = node->GetMapValueNode("PreRun");
         for(int i = 0; i < preRunNode->GetChildrenCount(); ++i)
@@ -594,7 +594,7 @@ bool runcpp2::Data::StageInfo::ParseYAML_Node(  YAML::ConstNodePtr node,
     
     //OutputTypes
     {
-        if(!ExistAndHasChild_LibYaml(node, outputTypeKeyName))
+        if(!ExistAndHasChild(node, outputTypeKeyName))
         {
             ssLOG_ERROR("Failed to parse " << outputTypeKeyName);
             return false;
@@ -609,7 +609,7 @@ bool runcpp2::Data::StageInfo::ParseYAML_Node(  YAML::ConstNodePtr node,
             NodeRequirement("Shared", YAML::NodeType::Map, true, false)
         };
         
-        if(!CheckNodeRequirements_LibYaml(outputTypeNode, outputTypeRequirements))
+        if(!CheckNodeRequirements(outputTypeNode, outputTypeRequirements))
         {
             ssLOG_ERROR("Failed to parse " << outputTypeKeyName);
             return false;
@@ -626,40 +626,30 @@ bool runcpp2::Data::StageInfo::ParseYAML_Node(  YAML::ConstNodePtr node,
         };
         
         YAML::ConstNodePtr executableNode = outputTypeNode->GetMapValueNode("Executable");
-        if(!ParseOutputTypes_LibYaml(   "Executable", 
-                                        executableNode, 
-                                        outputTypeInfoRequirements, 
-                                        OutputTypes.Executable))
+        if(!ParseOutputTypes(   "Executable", 
+                                executableNode, 
+                                outputTypeInfoRequirements, 
+                                OutputTypes.Executable))
         {
             return false;
         }
         
         YAML::ConstNodePtr executableSharedNode = outputTypeNode->GetMapValueNode("ExecutableShared");
-        if(!ParseOutputTypes_LibYaml(   "ExecutableShared",
-                                        executableSharedNode, 
-                                        outputTypeInfoRequirements, 
-                                        OutputTypes.ExecutableShared))
+        if(!ParseOutputTypes(   "ExecutableShared",
+                                executableSharedNode, 
+                                outputTypeInfoRequirements, 
+                                OutputTypes.ExecutableShared))
         {
             return false;
         }
         
         YAML::ConstNodePtr staticNode = outputTypeNode->GetMapValueNode("Static");
-        if(!ParseOutputTypes_LibYaml(   "Static",
-                                        staticNode, 
-                                        outputTypeInfoRequirements, 
-                                        OutputTypes.Static))
-        {
+        if(!ParseOutputTypes("Static", staticNode, outputTypeInfoRequirements, OutputTypes.Static))
             return false;
-        }
         
         YAML::ConstNodePtr sharedNode = outputTypeNode->GetMapValueNode("Shared");
-        if(!ParseOutputTypes_LibYaml(   "Shared", 
-                                        sharedNode, 
-                                        outputTypeInfoRequirements, 
-                                        OutputTypes.Shared))
-        {
+        if(!ParseOutputTypes("Shared", sharedNode, outputTypeInfoRequirements, OutputTypes.Shared))
             return false;
-        }
     }
     
     return true;

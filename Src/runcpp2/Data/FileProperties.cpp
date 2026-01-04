@@ -11,13 +11,13 @@ bool runcpp2::Data::FileProperties::ParseYAML_Node(YAML::ConstNodePtr node)
         NodeRequirement("Extension", YAML::NodeType::Map, true, false)
     };
     
-    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    if(!CheckNodeRequirements(node, requirements))
     {
         ssLOG_ERROR("File Properties: Failed to meet requirements");
         return false;
     }
     
-    if(ExistAndHasChild_LibYaml(node, "Prefix"))
+    if(ExistAndHasChild(node, "Prefix"))
     {
         YAML::ConstNodePtr prefixNode = node->GetMapValueNode("Prefix");
         for(int i = 0; i < prefixNode->GetChildrenCount(); ++i)
@@ -29,7 +29,7 @@ bool runcpp2::Data::FileProperties::ParseYAML_Node(YAML::ConstNodePtr node)
         }
     }
     
-    if(ExistAndHasChild_LibYaml(node, "Extension"))
+    if(ExistAndHasChild(node, "Extension"))
     {
         YAML::ConstNodePtr extensionNode = node->GetMapValueNode("Extension");
         for(int i = 0; i < extensionNode->GetChildrenCount(); ++i)

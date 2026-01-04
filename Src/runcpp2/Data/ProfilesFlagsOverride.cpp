@@ -15,7 +15,7 @@ bool runcpp2::Data::ProfilesFlagsOverride::ParseYAML_Node(YAML::ConstNodePtr nod
     for(int i = 0; i < node->GetChildrenCount(); ++i)
     {
         ProfileName profile = node->GetMapKeyScalarAt<ProfileName>(i).DS_TRY_ACT(return false);
-        if(!ParseYAML_NodeWithProfile_LibYaml(node->GetMapValueNodeAt(i), profile))
+        if(!ParseYAML_NodeWithProfile(node->GetMapValueNodeAt(i), profile))
             return false;
     }
     
@@ -23,8 +23,8 @@ bool runcpp2::Data::ProfilesFlagsOverride::ParseYAML_Node(YAML::ConstNodePtr nod
 }
 
 bool 
-runcpp2::Data::ProfilesFlagsOverride::ParseYAML_NodeWithProfile_LibYaml(YAML::ConstNodePtr node, 
-                                                                        ProfileName profile)
+runcpp2::Data::ProfilesFlagsOverride::ParseYAML_NodeWithProfile(YAML::ConstNodePtr node, 
+                                                                ProfileName profile)
 {
     ssLOG_FUNC_DEBUG();
     
@@ -49,11 +49,11 @@ runcpp2::Data::ProfilesFlagsOverride::ParseYAML_NodeWithProfile_LibYaml(YAML::Co
 }
 
 bool 
-runcpp2::Data::ProfilesFlagsOverride::IsYAML_NodeParsableAsDefault_LibYaml(YAML::ConstNodePtr node) const
+runcpp2::Data::ProfilesFlagsOverride::IsYAML_NodeParsableAsDefault(YAML::ConstNodePtr node) const
 {
     ssLOG_FUNC_DEBUG();
     FlagsOverrideInfo flags;
-    return flags.IsYAML_NodeParsableAsDefault_LibYaml(node);
+    return flags.IsYAML_NodeParsableAsDefault(node);
 }
 
 std::string runcpp2::Data::ProfilesFlagsOverride::ToString(std::string indentation) const

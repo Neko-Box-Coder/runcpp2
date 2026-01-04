@@ -47,8 +47,7 @@ namespace runcpp2
                                     const Data::Profile& profile,
                                     std::vector<std::string>& outBinariesPaths);
 
-    bool HandleImport_LibYaml(  Data::DependencyInfo& dependency,
-                                const ghc::filesystem::path& basePath);
+    bool HandleImport(Data::DependencyInfo& dependency, const ghc::filesystem::path& basePath);
 
     bool ResolveImports(Data::ScriptInfo& scriptInfo,
                         const ghc::filesystem::path& scriptPath,

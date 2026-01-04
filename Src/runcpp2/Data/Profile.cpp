@@ -31,7 +31,7 @@ bool runcpp2::Data::Profile::ParseYAML_Node(YAML::ConstNodePtr profileNode)
         NodeRequirement("Linker", YAML::NodeType::Map, true, false)
     };
     
-    if(!CheckNodeRequirements_LibYaml(profileNode, requirements))
+    if(!CheckNodeRequirements(profileNode, requirements))
     {
         ssLOG_ERROR("Compiler profile: Failed to meet requirements");
         return false;
@@ -39,7 +39,7 @@ bool runcpp2::Data::Profile::ParseYAML_Node(YAML::ConstNodePtr profileNode)
     
     Name = profileNode->GetMapValueScalar<std::string>("Name").DS_TRY_ACT(return false);
     
-    if(ExistAndHasChild_LibYaml(profileNode, "NameAliases"))
+    if(ExistAndHasChild(profileNode, "NameAliases"))
     {
         YAML::ConstNodePtr nameAliasesNode = profileNode->GetMapValueNode("NameAliases");
         for(int i = 0; i < nameAliasesNode->GetChildrenCount(); ++i)
@@ -60,7 +60,7 @@ bool runcpp2::Data::Profile::ParseYAML_Node(YAML::ConstNodePtr profileNode)
         }
     }
     
-    if(ExistAndHasChild_LibYaml(profileNode, "Languages"))
+    if(ExistAndHasChild(profileNode, "Languages"))
     {
         YAML::ConstNodePtr languagesNode = profileNode->GetMapValueNode("Languages");
         for(int i = 0; i < languagesNode->GetChildrenCount(); ++i)
@@ -71,7 +71,7 @@ bool runcpp2::Data::Profile::ParseYAML_Node(YAML::ConstNodePtr profileNode)
         }
     }
     
-    if(ExistAndHasChild_LibYaml(profileNode, "Setup"))
+    if(ExistAndHasChild(profileNode, "Setup"))
     {
         YAML::ConstNodePtr setupNode = profileNode->GetMapValueNode("Setup");
         for(int i = 0; i < setupNode->GetChildrenCount(); ++i)
@@ -92,7 +92,7 @@ bool runcpp2::Data::Profile::ParseYAML_Node(YAML::ConstNodePtr profileNode)
         }
     }
     
-    if(ExistAndHasChild_LibYaml(profileNode, "Cleanup"))
+    if(ExistAndHasChild(profileNode, "Cleanup"))
     {
         YAML::ConstNodePtr cleanupNode = profileNode->GetMapValueNode("Cleanup");
         for(int i = 0; i < cleanupNode->GetChildrenCount(); ++i)

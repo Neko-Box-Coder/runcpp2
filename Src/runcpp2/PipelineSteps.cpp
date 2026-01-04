@@ -366,7 +366,7 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
     }
     
     //Try to parse the runcpp2 info
-    if(!ParseScriptInfo_LibYaml(parsableInfo, outScriptInfo))
+    if(!ParseScriptInfo(parsableInfo, outScriptInfo))
     {
         ssLOG_ERROR("Failed to parse info");
         ssLOG_ERROR("Content trying to parse: " << "\n" << parsableInfo);
@@ -583,7 +583,7 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
         
         do
         {
-            if(!ParseScriptInfo_LibYaml(lastScriptInfoBuffer.str(), lastScriptInfoFromDisk))
+            if(!ParseScriptInfo(lastScriptInfoBuffer.str(), lastScriptInfoFromDisk))
                 break;
             
             //Resolve imports for last script info

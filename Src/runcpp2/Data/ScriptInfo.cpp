@@ -33,13 +33,13 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(YAML::ConstNodePtr node)
         //Cleanup can be platform profile map or sequence of commands, handle later
     };
     
-    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    if(!CheckNodeRequirements(node, requirements))
     {
         ssLOG_ERROR("ScriptInfo: Failed to meet requirements");
         return false;
     }
     
-    if(ExistAndHasChild_LibYaml(node, "PassScriptPath"))
+    if(ExistAndHasChild(node, "PassScriptPath"))
     {
         std::string passScriptPathStr = node->GetMapValueScalar<std::string>("PassScriptPath")
                                             .DS_TRY_ACT(return false);
@@ -58,12 +58,12 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(YAML::ConstNodePtr node)
         }
     }
     
-    if(ExistAndHasChild_LibYaml(node, "Language"))
+    if(ExistAndHasChild(node, "Language"))
     {
         Language = node->GetMapValueScalar<std::string>("Language").DS_TRY_ACT(return false);
     }
     
-    if(ExistAndHasChild_LibYaml(node, "BuildType"))
+    if(ExistAndHasChild(node, "BuildType"))
     {
         std::string typeStr = node  ->GetMapValueScalar<std::string>("BuildType")
                                     .DS_TRY_ACT(return false);
@@ -76,7 +76,7 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(YAML::ConstNodePtr node)
         CurrentBuildType = buildType;
     }
     
-    if(ExistAndHasChild_LibYaml(node, "RequiredProfiles"))
+    if(ExistAndHasChild(node, "RequiredProfiles"))
     {
         YAML::ConstNodePtr requiredProfilesNode = node->GetMapValueNode("RequiredProfiles");
         for(int i = 0; i < requiredProfilesNode->GetChildrenCount(); ++i)
@@ -96,47 +96,47 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(YAML::ConstNodePtr node)
         }
     }
      
-    if(!ParsePlatformProfileMap_LibYaml<ProfilesFlagsOverride>( node, 
-                                                                "OverrideCompileFlags", 
-                                                                OverrideCompileFlags, 
-                                                                "OverrideCompileFlags"))
+    if(!ParsePlatformProfileMap<ProfilesFlagsOverride>( node, 
+                                                        "OverrideCompileFlags", 
+                                                        OverrideCompileFlags, 
+                                                        "OverrideCompileFlags"))
     {
         return false;
     }
     
-    if(!ParsePlatformProfileMap_LibYaml<ProfilesFlagsOverride>( node, 
-                                                                "OverrideLinkFlags", 
-                                                                OverrideLinkFlags, 
-                                                                "OverrideLinkFlags"))
+    if(!ParsePlatformProfileMap<ProfilesFlagsOverride>( node, 
+                                                        "OverrideLinkFlags", 
+                                                        OverrideLinkFlags, 
+                                                        "OverrideLinkFlags"))
     {
         return false;
     }
     
-    if(!ParsePlatformProfileMap_LibYaml<ProfilesProcessPaths>(  node, 
-                                                                "OtherFilesToBeCompiled", 
-                                                                OtherFilesToBeCompiled, 
-                                                                "OtherFilesToBeCompiled"))
+    if(!ParsePlatformProfileMap<ProfilesProcessPaths>(  node, 
+                                                        "OtherFilesToBeCompiled", 
+                                                        OtherFilesToBeCompiled, 
+                                                        "OtherFilesToBeCompiled"))
     {
         return false;
     }
     
-    if(!ParsePlatformProfileMap_LibYaml<ProfilesProcessPaths>(  node, 
-                                                                "SourceFiles", 
-                                                                OtherFilesToBeCompiled, 
-                                                                "SourceFiles"))
+    if(!ParsePlatformProfileMap<ProfilesProcessPaths>(  node, 
+                                                        "SourceFiles", 
+                                                        OtherFilesToBeCompiled, 
+                                                        "SourceFiles"))
     {
         return false;
     }
     
-    if(!ParsePlatformProfileMap_LibYaml<ProfilesProcessPaths>(  node, 
-                                                                "IncludePaths", 
-                                                                IncludePaths, 
-                                                                "IncludePaths"))
+    if(!ParsePlatformProfileMap<ProfilesProcessPaths>(  node, 
+                                                        "IncludePaths", 
+                                                        IncludePaths, 
+                                                        "IncludePaths"))
     {
         return false;
     }
     
-    if(ExistAndHasChild_LibYaml(node, "Dependencies"))
+    if(ExistAndHasChild(node, "Dependencies"))
     {
         YAML::ConstNodePtr dependenciesNode = node->GetMapValueNode("Dependencies");
         for(int i = 0; i < dependenciesNode->GetChildrenCount(); ++i)
@@ -153,19 +153,19 @@ bool runcpp2::Data::ScriptInfo::ParseYAML_Node(YAML::ConstNodePtr node)
         }
     }
     
-    if(!ParsePlatformProfileMap_LibYaml<ProfilesDefines>(node, "Defines", Defines, "Defines"))
+    if(!ParsePlatformProfileMap<ProfilesDefines>(node, "Defines", Defines, "Defines"))
         return false;
     
-    if(!ParsePlatformProfileMap_LibYaml<ProfilesCommands>(node, "Setup", Setup, "Setup"))
+    if(!ParsePlatformProfileMap<ProfilesCommands>(node, "Setup", Setup, "Setup"))
         return false;
     
-    if(!ParsePlatformProfileMap_LibYaml<ProfilesCommands>(node, "PreBuild", PreBuild, "PreBuild"))
+    if(!ParsePlatformProfileMap<ProfilesCommands>(node, "PreBuild", PreBuild, "PreBuild"))
         return false;
     
-    if(!ParsePlatformProfileMap_LibYaml<ProfilesCommands>(node, "PostBuild", PostBuild, "PostBuild"))
+    if(!ParsePlatformProfileMap<ProfilesCommands>(node, "PostBuild", PostBuild, "PostBuild"))
         return false;
     
-    if(!ParsePlatformProfileMap_LibYaml<ProfilesCommands>(node, "Cleanup", Cleanup, "Cleanup"))
+    if(!ParsePlatformProfileMap<ProfilesCommands>(node, "Cleanup", Cleanup, "Cleanup"))
         return false;
     
     return true;

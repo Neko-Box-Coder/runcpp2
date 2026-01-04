@@ -18,7 +18,7 @@ bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(YAML::ConstNodePtr no
         ProfileName profile = node->GetMapKeyScalarAt<ProfileName>(i).DS_TRY_ACT(return false);
         YAML::ConstNodePtr profileNode = node->GetMapValueNodeAt(i);
         
-        //TODO: Maybe use `ParseYAML_NodeWithProfile_LibYaml()`?
+        //TODO: Maybe use `ParseYAML_NodeWithProfile()`?
         
         ProfileLinkProperty& property = ProfileProperties[profile];
         
@@ -30,7 +30,7 @@ bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(YAML::ConstNodePtr no
             NodeRequirement("AdditionalLinkOptions", YAML::NodeType::Sequence, false, true)
         };
         
-        if(!CheckNodeRequirements_LibYaml(profileNode, requirements))
+        if(!CheckNodeRequirements(profileNode, requirements))
         {
             ssLOG_ERROR("DependencyLinkProperty: Failed to meet requirements for profile " << 
                         profile);
@@ -60,7 +60,7 @@ bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(YAML::ConstNodePtr no
             property.SearchDirectories.push_back(searchPath);
         }
 
-        if(ExistAndHasChild_LibYaml(profileNode, "ExcludeLibraryNames"))
+        if(ExistAndHasChild(profileNode, "ExcludeLibraryNames"))
         {
             for(int j = 0; 
                 j < profileNode->GetMapValueNode("ExcludeLibraryNames")->GetChildrenCount(); 
@@ -74,7 +74,7 @@ bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(YAML::ConstNodePtr no
             }
         }
 
-        if(ExistAndHasChild_LibYaml(profileNode, "AdditionalLinkOptions"))
+        if(ExistAndHasChild(profileNode, "AdditionalLinkOptions"))
         {
             for(int j = 0; 
                 j < profileNode->GetMapValueNode("AdditionalLinkOptions")->GetChildrenCount();
@@ -92,9 +92,8 @@ bool runcpp2::Data::DependencyLinkProperty::ParseYAML_Node(YAML::ConstNodePtr no
     return true;
 }
 
-bool 
-runcpp2::Data::DependencyLinkProperty::ParseYAML_NodeWithProfile_LibYaml(   YAML::ConstNodePtr node, 
-                                                                            ProfileName profile)
+bool runcpp2::Data::DependencyLinkProperty::ParseYAML_NodeWithProfile(  YAML::ConstNodePtr node, 
+                                                                        ProfileName profile)
 {
     ssLOG_FUNC_DEBUG();
     
@@ -108,7 +107,7 @@ runcpp2::Data::DependencyLinkProperty::ParseYAML_NodeWithProfile_LibYaml(   YAML
         NodeRequirement("AdditionalLinkOptions", YAML::NodeType::Sequence, false, true)
     };
     
-    if(!CheckNodeRequirements_LibYaml(node, requirements))
+    if(!CheckNodeRequirements(node, requirements))
     {
         ssLOG_ERROR("DependencyLinkProperty: Failed to meet requirements for profile " << 
                     profile);
@@ -134,7 +133,7 @@ runcpp2::Data::DependencyLinkProperty::ParseYAML_NodeWithProfile_LibYaml(   YAML
         property.SearchDirectories.push_back(searchPath);
     }
 
-    if(ExistAndHasChild_LibYaml(node, "ExcludeLibraryNames"))
+    if(ExistAndHasChild(node, "ExcludeLibraryNames"))
     {
         for(int j = 0; j < node->GetMapValueNode("ExcludeLibraryNames")->GetChildrenCount(); ++j)
         {
@@ -146,7 +145,7 @@ runcpp2::Data::DependencyLinkProperty::ParseYAML_NodeWithProfile_LibYaml(   YAML
         }
     }
 
-    if(ExistAndHasChild_LibYaml(node, "AdditionalLinkOptions"))
+    if(ExistAndHasChild(node, "AdditionalLinkOptions"))
     {
         for(int j = 0; j < node->GetMapValueNode("AdditionalLinkOptions")->GetChildrenCount(); ++j)
         {
@@ -164,7 +163,7 @@ runcpp2::Data::DependencyLinkProperty::ParseYAML_NodeWithProfile_LibYaml(   YAML
 }
 
 bool 
-runcpp2::Data::DependencyLinkProperty::IsYAML_NodeParsableAsDefault_LibYaml(YAML::ConstNodePtr node) const
+runcpp2::Data::DependencyLinkProperty::IsYAML_NodeParsableAsDefault(YAML::ConstNodePtr node) const
 {
     ssLOG_FUNC_DEBUG();
 
@@ -174,8 +173,7 @@ runcpp2::Data::DependencyLinkProperty::IsYAML_NodeParsableAsDefault_LibYaml(YAML
         return false;
     }
 
-    if( ExistAndHasChild_LibYaml(node, "SearchLibraryNames") && 
-        ExistAndHasChild_LibYaml(node, "SearchDirectories"))
+    if(ExistAndHasChild(node, "SearchLibraryNames") && ExistAndHasChild(node, "SearchDirectories"))
     {
         std::vector<NodeRequirement> requirements =
         {
@@ -183,7 +181,7 @@ runcpp2::Data::DependencyLinkProperty::IsYAML_NodeParsableAsDefault_LibYaml(YAML
             NodeRequirement("SearchDirectories", YAML::NodeType::Sequence, true, false)
         };
         
-        return CheckNodeRequirements_LibYaml(node, requirements);
+        return CheckNodeRequirements(node, requirements);
     }
     
     return false;

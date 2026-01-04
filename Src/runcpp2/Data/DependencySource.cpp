@@ -5,7 +5,7 @@
 
 bool runcpp2::Data::DependencySource::ParseYAML_Node(YAML::ConstNodePtr node)
 {
-    if(ExistAndHasChild_LibYaml(node, "ImportPath"))
+    if(ExistAndHasChild(node, "ImportPath"))
     {
         DS_UNWRAP_ASSIGN_ACT(   ImportPath, 
                                 node->GetMapValueScalar<std::string>("ImportPath"), 
@@ -18,9 +18,9 @@ bool runcpp2::Data::DependencySource::ParseYAML_Node(YAML::ConstNodePtr node)
         }
     }
 
-    if(ExistAndHasChild_LibYaml(node, "Git"))
+    if(ExistAndHasChild(node, "Git"))
     {
-        if(ExistAndHasChild_LibYaml(node, "Local"))
+        if(ExistAndHasChild(node, "Local"))
         {
             ssLOG_ERROR("DependencySource: Both Git and Local sources found");
             return false;
@@ -33,9 +33,9 @@ bool runcpp2::Data::DependencySource::ParseYAML_Node(YAML::ConstNodePtr node)
         Source = gitSource;
         return true;
     }
-    else if(ExistAndHasChild_LibYaml(node, "Local"))
+    else if(ExistAndHasChild(node, "Local"))
     {
-        if(ExistAndHasChild_LibYaml(node, "Git"))
+        if(ExistAndHasChild(node, "Git"))
         {
             ssLOG_ERROR("DependencySource: Both Git and Local sources found");
             return false;
