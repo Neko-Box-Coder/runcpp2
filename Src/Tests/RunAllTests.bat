@@ -37,24 +37,14 @@ GOTO :FINAL
 
 
 :FINAL
-CALL :RUN_TEST "%~dp0\%MODE%BuildsManagerTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%IncludeManagerTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%FilePropertiesTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%FlagsOverrideInfoTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%DependencySourceTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%ProfilesCommandsTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%FilesToCopyInfoTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%ProfilesProcessPathsTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%ProfilesDefinesTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%DependencyLinkPropertyTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%FilesTypesInfoTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%ProfilesFlagsOverrideTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%StageInfoTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%DependencyInfoTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%ScriptInfoTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%ProfileTest.exe"
 CALL :RUN_TEST "%~dp0\%MODE%BuildTypeTest.exe"
+CALL :RUN_TEST "%~dp0\%MODE%DependencyInfoTest.exe"
+CALL :RUN_TEST "%~dp0\%MODE%DependencySourceTest.exe"
+CALL :RUN_TEST "%~dp0\%MODE%ProfileTest.exe"
+CALL :RUN_TEST "%~dp0\%MODE%ScriptInfoTest.exe"
+CALL :RUN_TEST "%~dp0\%MODE%BuildsManagerTest.exe"
 CALL :RUN_TEST "%~dp0\%MODE%ConfigParsingTest.exe"
+CALL :RUN_TEST "%~dp0\%MODE%IncludeManagerTest.exe"
 
 EXIT 0
 

@@ -10,7 +10,7 @@
 #include <vector>
 
 #if INTERNAL_RUNCPP2_UNIT_TESTS
-    class IncludeManagerAccessor;
+    struct IncludeManagerAccessor;
 #endif
 
 namespace runcpp2
@@ -36,7 +36,7 @@ namespace runcpp2
         
     private:
         #if INTERNAL_RUNCPP2_UNIT_TESTS
-            friend class ::IncludeManagerAccessor;
+            friend struct ::IncludeManagerAccessor;
         #endif
         
         ghc::filesystem::path GetRecordPath(const ghc::filesystem::path& sourceFile) const;

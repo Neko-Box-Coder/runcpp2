@@ -6,6 +6,7 @@
 #include "runcpp2/ConfigParsing.hpp"
 #include "runcpp2/PlatformUtil.hpp"
 #include "runcpp2/Data/BuildTypeHelper.hpp"
+
 #include "ssLogger/ssLog.hpp"
 #include "ghc/filesystem.hpp"
 
@@ -28,16 +29,16 @@ extern "C" const size_t DefaultScriptInfo_size;
 
 namespace
 {
-    bool HasCompiledCache(  const ghc::filesystem::path& scriptPath,
-                            const std::vector<ghc::filesystem::path>& sourceFiles,
-                            const ghc::filesystem::path& buildDir,
-                            const runcpp2::Data::Profile& currentProfile,
-                            runcpp2::IncludeManager& includeManager,
-                            std::vector<bool>& outHasCache,
-                            std::vector<ghc::filesystem::path>& outCachedObjectsFiles,
-                            ghc::filesystem::file_time_type& outFinalObjectWriteTime,
-                            ghc::filesystem::file_time_type& outFinalSourceWriteTime,
-                            ghc::filesystem::file_time_type& outFinalIncludeWriteTime)
+    DS::Result<bool> HasCompiledCache(  const ghc::filesystem::path& scriptPath,
+                                        const std::vector<ghc::filesystem::path>& sourceFiles,
+                                        const ghc::filesystem::path& buildDir,
+                                        const runcpp2::Data::Profile& currentProfile,
+                                        runcpp2::IncludeManager& includeManager,
+                                        std::vector<bool>& outHasCache,
+                                        std::vector<ghc::filesystem::path>& outCachedObjectsFiles,
+                                        ghc::filesystem::file_time_type& outFinalObjectWriteTime,
+                                        ghc::filesystem::file_time_type& outFinalSourceWriteTime,
+                                        ghc::filesystem::file_time_type& outFinalIncludeWriteTime)
     {
         ssLOG_FUNC_INFO();
         
@@ -49,14 +50,12 @@ namespace
         const std::string* rawObjectExt = 
             runcpp2::GetValueFromPlatformMap(currentProfile.FilesTypes.ObjectLinkFile.Extension);
         
-        if(rawObjectExt == nullptr)
-            return false;
+        DS_ASSERT_FALSE(rawObjectExt == nullptr);
         
         const std::string& objectExt = *rawObjectExt;
         outFinalObjectWriteTime = ghc::filesystem::file_time_type();
         
         std::error_code e;
-        
         for(int i = 0; i < sourceFiles.size(); ++i)
         {
             ghc::filesystem::path relativeSourcePath = 
@@ -64,9 +63,10 @@ namespace
             
             if(e)
             {
-                ssLOG_ERROR("Failed to get relative path for " << sourceFiles.at(i).string());
-                ssLOG_ERROR("Failed with error: " << e.message());
-                return false;
+                std::string retMsg =    DS_STR("Failed to get relative path for ") + 
+                                        sourceFiles.at(i).string() + "\n";
+                retMsg += DS_STR("Failed with error: ") + e.message();
+                return DS_ERROR_MSG(retMsg);
             }
             
             ghc::filesystem::path currentObjectFilePath =   buildDir / 
@@ -143,7 +143,7 @@ namespace
             }
         }
         
-        return true;
+        return {};
     }
     
     bool HasOutputCache(    const std::vector<bool>& sourceHasCache,
@@ -287,13 +287,9 @@ runcpp2::CheckSourcesNeedUpdate(    const std::string& scriptPath,
     ghc::filesystem::path scriptDirectory;
     std::string scriptName;
     
-    PipelineResult result = ValidateInputs( scriptPath, 
-                                            profiles, 
-                                            absoluteScriptPath,
-                                            scriptDirectory,
-                                            scriptName);
-    if(result != PipelineResult::SUCCESS)
-        return result;
+    ValidateInputs(scriptPath, profiles, absoluteScriptPath, scriptDirectory, scriptName)
+        .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                    return (PipelineResult)DS_TMP_ERROR.ErrorCode);
 
     //First check if script info file has changed
     std::error_code e;
@@ -320,7 +316,10 @@ runcpp2::CheckSourcesNeedUpdate(    const std::string& scriptPath,
     }
 
     //Initialize BuildsManager and IncludeManager
-    ghc::filesystem::path configDir = GetConfigFilePath();
+    ghc::filesystem::path configDir = 
+        GetConfigFilePath().DS_TRY_ACT( ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
+                                        return PipelineResult::INVALID_CONFIG_PATH);
+    
     configDir = configDir.parent_path();
     if(!ghc::filesystem::is_directory(configDir, e))
     {
@@ -333,16 +332,15 @@ runcpp2::CheckSourcesNeedUpdate(    const std::string& scriptPath,
     IncludeManager includeManager;
     
     const bool useLocalBuildDir = currentOptions.count(CmdOptions::LOCAL) > 0;
-    result = InitializeBuildDirectory(  configDir,
-                                        absoluteScriptPath,
-                                        useLocalBuildDir,
-                                        buildsManager,
-                                        buildDir,
-                                        includeManager);
+    InitializeBuildDirectory(   configDir,
+                                absoluteScriptPath,
+                                useLocalBuildDir,
+                                buildsManager,
+                                buildDir,
+                                includeManager)
+        .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                    return (PipelineResult)DS_TMP_ERROR.ErrorCode);
         
-    if(result != PipelineResult::SUCCESS)
-        return result;
-
     //Get profile and gather source files
     const int profileIndex = GetPreferredProfileIndex(  scriptPath, 
                                                         scriptInfo, 
@@ -351,8 +349,9 @@ runcpp2::CheckSourcesNeedUpdate(    const std::string& scriptPath,
     const Data::Profile& currentProfile = profiles.at(profileIndex);
     
     std::vector<ghc::filesystem::path> sourceFiles;
-    if(!GatherSourceFiles(absoluteScriptPath, scriptInfo, currentProfile, sourceFiles))
-        return PipelineResult::UNEXPECTED_FAILURE;
+    GatherSourceFiles(absoluteScriptPath, scriptInfo, currentProfile, sourceFiles)
+        .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                    return PipelineResult::UNEXPECTED_FAILURE);
 
     for(int i = 0; i < sourceFiles.size(); ++i)
         ssLOG_DEBUG("sourceFiles.at(i).string(): " << sourceFiles.at(i).string());
@@ -363,20 +362,18 @@ runcpp2::CheckSourcesNeedUpdate(    const std::string& scriptPath,
     ghc::filesystem::file_time_type finalSourceWriteTime;
     ghc::filesystem::file_time_type finalIncludeWriteTime;
     
-    if(!HasCompiledCache(   absoluteScriptPath,
-                            sourceFiles,
-                            buildDir,
-                            currentProfile,
-                            includeManager,
-                            sourceHasCache,
-                            cachedObjectsFiles,
-                            finalObjectWriteTime,
-                            finalSourceWriteTime,
-                            finalIncludeWriteTime))
-    {
-        //TODO: Maybe add a pipeline result for this?
-        return PipelineResult::UNEXPECTED_FAILURE;
-    }
+    HasCompiledCache(   absoluteScriptPath,
+                        sourceFiles,
+                        buildDir,
+                        currentProfile,
+                        includeManager,
+                        sourceHasCache,
+                        cachedObjectsFiles,
+                        finalObjectWriteTime,
+                        finalSourceWriteTime,
+                        finalIncludeWriteTime).DS_TRY_ACT(  ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                                                            //TODO: Maybe add a pipeline result for this?
+                                                            return PipelineResult::UNEXPECTED_FAILURE);
     
     if( finalSourceWriteTime > prevFinalSourceWriteTime ||
         finalIncludeWriteTime > prevFinalIncludeWriteTime)
@@ -411,28 +408,24 @@ runcpp2::StartPipeline( const std::string& scriptPath,
     ghc::filesystem::path absoluteScriptPath;
     ghc::filesystem::path scriptDirectory;
     std::string scriptName;
-    
-    PipelineResult result = ValidateInputs( scriptPath, 
-                                            profiles, 
-                                            absoluteScriptPath,
-                                            scriptDirectory,
-                                            scriptName);
-    if(result != PipelineResult::SUCCESS)
-        return result;
+    ValidateInputs(scriptPath, profiles, absoluteScriptPath, scriptDirectory, scriptName)
+        .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                    return (PipelineResult)DS_TMP_ERROR.ErrorCode);
 
-    ghc::filesystem::path configDir = GetConfigFilePath();
+    ghc::filesystem::path configDir = 
+        GetConfigFilePath().DS_TRY_ACT( ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
+                                        return PipelineResult::INVALID_CONFIG_PATH);
     ghc::filesystem::path buildDir;
 
     //Parse script info
     Data::ScriptInfo scriptInfo;
-    result = ParseAndValidateScriptInfo(absoluteScriptPath,
-                                        scriptDirectory,
-                                        scriptName,
-                                        currentOptions.count(CmdOptions::EXECUTABLE) > 0,
-                                        scriptInfo);
-    
-    if(result != PipelineResult::SUCCESS)
-        return result;
+    ParseAndValidateScriptInfo( absoluteScriptPath,
+                                scriptDirectory,
+                                scriptName,
+                                currentOptions.count(CmdOptions::EXECUTABLE) > 0,
+                                scriptInfo)
+        .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
+                    return (PipelineResult)DS_TMP_ERROR.ErrorCode);
     
     //Parse and get the config directory
     {
@@ -474,49 +467,49 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         
         BuildsManager buildsManager("/tmp");
         IncludeManager includeManager;
-        PipelineResult result = 
-            InitializeBuildDirectory(   configDir,
-                                        absoluteScriptPath,
-                                        currentOptions.count(CmdOptions::LOCAL) > 0,
-                                        buildsManager,
-                                        buildDir,
-                                        includeManager);
+        InitializeBuildDirectory(   configDir,
+                                    absoluteScriptPath,
+                                    currentOptions.count(CmdOptions::LOCAL) > 0,
+                                    buildsManager,
+                                    buildDir,
+                                    includeManager)
+            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                        return (PipelineResult)DS_TMP_ERROR.ErrorCode);
             
-        if (result != PipelineResult::SUCCESS)
-            return result;
-
         //Handle cleanup command if present
         if(currentOptions.count(CmdOptions::CLEANUP) > 0)
         {
-            return HandleCleanup(   scriptInfo, 
-                                    profiles.at(profileIndex),
-                                    scriptDirectory,
-                                    buildDir,
-                                    absoluteScriptPath,
-                                    buildsManager);
+            HandleCleanup(  scriptInfo, 
+                            profiles.at(profileIndex),
+                            scriptDirectory,
+                            buildDir,
+                            absoluteScriptPath,
+                            buildsManager)
+                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
+                            return (PipelineResult)DS_TMP_ERROR.ErrorCode);
         }
         
         //Resolve imports
-        result = ResolveScriptImports(scriptInfo, absoluteScriptPath, buildDir);
-        if(result != PipelineResult::SUCCESS)
-            return result;
+        ResolveScriptImports(scriptInfo, absoluteScriptPath, buildDir)
+            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                        return (PipelineResult)DS_TMP_ERROR.ErrorCode);
         
         //Check if script info has changed if provided and run setup if needed
         bool recompileNeeded = false;
         bool relinkNeeded = false;
         std::vector<std::string> changedDependencies;
         
-        result = CheckScriptInfoChanges(buildDir, 
-                                        scriptInfo, 
-                                        profiles.at(profileIndex), 
-                                        absoluteScriptPath,
-                                        lastScriptInfo, 
-                                        maxThreads,
-                                        recompileNeeded, 
-                                        relinkNeeded, 
-                                        changedDependencies);
-        if(result != PipelineResult::SUCCESS)
-            return result;
+        CheckScriptInfoChanges( buildDir, 
+                                scriptInfo, 
+                                profiles.at(profileIndex), 
+                                absoluteScriptPath,
+                                lastScriptInfo, 
+                                maxThreads,
+                                recompileNeeded, 
+                                relinkNeeded, 
+                                changedDependencies)
+            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                        return (PipelineResult)DS_TMP_ERROR.ErrorCode);
         
         //if(!lastScriptInfo || recompileNeeded || !changedDependencies.empty() || relinkNeeded)
             outScriptInfo = scriptInfo;
@@ -525,43 +518,40 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         
         //Process Dependencies
         std::vector<Data::DependencyInfo*> availableDependencies;
-        result = ProcessDependencies(   scriptInfo,
-                                        profiles.at(profileIndex),
-                                        absoluteScriptPath,
-                                        buildDir,
-                                        currentOptions,
-                                        changedDependencies,
-                                        maxThreads,
-                                        availableDependencies,
-                                        gatheredBinariesPaths);
-            
-        if(result != PipelineResult::SUCCESS)
-            return result;
+        ProcessDependencies(scriptInfo,
+                            profiles.at(profileIndex),
+                            absoluteScriptPath,
+                            buildDir,
+                            currentOptions,
+                            changedDependencies,
+                            maxThreads,
+                            availableDependencies,
+                            gatheredBinariesPaths)
+            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                        return (PipelineResult)DS_TMP_ERROR.ErrorCode);
         
         if(currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0)
             return PipelineResult::SUCCESS;
 
         //Get all the files we are trying to compile
         std::vector<ghc::filesystem::path> sourceFiles;
-        if(!GatherSourceFiles(  absoluteScriptPath, 
-                                scriptInfo, 
-                                profiles.at(profileIndex), 
-                                sourceFiles))
-        {
-            return PipelineResult::INVALID_SCRIPT_INFO;
-        }
+        GatherSourceFiles(  absoluteScriptPath, 
+                            scriptInfo, 
+                            profiles.at(profileIndex), 
+                            sourceFiles)
+            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                        return PipelineResult::INVALID_SCRIPT_INFO);
 
         //Get all include paths
         std::vector<ghc::filesystem::path> includePaths;
-        if(!GatherIncludePaths( scriptDirectory,
-                                scriptInfo,
-                                profiles.at(profileIndex),
-                                availableDependencies,
-                                includePaths))
-        {
-            ssLOG_ERROR("Failed to gather include paths");
-            return PipelineResult::INVALID_SCRIPT_INFO;
-        }
+        GatherIncludePaths( scriptDirectory,
+                            scriptInfo,
+                            profiles.at(profileIndex),
+                            availableDependencies,
+                            includePaths)
+            .DS_TRY_ACT(DS_TMP_ERROR.Message += "Failed to gather include paths";
+                        ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                        return PipelineResult::INVALID_SCRIPT_INFO);
 
         //Check if we have already compiled before.
         std::vector<bool> sourceHasCache;
@@ -570,24 +560,27 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         
         if(currentOptions.count(CmdOptions::RESET_CACHE) > 0 || recompileNeeded)
             sourceHasCache = std::vector<bool>(sourceFiles.size(), false);
-        else if(!HasCompiledCache(  absoluteScriptPath,
-                                    sourceFiles, 
-                                    buildDir, 
-                                    profiles.at(profileIndex),
-                                    includeManager,
-                                    sourceHasCache,
-                                    cachedObjectsFiles,
-                                    finalObjectWriteTime,
-                                    outFinalSourceWriteTime,
-                                    outFinalIncludeWriteTime))
+        else
         {
-            //TODO: Maybe add a pipeline result for this?
-            return PipelineResult::UNEXPECTED_FAILURE;
+            HasCompiledCache(   absoluteScriptPath,
+                                sourceFiles, 
+                                buildDir, 
+                                profiles.at(profileIndex),
+                                includeManager,
+                                sourceHasCache,
+                                cachedObjectsFiles,
+                                finalObjectWriteTime,
+                                outFinalSourceWriteTime,
+                                outFinalIncludeWriteTime)
+                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                            //TODO: Maybe add a pipeline result for this?
+                            return PipelineResult::UNEXPECTED_FAILURE);
         }
         
         runcpp2::SourceIncludeMap sourcesIncludes;
-        if(!runcpp2::GatherFilesIncludes(sourceFiles, sourceHasCache, includePaths, sourcesIncludes))
-            return PipelineResult::UNEXPECTED_FAILURE;
+        runcpp2::GatherFilesIncludes(sourceFiles, sourceHasCache, includePaths, sourcesIncludes)
+            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                        return PipelineResult::UNEXPECTED_FAILURE);
         
         for(int i = 0; i < sourceFiles.size(); ++i)
         {
@@ -596,22 +589,18 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 ssLOG_DEBUG("Updating include record for " << sourceFiles.at(i).string());
                 if(sourcesIncludes.count(sourceFiles.at(i)) == 0)
                 {
-                    ssLOG_WARNING(  "Includes not gathered for " << 
-                                    sourceFiles.at(i).string());
+                    ssLOG_WARNING("Includes not gathered for " << sourceFiles.at(i).string());
                     continue;
                 }
                 
-                bool writeResult = 
-                    includeManager.WriteIncludeRecord
-                    (
-                        sourceFiles.at(i), 
-                        sourcesIncludes.at(sourceFiles.at(i))
-                    );
-                
+                bool writeResult =  includeManager.WriteIncludeRecord
+                                    (
+                                        sourceFiles.at(i), 
+                                        sourcesIncludes.at(sourceFiles.at(i))
+                                    );
                 if(!writeResult)
                 {
-                    ssLOG_ERROR("Failed to write include record for " << 
-                                sourceFiles.at(i).string());
+                    ssLOG_ERROR("Failed to write include record for " << sourceFiles.at(i).string());
                     return PipelineResult::UNEXPECTED_FAILURE;
                 }
             }
@@ -645,10 +634,10 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         }
         
         //Run PreBuild commands before compilation
-        result = HandlePreBuild(scriptInfo, profiles.at(profileIndex), buildDir);
-        if(result != PipelineResult::SUCCESS)
-            return result;
-
+        HandlePreBuild(scriptInfo, profiles.at(profileIndex), buildDir)
+            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
+                        return (PipelineResult)DS_TMP_ERROR.ErrorCode);
+        
         //Compiling/Linking
         bool outputCache = false;
         if(!HasOutputCache( sourceHasCache, 
@@ -672,35 +661,36 @@ runcpp2::StartPipeline( const std::string& scriptPath,
             //TODO: Compile and link for watch as well. Load library as well
             if(currentOptions.count(CmdOptions::WATCH) > 0)
             {
-                if(!CompileScriptOnly(  buildDir,
-                                        absoluteScriptPath,
-                                        sourceFiles,
-                                        sourceHasCache,
-                                        includePaths, 
-                                        scriptInfo,
-                                        availableDependencies,
-                                        profiles.at(profileIndex),
-                                        maxThreads))
-                {
-                    return PipelineResult::COMPILE_LINK_FAILED;
-                }
+                CompileScriptOnly(  buildDir,
+                                    absoluteScriptPath,
+                                    sourceFiles,
+                                    sourceHasCache,
+                                    includePaths, 
+                                    scriptInfo,
+                                    availableDependencies,
+                                    profiles.at(profileIndex),
+                                    maxThreads)
+                    .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
+                                return PipelineResult::COMPILE_LINK_FAILED);
                 
                 return PipelineResult::SUCCESS;
             }
-            else if(!CompileAndLinkScript(  buildDir,
-                                            absoluteScriptPath,
-                                            ghc::filesystem::path(absoluteScriptPath).stem(), 
-                                            sourceFiles,
-                                            sourceHasCache,
-                                            includePaths,  
-                                            scriptInfo,
-                                            availableDependencies,
-                                            profiles.at(profileIndex),
-                                            linkFilesPaths,
-                                            maxThreads))
+            else
             {
-                ssLOG_ERROR("Failed to compile or link script");
-                return PipelineResult::COMPILE_LINK_FAILED;
+                CompileAndLinkScript(   buildDir,
+                                        absoluteScriptPath,
+                                        ghc::filesystem::path(absoluteScriptPath).stem(), 
+                                        sourceFiles,
+                                        sourceHasCache,
+                                        includePaths,  
+                                        scriptInfo,
+                                        availableDependencies,
+                                        profiles.at(profileIndex),
+                                        linkFilesPaths,
+                                        maxThreads)
+                    .DS_TRY_ACT(DS_TMP_ERROR.Message += "\nFailed to compile or link script.";
+                                ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
+                                return PipelineResult::COMPILE_LINK_FAILED);
             }
         }
     }
@@ -709,17 +699,16 @@ runcpp2::StartPipeline( const std::string& scriptPath,
     {
         std::vector<ghc::filesystem::path> targets;
         ghc::filesystem::path runnableTarget;
-        result = GetBuiltTargetPaths(   buildDir, 
-                                        scriptName, 
-                                        profiles.at(profileIndex), 
-                                        currentOptions,
-                                        scriptInfo,
-                                        targets,
-                                        &runnableTarget);
-            
-        if(result != PipelineResult::SUCCESS)
-            return result;
-
+        GetBuiltTargetPaths(buildDir, 
+                            scriptName, 
+                            profiles.at(profileIndex), 
+                            currentOptions,
+                            scriptInfo,
+                            targets,
+                            &runnableTarget)
+            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                        return (PipelineResult)DS_TMP_ERROR.ErrorCode);
+        
         if(targets.empty())
         {
             ssLOG_WARNING("No target files found");
@@ -736,16 +725,15 @@ runcpp2::StartPipeline( const std::string& scriptPath,
                 filesToCopyPaths.push_back(target.string());
         }
 
-        if(!CopyFiles(buildDir, filesToCopyPaths, copiedPaths))
-        {
-            ssLOG_ERROR("Failed to copy binaries before running the script");
-            return PipelineResult::UNEXPECTED_FAILURE;
-        }
+        CopyFiles(buildDir, filesToCopyPaths, copiedPaths)
+            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                        ssLOG_ERROR("Failed to copy binaries before running the script");
+                        return PipelineResult::UNEXPECTED_FAILURE);
         
         //Run PostBuild commands after successful compilation
-        result = HandlePostBuild(scriptInfo, profiles.at(profileIndex), buildDir.string());
-        if(result != PipelineResult::SUCCESS)
-            return PipelineResult::UNEXPECTED_FAILURE;
+        HandlePostBuild(scriptInfo, profiles.at(profileIndex), buildDir.string())
+            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
+                        return (PipelineResult)DS_TMP_ERROR.ErrorCode);
 
         //Don't run if we are just watching, reseting source cache or building
         if( currentOptions.count(CmdOptions::WATCH) > 0 || 
@@ -757,15 +745,17 @@ runcpp2::StartPipeline( const std::string& scriptPath,
         
         //Run otherwise
         ssLOG_INFO("Running script...");
-        return RunCompiledOutput(   runnableTarget,
-                                    absoluteScriptPath, 
-                                    scriptInfo, 
-                                    runArgs, 
-                                    currentOptions, 
-                                    returnStatus);
+        RunCompiledOutput(  runnableTarget,
+                            absoluteScriptPath, 
+                            scriptInfo, 
+                            runArgs, 
+                            currentOptions, 
+                            returnStatus)
+            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                        return (PipelineResult)DS_TMP_ERROR.ErrorCode);
     }
 
-    return PipelineResult::UNEXPECTED_FAILURE;
+    return PipelineResult::SUCCESS;
     
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
 }

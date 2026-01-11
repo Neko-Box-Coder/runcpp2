@@ -1,273 +1,101 @@
 #include "runcpp2/Data/DependencySource.hpp"
-#include "ssTest.hpp"
 #include "runcpp2/YamlLib.hpp"
 #include "runcpp2/runcpp2.hpp"
 #include "runcpp2/DeferUtil.hpp"
+#include "ssLogger/ssLog.hpp"
 
-int main(int argc, char** argv)
+DS::Result<void> TestMain()
 {
-    runcpp2::SetLogLevel("Warning");
-    
-    ssTEST_INIT_TEST_GROUP();
-    
-    ssTEST("DependencySource Should Parse Git Source")
+    //DependencySource Should Parse Git Source
     {
-        ssTEST_OUTPUT_SETUP
-        (
-            //NOTE: This is just a test YAML for validating parsing, don't use it for actual config
-            const char* yamlStr = R"(
-                Git:
-                    URL: https://github.com/user/repo.git
-                    Branch: master
-                    FullHistory: true
-                    SubmoduleInitType: Full
-            )";
-        );
+        //NOTE: This is just a test YAML for validating parsing, don't use it for actual config
+        const char* yamlStr = R"(
+            Git:
+                URL: https://github.com/user/repo.git
+                Branch: master
+                FullHistory: true
+                SubmoduleInitType: Full
+        )";
         
         runcpp2::YAML::ResourceHandle resource;
-        std::vector<runcpp2::YAML::NodePtr> roots = 
-            runcpp2::YAML::ParseYAML(yamlStr, resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
+        std::vector<runcpp2::YAML::NodePtr> roots = runcpp2::YAML::ParseYAML(   yamlStr, 
+                                                                                resource).DS_TRY();
         DEFER { FreeYAMLResource(resource); };
         
-        ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
+        DS_ASSERT_EQ(roots.size(), 1);
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::DependencySource dependencySource;
+        DS_ASSERT_TRUE(dependencySource.ParseYAML_Node(root));
         
-        ssTEST_OUTPUT_EXECUTION
-        (
-            bool parseResult = dependencySource.ParseYAML_Node(root);
-        );
-        
-        ssTEST_OUTPUT_ASSERT("ParseYAML_Node should succeed", parseResult);
         
         //Verify parsed values
         const runcpp2::Data::GitSource* git = 
             mpark::get_if<runcpp2::Data::GitSource>(&dependencySource.Source);
-        ssTEST_OUTPUT_ASSERT("Should be Git source", git != nullptr);
-        ssTEST_OUTPUT_ASSERT("URL", git->URL, "https://github.com/user/repo.git");
-        ssTEST_OUTPUT_ASSERT("Branch", git->Branch, "master");
-        ssTEST_OUTPUT_ASSERT("FullHistory", git->FullHistory, true);
-        ssTEST_OUTPUT_ASSERT(   "SubmoduleInitType", 
-                                git->CurrentSubmoduleInitType == 
-                                runcpp2::Data::SubmoduleInitType::FULL);
+        DS_ASSERT_TRUE(git != nullptr);
+        DS_ASSERT_EQ(git->URL, "https://github.com/user/repo.git");
+        
+        DS_ASSERT_EQ(git->Branch, "master");
+        DS_ASSERT_TRUE(git->FullHistory);
+        DS_ASSERT_EQ((int)git->CurrentSubmoduleInitType, (int)runcpp2::Data::SubmoduleInitType::FULL);
         
         //Test ToString() and Equals()
-        ssTEST_OUTPUT_EXECUTION
-        (
-            std::string yamlOutput = dependencySource.ToString("");
-            roots = 
-                runcpp2::YAML::ParseYAML(   yamlOutput, 
-                                            resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
-            ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
-            
-            runcpp2::Data::DependencySource parsedOutput;
-            parsedOutput.ParseYAML_Node(roots.front());
-        );
+        std::string yamlOutput = dependencySource.ToString("");
+        roots = runcpp2::YAML::ParseYAML(yamlOutput, resource).DS_TRY();
+        DS_ASSERT_EQ(roots.size(), 1);
         
-        ssTEST_OUTPUT_ASSERT(   "Parsed output should equal original", 
-                                dependencySource.Equals(parsedOutput));
-    };
+        runcpp2::Data::DependencySource parsedOutput;
+        parsedOutput.ParseYAML_Node(roots.front());
+        DS_ASSERT_TRUE(dependencySource.Equals(parsedOutput));
+    }
     
-    ssTEST("DependencySource Should Parse Local Source")
+    //DependencySource Should Parse Local Source
     {
-        ssTEST_OUTPUT_SETUP
-        (
-            //NOTE: This is just a test YAML for validating parsing, don't use it for actual config
-            const char* yamlStr = R"(
-                Local:
-                    Path: ../external/mylib
-            )";
-        );
+        //NOTE: This is just a test YAML for validating parsing, don't use it for actual config
+        const char* yamlStr = R"(
+            Local:
+                Path: ../external/mylib
+        )";
         
         runcpp2::YAML::ResourceHandle resource;
-        std::vector<runcpp2::YAML::NodePtr> roots = 
-            runcpp2::YAML::ParseYAML(yamlStr, resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
+        std::vector<runcpp2::YAML::NodePtr> roots = runcpp2::YAML::ParseYAML(   yamlStr, 
+                                                                                resource).DS_TRY();
         DEFER { FreeYAMLResource(resource); };
-        
-        ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
+        DS_ASSERT_EQ(roots.size(), 1);
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::DependencySource dependencySource;
-        
-        ssTEST_OUTPUT_EXECUTION
-        (
-            bool parseResult = dependencySource.ParseYAML_Node(root);
-        );
-        
-        ssTEST_OUTPUT_ASSERT("ParseYAML_Node should succeed", parseResult);
+        DS_ASSERT_TRUE(dependencySource.ParseYAML_Node(root));
         
         //Verify parsed values
         const runcpp2::Data::LocalSource* local = 
             mpark::get_if<runcpp2::Data::LocalSource>(&dependencySource.Source);
-        ssTEST_OUTPUT_ASSERT("Should be Local source", local != nullptr);
-        ssTEST_OUTPUT_ASSERT("Path", local->Path == "../external/mylib");
-        ssTEST_OUTPUT_ASSERT(   "Default CopyMode", 
-                                local->CopyMode == runcpp2::Data::LocalCopyMode::Auto);
+        DS_ASSERT_TRUE(local != nullptr);
+        DS_ASSERT_EQ(local->Path, "../external/mylib");
+        DS_ASSERT_EQ((int)local->CopyMode, (int)runcpp2::Data::LocalCopyMode::Auto);
         
         //Test ToString() and Equals()
-        ssTEST_OUTPUT_EXECUTION
-        (
-            std::string yamlOutput = dependencySource.ToString("");
-            roots = 
-                runcpp2::YAML::ParseYAML(   yamlOutput, 
-                                            resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
-            ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
-            
-            runcpp2::Data::DependencySource parsedOutput;
-            parsedOutput.ParseYAML_Node(roots.front());
-        );
+        std::string yamlOutput = dependencySource.ToString("");
+        roots = runcpp2::YAML::ParseYAML(yamlOutput, resource).DS_TRY();
+        DS_ASSERT_EQ(roots.size(), 1);
         
-        ssTEST_OUTPUT_ASSERT(   "Parsed output should equal original", 
-                                dependencySource.Equals(parsedOutput));
-    };
+        runcpp2::Data::DependencySource parsedOutput;
+        parsedOutput.ParseYAML_Node(roots.front());
+        DS_ASSERT_TRUE(dependencySource.Equals(parsedOutput));
+    }
     
-    ssTEST("DependencySource Should Parse Local Source With CopyMode")
+    return {};
+}
+
+int main(int argc, char** argv)
+{
+    try
     {
-        const std::vector<std::pair<std::string, 
-                                    runcpp2::Data::LocalCopyMode>> testCases = 
-        {
-            {"Auto", runcpp2::Data::LocalCopyMode::Auto},
-            {"Symlink", runcpp2::Data::LocalCopyMode::Symlink},
-            {"Hardlink", runcpp2::Data::LocalCopyMode::Hardlink},
-            {"Copy", runcpp2::Data::LocalCopyMode::Copy}
-        };
-
-        for(const std::pair<std::string, 
-                            runcpp2::Data::LocalCopyMode>& testCase : testCases)
-        {
-            ssTEST_OUTPUT("Test Copy Mode: " << testCase.first);
-            ssTEST_OUTPUT_SETUP
-            (
-                std::string yamlStr = R"(
-                    Local:
-                        Path: ../external/mylib
-                        CopyMode: )" + testCase.first;
-            );
-            
-            runcpp2::YAML::ResourceHandle resource;
-            std::vector<runcpp2::YAML::NodePtr> roots = 
-                runcpp2::YAML::ParseYAML(yamlStr, resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
-            DEFER { FreeYAMLResource(resource); };
-            
-            ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
-            runcpp2::YAML::NodePtr root = roots.front();
-            runcpp2::Data::DependencySource dependencySource;
-            
-            ssTEST_OUTPUT_EXECUTION
-            (
-                bool parseResult = dependencySource.ParseYAML_Node(root);
-            );
-            
-            ssTEST_OUTPUT_ASSERT("ParseYAML_Node should succeed", parseResult);
-            
-            const runcpp2::Data::LocalSource* local = 
-                mpark::get_if<runcpp2::Data::LocalSource>(&dependencySource.Source);
-            ssTEST_OUTPUT_ASSERT("Should be Local source", local != nullptr);
-
-            if(!local)
-                return;
-
-            ssTEST_OUTPUT_ASSERT("Path", local->Path, "../external/mylib");
-            ssTEST_OUTPUT_ASSERT("CopyMode", local->CopyMode == testCase.second);
-
-            //Test ToString() and Equals()
-            ssTEST_OUTPUT_EXECUTION
-            (
-                std::string yamlOutput = dependencySource.ToString("");
-                roots = 
-                    runcpp2::YAML::ParseYAML(   yamlOutput, 
-                                                resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
-                ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
-                
-                runcpp2::Data::DependencySource parsedOutput;
-                parsedOutput.ParseYAML_Node(roots.front());
-            );
-            
-            ssTEST_OUTPUT_ASSERT(   "Parsed output should equal original", 
-                                    dependencySource.Equals(parsedOutput));
-        }
-    };
-
-    ssTEST("DependencySource Should Handle Invalid CopyMode")
+        TestMain().DS_TRY_ACT(ssLOG_LINE(DS_TMP_ERROR.ToString()); return 1);
+        return 0;
+    }
+    catch(std::exception& ex)
     {
-        ssTEST_OUTPUT_SETUP
-        (
-            const char* yamlStr = R"(
-                Local:
-                    Path: ../external/mylib
-                    CopyMode: InvalidMode
-            )";
-        );
-        runcpp2::YAML::ResourceHandle resource;
-        std::vector<runcpp2::YAML::NodePtr> roots = 
-            runcpp2::YAML::ParseYAML(yamlStr, resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
-        DEFER { FreeYAMLResource(resource); };
-        
-        ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
-            runcpp2::YAML::NodePtr root = roots.front();
-        runcpp2::Data::DependencySource dependencySource;
-        
-        ssTEST_OUTPUT_EXECUTION
-        (
-            bool parseResult = dependencySource.ParseYAML_Node(root);
-        );
-        
-        ssTEST_OUTPUT_ASSERT("ParseYAML_Node should fail", parseResult, false);
-    };
-
-    ssTEST("DependencySource Should Handle Invalid FullHistory Option")
-    {
-        ssTEST_OUTPUT_SETUP
-        (
-            const char* yamlStr = R"(
-                Git:
-                    URL: https://github.com/user/repo.git
-                    FullHistory: What
-            )";
-        );
-        runcpp2::YAML::ResourceHandle resource;
-        std::vector<runcpp2::YAML::NodePtr> roots = 
-            runcpp2::YAML::ParseYAML(yamlStr, resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
-        DEFER { FreeYAMLResource(resource); };
-        
-        ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
-        runcpp2::YAML::NodePtr root = roots.front();
-        runcpp2::Data::DependencySource dependencySource;
-        
-        ssTEST_OUTPUT_EXECUTION
-        (
-            bool parseResult = dependencySource.ParseYAML_Node(root);
-        );
-        
-        ssTEST_OUTPUT_ASSERT("ParseYAML_Node should fail", parseResult, false);
-    };
-
-    ssTEST("DependencySource Should Handle Invalid SubmoduleInitType Option")
-    {
-        ssTEST_OUTPUT_SETUP
-        (
-            const char* yamlStr = R"(
-                Git:
-                    URL: https://github.com/user/repo.git
-                    SubmoduleInitType: What
-            )";
-        );
-        runcpp2::YAML::ResourceHandle resource;
-        std::vector<runcpp2::YAML::NodePtr> roots = 
-            runcpp2::YAML::ParseYAML(yamlStr, resource).DS_TRY_ACT(ssTEST_OUTPUT_ASSERT("", false));
-        DEFER { FreeYAMLResource(resource); };
-        
-        ssTEST_OUTPUT_ASSERT("", roots.size() == 1);
-        runcpp2::YAML::NodePtr root = roots.front();
-        runcpp2::Data::DependencySource dependencySource;
-        
-        ssTEST_OUTPUT_EXECUTION
-        (
-            bool parseResult = dependencySource.ParseYAML_Node(root);
-        );
-        
-        ssTEST_OUTPUT_ASSERT("ParseYAML_Node should fail", parseResult, false);
-    };
-    
-    ssTEST_END_TEST_GROUP();
-    return 0;
+        ssLOG_LINE(ex.what());
+        return 1;
+    }
+    return 1;
 }

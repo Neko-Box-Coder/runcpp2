@@ -24,6 +24,9 @@ else()
     option(RUNCPP2_BUILD_TESTS "Build runcpp2 tests" OFF)
 endif()
 
+# Don't build any tests for now until we have rewritten th
+option(RUNCPP2_BUILD_TESTS "Build runcpp2 tests" OFF)
+
 # =========================================================================
 # Retrieving Version String
 # =========================================================================
@@ -105,6 +108,7 @@ add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/variant")
 
 set(EXPECTED_BUILD_PACKAGE OFF)
 set(BUILD_TESTING OFF)
+set(DS_USE_DEBUG_BREAK ON)
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/DSResult")
 
 set(BUILD_TESTING ON)
@@ -121,9 +125,6 @@ target_include_directories( string-view-lite INTERFACE
 configure_file( "${CMAKE_CURRENT_LIST_DIR}/External/cfgpath/cfgpath.h" 
                 "${CMAKE_CURRENT_LIST_DIR}/Include/cfgpath.h" COPYONLY)
 
-if(RUNCPP2_BUILD_TESTS)
-    add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/ssTest")
-endif()
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/CppOverride")
 
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/MacroPowerToys")

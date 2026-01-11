@@ -21,48 +21,46 @@
 
 namespace runcpp2
 {
-    bool CopyFiles( const ghc::filesystem::path& destDir,
-                    const std::vector<std::string>& filePaths,
-                    std::vector<std::string>& outCopiedPaths);
+    DS::Result<void> CopyFiles( const ghc::filesystem::path& destDir,
+                                const std::vector<std::string>& filePaths,
+                                std::vector<std::string>& outCopiedPaths);
     
-    PipelineResult RunProfileCommands(  const Data::ProfilesCommands* commands,
+    DS::Result<void> RunProfileCommands(const Data::ProfilesCommands* commands,
                                         const Data::Profile& profile,
                                         const std::string& workingDir,
                                         const std::string& commandType);
 
-    PipelineResult ValidateInputs(  const std::string& scriptPath, 
+    DS::Result<void> ValidateInputs(const std::string& scriptPath, 
                                     const std::vector<Data::Profile>& profiles,
                                     ghc::filesystem::path& outAbsoluteScriptPath,
                                     ghc::filesystem::path& outScriptDirectory,
                                     std::string& outScriptName);
 
-    PipelineResult 
-    ParseAndValidateScriptInfo( const ghc::filesystem::path& absoluteScriptPath,
-                                const ghc::filesystem::path& scriptDirectory,
-                                const std::string& scriptName,
-                                const bool buildExecutable,
-                                Data::ScriptInfo& outScriptInfo);
+    DS::Result<void> ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptPath,
+                                                const ghc::filesystem::path& scriptDirectory,
+                                                const std::string& scriptName,
+                                                const bool buildExecutable,
+                                                Data::ScriptInfo& outScriptInfo);
 
-    PipelineResult HandleCleanup(   const Data::ScriptInfo& scriptInfo,
+    DS::Result<void> HandleCleanup( const Data::ScriptInfo& scriptInfo,
                                     const Data::Profile& profile,
                                     const ghc::filesystem::path& scriptDirectory,
                                     const ghc::filesystem::path& buildDir,
                                     const ghc::filesystem::path& absoluteScriptPath,
                                     BuildsManager& buildsManager);
 
-    PipelineResult 
-    InitializeBuildDirectory(   const ghc::filesystem::path& configDir,
-                                const ghc::filesystem::path& absoluteScriptPath,
-                                bool useLocalBuildDir,
-                                BuildsManager& outBuildsManager,
-                                ghc::filesystem::path& outBuildDir,
-                                IncludeManager& outIncludeManager);
+    DS::Result<void> InitializeBuildDirectory(  const ghc::filesystem::path& configDir,
+                                                const ghc::filesystem::path& absoluteScriptPath,
+                                                bool useLocalBuildDir,
+                                                BuildsManager& outBuildsManager,
+                                                ghc::filesystem::path& outBuildDir,
+                                                IncludeManager& outIncludeManager);
 
-    PipelineResult ResolveScriptImports(Data::ScriptInfo& scriptInfo,
-                                        const ghc::filesystem::path& scriptPath,
-                                        const ghc::filesystem::path& buildDir);
+    DS::Result<void> ResolveScriptImports(  Data::ScriptInfo& scriptInfo,
+                                            const ghc::filesystem::path& scriptPath,
+                                            const ghc::filesystem::path& buildDir);
     
-    PipelineResult CheckScriptInfoChanges(  const ghc::filesystem::path& buildDir,
+    DS::Result<void> CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
                                             const Data::ScriptInfo& scriptInfo,
                                             const Data::Profile& profile,
                                             const ghc::filesystem::path& absoluteScriptPath,
@@ -72,7 +70,7 @@ namespace runcpp2
                                             bool& outRelinkNeeded,
                                             std::vector<std::string>& outChangedDependencies);
     
-    PipelineResult 
+    DS::Result<void>
     ProcessDependencies(Data::ScriptInfo& scriptInfo,
                         const Data::Profile& profile,
                         const ghc::filesystem::path& absoluteScriptPath,
@@ -88,15 +86,15 @@ namespace runcpp2
                                     std::vector<std::string>& outLinkFilesPaths,
                                     std::vector<std::string>& outFilesToCopyPaths);
 
-    PipelineResult HandlePreBuild(  const Data::ScriptInfo& scriptInfo,
+    DS::Result<void> HandlePreBuild(const Data::ScriptInfo& scriptInfo,
                                     const Data::Profile& profile,
                                     const ghc::filesystem::path& buildDir);
 
-    PipelineResult HandlePostBuild( const Data::ScriptInfo& scriptInfo,
-                                    const Data::Profile& profile,
-                                    const ghc::filesystem::path& buildDir);
+    DS::Result<void> HandlePostBuild(   const Data::ScriptInfo& scriptInfo,
+                                        const Data::Profile& profile,
+                                        const ghc::filesystem::path& buildDir);
 
-    PipelineResult 
+    DS::Result<void>
     RunCompiledOutput(  const ghc::filesystem::path& target,
                         const ghc::filesystem::path& absoluteScriptPath,
                         const Data::ScriptInfo& scriptInfo,
@@ -104,32 +102,32 @@ namespace runcpp2
                         const std::unordered_map<CmdOptions, std::string>& currentOptions,
                         int& returnStatus);
 
-    PipelineResult GetBuiltTargetPaths( const ghc::filesystem::path& buildDir,
-                                        const std::string& scriptName,
-                                        const Data::Profile& profile,
-                                        const std::unordered_map<   CmdOptions, 
-                                                                    std::string>& currentOptions,
+    DS::Result<void> GetBuiltTargetPaths(   const ghc::filesystem::path& buildDir,
+                                            const std::string& scriptName,
+                                            const Data::Profile& profile,
+                                            const std::unordered_map<   CmdOptions, 
+                                                                        std::string>& currentOptions,
+                                            const Data::ScriptInfo& scriptInfo,
+                                            std::vector<ghc::filesystem::path>& outTargets,
+                                            ghc::filesystem::path* outRunnableTarget);
+    
+    DS::Result<void> GatherSourceFiles( const ghc::filesystem::path& absoluteScriptPath, 
                                         const Data::ScriptInfo& scriptInfo,
-                                        std::vector<ghc::filesystem::path>& outTargets,
-                                        ghc::filesystem::path* outRunnableTarget);
+                                        const Data::Profile& currentProfile,
+                                        std::vector<ghc::filesystem::path>& outSourcePaths);
     
-    bool GatherSourceFiles( const ghc::filesystem::path& absoluteScriptPath, 
-                            const Data::ScriptInfo& scriptInfo,
-                            const Data::Profile& currentProfile,
-                            std::vector<ghc::filesystem::path>& outSourcePaths);
-    
-    bool GatherIncludePaths(const ghc::filesystem::path& scriptDirectory, 
-                            const Data::ScriptInfo& scriptInfo,
-                            const Data::Profile& currentProfile,
-                            const std::vector<Data::DependencyInfo*>& dependencies,
-                            std::vector<ghc::filesystem::path>& outIncludePaths);
+    DS::Result<void> GatherIncludePaths(const ghc::filesystem::path& scriptDirectory, 
+                                        const Data::ScriptInfo& scriptInfo,
+                                        const Data::Profile& currentProfile,
+                                        const std::vector<Data::DependencyInfo*>& dependencies,
+                                        std::vector<ghc::filesystem::path>& outIncludePaths);
 
     using SourceIncludeMap = std::unordered_map<std::string, std::vector<ghc::filesystem::path>>;
     
-    bool GatherFilesIncludes(   const std::vector<ghc::filesystem::path>& sourceFiles,
-                                const std::vector<bool>& sourceHasCache,
-                                const std::vector<ghc::filesystem::path>& includePaths,
-                                SourceIncludeMap& outSourceIncludes);
+    DS::Result<void> GatherFilesIncludes(   const std::vector<ghc::filesystem::path>& sourceFiles,
+                                            const std::vector<bool>& sourceHasCache,
+                                            const std::vector<ghc::filesystem::path>& includePaths,
+                                            SourceIncludeMap& outSourceIncludes);
 }
 
 #endif

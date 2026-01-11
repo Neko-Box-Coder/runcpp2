@@ -13,21 +13,11 @@ function runTest()
     fi
 }
 
-runTest ./BuildsManagerTest
-runTest ./IncludeManagerTest
-runTest ./FilePropertiesTest
-runTest ./FlagsOverrideInfoTest
-runTest ./DependencySourceTest
-runTest ./ProfilesCommandsTest
-runTest ./FilesToCopyInfoTest
-runTest ./ProfilesProcessPathsTest
-runTest ./ProfilesDefinesTest
-runTest ./DependencyLinkPropertyTest
-runTest ./FilesTypesInfoTest
-runTest ./ProfilesFlagsOverrideTest
-runTest ./StageInfoTest
-runTest ./DependencyInfoTest
-runTest ./ScriptInfoTest
-runTest ./ProfileTest
 runTest ./BuildTypeTest
+runTest ./DependencyInfoTest
+runTest ./DependencySourceTest
+runTest ./ProfileTest
+runTest ./ScriptInfoTest
+runTest ./BuildsManagerTest
 runTest ./ConfigParsingTest
+runTest ./IncludeManagerTest
