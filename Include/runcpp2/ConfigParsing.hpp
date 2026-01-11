@@ -16,9 +16,9 @@ namespace runcpp2
                                 const bool writeUserConfig,
                                 const bool writeDefaultConfigs);
     
-    bool ReadUserConfig(std::vector<Data::Profile>& outProfiles, 
-                        std::string& outPreferredProfile,
-                        const std::string& customConfigPath = "");
+    DS::Result<void> ReadUserConfig(std::vector<Data::Profile>& outProfiles, 
+                                    std::string& outPreferredProfile,
+                                    const std::string& customConfigPath = "");
     
     bool ParseScriptInfo(const std::string& scriptInfo, Data::ScriptInfo& outScriptInfo);
 }

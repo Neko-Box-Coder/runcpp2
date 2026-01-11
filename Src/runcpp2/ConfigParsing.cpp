@@ -29,9 +29,9 @@ extern "C" const size_t Vs2022_v17Plus_size;
 
 namespace 
 {
-    bool ResovleProfileImport(  runcpp2::YAML::NodePtr currentProfileNode, 
-                                const ghc::filesystem::path& configPath,
-                                runcpp2::YAML::ResourceHandle& currentYamlResources)
+    DS::Result<void> ResovleProfileImport(  runcpp2::YAML::NodePtr currentProfileNode, 
+                                            const ghc::filesystem::path& configPath,
+                                            runcpp2::YAML::ResourceHandle& currentYamlResources)
     {
         using namespace runcpp2;
         
@@ -196,44 +196,36 @@ namespace
         return {};
     }
     
-    bool ParseUserConfig(   const std::string& userConfigString, 
-                            const ghc::filesystem::path& configPath,
-                            std::vector<runcpp2::Data::Profile>& outProfiles,
-                            std::string& outPreferredProfile)
+    DS::Result<void> ParseUserConfig(   const std::string& userConfigString, 
+                                        const ghc::filesystem::path& configPath,
+                                        std::vector<runcpp2::Data::Profile>& outProfiles,
+                                        std::string& outPreferredProfile)
     {
         ssLOG_FUNC_INFO();
         using namespace runcpp2;
         
         YAML::ResourceHandle parseResource;
-        std::vector<YAML::NodePtr> parsedNodes = 
-            YAML::ParseYAML(userConfigString, parseResource).DS_TRY_ACT(return false);
-        
+        std::vector<YAML::NodePtr> parsedNodes = YAML::ParseYAML(   userConfigString, 
+                                                                    parseResource).DS_TRY();
         DEFER { YAML::FreeYAMLResource(parseResource); };
         
-        if(parsedNodes.empty())
-            return false;
+        DS_ASSERT_FALSE(parsedNodes.empty());
         
         for(int i = 0; i < parsedNodes.size(); ++i)
         {
             YAML::NodePtr configNode = parsedNodes[i];
-            YAML::ResolveAnchors(configNode).DS_TRY_ACT(return false);
+            YAML::ResolveAnchors(configNode).DS_TRY();
             
             if(!ExistAndHasChild(configNode, "Profiles"))
                 continue;
             
             if(!configNode->GetMapValueNode("Profiles")->IsSequence())
-            {
-                ssLOG_ERROR("Profiles must be a sequence");
-                return false;
-            }
+                return DS_ERROR_MSG("Profiles must be a sequence");
             
             YAML::NodePtr profilesNode = configNode->GetMapValueNode("Profiles");
             
             if(profilesNode->GetChildrenCount() == 0)
-            {
-                ssLOG_ERROR("No compiler profiles found");
-                return false;
-            }
+                return DS_ERROR_MSG("No compiler profiles found");
             
             ssLOG_INFO(profilesNode->GetChildrenCount() << " profiles found in user config");
             
@@ -244,10 +236,7 @@ namespace
                 YAML::NodePtr currentProfileNode = profilesNode->GetSequenceChildNode(j);
                 
                 if(!currentProfileNode->IsMap())
-                {
-                    ssLOG_ERROR("Profile entry must be a map");
-                    return false;
-                }
+                    return DS_ERROR_MSG("Profile entry must be a map");
                 
                 if(!ResovleProfileImport(currentProfileNode, configPath, parseResource))
                     return false;

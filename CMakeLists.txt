@@ -105,6 +105,7 @@ add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/variant")
 
 set(EXPECTED_BUILD_PACKAGE OFF)
 set(BUILD_TESTING OFF)
+set(DS_USE_DEBUG_BREAK ON)
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/DSResult")
 
 set(BUILD_TESTING ON)
