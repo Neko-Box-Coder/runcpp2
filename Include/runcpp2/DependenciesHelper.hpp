@@ -14,52 +14,58 @@
 
 namespace runcpp2
 {
-    bool GetDependenciesPaths(  const std::vector<Data::DependencyInfo*>& availableDependencies,
-                                std::vector<std::string>& outCopiesPaths,
-                                std::vector<std::string>& outSourcesPaths,
-                                const ghc::filesystem::path& scriptPath,
-                                const ghc::filesystem::path& buildDir);
+    DS::Result<void> 
+    GetDependenciesPaths(   const std::vector<Data::DependencyInfo*>& availableDependencies,
+                            std::vector<std::string>& outCopiesPaths,
+                            std::vector<std::string>& outSourcesPaths,
+                            const ghc::filesystem::path& scriptPath,
+                            const ghc::filesystem::path& buildDir);
     
     bool IsDependencyAvailableForThisPlatform(const Data::DependencyInfo& dependency);
     
-    bool CleanupDependencies(   const runcpp2::Data::Profile& profile,
-                                const Data::ScriptInfo& scriptInfo,
-                                const std::vector<Data::DependencyInfo*>& availableDependencies,
-                                const std::vector<std::string>& dependenciesLocalCopiesPaths,
-                                const std::string& dependenciesToReset);
+    DS::Result<void> 
+    CleanupDependencies(const runcpp2::Data::Profile& profile,
+                        const Data::ScriptInfo& scriptInfo,
+                        const std::vector<Data::DependencyInfo*>& availableDependencies,
+                        const std::vector<std::string>& dependenciesLocalCopiesPaths,
+                        const std::string& dependenciesToReset);
     
-    bool SetupDependenciesIfNeeded( const runcpp2::Data::Profile& profile,
-                                    const ghc::filesystem::path& buildDir,
-                                    const Data::ScriptInfo& scriptInfo,
-                                    std::vector<Data::DependencyInfo*>& availableDependencies,
-                                    const std::vector<std::string>& dependenciesLocalCopiesPaths,
-                                    const std::vector<std::string>& dependenciesSourcePaths,
-                                    const int maxThreads);
-
-    bool BuildDependencies( const runcpp2::Data::Profile& profile,
-                            const Data::ScriptInfo& scriptInfo,
-                            const std::vector<Data::DependencyInfo*>& availableDependencies,
-                            const std::vector<std::string>& dependenciesLocalCopiesPaths,
-                            const int maxThreads);
-
-    bool GatherDependenciesBinaries(const std::vector<Data::DependencyInfo*>& availableDependencies,
-                                    const std::vector<std::string>& dependenciesCopiesPaths,
-                                    const Data::Profile& profile,
-                                    std::vector<std::string>& outBinariesPaths);
-
-    bool HandleImport(Data::DependencyInfo& dependency, const ghc::filesystem::path& basePath);
-
-    bool ResolveImports(Data::ScriptInfo& scriptInfo,
-                        const ghc::filesystem::path& scriptPath,
-                        const ghc::filesystem::path& buildDir);
-
-    bool SyncLocalDependency(   const Data::DependencyInfo& dependency,
-                                const ghc::filesystem::path& sourcePath,
-                                const ghc::filesystem::path& copyPath);
-
-    bool SyncLocalDependencies( const std::vector<Data::DependencyInfo*>& dependencies,
+    DS::Result<void> 
+    SetupDependenciesIfNeeded(  const runcpp2::Data::Profile& profile,
+                                const ghc::filesystem::path& buildDir,
+                                const Data::ScriptInfo& scriptInfo,
+                                std::vector<Data::DependencyInfo*>& availableDependencies,
+                                const std::vector<std::string>& dependenciesLocalCopiesPaths,
                                 const std::vector<std::string>& dependenciesSourcePaths,
-                                const std::vector<std::string>& dependenciesCopiesPaths);
+                                const int maxThreads);
+
+    DS::Result<void> 
+    BuildDependencies(  const runcpp2::Data::Profile& profile,
+                        const Data::ScriptInfo& scriptInfo,
+                        const std::vector<Data::DependencyInfo*>& availableDependencies,
+                        const std::vector<std::string>& dependenciesLocalCopiesPaths,
+                        const int maxThreads);
+
+    DS::Result<void> 
+    GatherDependenciesBinaries( const std::vector<Data::DependencyInfo*>& availableDependencies,
+                                const std::vector<std::string>& dependenciesCopiesPaths,
+                                const Data::Profile& profile,
+                                std::vector<std::string>& outBinariesPaths);
+
+    DS::Result<void> HandleImport(  Data::DependencyInfo& dependency, 
+                                    const ghc::filesystem::path& basePath);
+
+    DS::Result<void> ResolveImports(Data::ScriptInfo& scriptInfo,
+                                    const ghc::filesystem::path& scriptPath,
+                                    const ghc::filesystem::path& buildDir);
+
+    DS::Result<void> SyncLocalDependency(   const Data::DependencyInfo& dependency,
+                                            const ghc::filesystem::path& sourcePath,
+                                            const ghc::filesystem::path& copyPath);
+
+    DS::Result<void>  SyncLocalDependencies(const std::vector<Data::DependencyInfo*>& dependencies,
+                                            const std::vector<std::string>& dependenciesSourcePaths,
+                                            const std::vector<std::string>& dependenciesCopiesPaths);
 }
 
 #endif

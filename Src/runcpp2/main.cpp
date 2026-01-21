@@ -6,6 +6,8 @@
 
 #include "ghc/filesystem.hpp"
 
+#define OUTPUT_ERROR() ssLOG_ERROR(DS_TMP_ERROR.ToString());
+
 //TODO: Merge long and short options into a single structure
 int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& longOptionsMap,
                 const std::unordered_map<std::string, const runcpp2::OptionInfo&>& shortOptionsMap,
@@ -335,9 +337,10 @@ int main(int argc, char* argv[])
     INTERNAL_RUNCPP2_SAFE_START();
     
     //Show user config path
+    std::string configFilePath = runcpp2::GetConfigFilePath().DS_TRY_ACT(OUTPUT_ERROR(); return 1);
     if(currentOptions.count(runcpp2::CmdOptions::SHOW_USER_CONFIG))
     {
-        ssLOG_BASE(runcpp2::GetConfigFilePath());
+        ssLOG_BASE(configFilePath);
         return 0;
     }
 
@@ -360,11 +363,7 @@ int main(int argc, char* argv[])
     if(currentOptions.count(runcpp2::CmdOptions::RESET_USER_CONFIG))
     {
         ssLOG_INFO("Resetting user config");
-        if(!runcpp2::WriteDefaultConfigs(runcpp2::GetConfigFilePath(), true, true))
-        {
-            ssLOG_ERROR("Failed reset user config");
-            return -1;
-        }
+        runcpp2::WriteDefaultConfigs(configFilePath, true, true).DS_TRY_ACT(OUTPUT_ERROR(); return -1);
         ssLOG_BASE("User config reset successful");
         return 0;
     }
@@ -389,11 +388,9 @@ int main(int argc, char* argv[])
     if(currentOptions.count(runcpp2::CmdOptions::CONFIG_FILE))
         configPath = currentOptions.at(runcpp2::CmdOptions::CONFIG_FILE);
 
-    if(!runcpp2::ReadUserConfig(profiles, preferredProfile, configPath))
-    {
-        ssLOG_ERROR("Failed read user config");
-        return -1;
-    }
+    runcpp2::ReadUserConfig(profiles, 
+                            preferredProfile, 
+                            configPath).DS_TRY_ACT(OUTPUT_ERROR(); return -1);
     
     ssLOG_DEBUG("\nprofiles:");
     for(int i = 0; i < profiles.size(); ++i)

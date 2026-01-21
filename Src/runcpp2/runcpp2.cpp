@@ -320,7 +320,10 @@ runcpp2::CheckSourcesNeedUpdate(    const std::string& scriptPath,
     }
 
     //Initialize BuildsManager and IncludeManager
-    ghc::filesystem::path configDir = GetConfigFilePath();
+    ghc::filesystem::path configDir = 
+        GetConfigFilePath().DS_TRY_ACT( ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
+                                        return PipelineResult::INVALID_CONFIG_PATH);
+    
     configDir = configDir.parent_path();
     if(!ghc::filesystem::is_directory(configDir, e))
     {
@@ -420,7 +423,9 @@ runcpp2::StartPipeline( const std::string& scriptPath,
     if(result != PipelineResult::SUCCESS)
         return result;
 
-    ghc::filesystem::path configDir = GetConfigFilePath();
+    ghc::filesystem::path configDir = 
+        GetConfigFilePath().DS_TRY_ACT( ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
+                                        PipelineResult::INVALID_CONFIG_PATH);
     ghc::filesystem::path buildDir;
 
     //Parse script info

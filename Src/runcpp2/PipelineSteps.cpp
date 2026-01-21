@@ -327,6 +327,7 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
         outScriptInfo.LastWriteTime = ghc::filesystem::last_write_time(dedicatedYamlLoc, e);
         if(e)
         {
+            ssLOG_ERROR(e.message());
             ssLOG_ERROR("Failed to get last write time for: " << dedicatedYamlLoc);
             return PipelineResult::INVALID_SCRIPT_INFO;
         }
@@ -342,13 +343,14 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
         outScriptInfo.LastWriteTime = ghc::filesystem::last_write_time(absoluteScriptPath, e);
         if(e)
         {
+            ssLOG_ERROR(e.message());
             ssLOG_ERROR("Failed to get last write time for: " << absoluteScriptPath);
             return PipelineResult::INVALID_SCRIPT_INFO;
         }
 
         inputFile.open(absoluteScriptPath);
         
-        if (!inputFile)
+        if(!inputFile)
         {
             ssLOG_ERROR("Failed to open file: " << absoluteScriptPath);
             return PipelineResult::INVALID_SCRIPT_PATH;
@@ -366,12 +368,10 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
     }
     
     //Try to parse the runcpp2 info
-    if(!ParseScriptInfo(parsableInfo, outScriptInfo))
-    {
-        ssLOG_ERROR("Failed to parse info");
-        ssLOG_ERROR("Content trying to parse: " << "\n" << parsableInfo);
-        return PipelineResult::INVALID_SCRIPT_INFO;
-    }
+    ParseScriptInfo(parsableInfo, outScriptInfo)
+    .DS_TRY_ACT(ssLOG_ERROR("Failed to parse info: " << DS_TMP_ERROR.ToString());
+                ssLOG_ERROR("Content trying to parse: " << "\n" << parsableInfo);
+                return PipelineResult::INVALID_SCRIPT_INFO);
     
     if(!parsableInfo.empty())
     {
@@ -520,11 +520,10 @@ runcpp2::ResolveScriptImports(  Data::ScriptInfo& scriptInfo,
     INTERNAL_RUNCPP2_SAFE_START();
 
     //Resolve all the script info imports first before evaluating it
-    if(!ResolveImports(scriptInfo, scriptPath, buildDir))
-    {
-        ssLOG_ERROR("Failed to resolve imports");
-        return PipelineResult::UNEXPECTED_FAILURE;
-    }
+    ResolveImports(scriptInfo, scriptPath, buildDir)
+    .DS_TRY_ACT(ssLOG_ERROR("Failed to resolve imports");
+                ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                return PipelineResult::UNEXPECTED_FAILURE);
     
     return PipelineResult::SUCCESS;
     
@@ -583,7 +582,7 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
         
         do
         {
-            if(!ParseScriptInfo(lastScriptInfoBuffer.str(), lastScriptInfoFromDisk))
+            if(!ParseScriptInfo(lastScriptInfoBuffer.str(), lastScriptInfoFromDisk).HasValue())
                 break;
             
             //Resolve imports for last script info
@@ -696,15 +695,14 @@ runcpp2::ProcessDependencies(   Data::ScriptInfo& scriptInfo,
     
     std::vector<std::string> dependenciesLocalCopiesPaths;
     std::vector<std::string> dependenciesSourcePaths;
-    if(!GetDependenciesPaths(   outAvailableDependencies,
-                                dependenciesLocalCopiesPaths,
-                                dependenciesSourcePaths,
-                                absoluteScriptPath,
-                                buildDir))
-    {
-        ssLOG_ERROR("Failed to get dependencies paths");
-        return PipelineResult::DEPENDENCIES_FAILED;
-    }
+    GetDependenciesPaths(   outAvailableDependencies,
+                            dependenciesLocalCopiesPaths,
+                            dependenciesSourcePaths,
+                            absoluteScriptPath,
+                            buildDir)
+    .DS_TRY_ACT(ssLOG_ERROR("Failed to get dependencies paths");
+                ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                return PipelineResult::DEPENDENCIES_FAILED);
     
     if(currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 || !changedDependencies.empty())
     {
@@ -723,65 +721,63 @@ runcpp2::ProcessDependencies(   Data::ScriptInfo& scriptInfo,
                 depsToReset += "," + changedDependencies[i];
         }
         
-        if(!CleanupDependencies(profile,
-                                scriptInfo,
-                                outAvailableDependencies,
-                                dependenciesLocalCopiesPaths,
-                                currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 ?
-                                    currentOptions.at(CmdOptions::RESET_DEPENDENCIES) : 
-                                    depsToReset))
-        {
-            ssLOG_ERROR("Failed to cleanup dependencies");
-            return PipelineResult::DEPENDENCIES_FAILED;
-        }
+        CleanupDependencies(profile,
+                            scriptInfo,
+                            outAvailableDependencies,
+                            dependenciesLocalCopiesPaths,
+                            currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 ?
+                            currentOptions.at(CmdOptions::RESET_DEPENDENCIES) : 
+                            depsToReset)
+        .DS_TRY_ACT(ssLOG_ERROR("Failed to cleanup dependencies");
+                    ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                    return PipelineResult::DEPENDENCIES_FAILED);
     }
     
     if(currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0)
         return PipelineResult::SUCCESS;
     
-    if(!SetupDependenciesIfNeeded(  profile, 
-                                    buildDir,
-                                    scriptInfo, 
-                                    outAvailableDependencies,
-                                    dependenciesLocalCopiesPaths,
-                                    dependenciesSourcePaths,
-                                    maxThreads))
-    {
-        ssLOG_ERROR("Failed to setup script dependencies");
-        return PipelineResult::DEPENDENCIES_FAILED;
-    }
+    SetupDependenciesIfNeeded(  profile, 
+                                buildDir,
+                                scriptInfo, 
+                                outAvailableDependencies,
+                                dependenciesLocalCopiesPaths,
+                                dependenciesSourcePaths,
+                                maxThreads)
+    .DS_TRY_ACT(ssLOG_ERROR("Failed to setup script dependencies");
+                ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                return PipelineResult::DEPENDENCIES_FAILED);
 
     //Sync local dependencies before building
-    if(!SyncLocalDependencies(  outAvailableDependencies,
-                                dependenciesSourcePaths,
-                                dependenciesLocalCopiesPaths))
-    {
-        ssLOG_ERROR("Failed to sync local dependencies");
-        return PipelineResult::DEPENDENCIES_FAILED;
-    }
+    SyncLocalDependencies(  outAvailableDependencies,
+                            dependenciesSourcePaths,
+                            dependenciesLocalCopiesPaths)
+    .DS_TRY_ACT(ssLOG_ERROR("Failed to sync local dependencies");
+                ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                return PipelineResult::DEPENDENCIES_FAILED);
 
     if(currentOptions.count(CmdOptions::BUILD_SOURCE_ONLY) == 0)
     {
-        if(!BuildDependencies(  profile,
-                                scriptInfo,
-                                outAvailableDependencies, 
-                                dependenciesLocalCopiesPaths,
-                                maxThreads))
-        {
+        BuildDependencies(  profile,
+                            scriptInfo,
+                            outAvailableDependencies, 
+                            dependenciesLocalCopiesPaths,
+                            maxThreads)
+        .DS_TRY_ACT
+        (
             ssLOG_ERROR("Failed to build script dependencies. Maybe try resetting dependencies "
                         "with \"-rd all\" and run again?");
-            return PipelineResult::DEPENDENCIES_FAILED;
-        }
+            ssLOG_ERROR(DS_TMP_ERROR.ToString());
+            return PipelineResult::DEPENDENCIES_FAILED
+        );
     }
 
-    if(!GatherDependenciesBinaries( outAvailableDependencies,
-                                    dependenciesLocalCopiesPaths,
-                                    profile,
-                                    outGatheredBinariesPaths))
-    {
-        ssLOG_ERROR("Failed to gather dependencies binaries");
-        return PipelineResult::DEPENDENCIES_FAILED;
-    }
+    GatherDependenciesBinaries( outAvailableDependencies,
+                                dependenciesLocalCopiesPaths,
+                                profile,
+                                outGatheredBinariesPaths)
+    .DS_TRY_ACT(ssLOG_ERROR("Failed to gather dependencies binaries");
+                ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                return PipelineResult::DEPENDENCIES_FAILED);
 
     return PipelineResult::SUCCESS;
     

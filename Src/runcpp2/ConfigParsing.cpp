@@ -39,8 +39,7 @@ namespace
         
         ghc::filesystem::path currentImportFilePath = configPath;
         std::stack<ghc::filesystem::path> pathsToImport;
-        while(  runcpp2::ExistAndHasChild(currentProfileNode, "Import") || 
-                !pathsToImport.empty())
+        while(runcpp2::ExistAndHasChild(currentProfileNode, "Import") || !pathsToImport.empty())
         {
             //If we import field, we should deal with it instead
             if(runcpp2::ExistAndHasChild(currentProfileNode, "Import"))
@@ -49,36 +48,28 @@ namespace
                 if( importNode->GetType() != YAML::NodeType::Scalar && 
                     importNode->GetType() != YAML::NodeType::Sequence)
                 {
-                    ssLOG_ERROR("Import must be a path or sequence of paths of YAML file(s)");
-                    return false;
+                    return DS_ERROR_MSG("Import must be a path or sequence of paths of YAML file(s)");
                 }
                 
                 ghc::filesystem::path currentImportDir = currentImportFilePath;
                 currentImportDir = currentImportDir.parent_path();
                 if(importNode->GetType() == YAML::NodeType::Scalar)
                 {
-                    std::string importPath = importNode ->GetScalar<std::string>()
-                                                        .DS_TRY_ACT(return false);
+                    std::string importPath = importNode->GetScalar<std::string>().DS_TRY();
                     pathsToImport.push(currentImportDir / importPath);
                 }
                 else
                 {
                     if(importNode->GetChildrenCount() == 0)
-                    {
-                        ssLOG_ERROR("An import sequence cannot be an empty");
-                        return false;
-                    }
+                        return DS_ERROR_MSG("An import sequence cannot be an empty");
                     
                     for(int i = 0; i < importNode->GetChildrenCount(); ++i)
                     {
                         if(importNode->GetSequenceChildNode(i)->GetType() != YAML::NodeType::Scalar)
-                        {
-                            ssLOG_ERROR("It must be a sequence of paths");
-                            return false;
-                        }
+                            return DS_ERROR_MSG("It must be a sequence of paths");
                         
                         std::string importPath = importNode ->GetSequenceChildScalar<std::string>(i)
-                                                            .DS_TRY_ACT(return false);
+                                                            .DS_TRY();
                         pathsToImport.push(currentImportDir / importPath);
                     }
                 }
@@ -89,10 +80,7 @@ namespace
             
             std::error_code ec;
             if(!ghc::filesystem::exists(currentImportFilePath, ec))
-            {
-                ssLOG_ERROR("Import path doesn't exist: " << currentImportFilePath.string());
-                return false;
-            }
+                return DS_ERROR_MSG("Import path doesn't exist: " + currentImportFilePath.string());
             
             //Read compiler profiles
             std::stringstream buffer;
@@ -100,8 +88,8 @@ namespace
                 std::ifstream importProfileFile(currentImportFilePath);
                 if(!importProfileFile)
                 {
-                    ssLOG_ERROR("Failed to open profile import file: " << currentImportFilePath);
-                    return false;
+                    return DS_ERROR_MSG("Failed to open profile import file: " + 
+                                        DS_STR(currentImportFilePath));
                 }
                 buffer << importProfileFile.rdbuf();
             }
@@ -109,42 +97,33 @@ namespace
             YAML::ResourceHandle yamlResources;
             DEFER { YAML::FreeYAMLResource(yamlResources); };
             
-            std::vector<YAML::NodePtr> yamlRootNodes = 
-                YAML::ParseYAML(buffer.str(), yamlResources).DS_TRY_ACT(return false);
-            
-            if(yamlRootNodes.empty())
-                return false;
-            
+            std::vector<YAML::NodePtr> yamlRootNodes = YAML::ParseYAML( buffer.str(), 
+                                                                        yamlResources).DS_TRY();
+            DS_ASSERT_FALSE(yamlRootNodes.empty());
             for(int i = 0; i < yamlRootNodes.size(); ++i)
             {
-                YAML::ResolveAnchors(yamlRootNodes[i]).DS_TRY_ACT(return false);
+                YAML::ResolveAnchors(yamlRootNodes[i]).DS_TRY();
                 YAML::NodePtr importProfileNode = yamlRootNodes[i];
                 
-                if(!MergeYAML_NodeChildren( importProfileNode, 
-                                                    currentProfileNode, 
-                                                    currentYamlResources))
-                {
-                    return false;
-                }
-                
+                DS_ASSERT_TRUE(MergeYAML_NodeChildren(  importProfileNode, 
+                                                        currentProfileNode, 
+                                                        currentYamlResources));
                 if(ExistAndHasChild(importProfileNode, "Import"))
                 {
-                    currentProfileNode->RemoveMapChild("Import").DS_TRY_ACT(return false);
+                    currentProfileNode->RemoveMapChild("Import").DS_TRY();
                     importProfileNode   ->GetMapValueNode("Import")
                                         ->CloneToMapChild(  "Import", 
                                                             currentProfileNode,
-                                                            currentYamlResources)
-                                        .DS_TRY_ACT(return false);
+                                                            currentYamlResources).DS_TRY();
                 }
                 else
                 {
-                    currentProfileNode->RemoveMapChild("Import").DS_TRY_ACT(return false);
+                    currentProfileNode->RemoveMapChild("Import").DS_TRY();
                 }
             }
-        }   //while(  runcpp2::ExistAndHasChild(currentProfileNode, "Import") || 
-            //        !pathsToImport.empty())
+        } //while(runcpp2::ExistAndHasChild(currentProfileNode, "Import") || !pathsToImport.empty())
         
-        return true;
+        return {};
     }
 
     DS::Result<void> GetPreferredProfile(   runcpp2::YAML::NodePtr configNode, 
@@ -189,7 +168,7 @@ namespace
         }
         else
         {
-            return DS_ERROR_MSG(DS_STR("PreferredProfile needs to be a map or string value: ") +
+            return DS_ERROR_MSG("PreferredProfile needs to be a map or string value: " +
                                 DS_STR(YAML::NodeTypeToString(preferredProfilesMapNode->GetType())));
         }
         
@@ -238,19 +217,16 @@ namespace
                 if(!currentProfileNode->IsMap())
                     return DS_ERROR_MSG("Profile entry must be a map");
                 
-                if(!ResovleProfileImport(currentProfileNode, configPath, parseResource))
-                    return false;
-
+                ResovleProfileImport(currentProfileNode, configPath, parseResource).DS_TRY();
                 outProfiles.push_back({});
                 if(!outProfiles.back().ParseYAML_Node(currentProfileNode))
                 {
                     outProfiles.erase(outProfiles.end() - 1);
-                    ssLOG_ERROR("Failed to parse compiler profile at index " << j);
-                    return false;
+                    return DS_ERROR_MSG("Failed to parse compiler profile at index " + DS_STR(j));
                 }
             } //for(int j = 0; j < profilesNode->GetChildrenCount(); ++j)
             
-            GetPreferredProfile(configNode, outPreferredProfile).DS_TRY_ACT(return false);
+            GetPreferredProfile(configNode, outPreferredProfile).DS_TRY();
         } //for(int i = 0; i < parsedNodes.size(); ++i)
         
         if(outPreferredProfile.empty())
@@ -260,34 +236,25 @@ namespace
         }
         
         if(outProfiles.empty())
-        {
-            ssLOG_ERROR("No profiles registered");
-            return false;
-        }
+            return DS_ERROR_MSG("No profiles registered");
         
-        return true;
+        return {};
     }
 }
 
-std::string runcpp2::GetConfigFilePath()
+DS::Result<std::string> runcpp2::GetConfigFilePath()
 {
-    CO_INSERT_IMPL(OverrideInstance, std::string, ());
+    CO_INSERT_IMPL(OverrideInstance, DS::Result<std::string>, ());
     
     //Check if user config exists
     char configDirC_Str[MAX_PATH] = {0};
     
     get_user_config_folder(configDirC_Str, MAX_PATH, "runcpp2");
     
-    if(strlen(configDirC_Str) == 0)
-    {
-        ssLOG_ERROR("Failed to retrieve user config path");
-        return "";
-    }
-    
+    DS_ASSERT_GT(strlen(configDirC_Str), 0);
     std::string configDir = std::string(configDirC_Str);
     
     ssLOG_INFO("configDir: " << configDir);
-    
     std::string compilerConfigFilePaths[2] = 
     {
         configDir + "UserConfig.yaml", 
@@ -308,11 +275,13 @@ std::string runcpp2::GetConfigFilePath()
     return compilerConfigFilePaths[0];
 }
 
-bool runcpp2::WriteDefaultConfigs(  const ghc::filesystem::path& userConfigPath, 
-                                    const bool writeUserConfig,
-                                    const bool writeDefaultConfigs)
+DS::Result<void> runcpp2::WriteDefaultConfigs(  const ghc::filesystem::path& userConfigPath, 
+                                                const bool writeUserConfig,
+                                                const bool writeDefaultConfigs)
 {
-    CO_INSERT_IMPL(OverrideInstance, bool, (userConfigPath, writeUserConfig, writeDefaultConfigs));
+    CO_INSERT_IMPL( OverrideInstance, 
+                    DS::Result<void>, 
+                    (userConfigPath, writeUserConfig, writeDefaultConfigs));
     
     //Backup existing user config
     std::error_code _;
@@ -323,8 +292,8 @@ bool runcpp2::WriteDefaultConfigs(  const ghc::filesystem::path& userConfigPath,
         {
             if(backupCount > 10)
             {
-                ssLOG_ERROR("Failed to backup existing user config: " << userConfigPath.string());
-                return false;
+                return DS_ERROR_MSG("Failed to backup existing user config: " + 
+                                    userConfigPath.string());
             }
             
             std::string backupPath = userConfigPath.string();
@@ -345,17 +314,15 @@ bool runcpp2::WriteDefaultConfigs(  const ghc::filesystem::path& userConfigPath,
             ghc::filesystem::copy(userConfigPath, backupPath, copyErrorCode);
             if(copyErrorCode)
             {
-                ssLOG_ERROR("Failed to backup existing user config: " << userConfigPath.string() <<
-                            " with error: " << _.message());
-                
-                return false;
+                return DS_ERROR_MSG("Failed to backup existing user config: " + 
+                                    userConfigPath.string() + " with error: " + _.message());
             }
             
             ssLOG_INFO("Backed up existing user config: " << backupPath);
             if(!ghc::filesystem::remove(userConfigPath, _))
             {
-                ssLOG_ERROR("Failed to delete existing user config: " << userConfigPath.string());
-                return false;
+                return DS_ERROR_MSG("Failed to delete existing user config: " + 
+                                    userConfigPath.string());
             }
             
             break;
@@ -368,15 +335,13 @@ bool runcpp2::WriteDefaultConfigs(  const ghc::filesystem::path& userConfigPath,
     {
         std::ofstream configFile(userConfigPath, std::ios::binary);
         if(!configFile)
-        {
-            ssLOG_ERROR("Failed to create default config file: " << userConfigPath.string());
-            return false;
-        }
+            return DS_ERROR_MSG("Failed to create default config file: " + userConfigPath.string());
+        
         configFile.write((const char*)DefaultUserConfig, DefaultUserConfig_size);
     }
     
     if(!writeDefaultConfigs)
-        return true;
+        return {};
     
     ghc::filesystem::path userConfigDirectory = userConfigPath;
     userConfigDirectory = userConfigDirectory.parent_path();
@@ -384,68 +349,57 @@ bool runcpp2::WriteDefaultConfigs(  const ghc::filesystem::path& userConfigPath,
     
     //Default configs
     if(!ghc::filesystem::exists(defaultYamlDirectory , _))
-    {
-        if(!ghc::filesystem::create_directories(defaultYamlDirectory, _))
-        {
-            ssLOG_ERROR("Failed to create directory: " << defaultYamlDirectory.string());
-            return false;
-        }
-    }
+        DS_ASSERT_TRUE(ghc::filesystem::create_directories(defaultYamlDirectory, _));
     
     //Writing default profiles
     auto writeDefaultConfig = 
-        [&defaultYamlDirectory]
-        (ghc::filesystem::path outputPath, const uint8_t* outputContent, size_t outputSize)
+        [&defaultYamlDirectory](ghc::filesystem::path outputPath, 
+                                const uint8_t* outputContent, 
+                                size_t outputSize) -> DS::Result<void>
         {
             const ghc::filesystem::path currentOutputPath = defaultYamlDirectory / outputPath;
             std::ofstream defaultFile(  currentOutputPath.string(), 
                                         std::ios::binary | std::ios_base::trunc);
             if(!defaultFile)
             {
-                ssLOG_ERROR("Failed to create default config file: " << currentOutputPath.string());
-                return false;
+                return DS_ERROR_MSG("Failed to create default config file: " + 
+                                    currentOutputPath.string());
             }
             defaultFile.write((const char*)outputContent, outputSize);
-            return true;
+            return {};
         };
     
-    if( !writeDefaultConfig("CommonFileTypes.yaml", CommonFileTypes, CommonFileTypes_size) ||
-        !writeDefaultConfig("g++.yaml", G_PlusPlus, G_PlusPlus_size) ||
-        !writeDefaultConfig("vs2022_v17+.yaml", Vs2022_v17Plus, Vs2022_v17Plus_size))
-    {
-        return false;
-    }
+    writeDefaultConfig("CommonFileTypes.yaml", CommonFileTypes, CommonFileTypes_size).DS_TRY();
+    writeDefaultConfig("g++.yaml", G_PlusPlus, G_PlusPlus_size).DS_TRY();
+    writeDefaultConfig("vs2022_v17+.yaml", Vs2022_v17Plus, Vs2022_v17Plus_size).DS_TRY();
     
     //Writing .version to indicate everything is up-to-date
     std::ofstream configVersionFile(userConfigDirectory / ".version", 
                                     std::ios::binary | std::ios_base::trunc);
     if(!configVersionFile)
     {
-        ssLOG_ERROR("Failed to open version file: " << 
-                    ghc::filesystem::path(userConfigDirectory / ".version").string());
-        return false;
+        return DS_ERROR_MSG("Failed to open version file: " + 
+                            ghc::filesystem::path(userConfigDirectory / ".version").string());
     }
     
     configVersionFile << std::to_string(RUNCPP2_CONFIG_VERSION);
     
-    return true;
+    return {};
 }
 
-bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles, 
-                                std::string& outPreferredProfile,
-                                const std::string& customConfigPath)
+DS::Result<void> runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles, 
+                                            std::string& outPreferredProfile,
+                                            const std::string& customConfigPath)
 {
-    INTERNAL_RUNCPP2_SAFE_START();
-
     ssLOG_FUNC_INFO();
     
     ghc::filesystem::path configPath =  !customConfigPath.empty() ? 
                                         customConfigPath : 
-                                        GetConfigFilePath();
+                                        GetConfigFilePath().DS_VALUE_OR();
+    DS_CHECK_PREV();
     ghc::filesystem::path configVersionPath = configPath.parent_path() / ".version";
     
-    if(configPath.empty())
-        return false;
+    DS_ASSERT_FALSE(configPath.empty());
     
     std::error_code e;
     
@@ -456,10 +410,7 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles,
     if(!ghc::filesystem::exists(configPath, e))
     {
         if(!customConfigPath.empty())
-        {
-            ssLOG_ERROR("Config file doesn't exist: " << configPath.string());
-            return false;
-        }
+            return DS_ERROR_MSG("Config file doesn't exist: " + configPath.string());
         
         ssLOG_INFO("Config file doesn't exist. Creating one at: " << configPath.string());
         writeUserConfig = true;
@@ -470,10 +421,8 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles,
     {
         std::ifstream configVersionFile(configVersionPath);
         if(!configVersionFile)
-        {
-            ssLOG_ERROR("Failed to open version file: " << configVersionPath.string());
-            return false;
-        }
+            return DS_ERROR_MSG("Failed to open version file: " + configVersionPath.string());
+        
         std::string configVersionStr;
         std::stringstream buffer;
         buffer << configVersionFile.rdbuf();
@@ -488,70 +437,45 @@ bool runcpp2::ReadUserConfig(   std::vector<Data::Profile>& outProfiles,
     else
         writeDefaultConfigs = true;
     
-    if( (writeUserConfig || writeDefaultConfigs) && 
-        !WriteDefaultConfigs(configPath, writeUserConfig, writeDefaultConfigs))
+    if(writeUserConfig || writeDefaultConfigs)
     {
-        return false;
+        WriteDefaultConfigs(configPath, writeUserConfig, writeDefaultConfigs).DS_TRY();
     }
     
     if(ghc::filesystem::is_directory(configPath, e))
-    {
-        ssLOG_ERROR("Config file path is a directory: " << configPath.string());
-        return false;
-    }
+        return DS_ERROR_MSG("Config file path is a directory: " + configPath.string());
     
     //Read compiler profiles
     std::string userConfigContent;
     {
         std::ifstream userConfigFile(configPath);
         if(!userConfigFile)
-        {
-            ssLOG_ERROR("Failed to open config file: " << configPath.string());
-            return false;
-        }
+            return DS_ERROR_MSG("Failed to open config file: " + configPath.string());
         std::stringstream buffer;
         buffer << userConfigFile.rdbuf();
         userConfigContent = buffer.str();
     }
     
-    if(!ParseUserConfig(userConfigContent, configPath, outProfiles, outPreferredProfile))
-    {
-        ssLOG_ERROR("Failed to parse config file: " << configPath.string());
-        return false;
-    }
-
-    return true;
-    
-    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+    ParseUserConfig(userConfigContent, configPath, outProfiles, outPreferredProfile).DS_TRY();
+    return {};
 }
 
-bool runcpp2::ParseScriptInfo(const std::string& scriptInfo, Data::ScriptInfo& outScriptInfo)
+DS::Result<void> runcpp2::ParseScriptInfo(  const std::string& scriptInfo, 
+                                            Data::ScriptInfo& outScriptInfo)
 {
-    INTERNAL_RUNCPP2_SAFE_START();
-
     if(scriptInfo.empty())
-        return true;
+        return {};
 
     YAML::ResourceHandle resourceHandle;
-    std::vector<YAML::NodePtr> scriptNodes = 
-        YAML::ParseYAML(scriptInfo, resourceHandle).DS_TRY_ACT(return false);
-    
+    std::vector<YAML::NodePtr> scriptNodes = YAML::ParseYAML(scriptInfo, resourceHandle).DS_TRY();
     DEFER { YAML::FreeYAMLResource(resourceHandle); };
-    if(scriptNodes.empty())
-        return false;
+    DS_ASSERT_FALSE(scriptNodes.empty());
     
     //NOTE: Use the first one
-    YAML::ResolveAnchors(scriptNodes.front()).DS_TRY_ACT(return false);
+    YAML::ResolveAnchors(scriptNodes.front()).DS_TRY();
     YAML::NodePtr rootScriptNode = scriptNodes.front();
-    
-    if(outScriptInfo.ParseYAML_Node(rootScriptNode))
-    {
-        outScriptInfo.Populated = true;
-        return true;
-    }
-    else
-        return false;
-    
-    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+    DS_ASSERT_TRUE(outScriptInfo.ParseYAML_Node(rootScriptNode));
+    outScriptInfo.Populated = true;
+    return {};
 }
 

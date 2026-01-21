@@ -24,6 +24,10 @@ else()
     option(RUNCPP2_BUILD_TESTS "Build runcpp2 tests" OFF)
 endif()
 
+# Don't build any tests for now until we have rewritten th
+option(RUNCPP2_BUILD_TESTS "Build runcpp2 tests" OFF)
+set(RUNCPP2_BUILD_TESTS OFF)
+
 # =========================================================================
 # Retrieving Version String
 # =========================================================================

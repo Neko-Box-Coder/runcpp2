@@ -13,11 +13,11 @@
 
 namespace
 {
-    bool GetDependencyPath( const runcpp2::Data::DependencyInfo& dependency,
-                            const ghc::filesystem::path& scriptPath,
-                            const ghc::filesystem::path& buildDir,
-                            ghc::filesystem::path& outCopyPath,
-                            ghc::filesystem::path& outSourcePath)
+    DS::Result<void> GetDependencyPath( const runcpp2::Data::DependencyInfo& dependency,
+                                        const ghc::filesystem::path& scriptPath,
+                                        const ghc::filesystem::path& buildDir,
+                                        ghc::filesystem::path& outCopyPath,
+                                        ghc::filesystem::path& outSourcePath)
     {
         ssLOG_FUNC_INFO();
 
@@ -37,8 +37,7 @@ namespace
                 lastDotGitFoundIndex == std::string::npos ||
                 lastDotGitFoundIndex < lastSlashFoundIndex)
             {
-                ssLOG_ERROR("Invalid git url: " << git->URL);
-                return false;
+                return DS_ERROR_MSG(DS_STR("Invalid git url: ") + git->URL);
             }
             else
             {
@@ -75,8 +74,8 @@ namespace
 
             if(!ghc::filesystem::is_directory(outSourcePath))
             {
-                ssLOG_ERROR("Local dependency path is not a directory: " << outSourcePath);
-                return false;
+                return DS_ERROR_MSG(DS_STR( "Local dependency path is not a directory: ") + 
+                                            DS_STR(outSourcePath));
             }
 
             if(currentSource.ImportPath.empty())
@@ -85,14 +84,14 @@ namespace
                 outCopyPath = outSourcePath;
         }
         
-        return true;
+        return {};
     }
     
-    bool PopulateLocalDependency(   const runcpp2::Data::DependencyInfo& dependency,
-                                    const ghc::filesystem::path& copyPath,
-                                    const ghc::filesystem::path& sourcePath,
-                                    const ghc::filesystem::path& buildDir,
-                                    bool& outPrePopulated)
+    DS::Result<void> PopulateLocalDependency(   const runcpp2::Data::DependencyInfo& dependency,
+                                                const ghc::filesystem::path& copyPath,
+                                                const ghc::filesystem::path& sourcePath,
+                                                const ghc::filesystem::path& buildDir,
+                                                bool& outPrePopulated)
     {
         ssLOG_FUNC_DEBUG();
         
@@ -102,12 +101,11 @@ namespace
         {
             if(!ghc::filesystem::is_directory(copyPath, e))
             {
-                ssLOG_ERROR("Dependency path is a file: " << copyPath.string());
-                ssLOG_ERROR("It should be a folder instead");
-                return false;
+                return DS_ERROR_MSG("Dependency path is a file: " + copyPath.string() + "\n" +
+                                    "It should be a folder instead");
             }
             outPrePopulated = true;
-            return true;
+            return {};
         }
         else
         {
@@ -131,9 +129,8 @@ namespace
                         break;
                     default:
                     {
-                        ssLOG_ERROR("Invalid git submodule init type: " << 
-                                    static_cast<int>(git->CurrentSubmoduleInitType));
-                        return false;
+                        return DS_ERROR_MSG("Invalid git submodule init type: " +
+                                            DS_STR(static_cast<int>(git->CurrentSubmoduleInitType)));
                     }
                 }
                 
@@ -159,10 +156,8 @@ namespace
                                         output, 
                                         returnCode))
                 {
-                    ssLOG_ERROR("Failed to run git clone with result: " << returnCode);
-                    ssLOG_ERROR("Was trying to run: " << gitCloneCommand);
-                    //ssLOG_ERROR("Output: \n" << output);
-                    return false;
+                    return DS_ERROR_MSG("Failed to run git clone with result: " + DS_STR(returnCode) +
+                                        "\nWas trying to run: " + gitCloneCommand);
                 }
                 //else
                 //    ssLOG_INFO("Output: \n" << output);
@@ -170,23 +165,23 @@ namespace
             else if(mpark::get_if<runcpp2::Data::LocalSource>(&(dependency.Source.Source)))
             {
                 //Copy/link local directory if it doesn't have any import path
-                if( dependency.Source.ImportPath.empty() &&
-                    !runcpp2::SyncLocalDependency(dependency, sourcePath, copyPath))
+                if(dependency.Source.ImportPath.empty())
                 {
-                        return false;
+                    runcpp2::SyncLocalDependency(dependency, sourcePath, copyPath).DS_TRY();
                 }
             }
             
             outPrePopulated = false;
-            return true;
+            return {};
         }
     }
     
-    bool PopulateLocalDependencies( const std::vector<runcpp2::Data::DependencyInfo*>& dependencies,
-                                    const std::vector<std::string>& dependenciesCopiesPaths,
-                                    const std::vector<std::string>& dependenciesSourcesPaths,
-                                    const ghc::filesystem::path& buildDir,
-                                    std::vector<bool>& outPrePopulated)
+    DS::Result<void> 
+    PopulateLocalDependencies(  const std::vector<runcpp2::Data::DependencyInfo*>& dependencies,
+                                const std::vector<std::string>& dependenciesCopiesPaths,
+                                const std::vector<std::string>& dependenciesSourcesPaths,
+                                const ghc::filesystem::path& buildDir,
+                                std::vector<bool>& outPrePopulated)
     {
         ssLOG_FUNC_INFO();
         
@@ -195,29 +190,23 @@ namespace
         for(int i = 0; i < dependencies.size(); ++i)
         {
             if(!dependencies.at(i)->Source.ImportPath.empty())
-            {
-                ssLOG_ERROR("Dependency import not resolved before populating.");
-                return false;
-            }
+                return DS_ERROR_MSG("Dependency import not resolved before populating.");
             
             bool prePopulated = false;
-            if(!PopulateLocalDependency(*dependencies.at(i),
-                                        ghc::filesystem::path(dependenciesCopiesPaths.at(i)),
-                                        ghc::filesystem::path(dependenciesSourcesPaths.at(i)),
-                                        buildDir,
-                                        prePopulated))
-            {
-                return false;
-            }
-            
+            PopulateLocalDependency(*dependencies.at(i),
+                                    ghc::filesystem::path(dependenciesCopiesPaths.at(i)),
+                                    ghc::filesystem::path(dependenciesSourcesPaths.at(i)),
+                                    buildDir,
+                                    prePopulated).DS_TRY();
             outPrePopulated.at(i) = prePopulated;
         }
         
-        return true;
+        return {};
     }
     
-    bool PopulateAbsoluteIncludePaths(  std::vector<runcpp2::Data::DependencyInfo*>& dependencies,
-                                        const std::vector<std::string>& dependenciesCopiesPaths)
+    DS::Result<void> 
+    PopulateAbsoluteIncludePaths(   std::vector<runcpp2::Data::DependencyInfo*>& dependencies,
+                                    const std::vector<std::string>& dependenciesCopiesPaths)
     {
         //Append absolute include paths from relative include paths
         for(int i = 0; i < dependencies.size(); ++i)
@@ -227,10 +216,8 @@ namespace
             {
                 if(ghc::filesystem::path(dependencies.at(i)->IncludePaths.at(j)).is_absolute())
                 {
-                    ssLOG_ERROR("Dependency include path cannot be absolute: " << 
-                                dependencies.at(i)->IncludePaths.at(j));
-                    
-                    return false;
+                    return DS_ERROR_MSG("Dependency include path cannot be absolute: " +
+                                        dependencies.at(i)->IncludePaths.at(j));
                 }
                 
                 dependencies.at(i) 
@@ -250,31 +237,29 @@ namespace
             }
         }
         
-        return true;
+        return {};
     }
 
-    bool RunDependenciesSteps(  const runcpp2::Data::Profile& profile,
-                                const std::unordered_map<   PlatformName, 
-                                                            runcpp2::Data::ProfilesCommands> steps,
-                                const std::string& dependenciesCopiedDirectory,
-                                bool required,
-                                bool redirectIO)
+    DS::Result<void> 
+    RunDependenciesSteps(   const runcpp2::Data::Profile& profile,
+                            const std::unordered_map<   PlatformName, 
+                                                        runcpp2::Data::ProfilesCommands> steps,
+                            const std::string& dependenciesCopiedDirectory,
+                            bool required,
+                            bool redirectIO)
     {
         ssLOG_FUNC_INFO();
         
         if(steps.empty())
-            return true;
+            return {};
         
         //Find the platform name we use for setup
         if(!runcpp2::HasValueFromPlatformMap(steps))
         {
             if(required)
-            {
-                ssLOG_ERROR("Failed to find steps for current platform");
-                return false;
-            }
+                return DS_ERROR_MSG("Failed to find steps for current platform");
             else
-                return true;
+                return {};
         }
         
         const runcpp2::Data::ProfilesCommands& dependencySteps = 
@@ -285,32 +270,32 @@ namespace
             
         if(!commands)
         {
-            ssLOG_ERROR("Failed to find steps for profile " << profile.Name << 
-                        " for current platform");
-            return false;
+            return DS_ERROR_MSG(DS_STR( "Failed to find steps for profile ") + profile.Name + 
+                                        " for current platform");
         }
         
         //Run the commands
         for(int k = 0; k < commands->size(); ++k)
         {
             std::string processedDependencyPath = runcpp2::ProcessPath(dependenciesCopiedDirectory);
-            ssLOG_INFO( "Running command: " << commands->at(k) << " in " << 
-                        processedDependencyPath);
+            ssLOG_INFO("Running command: " << commands->at(k) << " in " << processedDependencyPath);
             
             int returnCode = 0;
             std::string output;
             
+            //TODO: Change to ds result
             if(!runcpp2::RunCommand(commands->at(k), 
                                     redirectIO,
                                     processedDependencyPath,
                                     output, 
                                     returnCode))
             {
-                ssLOG_ERROR("Failed to run command with result: " << returnCode);
-                ssLOG_ERROR("Was trying to run: " << commands->at(k));
+                std::string errorMsg = 
+                    DS_STR("Failed to run command with result: ") + DS_STR(returnCode) + "\n"
+                    "Was trying to run: " + commands->at(k);
                 if(redirectIO)
-                    ssLOG_ERROR("Output: \n" << output);
-                return false;
+                    errorMsg += DS_STR("\nOutput: \n") + output;
+                return DS_ERROR_MSG(errorMsg);
             }
             else
             {
@@ -319,7 +304,7 @@ namespace
             }
         }
         
-        return true;
+        return {};
     }
 
     bool GetDependencyBinariesExtensionsToLink( const runcpp2::Data::DependencyInfo& dependencyInfo,
@@ -406,11 +391,12 @@ namespace
     }
 }
 
-bool runcpp2::GetDependenciesPaths( const std::vector<Data::DependencyInfo*>& availableDependencies,
-                                    std::vector<std::string>& outCopiesPaths,
-                                    std::vector<std::string>& outSourcesPaths,
-                                    const ghc::filesystem::path& scriptPath,
-                                    const ghc::filesystem::path& buildDir)
+DS::Result<void> 
+runcpp2::GetDependenciesPaths(  const std::vector<Data::DependencyInfo*>& availableDependencies,
+                                std::vector<std::string>& outCopiesPaths,
+                                std::vector<std::string>& outSourcesPaths,
+                                const ghc::filesystem::path& scriptPath,
+                                const ghc::filesystem::path& buildDir)
 {
     ssLOG_FUNC_INFO();
 
@@ -418,21 +404,17 @@ bool runcpp2::GetDependenciesPaths( const std::vector<Data::DependencyInfo*>& av
     {
         ghc::filesystem::path currentCopyPath;
         ghc::filesystem::path currentSourcePath;
+        GetDependencyPath(  *availableDependencies.at(i),
+                            scriptPath,
+                            buildDir,
+                            currentCopyPath,
+                            currentSourcePath).DS_TRY();
         
-        if(!GetDependencyPath(  *availableDependencies.at(i),
-                                scriptPath,
-                                buildDir,
-                                currentCopyPath,
-                                currentSourcePath))
-        {
-            return false;
-        }
-
         outCopiesPaths.push_back(currentCopyPath.string());
         outSourcesPaths.push_back(currentSourcePath.string());
     }
     
-    return true;
+    return {};
 }
 
 bool runcpp2::IsDependencyAvailableForThisPlatform(const Data::DependencyInfo& dependency)
@@ -448,19 +430,20 @@ bool runcpp2::IsDependencyAvailableForThisPlatform(const Data::DependencyInfo& d
     return false;
 }
 
-bool runcpp2::CleanupDependencies(  const runcpp2::Data::Profile& profile,
-                                    const Data::ScriptInfo& scriptInfo,
-                                    const std::vector<Data::DependencyInfo*>& availableDependencies,
-                                    const std::vector<std::string>& dependenciesLocalCopiesPaths,
-                                    const std::string& dependenciesToReset)
+DS::Result<void> 
+runcpp2::CleanupDependencies(   const runcpp2::Data::Profile& profile,
+                                const Data::ScriptInfo& scriptInfo,
+                                const std::vector<Data::DependencyInfo*>& availableDependencies,
+                                const std::vector<std::string>& dependenciesLocalCopiesPaths,
+                                const std::string& dependenciesToReset)
 {
     ssLOG_FUNC_DEBUG();
     
     //If the script info is not populated (i.e. empty script info), don't do anything
     if(!scriptInfo.Populated)
-        return true;
+        return {};
 
-    assert(availableDependencies.size() == dependenciesLocalCopiesPaths.size());
+    DS_ASSERT_EQ(availableDependencies.size(), dependenciesLocalCopiesPaths.size());
     
     //Split dependency names if not "all"
     std::unordered_set<std::string> dependencyNames;
@@ -510,65 +493,63 @@ bool runcpp2::CleanupDependencies(  const runcpp2::Data::Profile& profile,
         std::error_code e;
         ssLOG_INFO("Running cleanup commands for " << availableDependencies.at(i)->Name);
         
-        if(!RunDependenciesSteps(   profile, 
-                                    availableDependencies.at(i)->Cleanup, 
-                                    dependenciesLocalCopiesPaths.at(i),
-                                    false,
-                                    false))
+        DS::Result<void> depResult = RunDependenciesSteps(  profile, 
+                                                            availableDependencies.at(i)->Cleanup, 
+                                                            dependenciesLocalCopiesPaths.at(i),
+                                                            false,
+                                                            false);
+        if(!depResult.HasValue())
         {
-            ssLOG_ERROR("Failed to cleanup dependency " << availableDependencies.at(i)->Name);
-            return false;
+            depResult.Error().Message +=    "\nFailed to cleanup dependency " + 
+                                            availableDependencies.at(i)->Name;
+            DS_APPEND_TRACE(depResult.Error());
+            return depResult;
         }
         
         //Remove the directory
         if( ghc::filesystem::exists(dependenciesLocalCopiesPaths.at(i), e) &&
             !ghc::filesystem::remove_all(dependenciesLocalCopiesPaths.at(i), e))
         {
-            ssLOG_ERROR("Failed to reset dependency directory: " << 
-                        dependenciesLocalCopiesPaths.at(i));
-            
-            return false;
+            return DS_ERROR_MSG("Failed to reset dependency directory: " +
+                                dependenciesLocalCopiesPaths.at(i));
         }
         
         ssLOG_DEBUG(availableDependencies.at(i)->Name << " removed");
     }
     
-    return true;
+    return {};
 }
 
 //#define RUNCPP2_USE_PARALLEL_FOR_DEP 0
 
-bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
-                                        const ghc::filesystem::path& buildDir,
-                                        const Data::ScriptInfo& scriptInfo,
-                                        std::vector<Data::DependencyInfo*>& availableDependencies,
-                                        const std::vector<std::string>& dependenciesLocalCopiesPaths,
-                                        const std::vector<std::string>& dependenciesSourcePaths,
-                                        const int maxThreads)
+DS::Result<void> 
+runcpp2::SetupDependenciesIfNeeded( const runcpp2::Data::Profile& profile,
+                                    const ghc::filesystem::path& buildDir,
+                                    const Data::ScriptInfo& scriptInfo,
+                                    std::vector<Data::DependencyInfo*>& availableDependencies,
+                                    const std::vector<std::string>& dependenciesLocalCopiesPaths,
+                                    const std::vector<std::string>& dependenciesSourcePaths,
+                                    const int maxThreads)
 {
     ssLOG_FUNC_INFO();
 
     //If the script info is not populated (i.e. empty script info), don't do anything
     if(!scriptInfo.Populated)
-        return true;
+        return {};
 
     std::vector<bool> prePolulatedDependencies;
     
     //Clone/copy the dependencies if needed
-    if(!PopulateLocalDependencies(  availableDependencies, 
-                                    dependenciesLocalCopiesPaths, 
-                                    dependenciesSourcePaths, 
-                                    buildDir,
-                                    prePolulatedDependencies))
-    {
-        return false;
-    }
+    PopulateLocalDependencies(  availableDependencies, 
+                                dependenciesLocalCopiesPaths, 
+                                dependenciesSourcePaths, 
+                                buildDir,
+                                prePolulatedDependencies).DS_TRY();
     
-    if(!PopulateAbsoluteIncludePaths(availableDependencies, dependenciesLocalCopiesPaths))
-        return false;
+    PopulateAbsoluteIncludePaths(availableDependencies, dependenciesLocalCopiesPaths).DS_TRY();
     
     #if RUNCPP2_USE_PARALLEL_FOR_DEP
-    std::vector<std::future<bool>> actions;
+    std::vector<std::future<DS::Result<void>>> actions;
     std::vector<bool> finished;
     
     //Cache logs for worker threads
@@ -592,25 +573,33 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
             std::async
             (
                 std::launch::async,
-                [i, &profile, &availableDependencies, &dependenciesLocalCopiesPaths, logLevel]()
+                [
+                    i, 
+                    &profile, 
+                    &availableDependencies, 
+                    &dependenciesLocalCopiesPaths, 
+                    logLevel
+                ]() -> DS::Result<void>
                 {
                     ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(logLevel);
         #endif
-        
                     ssLOG_INFO("Running setup commands for " << availableDependencies.at(i)->Name);
-                    if(!RunDependenciesSteps(   profile, 
+                    DS::Result<void> depResult = 
+                        RunDependenciesSteps(   profile, 
                                                 availableDependencies.at(i)->Setup, 
                                                 dependenciesLocalCopiesPaths.at(i),
                                                 true,
-                                                false))
+                                                false);
+                    if(!depResult.HasValue())
                     {
-                        ssLOG_ERROR("Failed to setup dependency " << 
-                                    availableDependencies.at(i)->Name);
-                        return false;
+                        depResult.Error().Message +=    "\nFailed to setup dependency " + 
+                                                        availableDependencies.at(i)->Name;
+                        DS_APPEND_TRACE(depResult.Error());
+                        return depResult;
                     }
         
         #if RUNCPP2_USE_PARALLEL_FOR_DEP
-                    return true;
+                    return {};
                 }
             )
         );
@@ -633,19 +622,20 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
                     
                     if(!actions.at(j).valid())
                     {
-                        ssLOG_ERROR("Failed to construct actions for setup");
                         ssLOG_OUTPUT_ALL_CACHE_GROUPED();
-                        return false;
+                        return DS_ERROR_MSG("Failed to construct actions for setup");
                     }
                     
                     std::future_status actionStatus = actions.at(j).wait_until(deadline);
                     if(actionStatus == std::future_status::ready)
                     {
-                        if(!actions.at(j).get())
+                        DS::Result<void> actionResult = actions.at(j).get();
+                        if(!actionResult.HasValue())
                         {
-                            ssLOG_ERROR("Setup failed for dependencies");
                             ssLOG_OUTPUT_ALL_CACHE_GROUPED();
-                            return false;
+                            actionResult.Error().Message += "\nSetup failed for dependencies";
+                            DS_APPEND_TRACE(actionResult.Error());
+                            return actionResult;
                         }
                         finished.at(j) = true;
                     }
@@ -667,20 +657,21 @@ bool runcpp2::SetupDependenciesIfNeeded(const runcpp2::Data::Profile& profile,
     }
     
     ssLOG_OUTPUT_ALL_CACHE_GROUPED();
-    return true;
+    return {};
 }
 
-bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
-                                const Data::ScriptInfo& scriptInfo,
-                                const std::vector<Data::DependencyInfo*>& availableDependencies,
-                                const std::vector<std::string>& dependenciesLocalCopiesPaths,
-                                const int maxThreads)
+DS::Result<void> 
+runcpp2::BuildDependencies( const runcpp2::Data::Profile& profile,
+                            const Data::ScriptInfo& scriptInfo,
+                            const std::vector<Data::DependencyInfo*>& availableDependencies,
+                            const std::vector<std::string>& dependenciesLocalCopiesPaths,
+                            const int maxThreads)
 {
     ssLOG_FUNC_INFO();
 
     //If the script info is not populated (i.e. empty script info), don't do anything
     if(!scriptInfo.Populated)
-        return true;
+        return {};
     
     #if RUNCPP2_USE_PARALLEL_FOR_DEP
     std::vector<std::future<bool>> actions;
@@ -702,30 +693,38 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
             std::async
             (
                 std::launch::async,
-                [i, &profile, &availableDependencies, &dependenciesLocalCopiesPaths, logLevel]()
+                [
+                    i, 
+                    &profile, 
+                    &availableDependencies, 
+                    &dependenciesLocalCopiesPaths, 
+                    logLevel
+                ]() -> DS::Result<void>
                 {
                     ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(logLevel);
         #endif
-                    
-                    if(!RunDependenciesSteps(   profile, 
+                    DS::Result<void> depResult = 
+                        RunDependenciesSteps(   profile, 
                                                 availableDependencies.at(i)->Build, 
                                                 dependenciesLocalCopiesPaths.at(i),
                                                 true,
-                                                false))
+                                                false);
+                    if(!depResult.HasValue())
                     {
-                        ssLOG_ERROR("Failed to build dependency " << availableDependencies.at(i)->Name);
-                        return false;
+                        depResult.Error().Message +=    "\nFailed to build dependency " + 
+                                                        availableDependencies.at(i)->Name;
+                        DS_APPEND_TRACE(depResult.Error());
+                        return depResult;
                     }
-        
         #if RUNCPP2_USE_PARALLEL_FOR_DEP
-                    return true;
+                    return {};
                 }
             )
         );
         
         finished.emplace_back(false);
         
-        //Evaluate the setup results for each batch
+        //Evaluate the build results for each batch
         if(actions.size() >= maxThreads || i == availableDependencies.size() - 1)
         {
             bool needsWaiting = false;
@@ -741,19 +740,20 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
                     
                     if(!actions.at(j).valid())
                     {
-                        ssLOG_ERROR("Failed to construct actions for building dependencies");
                         ssLOG_OUTPUT_ALL_CACHE_GROUPED();
-                        return false;
+                        return DS_ERROR_MSG("Failed to construct actions for building dependencies");
                     }
                     
                     std::future_status actionStatus = actions.at(j).wait_until(deadline);
                     if(actionStatus == std::future_status::ready)
                     {
-                        if(!actions.at(j).get())
+                        DS::Result<void> actionResult = actions.at(j).get();
+                        if(!actionResult.HasValue())
                         {
-                            ssLOG_ERROR("Build failed for dependencies");
                             ssLOG_OUTPUT_ALL_CACHE_GROUPED();
-                            return false;
+                            actionResult.Error().Message += "\nBuild failed for dependencies";
+                            DS_APPEND_TRACE(actionResult.Error());
+                            return actionResult;
                         }
                         finished.at(j) = true;
                     }
@@ -774,17 +774,16 @@ bool runcpp2::BuildDependencies(const runcpp2::Data::Profile& profile,
     }
 
     ssLOG_OUTPUT_ALL_CACHE_GROUPED();
-    return true;
+    return {};
 }
 
-bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyInfo*>& 
-                                                availableDependencies,
-                                            const std::vector<std::string>& dependenciesCopiesPaths,
-                                            const Data::Profile& profile,
-                                            std::vector<std::string>& outBinariesPaths)
+DS::Result<void> 
+runcpp2::GatherDependenciesBinaries(const std::vector<Data::DependencyInfo*>& availableDependencies,
+                                    const std::vector<std::string>& dependenciesCopiesPaths,
+                                    const Data::Profile& profile,
+                                    std::vector<std::string>& outBinariesPaths)
 {
     ssLOG_FUNC_DEBUG();
-
     
     std::unordered_set<std::string> binariesPathsSet;
     for(int i = 0; i < outBinariesPaths.size(); ++i)
@@ -799,9 +798,8 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
 
     if(minimumDependenciesCopiesCount > dependenciesCopiesPaths.size())
     {
-        ssLOG_ERROR("The amount of available dependencies do not match" <<
-                    " the amount of dependencies copies paths");
-        return false;
+        return DS_ERROR_MSG("The amount of available dependencies do not match" 
+                            " the amount of dependencies copies paths");
     }
     
     int nonLinkFilesCount = 0;
@@ -844,13 +842,9 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
         
         //Get all the file extensions to gather
         {
-            if(!GetDependencyBinariesExtensionsToLink(  *availableDependencies.at(i),
-                                                        profile,
-                                                        extensionsToLink))
-            {
-                return false;
-            }
-            
+            DS_ASSERT_TRUE(GetDependencyBinariesExtensionsToLink(   *availableDependencies.at(i),
+                                                                    profile,
+                                                                    extensionsToLink));
             const std::string* debugSymbolExt = 
                 runcpp2::GetValueFromPlatformMap(profile.FilesTypes.DebugSymbolFile.Extension);
                 
@@ -867,9 +861,8 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
         
         if(!runcpp2::HasValueFromPlatformMap(linkProperties))
         {
-            ssLOG_ERROR("Link properties for dependency " << availableDependencies.at(i)->Name <<
-                        " is missing for the current platform");
-            return false;
+            return DS_ERROR_MSG("Link properties for dependency " + availableDependencies.at(i)->Name +
+                                " is missing for the current platform");
         }
 
         const Data::DependencyLinkProperty& linkProperty = 
@@ -964,10 +957,7 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
                         std::error_code symlink_ec;
                         resolvedPath = ResolveSymlink(resolvedPath, symlink_ec);
                         if(symlink_ec)
-                        {
-                            ssLOG_ERROR("Failed to resolve symlink: " << symlink_ec.message());
-                            return false;
-                        }
+                            return DS_ERROR_MSG("Failed to resolve symlink: " + symlink_ec.message());
                     }
                     
                     const std::string processedPath = runcpp2::ProcessPath(it.path().string());
@@ -994,29 +984,24 @@ bool runcpp2::GatherDependenciesBinaries(   const std::vector<Data::DependencyIn
             ssLOG_WARNING("outBinariesPaths[" << i << "]: " << outBinariesPaths.at(i));
     }
     
-    return true;
+    return {};
 }
 
-bool runcpp2::HandleImport(Data::DependencyInfo& dependency, const ghc::filesystem::path& basePath)
+DS::Result<void> runcpp2::HandleImport( Data::DependencyInfo& dependency, 
+                                        const ghc::filesystem::path& basePath)
 {
     ssLOG_FUNC_DEBUG();
     
     if(dependency.Source.ImportPath.empty())
-        return true;
+        return {};
 
     const std::string fullPath = (basePath / dependency.Source.ImportPath).string();
     std::error_code ec;
     if(!ghc::filesystem::exists(fullPath, ec))
-    {
-        ssLOG_ERROR("Import file not found: " << fullPath);
-        return false;
-    }
+        return DS_ERROR_MSG("Import file not found: " + fullPath);
 
     if(ghc::filesystem::is_directory(fullPath))
-    {
-        ssLOG_ERROR("Import path is a directory: " << fullPath);
-        return false;
-    }
+        return DS_ERROR_MSG("Import path is a directory: " + fullPath);
 
     //Parse the YAML file
     YAML::ResourceHandle resource;
@@ -1026,23 +1011,16 @@ bool runcpp2::HandleImport(Data::DependencyInfo& dependency, const ghc::filesyst
     {
         std::ifstream file(fullPath);
         if(!file.is_open())
-        {
-            ssLOG_ERROR("Failed to open import file: " << fullPath);
-            return false;
-        }
+            return DS_ERROR_MSG("Failed to open import file: " + fullPath);
+        
         std::stringstream buffer;
         buffer << file.rdbuf();
         content = buffer.str();
     }
 
-    rootNodes = YAML::ParseYAML(content, resource).DS_TRY_ACT(ssLOG_ERROR("Failed"); return false);
+    rootNodes = YAML::ParseYAML(content, resource).DS_TRY();
     DEFER { YAML::FreeYAMLResource(resource); };
-    
-    if(rootNodes.empty())
-    {
-        ssLOG_ERROR("rootNodes.empty()");
-        return false;
-    }
+    DS_ASSERT_FALSE(rootNodes.empty());
     
     //Store the imported sources as copies for traciblity if needed
     std::vector<std::shared_ptr<Data::DependencySource>> previouslyImportedSources;
@@ -1063,7 +1041,7 @@ bool runcpp2::HandleImport(Data::DependencyInfo& dependency, const ghc::filesyst
     
     for(int i = 0; i < rootNodes.size(); ++i)
     {
-        YAML::ResolveAnchors(rootNodes[i]).DS_TRY_ACT(ssLOG_ERROR("Failed"); return false);
+        YAML::ResolveAnchors(rootNodes[i]).DS_TRY();
         
         //Parse the imported dependency
         if(!dependency.ParseYAML_Node(rootNodes[i]))
@@ -1072,32 +1050,30 @@ bool runcpp2::HandleImport(Data::DependencyInfo& dependency, const ghc::filesyst
             if(i != rootNodes.size() - 1)
                 continue;
             
-            ssLOG_ERROR("Failed to parse imported dependency: " << fullPath);
+            std::string errMsg = "Failed to parse imported dependency: " + fullPath;
             
             //Print the list of imported sources
             for(int j = 0; j < previouslyImportedSources.size(); ++j)
             {
-                ssLOG_ERROR("Imported source[" << j << "]: " << 
-                            previouslyImportedSources.at(j)->ImportPath.string());
+                errMsg +=   "Imported source[" + DS_STR(j) + "]: " =
+                            previouslyImportedSources.at(j)->ImportPath.string();
             }
 
-            return false;
+            return DS_ERROR_MSG(errMsg);
         }
 
         dependency.Source.ImportedSources = previouslyImportedSources;
-        return true;
+        return {};
     }
     
-    ssLOG_ERROR("This should never be reached");
-    return false;
+    return DS_ERROR_MSG("This should never be reached");
 }
 
-bool runcpp2::ResolveImports(   Data::ScriptInfo& scriptInfo,
-                                const ghc::filesystem::path& scriptPath,
-                                const ghc::filesystem::path& buildDir)
+DS::Result<void> runcpp2::ResolveImports(   Data::ScriptInfo& scriptInfo,
+                                            const ghc::filesystem::path& scriptPath,
+                                            const ghc::filesystem::path& buildDir)
 {
     ssLOG_FUNC_INFO();
-    INTERNAL_RUNCPP2_SAFE_START();
     
     //For each dependency, check if import path exists
     for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
@@ -1110,38 +1086,29 @@ bool runcpp2::ResolveImports(   Data::ScriptInfo& scriptInfo,
             continue;
         
         if(!source.ImportPath.is_relative())
-        {
-            ssLOG_ERROR("Import path is not relative: " << source.ImportPath.string());
-            return false;
-        }
+            return DS_ERROR_MSG("Import path is not relative: " + source.ImportPath.string());
 
         ghc::filesystem::path copyPath;
         ghc::filesystem::path sourcePath;
-        
-        if(!GetDependencyPath(dependency, scriptPath, buildDir, copyPath, sourcePath))
-            return false;
+        GetDependencyPath(dependency, scriptPath, buildDir, copyPath, sourcePath).DS_TRY();
 
         bool prePopulated = false;
-        if(!PopulateLocalDependency(dependency, copyPath, sourcePath, buildDir, prePopulated))
-            return false;
+        PopulateLocalDependency(dependency, copyPath, sourcePath, buildDir, prePopulated).DS_TRY();
         
         //Parse the import file
-        if(!HandleImport(dependency, copyPath))
-            return false;
+        HandleImport(dependency, copyPath).DS_TRY();
 
         //Check do we still have import path in the dependency. If so, we need to parse it again
         if(!dependency.Source.ImportPath.empty())
             --i;
     }
 
-    return true;
-    
-    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+    return {};
 }
 
-bool runcpp2::SyncLocalDependency(  const Data::DependencyInfo& dependency,
-                                    const ghc::filesystem::path& sourcePath,
-                                    const ghc::filesystem::path& copyPath)
+DS::Result<void> runcpp2::SyncLocalDependency(  const Data::DependencyInfo& dependency,
+                                                const ghc::filesystem::path& sourcePath,
+                                                const ghc::filesystem::path& copyPath)
 {
     ssLOG_FUNC_DEBUG();
     std::error_code ec;
@@ -1151,24 +1118,18 @@ bool runcpp2::SyncLocalDependency(  const Data::DependencyInfo& dependency,
     if(!local)
     {
         ssLOG_DEBUG("Not a local dependency, skipping sync");
-        return true;
+        return {};
     }
 
     //Fail if source path doesn't exist
     if(!ghc::filesystem::exists(sourcePath, ec))
-    {
-        ssLOG_ERROR("Source path does not exist: " << sourcePath.string());
-        return false;
-    }
+        return DS_ERROR_MSG("Source path does not exist: " + sourcePath.string());
 
     //Create target directory if it doesn't exist
     if(!ghc::filesystem::exists(copyPath, ec))
     {
         if(!ghc::filesystem::create_directory(copyPath, ec))
-        {
-            ssLOG_ERROR("Failed to create directory " << copyPath.string() << ": " << ec.message());
-            return false;
-        }
+            return DS_ERROR_MSG("Failed to create directory " + copyPath.string() + ": " + ec.message());
     }
 
     //Get list of files in source
@@ -1248,10 +1209,7 @@ bool runcpp2::SyncLocalDependency(  const Data::DependencyInfo& dependency,
                 }
 
                 if(ec)
-                {
-                    ssLOG_ERROR("Failed to update target: " << ec.message());
-                    return false;
-                }
+                    return DS_ERROR_MSG("Failed to update target: " + ec.message());
             }
             sourceFiles.erase(targetPath.filename().string());
         }
@@ -1303,30 +1261,25 @@ bool runcpp2::SyncLocalDependency(  const Data::DependencyInfo& dependency,
         }
 
         if(ec)
-        {
-            ssLOG_ERROR("Failed to add new file: " << ec.message());
-            return false;
-        }
+            return DS_ERROR_MSG("Failed to add new file: " + ec.message());
     }
 
-    return true;
+    return {};
 }
 
-bool runcpp2::SyncLocalDependencies(const std::vector<Data::DependencyInfo*>& dependencies,
-                                    const std::vector<std::string>& dependenciesSourcePaths,
-                                    const std::vector<std::string>& dependenciesCopiesPaths)
+DS::Result<void> 
+runcpp2::SyncLocalDependencies( const std::vector<Data::DependencyInfo*>& dependencies,
+                                const std::vector<std::string>& dependenciesSourcePaths,
+                                const std::vector<std::string>& dependenciesCopiesPaths)
 {
     ssLOG_FUNC_DEBUG();
     for(size_t i = 0; i < dependencies.size(); ++i)
     {
-        if(!SyncLocalDependency(*dependencies.at(i),
-                                ghc::filesystem::path(dependenciesSourcePaths.at(i)),
-                                ghc::filesystem::path(dependenciesCopiesPaths.at(i))))
-        {
-            return false;
-        }
+        SyncLocalDependency(*dependencies.at(i),
+                            ghc::filesystem::path(dependenciesSourcePaths.at(i)),
+                            ghc::filesystem::path(dependenciesCopiesPaths.at(i))).DS_TRY();
     }
 
-    return true;
+    return {};
 }
 

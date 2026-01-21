@@ -10,17 +10,17 @@
 #include <vector>
 namespace runcpp2
 {
-    std::string GetConfigFilePath();
+    DS::Result<std::string> GetConfigFilePath();
     
-    bool WriteDefaultConfigs(   const ghc::filesystem::path& userConfigPath, 
-                                const bool writeUserConfig,
-                                const bool writeDefaultConfigs);
+    DS::Result<void> WriteDefaultConfigs(   const ghc::filesystem::path& userConfigPath, 
+                                            const bool writeUserConfig,
+                                            const bool writeDefaultConfigs);
     
     DS::Result<void> ReadUserConfig(std::vector<Data::Profile>& outProfiles, 
                                     std::string& outPreferredProfile,
                                     const std::string& customConfigPath = "");
     
-    bool ParseScriptInfo(const std::string& scriptInfo, Data::ScriptInfo& outScriptInfo);
+    DS::Result<void> ParseScriptInfo(const std::string& scriptInfo, Data::ScriptInfo& outScriptInfo);
 }
 
 #endif
