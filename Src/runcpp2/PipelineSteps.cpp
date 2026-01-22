@@ -178,12 +178,11 @@ namespace
     }
 }
 
-bool runcpp2::CopyFiles(const ghc::filesystem::path& destDir,
-                        const std::vector<std::string>& filePaths,
-                        std::vector<std::string>& outCopiedPaths)
+DS::Result<void> runcpp2::CopyFiles(const ghc::filesystem::path& destDir,
+                                    const std::vector<std::string>& filePaths,
+                                    std::vector<std::string>& outCopiedPaths)
 {
     ssLOG_FUNC_INFO();
-    INTERNAL_RUNCPP2_SAFE_START();
     
     std::error_code e;
     for (const std::string& srcPath : filePaths)
@@ -199,35 +198,28 @@ bool runcpp2::CopyFiles(const ghc::filesystem::path& destDir,
             
             if(e)
             {
-                ssLOG_ERROR("Failed to copy file from " << srcPath << 
-                            " to " << destPath.string());
-                ssLOG_ERROR("Error: " << e.message());
-                return false;
+                std::string errorMsg =  DS_STR("Failed to copy file from ") + srcPath + " to " + 
+                                        destPath.string() + "\nError: " + e.message();
+                return DS_ERROR_MSG(errorMsg);
             }
             
             ssLOG_INFO("Copied from " << srcPath << " to " << destPath.string());
             outCopiedPaths.push_back(ProcessPath(destPath));
         }
         else
-        {
-            ssLOG_ERROR("File to copy not found: " << srcPath);
-            return false;
-        }
+            return DS_ERROR_MSG("File to copy not found: " + srcPath);
     }
     
-    return true;
-    
-    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+    return {};
 }
 
-runcpp2::PipelineResult 
-runcpp2::RunProfileCommands(const Data::ProfilesCommands* commands,
-                            const Data::Profile& profile,
-                            const std::string& workingDir,
-                            const std::string& commandType)
+
+DS::Result<void> runcpp2::RunProfileCommands(   const Data::ProfilesCommands* commands,
+                                                const Data::Profile& profile,
+                                                const std::string& workingDir,
+                                                const std::string& commandType)
 {
     ssLOG_FUNC_INFO();
-    INTERNAL_RUNCPP2_SAFE_START();
     
     if(commands != nullptr)
     {
@@ -243,11 +235,11 @@ runcpp2::RunProfileCommands(const Data::ProfilesCommands* commands,
                 
                 if(!runcpp2::RunCommand(cmd, true, workingDir, output, returnCode))
                 {
-                    ssLOG_ERROR(commandType << " command failed: " << cmd << 
-                                " with return code " << returnCode);
-                    ssLOG_ERROR("Was trying to run: " << cmd);
-                    ssLOG_ERROR("Output: \n" << output);
-                    return PipelineResult::UNEXPECTED_FAILURE;
+                    std::string errorMsg =  commandType + " command failed: " + cmd + 
+                                            " with return code " + DS_STR(returnCode) + "\n";
+                    errorMsg += "Was trying to run: " + cmd + "\n";
+                    errorMsg += "Output: \n" + output;
+                    return DS_ERROR_MSG_EC(errorMsg, (int)PipelineResult::UNEXPECTED_FAILURE);
                 }
                 
                 ssLOG_INFO(commandType << " command ran: \n" << cmd);
@@ -255,38 +247,33 @@ runcpp2::RunProfileCommands(const Data::ProfilesCommands* commands,
             }
         }
     }
-    return PipelineResult::SUCCESS;
     
-    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
+    return {};
 }
 
-runcpp2::PipelineResult runcpp2::ValidateInputs(const std::string& scriptPath, 
-                                                const std::vector<Data::Profile>& profiles,
-                                                ghc::filesystem::path& outAbsoluteScriptPath,
-                                                ghc::filesystem::path& outScriptDirectory,
-                                                std::string& outScriptName)
+DS::Result<void> runcpp2::ValidateInputs(   const std::string& scriptPath, 
+                                            const std::vector<Data::Profile>& profiles,
+                                            ghc::filesystem::path& outAbsoluteScriptPath,
+                                            ghc::filesystem::path& outScriptDirectory,
+                                            std::string& outScriptName)
 {
     ssLOG_FUNC_INFO();
-    INTERNAL_RUNCPP2_SAFE_START();
     
     if(profiles.empty())
-    {
-        ssLOG_ERROR("No compiler profiles found");
-        return PipelineResult::EMPTY_PROFILES;
-    }
+        return DS_ERROR_MSG_EC("No compiler profiles found", (int)PipelineResult::EMPTY_PROFILES);
 
     //Check if input file exists
     std::error_code _;
     if(!ghc::filesystem::exists(scriptPath, _))
     {
-        ssLOG_ERROR("File does not exist: " << scriptPath);
-        return PipelineResult::INVALID_SCRIPT_PATH;
+        return DS_ERROR_MSG_EC( "File does not exist: " + scriptPath, 
+                                (int)PipelineResult::INVALID_SCRIPT_PATH);
     }
     
     if(ghc::filesystem::is_directory(scriptPath, _))
     {
-        ssLOG_ERROR("The input file must not be a directory: " << scriptPath);
-        return PipelineResult::INVALID_SCRIPT_PATH;
+        return DS_ERROR_MSG_EC( "The input file must not be a directory: " + scriptPath,
+                                (int)PipelineResult::INVALID_SCRIPT_PATH);
     }
 
     outAbsoluteScriptPath = ghc::filesystem::absolute(ghc::filesystem::canonical(scriptPath, _));
@@ -299,20 +286,16 @@ runcpp2::PipelineResult runcpp2::ValidateInputs(const std::string& scriptPath,
     ssLOG_DEBUG("scriptName: " << outScriptName);
     ssLOG_DEBUG("is_directory: " << ghc::filesystem::is_directory(outScriptDirectory));
 
-    return PipelineResult::SUCCESS;
-    
-    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
+    return {};
 }
 
-runcpp2::PipelineResult 
-runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptPath,
-                                    const ghc::filesystem::path& scriptDirectory,
-                                    const std::string& scriptName,
-                                    const bool buildExecutable,
-                                    Data::ScriptInfo& outScriptInfo)
+DS::Result<void> runcpp2::ParseAndValidateScriptInfo(   const ghc::filesystem::path& absoluteScriptPath,
+                                                        const ghc::filesystem::path& scriptDirectory,
+                                                        const std::string& scriptName,
+                                                        const bool buildExecutable,
+                                                        Data::ScriptInfo& outScriptInfo)
 {
     ssLOG_FUNC_INFO();
-    INTERNAL_RUNCPP2_SAFE_START();
 
     //Check if there's script info as yaml file instead
     std::error_code e;
@@ -327,9 +310,9 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
         outScriptInfo.LastWriteTime = ghc::filesystem::last_write_time(dedicatedYamlLoc, e);
         if(e)
         {
-            ssLOG_ERROR(e.message());
-            ssLOG_ERROR("Failed to get last write time for: " << dedicatedYamlLoc);
-            return PipelineResult::INVALID_SCRIPT_INFO;
+            std::string errorMsg = e.message();
+            errorMsg += "\nFailed to get last write time for: " + dedicatedYamlLoc.string();
+            return DS_ERROR_MSG_EC(errorMsg, (int)PipelineResult::INVALID_SCRIPT_INFO);
         }
 
         inputFile.open(dedicatedYamlLoc);
@@ -343,17 +326,17 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
         outScriptInfo.LastWriteTime = ghc::filesystem::last_write_time(absoluteScriptPath, e);
         if(e)
         {
-            ssLOG_ERROR(e.message());
-            ssLOG_ERROR("Failed to get last write time for: " << absoluteScriptPath);
-            return PipelineResult::INVALID_SCRIPT_INFO;
+            std::string errorMsg = e.message();
+            errorMsg += "\nFailed to get last write time for: " + absoluteScriptPath.string();
+            return DS_ERROR_MSG_EC(errorMsg, (int)PipelineResult::INVALID_SCRIPT_INFO);
         }
 
         inputFile.open(absoluteScriptPath);
         
         if(!inputFile)
         {
-            ssLOG_ERROR("Failed to open file: " << absoluteScriptPath);
-            return PipelineResult::INVALID_SCRIPT_PATH;
+            return DS_ERROR_MSG_EC( "Failed to open file: " + absoluteScriptPath.string(), 
+                                    (int)PipelineResult::INVALID_SCRIPT_PATH);
         }
 
         std::stringstream buffer;
@@ -362,16 +345,18 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
         
         if(!GetParsableInfo(source, parsableInfo))
         {
-            ssLOG_ERROR("An error has been encountered when parsing info: " << absoluteScriptPath);
-            return PipelineResult::INVALID_SCRIPT_INFO;
+            return DS_ERROR_MSG_EC( "An error has been encountered when parsing info: " + 
+                                    absoluteScriptPath.string(), 
+                                    (int)PipelineResult::INVALID_SCRIPT_INFO);
         }
     }
     
     //Try to parse the runcpp2 info
     ParseScriptInfo(parsableInfo, outScriptInfo)
-    .DS_TRY_ACT(ssLOG_ERROR("Failed to parse info: " << DS_TMP_ERROR.ToString());
-                ssLOG_ERROR("Content trying to parse: " << "\n" << parsableInfo);
-                return PipelineResult::INVALID_SCRIPT_INFO);
+        .DS_TRY_ACT(DS_APPEND_TRACE(DS_TMP_ERROR);
+                    DS_TMP_ERROR.Message += "\nContent trying to parse: \n" + parsableInfo;
+                    DS_TMP_ERROR.ErrorCode = (int)PipelineResult::INVALID_SCRIPT_INFO;
+                    return DS::Error(DS_TMP_ERROR));
     
     if(!parsableInfo.empty())
     {
@@ -388,9 +373,7 @@ runcpp2::ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptP
                                             Data::BuildType::INTERNAL_EXECUTABLE_SHARED;
     }
 
-    return PipelineResult::SUCCESS;
-    
-    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
+    return {};
 }
 
 runcpp2::PipelineResult runcpp2::HandleCleanup( const Data::ScriptInfo& scriptInfo,
@@ -558,12 +541,9 @@ runcpp2::CheckScriptInfoChanges(const ghc::filesystem::path& buildDir,
             
         if(setupCommands != nullptr)
         {
-            PipelineResult result = RunProfileCommands( setupCommands, 
-                                                        profile, 
-                                                        scriptDirectory.string(), 
-                                                        "Setup");
-            if(result != PipelineResult::SUCCESS)
-                return result;
+            RunProfileCommands(setupCommands, profile, scriptDirectory.string(), "Setup")
+                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                            return (PipelineResult)DS_TMP_ERROR.ErrorCode);
         }
     }
     
@@ -845,7 +825,10 @@ runcpp2::PipelineResult runcpp2::HandlePreBuild(const Data::ScriptInfo& scriptIn
     const Data::ProfilesCommands* preBuildCommands = 
         runcpp2::GetValueFromPlatformMap(scriptInfo.PreBuild);
     
-    return RunProfileCommands(preBuildCommands, profile, buildDir.string(), "PreBuild");
+    RunProfileCommands(preBuildCommands, profile, buildDir.string(), "PreBuild")
+        .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                    return (PipelineResult)DS_TMP_ERROR.ErrorCode);
+    return {};
 }
 
 runcpp2::PipelineResult runcpp2::HandlePostBuild(   const Data::ScriptInfo& scriptInfo,
@@ -857,7 +840,10 @@ runcpp2::PipelineResult runcpp2::HandlePostBuild(   const Data::ScriptInfo& scri
     const Data::ProfilesCommands* postBuildCommands = 
         GetValueFromPlatformMap(scriptInfo.PostBuild);
     
-    return RunProfileCommands(postBuildCommands, profile, buildDir.string(), "PostBuild");
+    RunProfileCommands(postBuildCommands, profile, buildDir.string(), "PostBuild")
+        .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                    return (PipelineResult)DS_TMP_ERROR.ErrorCode);
+    return {};
 }
 
 runcpp2::PipelineResult 

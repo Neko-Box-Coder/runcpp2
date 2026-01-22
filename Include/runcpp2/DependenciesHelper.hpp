@@ -9,6 +9,7 @@
     #define NOMINMAX 1
 #endif
 
+#include "DSResult/DSResult.hpp"
 #include "ghc/filesystem.hpp"
 #include <vector>
 

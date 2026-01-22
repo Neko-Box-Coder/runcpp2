@@ -21,27 +21,26 @@
 
 namespace runcpp2
 {
-    bool CopyFiles( const ghc::filesystem::path& destDir,
-                    const std::vector<std::string>& filePaths,
-                    std::vector<std::string>& outCopiedPaths);
+    DS::Result<void> CopyFiles( const ghc::filesystem::path& destDir,
+                                const std::vector<std::string>& filePaths,
+                                std::vector<std::string>& outCopiedPaths);
     
-    PipelineResult RunProfileCommands(  const Data::ProfilesCommands* commands,
+    DS::Result<void> RunProfileCommands(const Data::ProfilesCommands* commands,
                                         const Data::Profile& profile,
                                         const std::string& workingDir,
                                         const std::string& commandType);
 
-    PipelineResult ValidateInputs(  const std::string& scriptPath, 
+    DS::Result<void> ValidateInputs(const std::string& scriptPath, 
                                     const std::vector<Data::Profile>& profiles,
                                     ghc::filesystem::path& outAbsoluteScriptPath,
                                     ghc::filesystem::path& outScriptDirectory,
                                     std::string& outScriptName);
 
-    PipelineResult 
-    ParseAndValidateScriptInfo( const ghc::filesystem::path& absoluteScriptPath,
-                                const ghc::filesystem::path& scriptDirectory,
-                                const std::string& scriptName,
-                                const bool buildExecutable,
-                                Data::ScriptInfo& outScriptInfo);
+    DS::Result<void> ParseAndValidateScriptInfo(const ghc::filesystem::path& absoluteScriptPath,
+                                                const ghc::filesystem::path& scriptDirectory,
+                                                const std::string& scriptName,
+                                                const bool buildExecutable,
+                                                Data::ScriptInfo& outScriptInfo);
 
     PipelineResult HandleCleanup(   const Data::ScriptInfo& scriptInfo,
                                     const Data::Profile& profile,
