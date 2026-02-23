@@ -14,28 +14,30 @@
 
 namespace runcpp2 
 {
-    bool CompileScriptOnly( const ghc::filesystem::path& buildDir,
+    DS::Result<void>  
+    CompileScriptOnly(  const ghc::filesystem::path& buildDir,
+                        const ghc::filesystem::path& scriptPath,
+                        const std::vector<ghc::filesystem::path>& sourceFiles,
+                        const std::vector<bool>& sourceHasCache,
+                        const std::vector<ghc::filesystem::path>& includePaths,
+                        const Data::ScriptInfo& scriptInfo,
+                        const std::vector<Data::DependencyInfo*>& availableDependencies,
+                        const Data::Profile& profile,
+                        const int maxThreads);
+    
+    //TODO: Convert string paths to filesystem paths
+    DS::Result<void> 
+    CompileAndLinkScript(   const ghc::filesystem::path& buildDir,
                             const ghc::filesystem::path& scriptPath,
+                            const std::string& outputName,
                             const std::vector<ghc::filesystem::path>& sourceFiles,
                             const std::vector<bool>& sourceHasCache,
                             const std::vector<ghc::filesystem::path>& includePaths,
                             const Data::ScriptInfo& scriptInfo,
                             const std::vector<Data::DependencyInfo*>& availableDependencies,
                             const Data::Profile& profile,
+                            const std::vector<std::string>& compiledObjectsPaths,
                             const int maxThreads);
-    
-    //TODO: Convert string paths to filesystem paths
-    bool CompileAndLinkScript(  const ghc::filesystem::path& buildDir,
-                                const ghc::filesystem::path& scriptPath,
-                                const std::string& outputName,
-                                const std::vector<ghc::filesystem::path>& sourceFiles,
-                                const std::vector<bool>& sourceHasCache,
-                                const std::vector<ghc::filesystem::path>& includePaths,
-                                const Data::ScriptInfo& scriptInfo,
-                                const std::vector<Data::DependencyInfo*>& availableDependencies,
-                                const Data::Profile& profile,
-                                const std::vector<std::string>& compiledObjectsPaths,
-                                const int maxThreads);
 }
 
 #endif

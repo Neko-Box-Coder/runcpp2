@@ -848,21 +848,19 @@ namespace
     }
 }
 
-bool runcpp2::CompileScriptOnly(const ghc::filesystem::path& buildDir,
-                                const ghc::filesystem::path& scriptPath,
-                                const std::vector<ghc::filesystem::path>& sourceFiles,
-                                const std::vector<bool>& sourceHasCache,
-                                const std::vector<ghc::filesystem::path>& includePaths,
-                                const Data::ScriptInfo& scriptInfo,
-                                const std::vector<Data::DependencyInfo*>& availableDependencies,
-                                const Data::Profile& profile,
-                                const int maxThreads)
+DS::Result<void> 
+runcpp2::CompileScriptOnly( const ghc::filesystem::path& buildDir,
+                            const ghc::filesystem::path& scriptPath,
+                            const std::vector<ghc::filesystem::path>& sourceFiles,
+                            const std::vector<bool>& sourceHasCache,
+                            const std::vector<ghc::filesystem::path>& includePaths,
+                            const Data::ScriptInfo& scriptInfo,
+                            const std::vector<Data::DependencyInfo*>& availableDependencies,
+                            const Data::Profile& profile,
+                            const int maxThreads)
 {
     if(!RunGlobalSteps(buildDir, profile.Setup))
-    {
-        ssLOG_ERROR("Failed to run profile global setup steps");
-        return false;
-    }
+        return DS_ERROR_MSG("Failed to run profile global setup steps");
     
     std::vector<ghc::filesystem::path> sourceFilesNeededToCompile;
 
@@ -884,38 +882,33 @@ bool runcpp2::CompileScriptOnly(const ghc::filesystem::path& buildDir,
                         objectsFilesPaths,
                         maxThreads))
     {
-        ssLOG_ERROR("CompileScript failed");
         if(!RunGlobalSteps(buildDir, profile.Cleanup))
-            ssLOG_ERROR("Failed to run profile global cleanup steps");
-        return false;
+            return DS_ERROR_MSG("CompileScript failed. Failed to run profile global cleanup steps");
+        
+        return DS_ERROR_MSG("CompileScript failed");
     }
     
     if(!RunGlobalSteps(buildDir, profile.Cleanup))
-    {
-        ssLOG_ERROR("Failed to run profile global cleanup steps");
-        return false;
-    }
+        return DS_ERROR_MSG("Failed to run profile global cleanup steps");
     
-    return true;
+    return {};
 }
 
-bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
-                                    const ghc::filesystem::path& scriptPath,
-                                    const std::string& outputName,
-                                    const std::vector<ghc::filesystem::path>& sourceFiles,
-                                    const std::vector<bool>& sourceHasCache,
-                                    const std::vector<ghc::filesystem::path>& includePaths,
-                                    const Data::ScriptInfo& scriptInfo,
-                                    const std::vector<Data::DependencyInfo*>& availableDependencies,
-                                    const Data::Profile& profile,
-                                    const std::vector<std::string>& compiledObjectsPaths,
-                                    const int maxThreads)
+DS::Result<void> 
+runcpp2::CompileAndLinkScript(  const ghc::filesystem::path& buildDir,
+                                const ghc::filesystem::path& scriptPath,
+                                const std::string& outputName,
+                                const std::vector<ghc::filesystem::path>& sourceFiles,
+                                const std::vector<bool>& sourceHasCache,
+                                const std::vector<ghc::filesystem::path>& includePaths,
+                                const Data::ScriptInfo& scriptInfo,
+                                const std::vector<Data::DependencyInfo*>& availableDependencies,
+                                const Data::Profile& profile,
+                                const std::vector<std::string>& compiledObjectsPaths,
+                                const int maxThreads)
 {
     if(!RunGlobalSteps(buildDir, profile.Setup))
-    {
-        ssLOG_ERROR("Failed to run profile global setup steps");
-        return false;
-    }
+        return DS_ERROR_MSG("Failed to run profile global setup steps");
     
     std::vector<ghc::filesystem::path> sourceFilesNeededToCompile;
     for(int i = 0; i < sourceFiles.size(); ++i)
@@ -937,10 +930,10 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
                         objectsFilesPaths,
                         maxThreads))
     {
-        ssLOG_ERROR("CompileScript failed");
         if(!RunGlobalSteps(buildDir, profile.Cleanup))
-            ssLOG_ERROR("Failed to run profile global cleanup steps");
-        return false;
+            return DS_ERROR_MSG("CompileScript failed. Failed to run profile global cleanup steps");
+        
+        return DS_ERROR_MSG("CompileScript failed");
     }
     
     //Add compiled object files
@@ -952,7 +945,7 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
     {
         ssLOG_INFO( "Skipping linking - build type is " << 
                     Data::BuildTypeToString(scriptInfo.CurrentBuildType));
-        return true;
+        return {};
     }
     
     std::string dependenciesLinkFlags;
@@ -985,18 +978,12 @@ bool runcpp2::CompileAndLinkScript( const ghc::filesystem::path& buildDir,
                     profile,
                     objectsFilesPaths))
     {
-        ssLOG_ERROR("LinkScript failed");
-        return false;
+        return DS_ERROR_MSG("LinkScript failed");
     }
     
     if(!RunGlobalSteps(buildDir, profile.Cleanup))
-    {
-        ssLOG_ERROR("Failed to run profile global cleanup steps");
-        if(!RunGlobalSteps(buildDir, profile.Cleanup))
-            ssLOG_ERROR("Failed to run profile global cleanup steps");
-        return false;
-    }
+        return DS_ERROR_MSG("Failed to run profile global cleanup steps");
     
-    return true;
+    return {};
 }
 
