@@ -97,10 +97,7 @@ namespace Mock_std
 #define std Mock_std
 
 #if INTERNAL_RUNCPP2_UNDEF_MOCKS
-    #undef exists
-    #undef is_directory
-    #undef ifstream
-    #undef std
+    #include "./UndefMocks.hpp"
 #endif
 
 #endif 

@@ -4,7 +4,9 @@
 
 #include <fstream>
 
-#if INTERNAL_RUNCPP2_UNIT_TESTS
+#if defined(INTERNAL_RUNCPP2_UNIT_TESTS) && \
+    INTERNAL_RUNCPP2_UNIT_TESTS == INTERNAL_RUNCPP2_UNIT_TESTS_INCLUDE_MANAGER
+    
     #include "Tests/IncludeManager/MockComponents.hpp"
 #else
     #define CO_NO_OVERRIDE 1
@@ -158,3 +160,9 @@ namespace runcpp2
         return IncludeRecordDir / (std::to_string(pathHash) + ".Includes");
     }
 } 
+
+#if defined(INTERNAL_RUNCPP2_UNIT_TESTS) && \
+    INTERNAL_RUNCPP2_UNIT_TESTS == INTERNAL_RUNCPP2_UNIT_TESTS_INCLUDE_MANAGER
+    
+    #include "Tests/IncludeManager/UndefMocks.hpp"
+#endif

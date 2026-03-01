@@ -123,14 +123,7 @@ namespace Mock_std
 #define std Mock_std
 
 #if INTERNAL_RUNCPP2_UNDEF_MOCKS
-    #undef exists
-    #undef create_directories
-    #undef last_write_time
-    #undef ifstream
-    #undef ofstream
-    #undef hash
-    #undef getline
-    #undef std
+    #include "./UndefMocks.hpp"
 #endif
 
 #endif 

@@ -7,14 +7,47 @@
 #include "runcpp2/PlatformUtil.hpp"
 #include "runcpp2/Data/BuildTypeHelper.hpp"
 
+
+//Unity build
+#include "runcpp2/Data/Profile.cpp"
+#include "runcpp2/Data/DependencyInfo.cpp"
+#include "runcpp2/Data/DependencyLinkProperty.cpp"
+#include "runcpp2/Data/DependencySource.cpp"
+#include "runcpp2/Data/GitSource.cpp"
+#include "runcpp2/Data/LocalSource.cpp"
+#include "runcpp2/Data/FileProperties.cpp"
+#include "runcpp2/Data/FlagsOverrideInfo.cpp"
+#include "runcpp2/Data/ProfilesCommands.cpp"
+#include "runcpp2/Data/ProfilesFlagsOverride.cpp"
+#include "runcpp2/Data/ScriptInfo.cpp"
+#include "runcpp2/Data/ProfilesProcessPaths.cpp"
+#include "runcpp2/Data/FilesTypesInfo.cpp"
+#include "runcpp2/Data/StageInfo.cpp"
+#include "runcpp2/Data/ProfilesDefines.cpp"
+#include "runcpp2/Data/FilesToCopyInfo.cpp"
+#include "runcpp2/Data/BuildTypeHelper.cpp"
+#include "runcpp2/ProfileHelper.cpp"
+#include "runcpp2/CompilingLinking.cpp"
+#include "runcpp2/ConfigParsing.cpp"
+#include "runcpp2/DefaultYAMLs.c"
+#include "runcpp2/DependenciesHelper.cpp"
+#include "runcpp2/ParseUtil.cpp"
+#include "runcpp2/PlatformUtil.cpp"
+#include "runcpp2/StringUtil.cpp"
+#include "runcpp2/BuildsManager.cpp"
+#include "runcpp2/PipelineSteps.cpp"
+#include "runcpp2/IncludeManager.cpp"
+#include "runcpp2/LibYAML_Wrapper.cpp"
+
+
 #include "ssLogger/ssLog.hpp"
 #include "ghc/filesystem.hpp"
 
 #include <fstream>
 #include <chrono>
 
-extern "C" const uint8_t DefaultScriptInfo[];
-extern "C" const size_t DefaultScriptInfo_size;
+//extern "C" const uint8_t DefaultScriptInfo[];
+//extern "C" const size_t DefaultScriptInfo_size;
 
 //Use for SetDllDirectory
 #if defined(_WIN32)

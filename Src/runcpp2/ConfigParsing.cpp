@@ -1,30 +1,61 @@
 #include "runcpp2/ConfigParsing.hpp"
 #include "runcpp2/ParseUtil.hpp"
-#include "runcpp2/StringUtil.hpp"
 #include "runcpp2/PlatformUtil.hpp"
 #include "runcpp2/YamlLib.hpp"
-
-#include "runcpp2/LibYAML_Wrapper.hpp"
 #include "runcpp2/DeferUtil.hpp"
+#include "runcpp2/LibYAML_Wrapper.hpp"
 
 #include "cfgpath.h"
 #include "ssLogger/ssLog.hpp"
 
-#if INTERNAL_RUNCPP2_UNIT_TESTS
+#if defined(INTERNAL_RUNCPP2_UNIT_TESTS) && \
+    INTERNAL_RUNCPP2_UNIT_TESTS == INTERNAL_RUNCPP2_UNIT_TESTS_CONFIG_PARSING
+    
+    //Unity build for unit test
+    #include "runcpp2/Data/Profile.cpp"
+    #include "runcpp2/Data/DependencyInfo.cpp"
+    #include "runcpp2/Data/DependencyLinkProperty.cpp"
+    #include "runcpp2/Data/DependencySource.cpp"
+    #include "runcpp2/Data/GitSource.cpp"
+    #include "runcpp2/Data/LocalSource.cpp"
+    #include "runcpp2/Data/FileProperties.cpp"
+    #include "runcpp2/Data/FlagsOverrideInfo.cpp"
+    #include "runcpp2/Data/ProfilesCommands.cpp"
+    #include "runcpp2/Data/ProfilesFlagsOverride.cpp"
+    #include "runcpp2/Data/ScriptInfo.cpp"
+    #include "runcpp2/Data/ProfilesProcessPaths.cpp"
+    #include "runcpp2/Data/FilesTypesInfo.cpp"
+    #include "runcpp2/Data/StageInfo.cpp"
+    #include "runcpp2/Data/ProfilesDefines.cpp"
+    #include "runcpp2/Data/FilesToCopyInfo.cpp"
+    #include "runcpp2/Data/BuildTypeHelper.cpp"
+    #include "runcpp2/ProfileHelper.cpp"
+    #include "runcpp2/CompilingLinking.cpp"
+    #include "runcpp2/DefaultYAMLs.c"
+    #include "runcpp2/DependenciesHelper.cpp"
+    #include "runcpp2/ParseUtil.cpp"
+    #include "runcpp2/PlatformUtil.cpp"
+    #include "runcpp2/StringUtil.cpp"
+    #include "runcpp2/BuildsManager.cpp"
+    #include "runcpp2/PipelineSteps.cpp"
+    #include "runcpp2/IncludeManager.cpp"
+    #include "runcpp2/LibYAML_Wrapper.cpp"
+    
     #include "Tests/ConfigParsing/MockComponents.hpp"
 #else
     #define CO_NO_OVERRIDE 1
     #include "CppOverride.hpp"
+    
+    extern "C" const uint8_t DefaultUserConfig[];
+    extern "C" const size_t DefaultUserConfig_size;
+    extern "C" const uint8_t CommonFileTypes[];
+    extern "C" const size_t CommonFileTypes_size;
+    extern "C" const uint8_t G_PlusPlus[];
+    extern "C" const size_t G_PlusPlus_size;
+    extern "C" const uint8_t Vs2022_v17Plus[];
+    extern "C" const size_t Vs2022_v17Plus_size;
 #endif
 
-extern "C" const uint8_t DefaultUserConfig[];
-extern "C" const size_t DefaultUserConfig_size;
-extern "C" const uint8_t CommonFileTypes[];
-extern "C" const size_t CommonFileTypes_size;
-extern "C" const uint8_t G_PlusPlus[];
-extern "C" const size_t G_PlusPlus_size;
-extern "C" const uint8_t Vs2022_v17Plus[];
-extern "C" const size_t Vs2022_v17Plus_size;
 
 
 namespace 
@@ -479,3 +510,9 @@ DS::Result<void> runcpp2::ParseScriptInfo(  const std::string& scriptInfo,
     return {};
 }
 
+
+#if defined(INTERNAL_RUNCPP2_UNIT_TESTS) && \
+    INTERNAL_RUNCPP2_UNIT_TESTS == INTERNAL_RUNCPP2_UNIT_TESTS_CONFIG_PARSING
+    
+    #include "Tests/ConfigParsing/UndefMocks.hpp"
+#endif

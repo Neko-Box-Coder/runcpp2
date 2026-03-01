@@ -7,6 +7,7 @@
 - Add version for default user config and prompt for update
 - Rename "OtherFilesToBeCompiled" to "SourceFiles"
 - Migrate to libyaml
+- Migrate to DSResult and remove ssTest
 
 ### v0.3.1
 - Check last run is shared lib or executable. Reset cache when necessary if different type
@@ -32,8 +33,8 @@
 ### v0.4.0
 - Allow runcpp2 to be library for scriptable pipeline
 - Add more default profiles
-- Ability to compile runcpp2 as single cpp, to ditch cmake
-- Migrate to DSResult and remove ssTest
+- Ability to compile runcpp2 as single cpp, ditch cmake
+- Move to variant-lite, mpark-variant is unreadable
 
 ## High Priority
 

@@ -1,4 +1,4 @@
-#include "runcpp2/ConfigParsing.hpp"
+#include "runcpp2/ConfigParsing.cpp"
 
 #include "DSResult/DSResult.hpp"
 #include "CppOverride.hpp"
@@ -15,17 +15,6 @@ CO_DECLARE_INSTANCE(OverrideInstance);
 #if !INTERNAL_RUNCPP2_UNIT_TESTS || !defined(INTERNAL_RUNCPP2_UNIT_TESTS)
     static_assert(false, "INTERNAL_RUNCPP2_UNIT_TESTS not defined");
 #endif
-
-
-//Mock DefaultUserConfig for testing
-extern "C" const uint8_t DefaultUserConfig[] = {0};
-extern "C" const size_t DefaultUserConfig_size = 0;
-extern "C" const uint8_t CommonFileTypes[] = {0};
-extern "C" const size_t CommonFileTypes_size = 0;
-extern "C" const uint8_t G_PlusPlus[] = {0};
-extern "C" const size_t G_PlusPlus_size = 0;
-extern "C" const uint8_t Vs2022_v17Plus[] = {0};
-extern "C" const size_t Vs2022_v17Plus_size = 0;
 
 
 DS::Result<void> TestMain()

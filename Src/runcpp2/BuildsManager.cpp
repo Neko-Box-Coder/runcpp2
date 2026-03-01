@@ -4,7 +4,9 @@
 #include <sstream>
 #include <cassert>
 
-#if INTERNAL_RUNCPP2_UNIT_TESTS
+#if defined(INTERNAL_RUNCPP2_UNIT_TESTS) && \
+    INTERNAL_RUNCPP2_UNIT_TESTS == INTERNAL_RUNCPP2_UNIT_TESTS_BUILDS_MANAGER
+    
     #include "Tests/BuildsManager/MockComponents.hpp"
 #else
     #define CO_NO_OVERRIDE 1
@@ -334,4 +336,9 @@ namespace runcpp2
 }
 
 
+#if defined(INTERNAL_RUNCPP2_UNIT_TESTS) && \
+    INTERNAL_RUNCPP2_UNIT_TESTS == INTERNAL_RUNCPP2_UNIT_TESTS_BUILDS_MANAGER
+    
+    #include "Tests/BuildsManager/UndefMocks.hpp"
+#endif
 
