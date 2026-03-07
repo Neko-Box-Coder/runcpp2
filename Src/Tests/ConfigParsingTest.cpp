@@ -4,6 +4,9 @@
 #include "ssLogger/ssLog.hpp"
 #include "MacroPowerToys.h"
 
+//NOTE: #include "runcpp2/DefaultYAMLs.c" at the end
+//NOTE: #include "runcpp2/LibYamlImpl.cpp" at the end
+
 CO_DECLARE_INSTANCE(OverrideInstance);
 
 #define INTERNAL_RUNCPP2_UNDEF_MOCKS 1
@@ -607,3 +610,4 @@ int main(int argc, char** argv)
 }
 
 #include "runcpp2/DefaultYAMLs.c"
+#include "runcpp2/LibYamlImpl.cpp"

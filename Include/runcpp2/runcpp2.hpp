@@ -30,6 +30,8 @@
 #include <system_error>
 #include <unordered_map>
 
+//NOTE: #include "runcpp2/LibYamlImpl.cpp" at the end
+
 //Use for SetDllDirectory
 #if defined(_WIN32)
     #ifndef WIN32_LEAN_AND_MEAN
@@ -909,5 +911,7 @@ namespace runcpp2
         return true;
     }
 }
+
+#include "runcpp2/LibYamlImpl.cpp"
 
 #endif

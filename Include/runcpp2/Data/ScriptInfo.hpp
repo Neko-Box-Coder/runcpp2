@@ -10,7 +10,6 @@
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/LibYAML_Wrapper.hpp"
-#include "runcpp2/YamlLib.hpp"
 
 #undef RUNCPP2_CURRENT_CLASS_NAME
 #define RUNCPP2_CURRENT_CLASS_NAME ScriptInfo

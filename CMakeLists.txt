@@ -112,7 +112,9 @@ set(DS_USE_DEBUG_BREAK ON)
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/DSResult")
 
 set(BUILD_TESTING ON)
-add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/libyaml")
+# add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/libyaml")
+add_library(libyaml INTERFACE)
+target_include_directories(libyaml INTERFACE "${CMAKE_CURRENT_LIST_DIR}/External/libyaml/include")
 set(BUILD_TESTING OFF)
 
 # NOTE: Just include the file. Can't add subdirectory since it install stuff
@@ -183,7 +185,7 @@ set(RUNCPP2_SOURCE_FILES "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/runcpp2.cpp")
 add_library(runcpp2Lib INTERFACE)
 
 set(RUNCPP2_PRIVATE_LINK_LIBS ssLogger System2 CppOverride dylib)
-set(RUNCPP2_PUBLIC_LINK_LIBS ghc_filesystem mpark_variant MacroPowerToys string-view-lite yaml DSResult)
+set(RUNCPP2_PUBLIC_LINK_LIBS ghc_filesystem mpark_variant MacroPowerToys string-view-lite libyaml DSResult)
 target_include_directories(runcpp2Lib INTERFACE "${CMAKE_CURRENT_LIST_DIR}/Include" 
                                                 "${CMAKE_CURRENT_LIST_DIR}/Src")
 target_link_libraries(runcpp2Lib INTERFACE ${RUNCPP2_PRIVATE_LINK_LIBS})
