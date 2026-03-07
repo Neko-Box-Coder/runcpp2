@@ -184,13 +184,7 @@ add_library(runcpp2Lib INTERFACE)
 
 set(RUNCPP2_PRIVATE_LINK_LIBS ssLogger System2 CppOverride dylib)
 set(RUNCPP2_PUBLIC_LINK_LIBS ghc_filesystem mpark_variant MacroPowerToys string-view-lite yaml DSResult)
-
-# target_include_directories(runcpp2Lib PUBLIC    "${CMAKE_CURRENT_LIST_DIR}/Include" 
-#                                                 "${CMAKE_CURRENT_LIST_DIR}/Src")
-# target_link_libraries(runcpp2Lib PRIVATE ${RUNCPP2_PRIVATE_LINK_LIBS})
-# target_link_libraries(runcpp2Lib PUBLIC ${RUNCPP2_PUBLIC_LINK_LIBS})
-
-target_include_directories(runcpp2Lib INTERFACE    "${CMAKE_CURRENT_LIST_DIR}/Include" 
+target_include_directories(runcpp2Lib INTERFACE "${CMAKE_CURRENT_LIST_DIR}/Include" 
                                                 "${CMAKE_CURRENT_LIST_DIR}/Src")
 target_link_libraries(runcpp2Lib INTERFACE ${RUNCPP2_PRIVATE_LINK_LIBS})
 target_link_libraries(runcpp2Lib INTERFACE ${RUNCPP2_PUBLIC_LINK_LIBS})
@@ -212,7 +206,7 @@ else()
                                         #"-Wno-unused-but-set-variable"
                                         "-Wno-unused-parameter"
                                         "-Wno-switch"
-                                        "-Wno-gnu-zero-variadic-macro-arguments"
+                                        # "-Wno-gnu-zero-variadic-macro-arguments"
                                         "-Wextra"
                                         "-Wpedantic")
     if (RUNCPP2_WARNINGS_AS_ERRORS)
@@ -220,14 +214,9 @@ else()
     endif()
 endif()
 
-# target_compile_options(runcpp2Lib PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
-
 target_compile_options(runcpp2Lib INTERFACE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
 
 # Define the runcpp2 and default config version macro
-# target_compile_definitions(runcpp2Lib PUBLIC    RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}"
-#                                                 RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION})
-
 target_compile_definitions(runcpp2Lib INTERFACE RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}"
                                                 RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION})
 
@@ -236,7 +225,6 @@ target_compile_definitions(runcpp2Lib INTERFACE RUNCPP2_VERSION="${RUNCPP2_PROJE
 # =========================================================================
 
 add_executable(runcpp2 "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/main.cpp")
-# target_compile_options(runcpp2 PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
 target_link_libraries(runcpp2 PUBLIC runcpp2Lib)
 
 # =========================================================================

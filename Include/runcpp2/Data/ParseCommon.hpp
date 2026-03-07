@@ -1,6 +1,9 @@
 #ifndef RUNCPP2_DATA_PARSE_COMMON_HPP
 #define RUNCPP2_DATA_PARSE_COMMON_HPP
 
+#include "ssLogger/ssLog.hpp"
+
+#include <exception>
 #include <string>
 
 using PlatformName = std::string;;

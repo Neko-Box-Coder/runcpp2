@@ -590,4 +590,4 @@ int main(int argc, char* argv[])
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(-1);
 }
 
-#include "runcpp2/runcpp2.cpp"
+#include "runcpp2/DefaultYAMLs.c"

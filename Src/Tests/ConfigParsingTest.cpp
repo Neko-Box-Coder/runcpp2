@@ -1,5 +1,4 @@
-#include "runcpp2/ConfigParsing.cpp"
-
+#include "runcpp2/ConfigParsing.hpp"
 #include "DSResult/DSResult.hpp"
 #include "CppOverride.hpp"
 #include "ssLogger/ssLog.hpp"
@@ -607,3 +606,4 @@ int main(int argc, char** argv)
     return 1;
 }
 
+#include "runcpp2/DefaultYAMLs.c"
