@@ -4,10 +4,14 @@
 #include "runcpp2/Data/BuildType.hpp"
 #include "runcpp2/Data/FilesTypesInfo.hpp"
 #include "runcpp2/Data/Profile.hpp"
+#include "runcpp2/Data/FileProperties.hpp"
 #include "runcpp2/PlatformUtil.hpp"
 
 #include "ghc/filesystem.hpp"
 #include "ssLogger/ssLog.hpp"
+
+#include <string>
+#include <vector>
 
 namespace
 {

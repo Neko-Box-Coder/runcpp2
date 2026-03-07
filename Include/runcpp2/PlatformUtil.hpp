@@ -11,7 +11,6 @@
 #include "ssLogger/ssLog.hpp"
 #include "ghc/filesystem.hpp"
 
-#include <stdio.h>
 #include <cctype>
 #include <cstdint>
 #include <string>

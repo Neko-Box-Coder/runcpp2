@@ -6,17 +6,22 @@
 #include "runcpp2/Data/ProfilesCommands.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
 #include "runcpp2/Data/CmdOptions.hpp"
+#include "runcpp2/Data/BuildTypeHelper.hpp"
+#include "runcpp2/Data/BuildType.hpp"
+#include "runcpp2/Data/DependencyInfo.hpp"
+#include "runcpp2/Data/FileProperties.hpp"
+#include "runcpp2/Data/FilesTypesInfo.hpp"
+#include "runcpp2/Data/ParseCommon.hpp"
+#include "runcpp2/Data/ProfilesFlagsOverride.hpp"
+#include "runcpp2/Data/ProfilesProcessPaths.hpp"
 
 #include "runcpp2/BuildsManager.hpp"
 #include "runcpp2/IncludeManager.hpp"
 
-#include "runcpp2/ProfileHelper.hpp"
 #include "runcpp2/ConfigParsing.hpp"
 #include "runcpp2/DependenciesHelper.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/PlatformUtil.hpp"
-#include "runcpp2/Data/BuildTypeHelper.hpp"
-
 
 #if !defined(NOMINMAX)
     #define NOMINMAX 1
@@ -26,11 +31,21 @@
 #include "System2.h"
 #include "ssLogger/ssLog.hpp"
 #include "dylib.hpp"
+#include "DSResult/DSResult.hpp"
 
 #include <string>
 #include <vector>
 #include <unordered_map>
 #include <queue>
+#include <stddef.h>
+#include <exception>
+#include <fstream>
+#include <memory>
+#include <sstream>
+#include <system_error>
+#include <unordered_set>
+
+
 
 namespace
 {

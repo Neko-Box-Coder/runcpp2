@@ -4,9 +4,21 @@
 #include "runcpp2/Data/DependencyInfo.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
 #include "runcpp2/Data/Profile.hpp"
+#include "runcpp2/Data/DependencyLibraryType.hpp"
+#include "runcpp2/Data/DependencyLinkProperty.hpp"
+#include "runcpp2/Data/DependencySource.hpp"
+#include "runcpp2/Data/FileProperties.hpp"
+#include "runcpp2/Data/FilesToCopyInfo.hpp"
+#include "runcpp2/Data/FilesTypesInfo.hpp"
+#include "runcpp2/Data/GitSource.hpp"
+#include "runcpp2/Data/LocalSource.hpp"
+#include "runcpp2/Data/ParseCommon.hpp"
+#include "runcpp2/Data/ProfilesCommands.hpp"
+#include "runcpp2/Data/SubmoduleInitType.hpp"
+
+#include "runcpp2/LibYAML_Wrapper.hpp"
 #include "runcpp2/PlatformUtil.hpp"
 #include "runcpp2/StringUtil.hpp"
-#include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/DeferUtil.hpp"
 
 #if !defined(NOMINMAX)
@@ -16,11 +28,20 @@
 #include "ssLogger/ssLog.hpp"
 #include "DSResult/DSResult.hpp"
 #include "ghc/filesystem.hpp"
+#include "mpark/variant.hpp"
 
 #include <vector>
 #include <unordered_set>
 #include <future>
 #include <chrono>
+#include <stddef.h>
+#include <cctype>
+#include <fstream>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <system_error>
+#include <unordered_map>
 
 namespace
 {

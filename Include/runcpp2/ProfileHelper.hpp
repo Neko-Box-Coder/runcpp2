@@ -3,10 +3,19 @@
 
 #include "runcpp2/Data/Profile.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
+#include "runcpp2/Data/ParseCommon.hpp"
+#include "runcpp2/Data/StageInfo.hpp"
+
 #include "runcpp2/PlatformUtil.hpp"
 
 #include "ghc/filesystem.hpp"
 #include "ssLogger/ssLog.hpp"
+
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
 
 namespace
 {

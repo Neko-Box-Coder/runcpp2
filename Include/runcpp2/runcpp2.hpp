@@ -6,20 +6,29 @@
 #include "runcpp2/Data/Profile.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
 #include "runcpp2/Data/PipelineResult.hpp"
+#include "runcpp2/Data/FileProperties.hpp"
+#include "runcpp2/Data/FilesTypesInfo.hpp"
+#include "runcpp2/Data/ParseCommon.hpp"
 
 #include "runcpp2/PipelineSteps.hpp"
 #include "runcpp2/ProfileHelper.hpp"
 #include "runcpp2/CompilingLinking.hpp"
 #include "runcpp2/ConfigParsing.hpp"
 #include "runcpp2/PlatformUtil.hpp"
+#include "runcpp2/BuildsManager.hpp"
+#include "runcpp2/IncludeManager.hpp"
 
 #include "ssLogger/ssLog.hpp"
 #include "ghc/filesystem.hpp"
+#include "DSResult/DSResult.hpp"
 
 #include <string>
 #include <vector>
-#include <fstream>
 #include <chrono>
+#include <stdint.h>
+#include <stdlib.h>
+#include <system_error>
+#include <unordered_map>
 
 //Use for SetDllDirectory
 #if defined(_WIN32)
@@ -34,6 +43,8 @@
 
 extern const uint8_t DefaultScriptInfo[];
 extern const size_t DefaultScriptInfo_size;
+
+namespace runcpp2 { namespace Data { struct DependencyInfo; } }
 
 namespace
 {

@@ -9,6 +9,11 @@
 #include <unordered_map>
 #include <sstream>
 #include <cassert>
+#include <cstddef>
+#include <fstream>
+#include <string>
+#include <system_error>
+#include <utility>
 
 #if defined(INTERNAL_RUNCPP2_UNIT_TESTS) && \
     INTERNAL_RUNCPP2_UNIT_TESTS == INTERNAL_RUNCPP2_UNIT_TESTS_BUILDS_MANAGER

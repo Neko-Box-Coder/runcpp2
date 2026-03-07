@@ -18,10 +18,7 @@
 #include <cctype>
 #include <cstdint>
 
-struct yaml_event_s;
 typedef yaml_event_s yaml_event_t;
-
-struct yaml_parser_s;
 typedef yaml_parser_s yaml_parser_t;
 
 #if RUNCPP2_YAML_PRINT_PARSE
@@ -99,7 +96,6 @@ namespace runcpp2
         
         inline StringView NodeTypeToString(NodeType type);
     
-        struct Node;
         using NodePtr = std::shared_ptr<Node>;
         using ConstNodePtr = std::shared_ptr<const Node>;
         

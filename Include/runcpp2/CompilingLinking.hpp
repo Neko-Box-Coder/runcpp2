@@ -3,10 +3,19 @@
 
 #include "runcpp2/Data/Profile.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
-#include "runcpp2/Data/ScriptInfo.hpp"
 #include "runcpp2/Data/DependencyLibraryType.hpp"
 #include "runcpp2/Data/BuildTypeHelper.hpp"
-#include "runcpp2/DependenciesHelper.hpp"
+#include "runcpp2/Data/BuildType.hpp"
+#include "runcpp2/Data/DependencyInfo.hpp"
+#include "runcpp2/Data/DependencyLinkProperty.hpp"
+#include "runcpp2/Data/FileProperties.hpp"
+#include "runcpp2/Data/FilesTypesInfo.hpp"
+#include "runcpp2/Data/FlagsOverrideInfo.hpp"
+#include "runcpp2/Data/ParseCommon.hpp"
+#include "runcpp2/Data/ProfilesDefines.hpp"
+#include "runcpp2/Data/ProfilesFlagsOverride.hpp"
+#include "runcpp2/Data/StageInfo.hpp"
+
 #include "runcpp2/PlatformUtil.hpp"
 #include "runcpp2/StringUtil.hpp"
 
@@ -14,13 +23,17 @@
     #define NOMINMAX 1
 #endif
 
+#include "DSResult/DSResult.hpp"
 #include "ssLogger/ssLog.hpp"
-#include "System2.h"
 #include "ghc/filesystem.hpp"
 
 #include <future>
 #include <chrono>
 #include <string>
+#include <cstddef>
+#include <system_error>
+#include <unordered_map>
+#include <vector>
 
 namespace
 {
