@@ -125,7 +125,7 @@ target_include_directories( string-view-lite INTERFACE
 
 # Copy cfgpath.h
 configure_file( "${CMAKE_CURRENT_LIST_DIR}/External/cfgpath/cfgpath.h" 
-                "${CMAKE_CURRENT_LIST_DIR}/Include/cfgpath.h" COPYONLY)
+                "${CMAKE_CURRENT_LIST_DIR}/Src/cfgpath.h" COPYONLY)
 
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/CppOverride")
 
@@ -186,15 +186,14 @@ add_library(runcpp2Lib INTERFACE)
 
 set(RUNCPP2_PRIVATE_LINK_LIBS ssLogger System2 CppOverride dylib)
 set(RUNCPP2_PUBLIC_LINK_LIBS ghc_filesystem mpark_variant MacroPowerToys string-view-lite libyaml DSResult)
-target_include_directories(runcpp2Lib INTERFACE "${CMAKE_CURRENT_LIST_DIR}/Include" 
-                                                "${CMAKE_CURRENT_LIST_DIR}/Src")
+target_include_directories(runcpp2Lib INTERFACE "${CMAKE_CURRENT_LIST_DIR}/Src")
 target_link_libraries(runcpp2Lib INTERFACE ${RUNCPP2_PRIVATE_LINK_LIBS})
 target_link_libraries(runcpp2Lib INTERFACE ${RUNCPP2_PUBLIC_LINK_LIBS})
 
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # TODO: Try to change to /Wall
-    set(RUNCPP2_STANDARD_COMPILE_FLAGS "/utf-8;/W1;/DGHC_WIN_DISABLE_WSTRING_STORAGE_TYPE=1")
+    set(RUNCPP2_STANDARD_COMPILE_FLAGS "/utf-8;/W1;/DGHC_WIN_DISABLE_WSTRING_STORAGE_TYPE=1;/bigobj")
     if (RUNCPP2_WARNINGS_AS_ERRORS)
         list(APPEND RUNCPP2_STANDARD_COMPILE_FLAGS "/WX")
     endif()
@@ -220,7 +219,8 @@ target_compile_options(runcpp2Lib INTERFACE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
 
 # Define the runcpp2 and default config version macro
 target_compile_definitions(runcpp2Lib INTERFACE RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}"
-                                                RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION})
+                                                RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION}
+                                                YAML_DECLARE_STATIC=1)
 
 # =========================================================================
 # runcpp2 executable
