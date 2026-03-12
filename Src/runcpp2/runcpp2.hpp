@@ -380,10 +380,13 @@ namespace runcpp2
                         return (PipelineResult)DS_TMP_ERROR.ErrorCode);
             
         //Get profile and gather source files
-        const int profileIndex = GetPreferredProfileIndex(  scriptPath, 
-                                                            scriptInfo, 
-                                                            profiles, 
-                                                            configPreferredProfile);
+        const int profileIndex =    GetPreferredProfileIndex(   scriptPath, 
+                                                                scriptInfo, 
+                                                                profiles, 
+                                                                configPreferredProfile)
+                                        .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                                                    return PipelineResult::NO_AVAILABLE_PROFILE);
+        
         const Data::Profile& currentProfile = profiles.at(profileIndex);
         
         std::vector<ghc::filesystem::path> sourceFiles;
@@ -483,13 +486,12 @@ namespace runcpp2
             }
         }
         
-        int profileIndex = GetPreferredProfileIndex(absoluteScriptPath, 
-                                                    scriptInfo, 
-                                                    profiles, 
-                                                    configPreferredProfile);
-
-        if(profileIndex == -1)
-            return PipelineResult::NO_AVAILABLE_PROFILE;
+        int profileIndex =  GetPreferredProfileIndex(   absoluteScriptPath, 
+                                                        scriptInfo, 
+                                                        profiles, 
+                                                        configPreferredProfile)
+                                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                                            return PipelineResult::NO_AVAILABLE_PROFILE);;
 
         //Parsing the script, setting up dependencies, compiling and linking
         std::vector<std::string> filesToCopyPaths;

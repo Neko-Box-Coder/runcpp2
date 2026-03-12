@@ -183,21 +183,46 @@ namespace
         return true;
     }
 
-    std::vector<int> GetAvailableProfiles(  const std::vector<runcpp2::Data::Profile>& profiles,
-                                            const runcpp2::Data::ScriptInfo& scriptInfo,
-                                            const std::string& scriptPath)
+    DS::Result<std::vector<int>> 
+    GetAvailableProfiles(   const std::vector<runcpp2::Data::Profile>& profiles,
+                            const runcpp2::Data::ScriptInfo& scriptInfo,
+                            const std::string& scriptPath)
     {
+        std::string scriptExtension = ghc::filesystem::path(scriptPath).extension().string();
+        bool isYaml = scriptExtension == ".yaml" || scriptExtension == ".yml";
+        const ProfilesProcessPaths* sources = 
+            isYaml ? runcpp2::GetValueFromPlatformMap(scriptInfo.OtherFilesToBeCompiled) : nullptr;
+        
+        if(isYaml && !sources)
+            return DS_ERROR_MSG("No valid source files found when using yaml as input");
+        
         //Check which profile is available
         std::vector<int> availableProfiles;
         
         for(int i = 0; i < profiles.size(); ++i)
         {
-            ssLOG_DEBUG("Checking profile: " << profiles.at(i).Name);
+            ssLOG_DEBUG("Checking profile: " << profiles[i].Name);
             
-            if( IsProfileAvailableOnSystem(profiles.at(i)) && 
-                IsProfileValidForScript(profiles.at(i), scriptInfo, scriptPath))
+            if(IsProfileAvailableOnSystem(profiles[i]))
             {
-                availableProfiles.push_back(i);
+                std::string checkPath;
+                if(isYaml)
+                {
+                    //TODO: Maybe need to check all the paths to be explicit
+                    bool explicitProfileFound = sources->Paths.count(profiles[i].Name) > 0 && 
+                                                !sources->Paths.at(profiles[i].Name).empty();
+                    if(explicitProfileFound)
+                        checkPath = sources->Paths.at(profiles[i].Name)[0].string();
+                    else if(sources->Paths.count("DefaultProfile") > 0)
+                        checkPath = sources->Paths.at("DefaultProfile")[0].string();
+                    else
+                        continue;
+                }
+                else
+                    checkPath = scriptPath;
+                
+                if(IsProfileValidForScript(profiles[i], scriptInfo, scriptPath))
+                    availableProfiles.push_back(i);
             }
         }
         
@@ -207,30 +232,24 @@ namespace
 
 namespace runcpp2
 {
-    inline int GetPreferredProfileIndex(const std::string& scriptPath,
-                                        const Data::ScriptInfo& scriptInfo,
-                                        const std::vector<Data::Profile>& profiles, 
-                                        const std::string& configPreferredProfile)
+    inline DS::Result<int> GetPreferredProfileIndex(const std::string& scriptPath,
+                                                    const Data::ScriptInfo& scriptInfo,
+                                                    const std::vector<Data::Profile>& profiles, 
+                                                    const std::string& configPreferredProfile)
     {
-        std::vector<int> availableProfiles = GetAvailableProfiles(profiles, scriptInfo, scriptPath);
-        
+        std::vector<int> availableProfiles = GetAvailableProfiles(  profiles, 
+                                                                    scriptInfo, 
+                                                                    scriptPath).DS_TRY();
         if(availableProfiles.empty())
-        {
-            ssLOG_ERROR("No compilers/linkers found that can be used for " << scriptPath);
-            return -1;
-        }
+            return DS_ERROR_MSG("No compilers/linkers found that can be used for " + scriptPath);
         
-        int firstAvailableProfileIndex = -1;
-        
+        int firstAvailableProfileIndex = availableProfiles[0];
         if(!configPreferredProfile.empty())
         {
-            for(int i = 0; i < availableProfiles.size(); ++i)
+            for(int i = 1; i < availableProfiles.size(); ++i)
             {
-                if(firstAvailableProfileIndex == -1)
-                    firstAvailableProfileIndex = availableProfiles.at(i);
-                
-                if( profiles.at(availableProfiles.at(i)).Name == configPreferredProfile || 
-                    profiles.at(availableProfiles.at(i)).NameAliases.count(configPreferredProfile) > 0)
+                if( profiles.at(availableProfiles[i]).Name == configPreferredProfile || 
+                    profiles.at(availableProfiles[i]).NameAliases.count(configPreferredProfile) > 0)
                 {
                     return availableProfiles.at(i);
                 }

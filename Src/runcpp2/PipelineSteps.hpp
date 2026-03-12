@@ -335,53 +335,65 @@ namespace runcpp2
         std::error_code e;
         std::string parsableInfo;
         std::ifstream inputFile;
-        ghc::filesystem::path dedicatedYamlLoc = 
-            scriptDirectory / ghc::filesystem::path(scriptName + ".yaml");
         
-        if(ghc::filesystem::exists(dedicatedYamlLoc, e))
+        ghc::filesystem::path scriptInfoFile;
+        bool dedicatedYaml = false;
+        
+        //If we are having yaml as input
+        if(absoluteScriptPath.extension() == ".yaml" || absoluteScriptPath.extension() == ".yml")
         {
-            //Record write time for yaml file for watch option
-            outScriptInfo.LastWriteTime = ghc::filesystem::last_write_time(dedicatedYamlLoc, e);
-            if(e)
-            {
-                std::string errorMsg = e.message();
-                errorMsg += "\nFailed to get last write time for: " + dedicatedYamlLoc.string();
-                return DS_ERROR_MSG_EC(errorMsg, (int)PipelineResult::INVALID_SCRIPT_INFO);
-            }
-
-            inputFile.open(dedicatedYamlLoc);
-            std::stringstream buffer;
-            buffer << inputFile.rdbuf();
-            parsableInfo = buffer.str();
+            scriptInfoFile = absoluteScriptPath;
+            dedicatedYaml = true;
         }
+        //Otherwise we are having source file as input
         else
         {
+            //Try to see if there's a corresponding yaml file
+            ghc::filesystem::path dedicatedYamlLoc = 
+                scriptDirectory / ghc::filesystem::path(scriptName + ".yaml");
+            
+            if(ghc::filesystem::exists(dedicatedYamlLoc, e))
+            {
+                dedicatedYaml = true;
+                scriptInfoFile = dedicatedYamlLoc;
+            }
+            else
+                scriptInfoFile = absoluteScriptPath;
+        }
+        
+        //Get parsable info
+        {
             //Record write time for script file for watch option
-            outScriptInfo.LastWriteTime = ghc::filesystem::last_write_time(absoluteScriptPath, e);
+            outScriptInfo.LastWriteTime = ghc::filesystem::last_write_time(scriptInfoFile, e);
             if(e)
             {
                 std::string errorMsg = e.message();
-                errorMsg += "\nFailed to get last write time for: " + absoluteScriptPath.string();
+                errorMsg += "\nFailed to get last write time for: " + scriptInfoFile.string();
                 return DS_ERROR_MSG_EC(errorMsg, (int)PipelineResult::INVALID_SCRIPT_INFO);
             }
 
-            inputFile.open(absoluteScriptPath);
+            inputFile.open(scriptInfoFile);
             
             if(!inputFile)
             {
-                return DS_ERROR_MSG_EC( "Failed to open file: " + absoluteScriptPath.string(), 
+                return DS_ERROR_MSG_EC( "Failed to open file: " + scriptInfoFile.string(), 
                                         (int)PipelineResult::INVALID_SCRIPT_PATH);
             }
 
             std::stringstream buffer;
             buffer << inputFile.rdbuf();
-            std::string source(buffer.str());
             
-            if(!GetParsableInfo(source, parsableInfo))
+            if(dedicatedYaml)
+                parsableInfo = buffer.str();
+            else
             {
-                return DS_ERROR_MSG_EC( "An error has been encountered when parsing info: " + 
-                                        absoluteScriptPath.string(), 
-                                        (int)PipelineResult::INVALID_SCRIPT_INFO);
+                GetParsableInfo(buffer.str(), parsableInfo)
+                    .DS_TRY_ACT(DS_TMP_ERROR.Message += 
+                                    "\nAn error has been encountered when parsing info: " + 
+                                    scriptInfoFile.string();
+                                DS_TMP_ERROR.ErrorCode = (int)PipelineResult::INVALID_SCRIPT_INFO;
+                                DS_APPEND_TRACE(DS_TMP_ERROR);
+                                return DS::Error(DS_TMP_ERROR));
             }
         }
         
@@ -990,83 +1002,95 @@ namespace runcpp2
     {
         ssLOG_FUNC_INFO();
         
-        if(!currentProfile.FileExtensions.count(absoluteScriptPath.extension()))
-            return DS_ERROR_MSG("File extension of script doesn't match profile");
-
         if(!absoluteScriptPath.is_absolute())
             return DS_ERROR_MSG("Script path is not absolute: " + DS_STR(absoluteScriptPath));
         
         outSourcePaths.clear();
-        outSourcePaths.push_back(absoluteScriptPath);
-        
-        const Data::ProfilesProcessPaths* compileFiles = 
-            GetValueFromPlatformMap(scriptInfo.OtherFilesToBeCompiled);
-        
-        if(compileFiles == nullptr)
+        if(absoluteScriptPath.extension() != ".yaml" && absoluteScriptPath.extension() != ".yml")
         {
-            ssLOG_INFO("No other files to be compiled files current platform");
+            if(currentProfile.FileExtensions.count(absoluteScriptPath.extension().string()) == 0)
+                return DS_ERROR_MSG("Input file cannot be used for profile " + currentProfile.Name);
+            else
+                outSourcePaths.push_back(absoluteScriptPath);
+        }
+        
+        do
+        {
+            const Data::ProfilesProcessPaths* compileFiles = 
+                GetValueFromPlatformMap(scriptInfo.OtherFilesToBeCompiled);
             
-            if(!scriptInfo.OtherFilesToBeCompiled.empty())
+            if(compileFiles == nullptr)
             {
-                ssLOG_WARNING(  "Other source files are present, "
-                                "but none are included for current configuration. Is this intended?");
+                ssLOG_INFO("No other files to be compiled files current platform");
+                
+                if(!scriptInfo.OtherFilesToBeCompiled.empty())
+                {
+                    ssLOG_WARNING(  "Other source files are present, "
+                                    "but none are included for current configuration. "
+                                    "Is this intended?");
+                }
+                break;
             }
-            return {};
-        }
-        
-        const std::vector<ghc::filesystem::path>* profileCompileFiles = 
-            GetValueFromProfileMap(currentProfile, compileFiles->Paths);
             
-        if(!profileCompileFiles)
-        {
-            ssLOG_INFO("No other files to be compiled for current profile");
-            return {};
-        }
+            const std::vector<ghc::filesystem::path>* profileCompileFiles = 
+                GetValueFromProfileMap(currentProfile, compileFiles->Paths);
+                
+            if(!profileCompileFiles)
+            {
+                ssLOG_INFO("No other files to be compiled for current profile");
+                break;
+            }
 
-        //TODO: Allow filepaths to contain wildcards as follows
-        //* as directory or filename wildcard
-        //i.e. "./*/test/*.cpp" will match "./moduleA/test/a.cpp" and "./moduleB/test/b.cpp"
-        
-        //** as recursive directory wildcard
-        //i.e. "./**/*.cpp" will match any .cpp files
-        //i.e. "./**/test.cpp" will match any files named "test.cpp"
-        
-        //For the time being, each entry will represent a path
-        {
-            const ghc::filesystem::path scriptDirectory = 
-                ghc::filesystem::path(absoluteScriptPath).parent_path();
+            //TODO: Allow filepaths to contain wildcards as follows
+            //* as directory or filename wildcard
+            //i.e. "./*/test/*.cpp" will match "./moduleA/test/a.cpp" and "./moduleB/test/b.cpp"
             
-            for(int i = 0; i < profileCompileFiles->size(); ++i)
+            //** as recursive directory wildcard
+            //i.e. "./**/*.cpp" will match any .cpp files
+            //i.e. "./**/test.cpp" will match any files named "test.cpp"
+            
+            //For the time being, each entry will represent a path
             {
-                ghc::filesystem::path currentPath = profileCompileFiles->at(i);
-                if(currentPath.is_relative())
-                    currentPath = scriptDirectory / currentPath;
+                const ghc::filesystem::path scriptDirectory = 
+                    ghc::filesystem::path(absoluteScriptPath).parent_path();
                 
-                if(currentPath.is_relative())
+                for(int i = 0; i < profileCompileFiles->size(); ++i)
                 {
-                    std::string errMsg = 
-                        DS_STR("Failed to process compile path: ") + DS_STR(profileCompileFiles->at(i)) +
-                        "\nTry to append path to script directory but failed" +
-                        "\nFinal appended path: " + DS_STR(currentPath);
-                    return DS_ERROR_MSG(errMsg);
+                    ghc::filesystem::path currentPath = profileCompileFiles->at(i);
+                    if(currentPath.is_relative())
+                        currentPath = scriptDirectory / currentPath;
+                    
+                    if(currentPath.is_relative())
+                    {
+                        std::string errMsg =    DS_STR("Failed to process compile path: ") + 
+                                                DS_STR(profileCompileFiles->at(i)) +
+                                                "\nTry to append path to script directory but failed" +
+                                                "\nFinal appended path: " + 
+                                                DS_STR(currentPath);
+                        return DS_ERROR_MSG(errMsg);
+                    }
+                    
+                    std::error_code e;
+                    if(ghc::filesystem::is_directory(currentPath, e))
+                    {
+                        return DS_ERROR_MSG("Directory is found instead of file: " + 
+                                            DS_STR(profileCompileFiles->at(i)));
+                    }
+                    
+                    if(!ghc::filesystem::exists(currentPath, e))
+                    {
+                        return DS_ERROR_MSG("File doesn't exist: " + 
+                                            DS_STR(profileCompileFiles->at(i)));
+                    }
+                    
+                    outSourcePaths.push_back(currentPath);
                 }
-                
-                std::error_code e;
-                if(ghc::filesystem::is_directory(currentPath, e))
-                {
-                    return DS_ERROR_MSG("Directory is found instead of file: " + 
-                                        DS_STR(profileCompileFiles->at(i)));
-                }
-                
-                if(!ghc::filesystem::exists(currentPath, e))
-                {
-                    return DS_ERROR_MSG("File doesn't exist: " + 
-                                        DS_STR(profileCompileFiles->at(i)));
-                }
-                
-                outSourcePaths.push_back(currentPath);
             }
         }
+        while(0);
+        
+        if(outSourcePaths.empty())
+            return DS_ERROR_MSG("No source files found for compiling.");
         
         return {};
     }

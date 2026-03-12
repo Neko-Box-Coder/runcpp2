@@ -161,7 +161,8 @@ namespace runcpp2
         return true;
     }
 
-    inline bool GetParsableInfo(const std::string& contentToParse, std::string& outParsableInfo)
+    inline DS::Result<void> GetParsableInfo(const std::string& contentToParse, 
+                                            std::string& outParsableInfo)
     {
         ssLOG_FUNC_DEBUG();
 
@@ -197,14 +198,12 @@ namespace runcpp2
             contentReadyToParse = false;
         };
         
-        auto checkFinishedGettingParsableContent = [&]() -> bool
+        auto checkFinishedGettingParsableContent = [&]() -> DS::Result<bool>
         {
             if(singleLineComments)
             {
                 //Check for end of continuous section
-                if( currentLine.size() < 2 || 
-                    currentLine.at(0) != '/' || 
-                    currentLine.at(1) != '/')
+                if(currentLine.size() < 2 || currentLine[0] != '/' || currentLine[1] != '/')
                 {
                     contentReadyToParse = true;
                     return true;
@@ -212,17 +211,16 @@ namespace runcpp2
                 
                 if(preceedingSpace && currentLine.size() < 3)
                 {
-                    ssLOG_ERROR("Inconsistent spacing for single line comment");
                     resetPrefixState();
-                    return false;
+                    return DS_ERROR_MSG("Inconsistent spacing for single line comment");
                 }
             }
             else
             {
                 //Check for closing */
                 if( currentLine.size() >= 2 &&
-                    currentLine.at(currentLine.size() - 1) == '/' &&
-                    currentLine.at(currentLine.size() - 2) == '*')
+                    currentLine[currentLine.size() - 1] == '/' &&
+                    currentLine[currentLine.size() - 2] == '*')
                 {
                     currentLine.erase(currentLine.size() - 2, 2);
                     TrimRight(currentLine);
@@ -275,7 +273,8 @@ namespace runcpp2
                     {
                         Trim(currentLine);
                         
-                        if(checkFinishedGettingParsableContent())
+                        bool check = checkFinishedGettingParsableContent().DS_TRY();
+                        if(check)
                             break;
 
                         currentLine.erase(0, (preceedingSpace ? 3 : 2));
@@ -287,7 +286,8 @@ namespace runcpp2
                     {
                         TrimRight(currentLine);
                         
-                        if(checkFinishedGettingParsableContent())
+                        bool check = checkFinishedGettingParsableContent().DS_TRY();
+                        if(check)
                             break;
                         
                         currentLine += '\n';
@@ -296,7 +296,7 @@ namespace runcpp2
                     
                     currentLine.clear();
                 }
-            }
+            } //else
             
             //Special case for last character/line
             if(i == source.size() - 1 && insideCommentToParse)
@@ -305,7 +305,8 @@ namespace runcpp2
                 
                 if(singleLineComments)
                 {
-                    if(checkFinishedGettingParsableContent())
+                    bool check = checkFinishedGettingParsableContent().DS_TRY();
+                    if(check)
                         break;
                     
                     currentLine.erase(0, (preceedingSpace ? 3 : 2));
@@ -314,20 +315,20 @@ namespace runcpp2
                 }
                 else
                 {
-                    if(checkFinishedGettingParsableContent())
+                    bool check = checkFinishedGettingParsableContent().DS_TRY();
+                    if(check)
                         break;
                     
-                    ssLOG_ERROR("Missing closing */ in block comment");
-                    resetPrefixState();
-                    break;
+                    //resetPrefixState();
+                    return DS_ERROR_MSG("Missing closing */ in block comment");
                 }
             }
-        }
+        } //for(int i = 0; i < source.size(); i++)
         
         if(!contentReadyToParse)
             outParsableInfo.clear();
         
-        return true;
+        return {};
     }
     
     inline bool MergeYAML_NodeChildren( YAML::NodePtr nodeToMergeFrom, 

@@ -41,6 +41,7 @@
 builds/
 Builds/
 Build/
+build/
 v0.*/
 *.bak
 *.runcpp2/

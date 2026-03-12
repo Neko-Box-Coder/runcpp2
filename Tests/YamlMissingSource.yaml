@@ -1,0 +1,6 @@
+BuildType: Executable
+PassScriptPath: false
+Language: "c++"
+RequiredProfiles:
+  DefaultPlatform:
+    - "g++"
