@@ -21,7 +21,7 @@ with the config specified either:
   script.yaml   # Your build settings
   ```
 
-The name of the final output will be the name of the script file, therefore a script file will 
+The name of the output binary will be the name of the script file therefore a script file will 
 always have a 1 to 1 relationship with the linker output, even if multiple sources are specified in 
 the script file build settings. 
 
@@ -60,6 +60,12 @@ runcpp2 ./script.cpp <any arguments>
         int main(int, char**) { std::cout << "Hello World" << std::endl; }
         ```
 
+### YAML File As Input
+
+!!! info inline end "This requires `v0.4.0` version"
+You can also use a YAML file as input. If this is the case, the name of the output 
+binary will be the name of the YAML file.
+
 ---
 
 ## Error Feedback
@@ -79,6 +85,8 @@ can be spcified inlined inside a source file or as a separate yaml file in the f
 
 - To specify build config in a dedicated yaml file:
     - The yaml file in the same directory and share the same as the source file being run will be used
+    !!! info inline end "This requires `v0.4.0` version"
+    - The yaml file must specify at least one source if fed as input
 - To specify inline build config inside a source file: 
     - Put them inside a comment with `runcpp2` at the beginning of the build config
     - The inline build config can exist in anywhere of the source file
