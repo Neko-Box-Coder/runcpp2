@@ -32,6 +32,8 @@
 
 ### v0.4.0
 - Allow runcpp2 to be library for scriptable pipeline
+- Parameters for build config/script
+- Parameters for profiles
 - Add more default profiles
 - Ability to compile runcpp2 as single cpp, ditch cmake
 - Move to variant-lite, mpark-variant is unreadable
@@ -42,7 +44,6 @@
     - This ties to the warning in `CompilingLinking.cpp:619`
 - Update `FileProperties.hpp` to use list of string for prefix and extension
     - Merge `SharedLinkFile` and `SharedLibraryFile`
-- Add the ability for user to specify custom substitution options which applies to all fields
 - Add the ability to append defines coming from the dependencies
 - Add wildcard support for filenames and extensions (Files Globbing)
 - Add the ability to query script build directory
