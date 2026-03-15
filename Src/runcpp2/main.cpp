@@ -1,10 +1,30 @@
+#include "runcpp2/Data/CmdOptions.hpp"
+#include "runcpp2/Data/ParseCommon.hpp"
+#include "runcpp2/Data/PipelineResult.hpp"
+#include "runcpp2/Data/Profile.hpp"
+#include "runcpp2/Data/ScriptInfo.hpp"
+
 #include "runcpp2/ConfigParsing.hpp"
 #include "runcpp2/StringUtil.hpp"
 #include "runcpp2/runcpp2.hpp"
 
 #include "ssLogger/ssLog.hpp"
-
 #include "ghc/filesystem.hpp"
+#include "DSResult/DSResult.hpp"
+
+//NOTE: #include "runcpp2/DefaultYAMLs.c" at the end
+
+#include <cctype>
+#include <chrono>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <system_error>
+#include <thread>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 #define OUTPUT_ERROR() ssLOG_ERROR(DS_TMP_ERROR.ToString());
 
@@ -590,3 +610,4 @@ int main(int argc, char* argv[])
     INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(-1);
 }
 
+#include "runcpp2/DefaultYAMLs.c"

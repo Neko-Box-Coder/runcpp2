@@ -1,0 +1,325 @@
+#ifndef RUNCPP2_DATA_PROFILE_HPP
+#define RUNCPP2_DATA_PROFILE_HPP
+
+#include "runcpp2/Data/ParseCommon.hpp"
+#include "runcpp2/Data/FilesTypesInfo.hpp"
+#include "runcpp2/Data/StageInfo.hpp"
+#include "runcpp2/ParseUtil.hpp"
+#include "runcpp2/LibYAML_Wrapper.hpp"
+
+#include "DSResult/DSResult.hpp"
+
+#include "ssLogger/ssLog.hpp"
+
+#include <string>
+#include <utility>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+namespace runcpp2
+{
+namespace Data
+{
+    struct Profile
+    {
+        std::string Name;
+        
+        std::unordered_set<std::string> NameAliases;
+        std::unordered_set<std::string> FileExtensions;
+        std::unordered_set<std::string> Languages;
+        std::unordered_map<PlatformName, std::vector<std::string>> Setup;
+        std::unordered_map<PlatformName, std::vector<std::string>> Cleanup;
+        FilesTypesInfo FilesTypes;
+        
+        StageInfo Compiler;
+        StageInfo Linker;
+        
+        inline void GetNames(std::vector<std::string>& outNames) const
+        {
+            outNames.clear();
+            outNames.push_back(Name);
+            for(const auto& alias : NameAliases)
+                outNames.push_back(alias);
+            
+            //Special name all that applies to all profile
+            outNames.push_back("DefaultProfile");
+        }
+
+        inline bool ParseYAML_Node(YAML::ConstNodePtr profileNode)
+        {
+            ssLOG_FUNC_DEBUG();
+            
+            std::vector<NodeRequirement> requirements =
+            {
+                NodeRequirement("Name", YAML::NodeType::Scalar, true, false),
+                NodeRequirement("NameAliases", YAML::NodeType::Sequence, false, true),
+                NodeRequirement("FileExtensions", YAML::NodeType::Sequence, true, false),
+                NodeRequirement("Languages", YAML::NodeType::Sequence, false, true),
+                NodeRequirement("Setup", YAML::NodeType::Map, false, true),
+                NodeRequirement("Cleanup", YAML::NodeType::Map, false, true),
+                NodeRequirement("FilesTypes", YAML::NodeType::Map, true, false),
+                NodeRequirement("Compiler", YAML::NodeType::Map, true, false),
+                NodeRequirement("Linker", YAML::NodeType::Map, true, false)
+            };
+            
+            if(!CheckNodeRequirements(profileNode, requirements))
+            {
+                ssLOG_ERROR("Compiler profile: Failed to meet requirements");
+                return false;
+            }
+            
+            Name = profileNode->GetMapValueScalar<std::string>("Name").DS_TRY_ACT(return false);
+            
+            if(ExistAndHasChild(profileNode, "NameAliases"))
+            {
+                YAML::ConstNodePtr nameAliasesNode = profileNode->GetMapValueNode("NameAliases");
+                for(int i = 0; i < nameAliasesNode->GetChildrenCount(); ++i)
+                {
+                    std::string nameAlias = nameAliasesNode ->GetSequenceChildScalar<std::string>(i)
+                                                            .DS_TRY_ACT(return false);
+                    NameAliases.insert(nameAlias);
+                }
+            }
+
+            {
+                YAML::ConstNodePtr fileExtensionsNode = profileNode->GetMapValueNode("FileExtensions");
+                for(int i = 0; i < fileExtensionsNode->GetChildrenCount(); ++i)
+                {
+                    std::string extension = 
+                        fileExtensionsNode  ->GetSequenceChildScalar<std::string>(i)
+                                            .DS_TRY_ACT(return false);
+                    FileExtensions.insert(extension);
+                }
+            }
+            
+            if(ExistAndHasChild(profileNode, "Languages"))
+            {
+                YAML::ConstNodePtr languagesNode = profileNode->GetMapValueNode("Languages");
+                for(int i = 0; i < languagesNode->GetChildrenCount(); ++i)
+                {
+                    std::string language = languagesNode->GetSequenceChildScalar<std::string>(i)
+                                                        .DS_TRY_ACT(return false);
+                    Languages.insert(language);
+                }
+            }
+            
+            if(ExistAndHasChild(profileNode, "Setup"))
+            {
+                YAML::ConstNodePtr setupNode = profileNode->GetMapValueNode("Setup");
+                for(int i = 0; i < setupNode->GetChildrenCount(); ++i)
+                {
+                    YAML::ConstNodePtr currentPlatformNode = setupNode->GetMapValueNodeAt(i);
+                    
+                    std::string key = setupNode ->GetMapKeyScalarAt<std::string>(i)
+                                                .DS_TRY_ACT(return false);
+                    std::vector<std::string> setupSteps;
+                    
+                    for(int j = 0; j < currentPlatformNode->GetChildrenCount(); ++j)
+                    {
+                        std::string step = 
+                            currentPlatformNode ->GetSequenceChildScalar<std::string>(j)
+                                                .DS_TRY_ACT(return false);
+                        setupSteps.push_back(step);
+                    }
+                    
+                    Setup[key] = setupSteps;
+                }
+            }
+            
+            if(ExistAndHasChild(profileNode, "Cleanup"))
+            {
+                YAML::ConstNodePtr cleanupNode = profileNode->GetMapValueNode("Cleanup");
+                for(int i = 0; i < cleanupNode->GetChildrenCount(); ++i)
+                {
+                    YAML::ConstNodePtr currentPlatformNode = cleanupNode->GetMapValueNodeAt(i);
+                    
+                    std::string key = cleanupNode   ->GetMapKeyScalarAt<std::string>(i)
+                                                    .DS_TRY_ACT(return false);
+                    std::vector<std::string> cleanupSteps;
+                    
+                    for(int j = 0; j < currentPlatformNode->GetChildrenCount(); ++j)
+                    {
+                        std::string step = 
+                            currentPlatformNode ->GetSequenceChildScalar<std::string>(j)
+                                                .DS_TRY_ACT(return false);
+                        cleanupSteps.push_back(step);
+                    }
+                    
+                    Cleanup[key] = cleanupSteps;
+                }
+            }
+            
+            if(!FilesTypes.ParseYAML_Node(profileNode->GetMapValueNode("FilesTypes")))
+            {
+                ssLOG_ERROR("Profile: FilesTypes is invalid");
+                return false;
+            }
+            
+            ssLOG_DEBUG("Parsing Compiler");
+            if(!Compiler.ParseYAML_Node(profileNode->GetMapValueNode("Compiler"), "CompileTypes"))
+            {
+                ssLOG_ERROR("Profile: Compiler is invalid");
+                return false;
+            }
+            
+            ssLOG_DEBUG("Parsing Linker");
+            if(!Linker.ParseYAML_Node(profileNode->GetMapValueNode("Linker"), "LinkTypes"))
+            {
+                ssLOG_ERROR("Profile: Linker is invalid");
+                return false;
+            }
+            
+            return true;
+        }
+
+        inline std::string ToString(std::string indentation) const
+        {
+            std::string out;
+            
+            out += indentation + "Name: " + GetEscapedYAMLString(Name) + "\n";
+            
+            if(!NameAliases.empty())
+            {
+                out += indentation + "NameAliases:\n";
+                for(auto it = NameAliases.begin(); it != NameAliases.end(); ++it)
+                    out += indentation + "-   " + GetEscapedYAMLString(*it) + "\n";
+            }
+            
+            if(FileExtensions.empty())
+                out += indentation + "FileExtensions: []\n";
+            else
+            {
+                out += indentation + "FileExtensions:\n";
+                for(auto it = FileExtensions.begin(); it != FileExtensions.end(); ++it)
+                    out += indentation + "-   " + GetEscapedYAMLString(*it) + "\n";
+            }
+            
+            if(!Languages.empty())
+            {
+                out += indentation + "Languages:\n";
+                for(auto it = Languages.begin(); it != Languages.end(); ++it)
+                    out += indentation + "-   " + GetEscapedYAMLString(*it) + "\n";
+            }
+            
+            if(!Setup.empty())
+            {
+                out += indentation + "Setup:\n";
+                for(auto it = Setup.begin(); it != Setup.end(); ++it)
+                {
+                    out += indentation + "    " + it->first + ":\n";
+                    for(int i = 0; i < it->second.size(); ++i)
+                        out += indentation + "    -   " + GetEscapedYAMLString(it->second[i]) + "\n";
+                }
+            }
+            
+            if(!Cleanup.empty())
+            {
+                out += indentation + "Cleanup:\n";
+                for(auto it = Cleanup.begin(); it != Cleanup.end(); ++it)
+                {
+                    out += indentation + "    " + it->first + ":\n";
+                    for(int i = 0; i < it->second.size(); ++i)
+                        out += indentation + "    -   " + GetEscapedYAMLString(it->second[i]) + "\n";
+                }
+            }
+            
+            out += indentation + "FilesTypes:\n";
+            out += FilesTypes.ToString(indentation + "    ");
+            
+            out += indentation + "Compiler:\n";
+            out += Compiler.ToString(indentation + "    ", "CompileTypes");
+            
+            out += indentation + "Linker:\n";
+            out += Linker.ToString(indentation + "    ", "LinkTypes");
+            
+            return out;
+        }
+
+        inline bool Equals(const Profile& other) const
+        {
+            if( Name != other.Name || 
+                NameAliases.size() != other.NameAliases.size() ||
+                FileExtensions.size() != other.FileExtensions.size() ||
+                Languages.size() != other.Languages.size() ||
+                Setup.size() != other.Setup.size() ||
+                Cleanup.size() != other.Cleanup.size() ||
+                !FilesTypes.Equals(other.FilesTypes) ||
+                !Compiler.Equals(other.Compiler) ||
+                !Linker.Equals(other.Linker))
+            {
+                return false;
+            }
+            
+            for(const std::string& it : NameAliases)
+            {
+                if(other.NameAliases.count(it) == 0)
+                    return false;
+            }
+            
+            for(const std::string& it : FileExtensions)
+            {
+                if(other.FileExtensions.count(it) == 0)
+                    return false;
+            }
+            
+            for(const std::string& it : Languages)
+            {
+                if(other.Languages.count(it) == 0)
+                    return false;
+            }
+            
+            for(const auto& it : Setup)
+            {
+                if(other.Setup.count(it.first) == 0 || other.Setup.at(it.first) != it.second)
+                    return false;
+            }
+            
+            for(const auto& it : Cleanup)
+            {
+                if(other.Cleanup.count(it.first) == 0 || other.Cleanup.at(it.first) != it.second)
+                    return false;
+            }
+            
+            return true;
+        }
+    };
+}
+}
+
+namespace runcpp2
+{
+    template <typename T>
+    inline bool HasValueFromProfileMap( const Data::Profile& profile,
+                                        const std::unordered_map<ProfileName, T>& map)
+    {
+        std::vector<std::string> profileNames;
+        profile.GetNames(profileNames);
+        
+        for(int i = 0; i < profileNames.size(); ++i)
+        {
+            if(map.find(profileNames.at(i)) != map.end())
+                return true;
+        }
+        return false;
+    }
+    
+    template <typename T>
+    inline const T* GetValueFromProfileMap( const Data::Profile& profile,
+                                            const std::unordered_map<ProfileName, T>& map)
+    {
+        std::vector<std::string> profileNames;
+        profile.GetNames(profileNames);
+        
+        for(int i = 0; i < profileNames.size(); ++i)
+        {
+            auto it = map.find(profileNames.at(i));
+            if(it != map.end())
+                return &it->second;
+        }
+        return nullptr;
+    }
+}
+
+
+#endif

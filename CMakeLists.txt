@@ -112,7 +112,9 @@ set(DS_USE_DEBUG_BREAK ON)
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/DSResult")
 
 set(BUILD_TESTING ON)
-add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/libyaml")
+# add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/libyaml")
+add_library(libyaml INTERFACE)
+target_include_directories(libyaml INTERFACE "${CMAKE_CURRENT_LIST_DIR}/External/libyaml/include")
 set(BUILD_TESTING OFF)
 
 # NOTE: Just include the file. Can't add subdirectory since it install stuff
@@ -123,7 +125,7 @@ target_include_directories( string-view-lite INTERFACE
 
 # Copy cfgpath.h
 configure_file( "${CMAKE_CURRENT_LIST_DIR}/External/cfgpath/cfgpath.h" 
-                "${CMAKE_CURRENT_LIST_DIR}/Include/cfgpath.h" COPYONLY)
+                "${CMAKE_CURRENT_LIST_DIR}/Src/cfgpath.h" COPYONLY)
 
 add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/External/CppOverride")
 
@@ -177,49 +179,21 @@ endif()
 # runcpp2 library
 # =========================================================================
 
-set(RUNCPP2_SOURCE_FILES    "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/Profile.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencyInfo.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencyLinkProperty.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/DependencySource.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/GitSource.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/LocalSource.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/FileProperties.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/FlagsOverrideInfo.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ProfilesCommands.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ProfilesFlagsOverride.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ScriptInfo.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ProfilesProcessPaths.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/FilesTypesInfo.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/StageInfo.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/ProfilesDefines.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/FilesToCopyInfo.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/Data/BuildTypeHelper.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/ProfileHelper.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/CompilingLinking.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/ConfigParsing.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/DefaultYAMLs.c"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/DependenciesHelper.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/ParseUtil.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/PlatformUtil.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/StringUtil.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/runcpp2.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/BuildsManager.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/PipelineSteps.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/IncludeManager.cpp"
-                            "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/LibYAML_Wrapper.cpp")
+set(RUNCPP2_SOURCE_FILES "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/runcpp2.cpp")
 
-add_library(runcpp2Lib STATIC ${RUNCPP2_SOURCE_FILES})
+# add_library(runcpp2Lib STATIC ${RUNCPP2_SOURCE_FILES})
+add_library(runcpp2Lib INTERFACE)
 
 set(RUNCPP2_PRIVATE_LINK_LIBS ssLogger System2 CppOverride dylib)
-set(RUNCPP2_PUBLIC_LINK_LIBS ghc_filesystem mpark_variant MacroPowerToys string-view-lite yaml DSResult)
+set(RUNCPP2_PUBLIC_LINK_LIBS ghc_filesystem mpark_variant MacroPowerToys string-view-lite libyaml DSResult)
+target_include_directories(runcpp2Lib INTERFACE "${CMAKE_CURRENT_LIST_DIR}/Src")
+target_link_libraries(runcpp2Lib INTERFACE ${RUNCPP2_PRIVATE_LINK_LIBS})
+target_link_libraries(runcpp2Lib INTERFACE ${RUNCPP2_PUBLIC_LINK_LIBS})
 
-target_include_directories(runcpp2Lib PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
-target_link_libraries(runcpp2Lib PRIVATE ${RUNCPP2_PRIVATE_LINK_LIBS})
-target_link_libraries(runcpp2Lib PUBLIC ${RUNCPP2_PUBLIC_LINK_LIBS})
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # TODO: Try to change to /Wall
-    set(RUNCPP2_STANDARD_COMPILE_FLAGS "/utf-8;/W1;/DGHC_WIN_DISABLE_WSTRING_STORAGE_TYPE=1")
+    set(RUNCPP2_STANDARD_COMPILE_FLAGS "/utf-8;/W1;/DGHC_WIN_DISABLE_WSTRING_STORAGE_TYPE=1;/bigobj")
     if (RUNCPP2_WARNINGS_AS_ERRORS)
         list(APPEND RUNCPP2_STANDARD_COMPILE_FLAGS "/WX")
     endif()
@@ -233,7 +207,7 @@ else()
                                         #"-Wno-unused-but-set-variable"
                                         "-Wno-unused-parameter"
                                         "-Wno-switch"
-                                        "-Wno-gnu-zero-variadic-macro-arguments"
+                                        # "-Wno-gnu-zero-variadic-macro-arguments"
                                         "-Wextra"
                                         "-Wpedantic")
     if (RUNCPP2_WARNINGS_AS_ERRORS)
@@ -241,34 +215,25 @@ else()
     endif()
 endif()
 
-target_compile_options(runcpp2Lib PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
+target_compile_options(runcpp2Lib INTERFACE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
 
 # Define the runcpp2 and default config version macro
-target_compile_definitions(runcpp2Lib PUBLIC    RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}"
-                                                RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION})
+target_compile_definitions(runcpp2Lib INTERFACE RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}"
+                                                RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION}
+                                                YAML_DECLARE_STATIC=1)
 
 # =========================================================================
 # runcpp2 executable
 # =========================================================================
 
 add_executable(runcpp2 "${CMAKE_CURRENT_LIST_DIR}/Src/runcpp2/main.cpp")
-target_compile_options(runcpp2 PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
-target_link_libraries(runcpp2 PUBLIC runcpp2Lib ssLogger)
+target_link_libraries(runcpp2 PUBLIC runcpp2Lib)
 
 # =========================================================================
 # runcpp2 library override
 # =========================================================================
 
 if(RUNCPP2_BUILD_TESTS)
-    add_library(runcpp2Override STATIC ${RUNCPP2_SOURCE_FILES})
-    target_include_directories(runcpp2Override PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Include")
-    target_link_libraries(runcpp2Override PRIVATE ${RUNCPP2_PRIVATE_LINK_LIBS})
-    target_link_libraries(runcpp2Override PUBLIC ${RUNCPP2_PUBLIC_LINK_LIBS})
-    target_compile_options(runcpp2Override PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
-    target_compile_definitions( runcpp2Override PUBLIC   
-                                RUNCPP2_VERSION="${RUNCPP2_PROJECT_VERSION}" 
-                                RUNCPP2_CONFIG_VERSION=${RUNCPP2_CONFIG_VERSION}
-                                INTERNAL_RUNCPP2_UNIT_TESTS=1)
     add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/Src/Tests")
 endif()
 

@@ -34,3 +34,6 @@
 [submodule "DSResult"]
 	path = External/DSResult
 	url = https://github.com/Neko-Box-Coder/DSResult.git
+[submodule "System2.cpp"]
+	path = External/System2.cpp
+	url = https://github.com/Neko-Box-Coder/System2.cpp.git

@@ -1,32 +1,50 @@
-add_executable(BuildsManagerTest "${CMAKE_CURRENT_LIST_DIR}/../runcpp2/BuildsManager.cpp"
-                                 "${CMAKE_CURRENT_LIST_DIR}/BuildsManagerTest.cpp")
+# set(INTERNAL_RUNCPP2_UNIT_TESTS_GENERIC 1)
+set(INTERNAL_RUNCPP2_UNIT_TESTS_CONFIG_PARSING 2)
+set(INTERNAL_RUNCPP2_UNIT_TESTS_INCLUDE_MANAGER 3)
+set(INTERNAL_RUNCPP2_UNIT_TESTS_BUILDS_MANAGER 4)
 
-target_include_directories(BuildsManagerTest PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../../Include")
-target_compile_options(BuildsManagerTest PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
-target_link_libraries(BuildsManagerTest PRIVATE ghc_filesystem CppOverride ssLogger DSResult)
-target_compile_definitions(BuildsManagerTest PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=1)
+function(add_unit_test_defines TEST_NAME)
+    target_compile_definitions( "${TEST_NAME}" 
+                                # PUBLIC INTERNAL_RUNCPP2_UNIT_TESTS_GENERIC=${INTERNAL_RUNCPP2_UNIT_TESTS_GENERIC}
+                                PUBLIC INTERNAL_RUNCPP2_UNIT_TESTS_CONFIG_PARSING=${INTERNAL_RUNCPP2_UNIT_TESTS_CONFIG_PARSING}
+                                PUBLIC INTERNAL_RUNCPP2_UNIT_TESTS_INCLUDE_MANAGER=${INTERNAL_RUNCPP2_UNIT_TESTS_INCLUDE_MANAGER}
+                                PUBLIC INTERNAL_RUNCPP2_UNIT_TESTS_BUILDS_MANAGER=${INTERNAL_RUNCPP2_UNIT_TESTS_BUILDS_MANAGER})
+endfunction()
 
-add_executable(IncludeManagerTest "${CMAKE_CURRENT_LIST_DIR}/../runcpp2/IncludeManager.cpp"
-                                 "${CMAKE_CURRENT_LIST_DIR}/IncludeManagerTest.cpp")
 
-target_include_directories(IncludeManagerTest PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../../Include")
-target_compile_options(IncludeManagerTest PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
-target_link_libraries(IncludeManagerTest PRIVATE ghc_filesystem CppOverride ssLogger DSResult)
-target_compile_definitions(IncludeManagerTest PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=1)
+
+add_executable(BuildsManagerTest "${CMAKE_CURRENT_LIST_DIR}/BuildsManagerTest.cpp")
+target_link_libraries(BuildsManagerTest PRIVATE runcpp2Lib)
+target_compile_definitions(BuildsManagerTest PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=${INTERNAL_RUNCPP2_UNIT_TESTS_BUILDS_MANAGER})
+add_unit_test_defines(BuildsManagerTest)
+
+
+
+
+add_executable(IncludeManagerTest "${CMAKE_CURRENT_LIST_DIR}/IncludeManagerTest.cpp")
+target_link_libraries(IncludeManagerTest PRIVATE runcpp2Lib)
+target_compile_definitions(IncludeManagerTest PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=${INTERNAL_RUNCPP2_UNIT_TESTS_INCLUDE_MANAGER})
+add_unit_test_defines(IncludeManagerTest)
+
+
+
 
 
 add_executable(ConfigParsingTest "${CMAKE_CURRENT_LIST_DIR}/ConfigParsingTest.cpp")
-target_include_directories(ConfigParsingTest PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../../Include")
-target_compile_options(ConfigParsingTest PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
-target_link_libraries(ConfigParsingTest PRIVATE ghc_filesystem CppOverride ssLogger runcpp2Override DSResult)
-target_compile_definitions(ConfigParsingTest PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=1)
+target_link_libraries(ConfigParsingTest PRIVATE runcpp2Lib)
+target_compile_definitions(ConfigParsingTest PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=${INTERNAL_RUNCPP2_UNIT_TESTS_CONFIG_PARSING})
+add_unit_test_defines(ConfigParsingTest)
+
+
+
 
 
 function(create_data_test TEST_NAME)
     add_executable("${TEST_NAME}" "${CMAKE_CURRENT_LIST_DIR}/Data/${TEST_NAME}.cpp")
     target_compile_options("${TEST_NAME}" PRIVATE "${RUNCPP2_STANDARD_COMPILE_FLAGS}")
-    target_compile_definitions("${TEST_NAME}" PRIVATE INTERNAL_RUNCPP2_UNIT_TESTS=1 TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES=1)
-    target_link_libraries("${TEST_NAME}" PUBLIC runcpp2Lib ssLogger)
+    target_compile_definitions("${TEST_NAME}" PRIVATE   # INTERNAL_RUNCPP2_UNIT_TESTS=${INTERNAL_RUNCPP2_UNIT_TESTS_GENERIC}
+                                                        TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES=1)
+    target_link_libraries("${TEST_NAME}" PUBLIC runcpp2Lib)
 endfunction()
 
 create_data_test(BuildTypeTest)

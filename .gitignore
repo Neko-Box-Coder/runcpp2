@@ -41,6 +41,7 @@
 builds/
 Builds/
 Build/
+build/
 v0.*/
 *.bak
 *.runcpp2/
@@ -59,5 +60,5 @@ compile_commands.json
 
 # Generated file
 Src/runcpp2/DefaultYAMLs.c
-Include/cfgpath.h
+Src/cfgpath.h
 .aider*

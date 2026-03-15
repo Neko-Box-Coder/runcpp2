@@ -1,9 +1,11 @@
 #include "runcpp2/ConfigParsing.hpp"
-
 #include "DSResult/DSResult.hpp"
 #include "CppOverride.hpp"
 #include "ssLogger/ssLog.hpp"
 #include "MacroPowerToys.h"
+
+//NOTE: #include "runcpp2/DefaultYAMLs.c" at the end
+//NOTE: #include "runcpp2/LibYamlImpl.cpp" at the end
 
 CO_DECLARE_INSTANCE(OverrideInstance);
 
@@ -15,17 +17,6 @@ CO_DECLARE_INSTANCE(OverrideInstance);
 #if !INTERNAL_RUNCPP2_UNIT_TESTS || !defined(INTERNAL_RUNCPP2_UNIT_TESTS)
     static_assert(false, "INTERNAL_RUNCPP2_UNIT_TESTS not defined");
 #endif
-
-
-//Mock DefaultUserConfig for testing
-extern "C" const uint8_t DefaultUserConfig[] = {0};
-extern "C" const size_t DefaultUserConfig_size = 0;
-extern "C" const uint8_t CommonFileTypes[] = {0};
-extern "C" const size_t CommonFileTypes_size = 0;
-extern "C" const uint8_t G_PlusPlus[] = {0};
-extern "C" const size_t G_PlusPlus_size = 0;
-extern "C" const uint8_t Vs2022_v17Plus[] = {0};
-extern "C" const size_t Vs2022_v17Plus_size = 0;
 
 
 DS::Result<void> TestMain()
@@ -618,3 +609,5 @@ int main(int argc, char** argv)
     return 1;
 }
 
+#include "runcpp2/DefaultYAMLs.c"
+#include "runcpp2/LibYamlImpl.cpp"

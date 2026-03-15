@@ -1,0 +1,7 @@
+BuildType: Executable
+PassScriptPath: false
+Language: "c++"
+SourceFiles:
+  DefaultPlatform:
+    DefaultProfile:
+      - "./Simple.cpp"
