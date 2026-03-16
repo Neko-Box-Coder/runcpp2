@@ -536,13 +536,13 @@ namespace runcpp2
     }
 
     inline DS::Result<void> ResolveScriptImports(   Data::ScriptInfo& scriptInfo,
-                                                    const ghc::filesystem::path& scriptPath,
+                                                    const ghc::filesystem::path& scriptDirectory,
                                                     const ghc::filesystem::path& buildDir)
     {
         ssLOG_FUNC_INFO();
 
         //Resolve all the script info imports first before evaluating it
-        ResolveImports(scriptInfo, scriptPath, buildDir)
+        ResolveImports(scriptInfo, scriptDirectory, buildDir)
             .DS_TRY_ACT(DS_TMP_ERROR.ErrorCode = (int)PipelineResult::UNEXPECTED_FAILURE;
                         DS_APPEND_TRACE(DS_TMP_ERROR);
                         return DS::Error(DS_TMP_ERROR));
@@ -553,7 +553,7 @@ namespace runcpp2
     inline DS::Result<void> CheckScriptInfoChanges( const ghc::filesystem::path& buildDir,
                                                     const Data::ScriptInfo& scriptInfo,
                                                     const Data::Profile& profile,
-                                                    const ghc::filesystem::path& absoluteScriptPath,
+                                                    const ghc::filesystem::path& scriptDirectory,
                                                     const Data::ScriptInfo* lastScriptInfo,
                                                     const int maxThreads,
                                                     bool& outAllRecompileNeeded,
@@ -562,7 +562,6 @@ namespace runcpp2
     {
         ssLOG_FUNC_INFO();
 
-        const ghc::filesystem::path scriptDirectory = absoluteScriptPath.parent_path();
         ghc::filesystem::path lastScriptInfoFilePath = buildDir / "LastScriptInfo.yaml";
         Data::ScriptInfo lastScriptInfoFromDisk;
 
@@ -599,7 +598,7 @@ namespace runcpp2
                     break;
                 
                 //Resolve imports for last script info
-                ResolveScriptImports(lastScriptInfoFromDisk, absoluteScriptPath, buildDir).DS_TRY();
+                ResolveScriptImports(lastScriptInfoFromDisk, scriptDirectory, buildDir).DS_TRY();
                 lastInfo = &lastScriptInfoFromDisk;
             }
             while(false);
@@ -680,7 +679,7 @@ namespace runcpp2
     inline DS::Result<void>
     ProcessDependencies(Data::ScriptInfo& scriptInfo,
                         const Data::Profile& profile,
-                        const ghc::filesystem::path& absoluteScriptPath,
+                        const ghc::filesystem::path& scriptDirectory,
                         const ghc::filesystem::path& buildDir,
                         const std::unordered_map<CmdOptions, std::string>& currentOptions,
                         const std::vector<std::string>& changedDependencies,
@@ -701,7 +700,7 @@ namespace runcpp2
         GetDependenciesPaths(   outAvailableDependencies,
                                 dependenciesLocalCopiesPaths,
                                 dependenciesSourcePaths,
-                                absoluteScriptPath,
+                                scriptDirectory,
                                 buildDir)
             .DS_TRY_ACT(DS_TMP_ERROR.ErrorCode = (int)PipelineResult::DEPENDENCIES_FAILED;
                         DS_APPEND_TRACE(DS_TMP_ERROR);
