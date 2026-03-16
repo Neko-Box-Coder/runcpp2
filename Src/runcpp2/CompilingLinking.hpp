@@ -124,7 +124,7 @@ namespace
     }
     
     bool CompileScript( const ghc::filesystem::path& buildDir,
-                        const ghc::filesystem::path& scriptPath,
+                        const ghc::filesystem::path& scriptDirectory,
                         const std::vector<ghc::filesystem::path>& sourceFiles,
                         const std::vector<ghc::filesystem::path>& includePaths,
                         const runcpp2::Data::ScriptInfo& scriptInfo,
@@ -245,7 +245,7 @@ namespace
             std::error_code e;
             ghc::filesystem::path currentSource = sourceFiles.at(i);
             ghc::filesystem::path relativeSourcePath = 
-                ghc::filesystem::relative(currentSource, scriptPath.parent_path(), e);
+                ghc::filesystem::relative(currentSource, scriptDirectory, e);
             
             if(e)
             {
@@ -874,7 +874,7 @@ namespace runcpp2
 {
     inline DS::Result<void>  
     CompileScriptOnly(  const ghc::filesystem::path& buildDir,
-                        const ghc::filesystem::path& scriptPath,
+                        const ghc::filesystem::path& scriptDirectory,
                         const std::vector<ghc::filesystem::path>& sourceFiles,
                         const std::vector<bool>& sourceHasCache,
                         const std::vector<ghc::filesystem::path>& includePaths,
@@ -897,7 +897,7 @@ namespace runcpp2
         std::vector<ghc::filesystem::path> objectsFilesPaths;
 
         if(!CompileScript(  buildDir,
-                            scriptPath,
+                            scriptDirectory,
                             sourceFilesNeededToCompile, 
                             includePaths,
                             scriptInfo, 
@@ -921,7 +921,7 @@ namespace runcpp2
     //TODO: Convert string paths to filesystem paths
     inline DS::Result<void> 
     CompileAndLinkScript(   const ghc::filesystem::path& buildDir,
-                            const ghc::filesystem::path& scriptPath,
+                            const ghc::filesystem::path& scriptDirectory,
                             const std::string& outputName,
                             const std::vector<ghc::filesystem::path>& sourceFiles,
                             const std::vector<bool>& sourceHasCache,
@@ -946,7 +946,7 @@ namespace runcpp2
 
         //Compile source files that don't have cache
         if(!CompileScript(  buildDir,
-                            scriptPath,
+                            scriptDirectory,
                             sourceFilesNeededToCompile, 
                             includePaths,
                             scriptInfo, 
