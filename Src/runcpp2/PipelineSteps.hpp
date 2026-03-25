@@ -1085,7 +1085,7 @@ namespace runcpp2
                     outSourcePaths.push_back(currentPath);
                 }
             }
-        }
+        } //do
         while(0);
         
         if(outSourcePaths.empty())

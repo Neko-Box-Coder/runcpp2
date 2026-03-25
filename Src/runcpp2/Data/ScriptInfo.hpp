@@ -42,16 +42,11 @@ namespace Data
         RUNCPP2_FIELD std::string Language;
         RUNCPP2_FIELD bool PassScriptPath = false;
         RUNCPP2_FIELD BuildType CurrentBuildType = BuildType::EXECUTABLE;
-        RUNCPP2_FIELD std::unordered_map<   PlatformName, 
-                                            std::vector<ProfileName>> RequiredProfiles;
-        RUNCPP2_FIELD std::unordered_map<   PlatformName, 
-                                            ProfilesFlagsOverride> OverrideCompileFlags;
-        RUNCPP2_FIELD std::unordered_map<   PlatformName, 
-                                            ProfilesFlagsOverride> OverrideLinkFlags;
-        RUNCPP2_FIELD std::unordered_map<   PlatformName, 
-                                            ProfilesProcessPaths> OtherFilesToBeCompiled;
-        RUNCPP2_FIELD std::unordered_map<   PlatformName, 
-                                            ProfilesProcessPaths> IncludePaths;
+        RUNCPP2_FIELD std::unordered_map<PlatformName, std::vector<ProfileName>> RequiredProfiles;
+        RUNCPP2_FIELD std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideCompileFlags;
+        RUNCPP2_FIELD std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideLinkFlags;
+        RUNCPP2_FIELD std::unordered_map<PlatformName, ProfilesProcessPaths> OtherFilesToBeCompiled;
+        RUNCPP2_FIELD std::unordered_map<PlatformName, ProfilesProcessPaths> IncludePaths;
         RUNCPP2_FIELD std::vector<DependencyInfo> Dependencies;
         RUNCPP2_FIELD std::unordered_map<PlatformName, ProfilesDefines> Defines;
         RUNCPP2_FIELD std::unordered_map<PlatformName, ProfilesCommands> Setup;
