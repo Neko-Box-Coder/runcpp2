@@ -288,7 +288,7 @@ namespace
                 for(int j = 0; j < currentOutputTypeInfo->ExpectedOutputFiles.size(); ++j)
                 {
                     std::string currentPath = currentOutputTypeInfo->ExpectedOutputFiles.at(j);
-                    if(!profile.Compiler.PerformSubstituions(substitutionMap, currentPath))
+                    if(!runcpp2::PerformSubstituions(substitutionMap, currentPath))
                     {
                         ssLOG_ERROR("Failed to substitute \"" << currentPath << "\"");
                         actions.emplace_back(std::async(std::launch::deferred, []{return false;}));
@@ -347,7 +347,7 @@ namespace
                         {
                             std::string setupStep = currentOutputTypeInfo->Setup.at(j);
                             
-                            if(!profile.Compiler.PerformSubstituions(substitutionMap, setupStep))
+                            if(!runcpp2::PerformSubstituions(substitutionMap, setupStep))
                             {
                                 ssLOG_ERROR("Failed to substitute \"" << setupStep << "\"");
                                 return false;
@@ -424,7 +424,7 @@ namespace
                         {
                             std::string cleanupStep = currentOutputTypeInfo->Cleanup.at(j);
                             
-                            if(!profile.Compiler.PerformSubstituions(substitutionMap, cleanupStep))
+                            if(!runcpp2::PerformSubstituions(substitutionMap, cleanupStep))
                             {
                                 ssLOG_ERROR("Failed to substitute \"" << cleanupStep << "\"");
                                 return false;
@@ -711,7 +711,7 @@ namespace
             for(int i = 0; i < currentOutputTypeInfo->ExpectedOutputFiles.size(); ++i)
             {
                 std::string currentPath = currentOutputTypeInfo->ExpectedOutputFiles.at(i);
-                if(!profile.Linker.PerformSubstituions(substitutionMap, currentPath))
+                if(!runcpp2::PerformSubstituions(substitutionMap, currentPath))
                 {
                     ssLOG_ERROR("Failed to substitute \"" << currentPath << "\"");
                     return false;
@@ -732,7 +732,7 @@ namespace
             {
                 std::string setupStep = currentOutputTypeInfo->Setup.at(i);
                 
-                if(!profile.Linker.PerformSubstituions(substitutionMap, setupStep))
+                if(!runcpp2::PerformSubstituions(substitutionMap, setupStep))
                 {
                     ssLOG_ERROR("Failed to substitute \"" << setupStep << "\"");
                     return false;
@@ -802,7 +802,7 @@ namespace
             {
                 std::string cleanupStep = currentOutputTypeInfo->Cleanup.at(i);
                 
-                if(!profile.Linker.PerformSubstituions(substitutionMap, cleanupStep))
+                if(!runcpp2::PerformSubstituions(substitutionMap, cleanupStep))
                 {
                     ssLOG_ERROR("Failed to substitute \"" << cleanupStep << "\"");
                     return false;
