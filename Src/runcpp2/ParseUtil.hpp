@@ -456,6 +456,7 @@ namespace runcpp2
                                         const std::vector<int>& substitutionsLocations,
                                         const std::vector<int>& substitutionsLengths,
                                         std::string& inOutSubstitutedString,
+                                        const std::vector<char>& escapeChars,
                                         int substituteValueIndex = 0)
     {
         ssLOG_FUNC_DEBUG();
@@ -475,10 +476,6 @@ namespace runcpp2
             
             //Escape escapes character at the end if any
             {
-                std::vector<char> escapeChars = {'\\'};
-                #ifdef _WIN32
-                    escapeChars.emplace_back('^');
-                #endif
                 if(!currentValue.empty())
                 {
                     int currentValIndex = currentValue.size();
@@ -622,6 +619,7 @@ namespace runcpp2
     }
     
     inline bool PerformSubstituions(const SubstitutionMap& substitutionMap, 
+                                    const std::vector<char>& escapeChars,
                                     std::string& inOutSubstitutedString)
     {
         std::string escapedString;
@@ -650,7 +648,8 @@ namespace runcpp2
                                             foundSubstitutions, 
                                             substitutionsLocations, 
                                             substitutionsLengths,
-                                            inOutSubstitutedString);
+                                            inOutSubstitutedString,
+                                            escapeChars);
     }
     
     

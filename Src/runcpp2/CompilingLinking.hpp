@@ -39,7 +39,7 @@ namespace
 {
     using OverrideFlags = 
         std::unordered_map<PlatformName, runcpp2::Data::ProfilesFlagsOverride>;
- 
+
     //TODO: Add option to add/remove flags for each run option (executable, shared, static)
     void AppendAndRemoveFlags(  const runcpp2::Data::Profile& profile,
                                 const OverrideFlags overrideFlags,
@@ -237,6 +237,11 @@ namespace
         //Cache logs for worker threads
         ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS();
         int logLevel = ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL();
+        #ifdef _WIN32
+            const std::vector<char> escapeChars = {'\\', '^'};
+        #else
+            const std::vector<char> escapeChars = {'\\'};
+        #endif
         
         //Compile async, allow compilation for all source files whether if it succeeded or not
         bool failedAny = false;
@@ -288,7 +293,7 @@ namespace
                 for(int j = 0; j < currentOutputTypeInfo->ExpectedOutputFiles.size(); ++j)
                 {
                     std::string currentPath = currentOutputTypeInfo->ExpectedOutputFiles.at(j);
-                    if(!runcpp2::PerformSubstituions(substitutionMap, currentPath))
+                    if(!runcpp2::PerformSubstituions(substitutionMap, escapeChars, currentPath))
                     {
                         ssLOG_ERROR("Failed to substitute \"" << currentPath << "\"");
                         actions.emplace_back(std::async(std::launch::deferred, []{return false;}));
@@ -332,7 +337,8 @@ namespace
                                             //      therefore need to copy it.
                         &buildDir,
                         &scriptInfo,
-                        logLevel
+                        logLevel,
+                        &escapeChars
                     ]()
                     {
                         ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(logLevel);
@@ -347,7 +353,7 @@ namespace
                         {
                             std::string setupStep = currentOutputTypeInfo->Setup.at(j);
                             
-                            if(!runcpp2::PerformSubstituions(substitutionMap, setupStep))
+                            if(!runcpp2::PerformSubstituions(substitutionMap, escapeChars, setupStep))
                             {
                                 ssLOG_ERROR("Failed to substitute \"" << setupStep << "\"");
                                 return false;
@@ -379,6 +385,7 @@ namespace
                             std::string runPartSubstitutedCommand;
                             if(!profile.Compiler.ConstructCommand(  substitutionMap, 
                                                                     scriptInfo.CurrentBuildType,
+                                                                    escapeChars,
                                                                     runPartSubstitutedCommand))
                             {
                                 ssLOG_ERROR("Failed to construct compile command");
@@ -424,7 +431,9 @@ namespace
                         {
                             std::string cleanupStep = currentOutputTypeInfo->Cleanup.at(j);
                             
-                            if(!runcpp2::PerformSubstituions(substitutionMap, cleanupStep))
+                            if(!runcpp2::PerformSubstituions(   substitutionMap, 
+                                                                escapeChars, 
+                                                                cleanupStep))
                             {
                                 ssLOG_ERROR("Failed to substitute \"" << cleanupStep << "\"");
                                 return false;
@@ -723,6 +732,12 @@ namespace
         
         //Link the script
         {
+            #ifdef _WIN32
+                const std::vector<char> escapeChars = {'\\', '^'};
+            #else
+                const std::vector<char> escapeChars = {'\\'};
+            #endif
+            
             //Getting PreRun command
             std::string preRun =    runcpp2::HasValueFromPlatformMap(profile.Linker.PreRun) ?
                                     *runcpp2::GetValueFromPlatformMap(profile.Linker.PreRun) : "";
@@ -732,7 +747,7 @@ namespace
             {
                 std::string setupStep = currentOutputTypeInfo->Setup.at(i);
                 
-                if(!runcpp2::PerformSubstituions(substitutionMap, setupStep))
+                if(!runcpp2::PerformSubstituions(substitutionMap, escapeChars, setupStep))
                 {
                     ssLOG_ERROR("Failed to substitute \"" << setupStep << "\"");
                     return false;
@@ -766,6 +781,7 @@ namespace
                 std::string runPartSubstitutedCommand;
                 if(!profile.Linker.ConstructCommand(substitutionMap, 
                                                     scriptInfo.CurrentBuildType,
+                                                    escapeChars,
                                                     runPartSubstitutedCommand))
                 {
                     ssLOG_ERROR("Failed to construct link command");
@@ -802,7 +818,7 @@ namespace
             {
                 std::string cleanupStep = currentOutputTypeInfo->Cleanup.at(i);
                 
-                if(!runcpp2::PerformSubstituions(substitutionMap, cleanupStep))
+                if(!runcpp2::PerformSubstituions(substitutionMap, escapeChars, cleanupStep))
                 {
                     ssLOG_ERROR("Failed to substitute \"" << cleanupStep << "\"");
                     return false;

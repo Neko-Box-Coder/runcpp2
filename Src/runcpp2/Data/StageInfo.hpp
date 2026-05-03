@@ -82,6 +82,7 @@ namespace Data
         
         inline bool ConstructCommand(   const SubstitutionMap& substitutionMap, 
                                         const BuildType buildType,
+                                        const std::vector<char>& escapeChars,
                                         std::string& outCommand) const
         {
             ssLOG_FUNC_DEBUG();   
@@ -157,7 +158,8 @@ namespace Data
                                                     substitutionsInCurrentPart, 
                                                     substitutionsLocations, 
                                                     substitutionsLengths,
-                                                    substitutedPart))
+                                                    substitutedPart,
+                                                    escapeChars))
                     {
                         return false;
                     }
@@ -223,6 +225,7 @@ namespace Data
                                                         substitutionsLocations, 
                                                         substitutionsLengths,
                                                         substitutedPart,
+                                                        escapeChars,
                                                         j))
                         {
                             return false;
