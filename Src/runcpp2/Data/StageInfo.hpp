@@ -152,17 +152,15 @@ namespace Data
                 if(currentRunParts.at(i).Type == RunPart::RunType::ONCE)
                 {
                     std::string substitutedPart;
-                    
-                    if(!PerformSubstituionsWithInfo(substitutionMap, 
-                                                    currentEscapedPart, 
-                                                    substitutionsInCurrentPart, 
-                                                    substitutionsLocations, 
-                                                    substitutionsLengths,
-                                                    substitutedPart,
-                                                    escapeChars))
-                    {
-                        return false;
-                    }
+                    PerformSubstituionsWithInfo(substitutionMap, 
+                                                currentEscapedPart, 
+                                                substitutionsInCurrentPart, 
+                                                substitutionsLocations, 
+                                                substitutionsLengths,
+                                                substitutedPart,
+                                                escapeChars)
+                        .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                                    return false);
                     
                     outCommand += substitutedPart;
                 }
@@ -218,19 +216,16 @@ namespace Data
                     for(int j = 0; j < firstCount; ++j)
                     {
                         std::string substitutedPart;
-                                    
-                        if(!PerformSubstituionsWithInfo(substitutionMap, 
-                                                        currentEscapedPart, 
-                                                        substitutionsInCurrentPart, 
-                                                        substitutionsLocations, 
-                                                        substitutionsLengths,
-                                                        substitutedPart,
-                                                        escapeChars,
-                                                        j))
-                        {
-                            return false;
-                        }
-                        
+                        PerformSubstituionsWithInfo(substitutionMap, 
+                                                    currentEscapedPart, 
+                                                    substitutionsInCurrentPart, 
+                                                    substitutionsLocations, 
+                                                    substitutionsLengths,
+                                                    substitutedPart,
+                                                    escapeChars,
+                                                    j)
+                            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                                        return false);
                         outCommand += substitutedPart;
                     }
                 }
