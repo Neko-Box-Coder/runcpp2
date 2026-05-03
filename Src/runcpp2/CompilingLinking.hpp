@@ -293,15 +293,18 @@ namespace
                 for(int j = 0; j < currentOutputTypeInfo->ExpectedOutputFiles.size(); ++j)
                 {
                     std::string currentPath = currentOutputTypeInfo->ExpectedOutputFiles.at(j);
-                    if(!runcpp2::PerformSubstituions(substitutionMap, escapeChars, currentPath))
+                    DS::Result<void> res = runcpp2::PerformSubstituions(substitutionMap, 
+                                                                        escapeChars, 
+                                                                        currentPath);
+                    if(!res.HasValue())
                     {
-                        ssLOG_ERROR("Failed to substitute \"" << currentPath << "\"");
+                        ssLOG_ERROR(res.Error().ToString());
                         actions.emplace_back(std::async(std::launch::deferred, []{return false;}));
                         finished.emplace_back(false);
                         continue;
                     }
                     
-                    auto path = ghc::filesystem::path(currentPath);
+                    ghc::filesystem::path path = currentPath;
                     ghc::filesystem::create_directories(path.parent_path(), e);
                     if(e)
                     {
@@ -353,9 +356,12 @@ namespace
                         {
                             std::string setupStep = currentOutputTypeInfo->Setup.at(j);
                             
-                            if(!runcpp2::PerformSubstituions(substitutionMap, escapeChars, setupStep))
+                            DS::Result<void> res = runcpp2::PerformSubstituions(substitutionMap, 
+                                                                                escapeChars, 
+                                                                                setupStep);
+                            if(!res.HasValue())
                             {
-                                ssLOG_ERROR("Failed to substitute \"" << setupStep << "\"");
+                                ssLOG_ERROR(res.Error().ToString());
                                 return false;
                             }
                             
@@ -430,14 +436,8 @@ namespace
                         for(int j = 0; j < currentOutputTypeInfo->Cleanup.size(); ++j)
                         {
                             std::string cleanupStep = currentOutputTypeInfo->Cleanup.at(j);
-                            
-                            if(!runcpp2::PerformSubstituions(   substitutionMap, 
-                                                                escapeChars, 
-                                                                cleanupStep))
-                            {
-                                ssLOG_ERROR("Failed to substitute \"" << cleanupStep << "\"");
-                                return false;
-                            }
+                            runcpp2::PerformSubstituions(substitutionMap, escapeChars, cleanupStep)
+                                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                             
                             if(!preRun.empty())
                                 cleanupStep = preRun + " && " + cleanupStep;
@@ -720,11 +720,8 @@ namespace
             for(int i = 0; i < currentOutputTypeInfo->ExpectedOutputFiles.size(); ++i)
             {
                 std::string currentPath = currentOutputTypeInfo->ExpectedOutputFiles.at(i);
-                if(!runcpp2::PerformSubstituions(substitutionMap, currentPath))
-                {
-                    ssLOG_ERROR("Failed to substitute \"" << currentPath << "\"");
-                    return false;
-                }
+                runcpp2::PerformSubstituions(substitutionMap, currentPath)
+                    .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                 
                 outObjectsFilesPaths.push_back(currentPath);
             }
@@ -746,12 +743,8 @@ namespace
             for(int i = 0; i < currentOutputTypeInfo->Setup.size(); ++i)
             {
                 std::string setupStep = currentOutputTypeInfo->Setup.at(i);
-                
-                if(!runcpp2::PerformSubstituions(substitutionMap, escapeChars, setupStep))
-                {
-                    ssLOG_ERROR("Failed to substitute \"" << setupStep << "\"");
-                    return false;
-                }
+                runcpp2::PerformSubstituions(substitutionMap, escapeChars, setupStep)
+                    .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                 
                 if(!preRun.empty())
                     setupStep = preRun + " && " + setupStep;
@@ -817,12 +810,8 @@ namespace
             for(int i = 0; i < currentOutputTypeInfo->Cleanup.size(); ++i)
             {
                 std::string cleanupStep = currentOutputTypeInfo->Cleanup.at(i);
-                
-                if(!runcpp2::PerformSubstituions(substitutionMap, escapeChars, cleanupStep))
-                {
-                    ssLOG_ERROR("Failed to substitute \"" << cleanupStep << "\"");
-                    return false;
-                }
+                runcpp2::PerformSubstituions(substitutionMap, escapeChars, cleanupStep)
+                    .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                 
                 if(!preRun.empty())
                     cleanupStep = preRun + " && " + cleanupStep;

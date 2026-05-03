@@ -450,28 +450,23 @@ namespace runcpp2
     }
     
     using SubstitutionMap = std::unordered_map<std::string, std::vector<std::string>>;
-    bool PerformSubstituionsWithInfo(   const SubstitutionMap& substitutionMap, 
-                                        const std::string& escapedString,
-                                        const std::vector<std::string>& foundSubstitutions,
-                                        const std::vector<int>& substitutionsLocations,
-                                        const std::vector<int>& substitutionsLengths,
-                                        std::string& inOutSubstitutedString,
-                                        const std::vector<char>& escapeChars,
-                                        int substituteValueIndex = 0)
+    DS::Result<void> 
+    PerformSubstituionsWithInfo(const SubstitutionMap& substitutionMap, 
+                                const std::string& escapedString,
+                                const std::vector<std::string>& foundSubstitutions,
+                                const std::vector<int>& substitutionsLocations,
+                                const std::vector<int>& substitutionsLengths,
+                                std::string& inOutSubstitutedString,
+                                const std::vector<char>& escapeChars,
+                                int substituteValueIndex = 0)
     {
         ssLOG_FUNC_DEBUG();
 
         inOutSubstitutedString = escapedString;
-        
         for(int i = foundSubstitutions.size() - 1; i >= 0; --i)
         {
             const std::string& substitution = foundSubstitutions.at(i);
-            if(substitutionMap.count(substitution) == 0)
-            {
-                ssLOG_ERROR("INTERNAL ERROR, missing substitution value for \"" << substitution << "\"");
-                return false;
-            }
-            
+            DS_ASSERT_NOT_EQ(substitutionMap.count(substitution), 0);
             std::string currentValue = substitutionMap.at(substitution).at(substituteValueIndex);
             
             //Escape escapes character at the end if any
@@ -479,9 +474,8 @@ namespace runcpp2
                 if(!currentValue.empty())
                 {
                     int currentValIndex = currentValue.size();
-                    while(currentValIndex > 0)
+                    while(--currentValIndex > 0)
                     {
-                        --currentValIndex;
                         bool found = false;
                         for(int j = 0; j < escapeChars.size(); ++j)
                         {
@@ -523,7 +517,7 @@ namespace runcpp2
                                             currentValue);
         }
         
-        return true;
+        return {};
     }
     
     //NOTE: This extracts substitutions and also allow escapes to happen for substitution characters.
@@ -618,9 +612,9 @@ namespace runcpp2
         }
     }
     
-    inline bool PerformSubstituions(const SubstitutionMap& substitutionMap, 
-                                    const std::vector<char>& escapeChars,
-                                    std::string& inOutSubstitutedString)
+    inline DS::Result<void> PerformSubstituions(const SubstitutionMap& substitutionMap, 
+                                                const std::vector<char>& escapeChars,
+                                                std::string& inOutSubstitutedString)
     {
         std::string escapedString;
         std::vector<std::string> foundSubstitutions;
@@ -633,23 +627,16 @@ namespace runcpp2
                                                 substitutionsLocations,
                                                 substitutionsLengths);
         
-        if( foundSubstitutions.size() != substitutionsLocations.size() ||
-            foundSubstitutions.size() != substitutionsLengths.size())
-        {
-            ssLOG_ERROR("Substitution size mismatch");
-            ssLOG_ERROR("foundSubstitutions.size(): " << foundSubstitutions.size());
-            ssLOG_ERROR("substitutionsLocations.size(): " << substitutionsLocations.size());
-            ssLOG_ERROR("substitutionsLengths.size(): " << substitutionsLengths.size());
-            return false;
-        }
-        
-        return PerformSubstituionsWithInfo( substitutionMap, 
-                                            escapedString, 
-                                            foundSubstitutions, 
-                                            substitutionsLocations, 
-                                            substitutionsLengths,
-                                            inOutSubstitutedString,
-                                            escapeChars);
+        DS_ASSERT_EQ(foundSubstitutions.size(), substitutionsLocations.size());
+        DS_ASSERT_EQ(foundSubstitutions.size(), substitutionsLengths.size());
+        PerformSubstituionsWithInfo(substitutionMap, 
+                                    escapedString, 
+                                    foundSubstitutions, 
+                                    substitutionsLocations, 
+                                    substitutionsLengths,
+                                    inOutSubstitutedString,
+                                    escapeChars).DS_TRY();
+        return {};
     }
     
     
