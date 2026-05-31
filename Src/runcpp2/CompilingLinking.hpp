@@ -293,9 +293,9 @@ namespace
                 for(int j = 0; j < currentOutputTypeInfo->ExpectedOutputFiles.size(); ++j)
                 {
                     std::string currentPath = currentOutputTypeInfo->ExpectedOutputFiles.at(j);
-                    DS::Result<void> res = runcpp2::PerformSubstituions(substitutionMap, 
-                                                                        escapeChars, 
-                                                                        currentPath);
+                    DS::Result<void> res = runcpp2::PerformSubstitutions(   substitutionMap, 
+                                                                            escapeChars, 
+                                                                            currentPath);
                     if(!res.HasValue())
                     {
                         ssLOG_ERROR(res.Error().ToString());
@@ -356,9 +356,9 @@ namespace
                         {
                             std::string setupStep = currentOutputTypeInfo->Setup.at(j);
                             
-                            DS::Result<void> res = runcpp2::PerformSubstituions(substitutionMap, 
-                                                                                escapeChars, 
-                                                                                setupStep);
+                            DS::Result<void> res = runcpp2::PerformSubstitutions(   substitutionMap, 
+                                                                                    escapeChars, 
+                                                                                    setupStep);
                             if(!res.HasValue())
                             {
                                 ssLOG_ERROR(res.Error().ToString());
@@ -436,7 +436,7 @@ namespace
                         for(int j = 0; j < currentOutputTypeInfo->Cleanup.size(); ++j)
                         {
                             std::string cleanupStep = currentOutputTypeInfo->Cleanup.at(j);
-                            runcpp2::PerformSubstituions(substitutionMap, escapeChars, cleanupStep)
+                            runcpp2::PerformSubstitutions(substitutionMap, escapeChars, cleanupStep)
                                 .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                             
                             if(!preRun.empty())
@@ -720,7 +720,7 @@ namespace
             for(int i = 0; i < currentOutputTypeInfo->ExpectedOutputFiles.size(); ++i)
             {
                 std::string currentPath = currentOutputTypeInfo->ExpectedOutputFiles.at(i);
-                runcpp2::PerformSubstituions(substitutionMap, currentPath)
+                runcpp2::PerformSubstitutions(substitutionMap, currentPath)
                     .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                 
                 outObjectsFilesPaths.push_back(currentPath);
@@ -743,7 +743,7 @@ namespace
             for(int i = 0; i < currentOutputTypeInfo->Setup.size(); ++i)
             {
                 std::string setupStep = currentOutputTypeInfo->Setup.at(i);
-                runcpp2::PerformSubstituions(substitutionMap, escapeChars, setupStep)
+                runcpp2::PerformSubstitutions(substitutionMap, escapeChars, setupStep)
                     .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                 
                 if(!preRun.empty())
@@ -810,7 +810,7 @@ namespace
             for(int i = 0; i < currentOutputTypeInfo->Cleanup.size(); ++i)
             {
                 std::string cleanupStep = currentOutputTypeInfo->Cleanup.at(i);
-                runcpp2::PerformSubstituions(substitutionMap, escapeChars, cleanupStep)
+                runcpp2::PerformSubstitutions(substitutionMap, escapeChars, cleanupStep)
                     .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                 
                 if(!preRun.empty())
