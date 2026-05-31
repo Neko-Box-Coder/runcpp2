@@ -124,110 +124,33 @@ namespace Data
                 ssLOG_DEBUG("Parsing run part at index: " << i);
                 ssLOG_DEBUG("Which is: \"" << currentRunParts.at(i).CommandPart << "\"");
                 
-                std::string currentEscapedPart;
-                std::vector<std::string> substitutionsInCurrentPart;
-                std::vector<int> substitutionsLocations;
-                std::vector<int> substitutionsLengths;
-                
-                GetEscapedStringAndExtractSubstitutions(currentRunParts.at(i).CommandPart, 
-                                                        currentEscapedPart,
-                                                        substitutionsInCurrentPart,
-                                                        substitutionsLocations,
-                                                        substitutionsLengths);
-                
-                if( substitutionsInCurrentPart.size() != substitutionsLocations.size() ||
-                    substitutionsInCurrentPart.size() != substitutionsLengths.size())
-                {
-                    ssLOG_ERROR("Substitution size mismatch");
-                    ssLOG_ERROR("substitutionsInCurrentPart.size(): " << substitutionsInCurrentPart.size());
-                    ssLOG_ERROR("substitutionsLocations.size(): " << substitutionsLocations.size());
-                    ssLOG_ERROR("substitutionsLengths.size(): " << substitutionsLengths.size());
-                    return false;
-                }
-                
                 static_assert(  static_cast<int>(RunPart::RunType::COUNT) == 2, 
                                 "Update parsing for new runtype");
                 
                 //Check RunType::ONCE if all the substitutions are present
                 if(currentRunParts.at(i).Type == RunPart::RunType::ONCE)
                 {
-                    std::string substitutedPart;
-                    PerformSubstituionsWithInfo(substitutionMap, 
-                                                currentEscapedPart, 
-                                                substitutionsInCurrentPart, 
-                                                substitutionsLocations, 
-                                                substitutionsLengths,
-                                                substitutedPart,
-                                                escapeChars)
+                    std::string substitutedPart = currentRunParts.at(i).CommandPart;
+                    
+                    PerformSubstitutions(substitutionMap, escapeChars, substitutedPart)
                         .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
                                     return false);
-                    
                     outCommand += substitutedPart;
                 }
                 //Check RunType::REPEATS, all the substitutions must have the same number of values.
                 //Otherwise, bail
                 else
                 {
-                    int firstCount = -1;
+                    std::vector<std::string> substitutedParts;
+                    PerformMultiSubstitutions(  substitutionMap, 
+                                                escapeChars,
+                                                currentRunParts.at(i).CommandPart,
+                                                substitutedParts)
+                        .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                                    return false);
                     
-                    //If there are no substitution, report this
-                    if(substitutionsInCurrentPart.empty())
-                    {
-                        ssLOG_ERROR("There are no substitutions found in " << currentEscapedPart << 
-                                    " but it is set to be of RunType::REPEATS.");
-                        
-                        ssLOG_ERROR("Substitutions are needed to determine " << 
-                                    "how many times to repeat this part");
-                        
-                        return false;
-                    }
-                    
-                    //Check all the substitution found in the run part
-                    for(int j = 0; j < substitutionsInCurrentPart.size(); ++j)
-                    {
-                        if(substitutionMap.count(substitutionsInCurrentPart.at(j)) == 0)
-                        {
-                            ssLOG_DEBUG("No substitution found for " << substitutionsInCurrentPart.at(j) << 
-                                        " in " << currentRunParts.at(i).CommandPart);
-                            
-                            ssLOG_DEBUG("Current run part is type repeat, skipping to next");
-                            continue;
-                        }
-                        
-                        int substitutionValuesCount = 
-                            substitutionMap.at(substitutionsInCurrentPart.at(j)).size();
-                        
-                        if(firstCount == -1)
-                            firstCount = substitutionValuesCount;
-                        else if(substitutionValuesCount != firstCount)
-                        {
-                            ssLOG_ERROR("The number of substitution values found for " << 
-                                        substitutionsInCurrentPart.at(j) << " which is " << 
-                                        substitutionValuesCount << " does not match " <<
-                                        "the number of other substitution values which is " << 
-                                        firstCount);
-
-                            return false;
-                        }
-                    }
-                    
-                    //Once we agreed on how many repeats we need to do based on 
-                    //the substitution values count, we can then do substitution.
-                    for(int j = 0; j < firstCount; ++j)
-                    {
-                        std::string substitutedPart;
-                        PerformSubstituionsWithInfo(substitutionMap, 
-                                                    currentEscapedPart, 
-                                                    substitutionsInCurrentPart, 
-                                                    substitutionsLocations, 
-                                                    substitutionsLengths,
-                                                    substitutedPart,
-                                                    escapeChars,
-                                                    j)
-                            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                                        return false);
-                        outCommand += substitutedPart;
-                    }
+                    for(int j = 0; j < substitutedParts.size(); ++j)
+                        outCommand += substitutedParts[j];
                 }
             }
             

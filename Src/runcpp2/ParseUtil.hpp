@@ -451,23 +451,37 @@ namespace runcpp2
     
     using SubstitutionMap = std::unordered_map<std::string, std::vector<std::string>>;
     DS::Result<void> 
-    PerformSubstituionsWithInfo(const SubstitutionMap& substitutionMap, 
-                                const std::string& escapedString,
-                                const std::vector<std::string>& foundSubstitutions,
-                                const std::vector<int>& substitutionsLocations,
-                                const std::vector<int>& substitutionsLengths,
-                                std::string& inOutSubstitutedString,
-                                const std::vector<char>& escapeChars,
-                                int substituteValueIndex = 0)
+    PerformSubstitutionsWithInfo(   const SubstitutionMap& substitutionMap, 
+                                    const std::string& escapedString,
+                                    const std::vector<std::string>& foundSubstitutions,
+                                    const std::vector<int>& substitutionsLocations,
+                                    const std::vector<int>& substitutionsLengths,
+                                    std::string& inOutSubstitutedString,
+                                    const std::vector<char>& escapeChars,
+                                    int substituteValueIndex = 0)
     {
         ssLOG_FUNC_DEBUG();
 
         inOutSubstitutedString = escapedString;
         for(int i = foundSubstitutions.size() - 1; i >= 0; --i)
         {
-            const std::string& substitution = foundSubstitutions.at(i);
-            DS_ASSERT_NOT_EQ(substitutionMap.count(substitution), 0);
-            std::string currentValue = substitutionMap.at(substitution).at(substituteValueIndex);
+            const std::string& substitution = foundSubstitutions[i];
+            if(substitutionMap.count(substitution) == 0)
+            {
+                ssLOG_DEBUG("substitution: " << substitution << " not found in substitution map, "
+                            "skipping...");
+                continue;
+            }
+            
+            //The substitution values can either be 1 
+            //(in which case will be the same value regardless of substituteValueIndex)
+            //Or the index being requested.
+            int useIndex = substituteValueIndex;
+            if(substitutionMap.at(substitution).size() == 1)
+                useIndex = 0;
+            
+            DS_ASSERT_LT(useIndex, substitutionMap.at(substitution).size());
+            std::string currentValue = substitutionMap.at(substitution).at(useIndex);
             
             //Escape escapes character at the end if any
             {
@@ -512,6 +526,7 @@ namespace runcpp2
             ssLOG_DEBUG("Replacing \"" << substitution << "\" with \"" << currentValue << 
                         "\" in \"" << escapedString << "\"");
             
+            //TODO: Instead of doing replace, we should just memcpy and rebuild the string
             inOutSubstitutedString.replace( substitutionsLocations.at(i), 
                                             substitutionsLengths.at(i), 
                                             currentValue);
@@ -612,9 +627,9 @@ namespace runcpp2
         }
     }
     
-    inline DS::Result<void> PerformSubstituions(const SubstitutionMap& substitutionMap, 
-                                                const std::vector<char>& escapeChars,
-                                                std::string& inOutSubstitutedString)
+    inline DS::Result<void> PerformSubstitutions(   const SubstitutionMap& substitutionMap, 
+                                                    const std::vector<char>& escapeChars,
+                                                    std::string& inOutSubstitutedString)
     {
         std::string escapedString;
         std::vector<std::string> foundSubstitutions;
@@ -629,17 +644,79 @@ namespace runcpp2
         
         DS_ASSERT_EQ(foundSubstitutions.size(), substitutionsLocations.size());
         DS_ASSERT_EQ(foundSubstitutions.size(), substitutionsLengths.size());
-        PerformSubstituionsWithInfo(substitutionMap, 
-                                    escapedString, 
-                                    foundSubstitutions, 
-                                    substitutionsLocations, 
-                                    substitutionsLengths,
-                                    inOutSubstitutedString,
-                                    escapeChars).DS_TRY();
+        PerformSubstitutionsWithInfo(   substitutionMap, 
+                                        escapedString, 
+                                        foundSubstitutions, 
+                                        substitutionsLocations, 
+                                        substitutionsLengths,
+                                        inOutSubstitutedString,
+                                        escapeChars)
+            .DS_TRY();
         return {};
     }
     
-    
+    inline DS::Result<void> PerformMultiSubstitutions(  const SubstitutionMap& substitutionMap, 
+                                                        const std::vector<char>& escapeChars,
+                                                        const std::string& inString,
+                                                        std::vector<std::string>& outStrings)
+    {
+        std::string escapedString;
+        std::vector<std::string> foundSubstitutions;
+        std::vector<int> substitutionsLocations;
+        std::vector<int> substitutionsLengths;
+        
+        GetEscapedStringAndExtractSubstitutions(inString, 
+                                                escapedString,
+                                                foundSubstitutions,
+                                                substitutionsLocations,
+                                                substitutionsLengths);
+        
+        DS_ASSERT_EQ(foundSubstitutions.size(), substitutionsLocations.size());
+        DS_ASSERT_EQ(foundSubstitutions.size(), substitutionsLengths.size());
+        
+        int foundSize = -1;
+        for(int i = 0; i < foundSubstitutions.size(); ++i)
+        {
+            if(substitutionMap.count(foundSubstitutions[i]) > 0)
+            {
+                if(foundSize == -1)
+                    foundSize = substitutionMap.at(foundSubstitutions[i]).size();
+                else
+                {
+                    if(substitutionMap.at(foundSubstitutions[i]).size() != 1)
+                    {
+                        if(foundSize == 1)
+                        {
+                            foundSize = substitutionMap.at(foundSubstitutions[i]).size();
+                            continue;
+                        }
+                        else if(foundSize ==  substitutionMap.at(foundSubstitutions[i]).size())
+                            continue;
+                        
+                        return DS_ERROR_MSG("Mismatching array size when substituting with " +
+                                            foundSubstitutions[i]);
+                    }
+                }
+            }
+        }
+        
+        DS_ASSERT_NOT_EQ(foundSize, -1);
+        
+        for(int i = 0; i < foundSize; ++i)
+        {
+            outStrings.emplace_back(std::string());
+            PerformSubstitutionsWithInfo(   substitutionMap, 
+                                            escapedString, 
+                                            foundSubstitutions, 
+                                            substitutionsLocations, 
+                                            substitutionsLengths,
+                                            outStrings.back(),
+                                            escapeChars,
+                                            i)
+                .DS_TRY();
+        }
+        return {};
+    }
 }
 
 #endif
