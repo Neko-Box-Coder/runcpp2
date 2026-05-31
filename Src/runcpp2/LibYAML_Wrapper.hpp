@@ -5,6 +5,7 @@
 #include "mpark/variant.hpp"
 #include "nonstd/string_view.hpp"
 #include "yaml.h"
+#include "runcpp2/DeferUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
 #include <stack>
@@ -107,7 +108,8 @@ namespace runcpp2
             Scalar, 
             Alias,
             Sequence, 
-            Map
+            Map,
+            Count //4
         };
         
         inline StringView NodeTypeToString(NodeType type);
@@ -119,7 +121,7 @@ namespace runcpp2
         {
             std::vector<std::shared_ptr<yaml_event_t>> ReadData = {};
             //NOTE: Needs to be unique_ptr due to small string optimizations
-            std::vector<std::unique_ptr<std::string>> WriteData = {};
+            std::vector<std::shared_ptr<std::string>> WriteData = {};
             
             inline std::string& CreateString()
             {
@@ -127,9 +129,11 @@ namespace runcpp2
                 return *WriteData.back().get();
             }
             
-            inline void StoreString(const std::string& str)
+            inline std::string& CreateString(StringView view)
             {
-                CreateString() = str;
+                WriteData.emplace_back(std::unique_ptr<std::string>(new std::string(view.data(), 
+                                                                                    view.size())));
+                return *WriteData.back().get();
             }
         };
         
@@ -140,10 +144,24 @@ namespace runcpp2
         //NOTE: all parameters must be alive while using the node
         inline DS::Result<std::vector<NodePtr>> ParseYAML(  StringView yamlString, 
                                                             ResourceHandle& outResource);
-    
+        #ifdef ParseYAML_TryDefer
+            #error "ParseYAML_TryDefer is already defined"
+        #else
+            //Same as:
+            //inline std::vector<NodePtr> ParseYAML_TryDefer( StringView yamlString, 
+            //                                                ResourceHandle& outResource);
+            #define ParseYAML_TryDefer(yamlString, outResource) \
+                ParseYAML(yamlString, outResource).DS_VALUE_OR(); \
+                DEFER { FreeYAMLResource(outResource); }; \
+                DS_CHECK_PREV()
+        #endif
+        
         inline DS::Result<void> ResolveAnchors(NodePtr rootNode);
         
-        inline DS::Result<void> FreeYAMLResource(ResourceHandle& resourceHandleToFree);
+        inline void FreeYAMLResource(ResourceHandle& resourceHandleToFree);
+        
+        inline std::vector<NodePtr> ParseYAML_DeferTry( StringView yamlString, 
+                                                        ResourceHandle& outResource);
         
         struct Alias
         {
@@ -169,7 +187,9 @@ namespace runcpp2
             int LineNumber = -1;
             Node* Parent = nullptr;
             
+            //--------------------------------------------------
             //Reading
+            //--------------------------------------------------
             inline NodeType GetType() const { return (NodeType)Value.index(); }
             
             inline bool IsAlias() const { return mpark::is<Alias>(Value); };
@@ -220,34 +240,55 @@ namespace runcpp2
             template<typename T>
             inline DS::Result<T> GetMapValueScalarAt(uint32_t index) const;
             
+            inline Node* GetParent() const;
+            
             inline uint32_t GetChildrenCount() const;
             
+            //--------------------------------------------------
             //Writing
-            DS::Result<NodePtr> CloneToSequenceChild(   NodePtr parentNode, 
-                                                        ResourceHandle& yamlResouce) const;
+            //--------------------------------------------------
+            //NOTE: `val` will be copied
+            inline DS::Result<void> InitScalar(ScalarValue val, ResourceHandle& yamlResource);
+            
+            //NOTE: `alias` will be copied
+            inline DS::Result<void> InitAlias(ScalarValue alias, ResourceHandle& yamlResource);
             
             //TODO: Support ordering sequence child
-            
-            //TODO: Support erasing sequence child
+            inline DS::Result<void> InitSequence();
+            inline DS::Result<NodePtr> CloneToSequenceChild(NodePtr parentNode, 
+                                                            ResourceHandle& yamlResource) const;
+            inline DS::Result<void> RemoveSequenceChildAt(uint32_t index);
+            inline DS::Result<NodePtr> CreateSequenceChild();
+            inline DS::Result<NodePtr> CreateSequenceChildAt(uint32_t index);
             
             //NOTE: `key` will be copied
-            DS::Result<NodePtr> CloneToMapChild(StringView key, 
-                                                NodePtr parentNode, 
-                                                ResourceHandle& yamlResouce) const;
-            
+            inline DS::Result<void> InitMap();
+            inline DS::Result<NodePtr> CloneToMapChild( StringView key, 
+                                                        NodePtr parentNode, 
+                                                        ResourceHandle& yamlResource) const;
             //TODO: Support ordering map child
-            
-            //TODO: Support erasing map child
             inline DS::Result<void> RemoveMapChild(StringView key);
+            inline DS::Result<void> RemoveMapChildAt(uint32_t index);
             
+            //NOTE: `newKey` will be copied
+            inline DS::Result<void> UpdateMapKey(   StringView oldKey, 
+                                                    StringView newKey, 
+                                                    ResourceHandle& resourceHandle);
+            inline DS::Result<void> UpdateMapValue(   StringView oldKey, 
+                                                    StringView newKey, 
+                                                    ResourceHandle& resourceHandle);
             
-            //TODO: Proper Writing
+            //NOTE: `key` will be copied
+            inline DS::Result<NodePtr> CreateMapChild(StringView key, ResourceHandle& resourceHandle);
+            inline DS::Result<NodePtr> CreateMapChildAt(StringView key, 
+                                                        uint32_t index, 
+                                                        ResourceHandle& resourceHandle);
             
             //TODO: Support null (null tag and ~)?
             
-            DS::Result<void> ToString(std::string& outString) const;
+            inline DS::Result<void> ToString(std::string& outString) const;
             
-            DS::Result<NodePtr> Clone(bool shallow, ResourceHandle& yamlResouce) const;
+            inline DS::Result<NodePtr> Clone(bool shallow, ResourceHandle& yamlResource) const;
         };
         
         //==================================================
@@ -506,19 +547,18 @@ namespace runcpp2
             return {};
         }
         
-        inline DS::Result<void> FreeYAMLResource(ResourceHandle& resourceHandleToFree)
+        inline void FreeYAMLResource(ResourceHandle& resourceHandleToFree)
         {
-            DS_ASSERT_TRUE(resourceHandleToFree.first != nullptr);
+            if(resourceHandleToFree.first != nullptr)
+            {
+                for(int i = 0; i < resourceHandleToFree.second.ReadData.size(); ++i)
+                    yaml_event_delete(resourceHandleToFree.second.ReadData[i].get());
+                yaml_parser_delete(resourceHandleToFree.first);
+                delete resourceHandleToFree.first;
+            }
             
-            for(int i = 0; i < resourceHandleToFree.second.ReadData.size(); ++i)
-                yaml_event_delete(resourceHandleToFree.second.ReadData[i].get());
-            
-            yaml_parser_delete(resourceHandleToFree.first);
-            
-            delete resourceHandleToFree.first;
             resourceHandleToFree.first = nullptr;
             resourceHandleToFree.second = ReadWriteBuffer();
-            return {};
         }
         
         template<>
@@ -785,6 +825,11 @@ namespace runcpp2
             return mpark::get_if<OrderedMap>(&Value)->Map.at(keyNode)->GetScalar<T>();
         }
         
+        inline Node* Node::GetParent() const
+        {
+            return Parent;
+        }
+        
         inline uint32_t Node::GetChildrenCount() const
         {
             if(IsAlias() || IsScalar())
@@ -797,33 +842,79 @@ namespace runcpp2
                 return 0;
         }
         
+        inline DS::Result<void> Node::InitScalar(ScalarValue val, ResourceHandle& yamlResource)
+        {
+            Value = StringView(yamlResource.second.CreateString(val));
+            return {};
+        }
+            
+        inline DS::Result<void> Node::InitAlias(ScalarValue alias, ResourceHandle& yamlResource)
+        {
+            Value = Alias{StringView(yamlResource.second.CreateString(alias))};
+            return {};
+        }
+        
+        inline DS::Result<void> Node::InitSequence()
+        {
+            Value = Sequence();
+            return {};
+        }
+        
         //TODO: Reorder the whole thing to match declaration order
         inline DS::Result<NodePtr> Node::CloneToSequenceChild(  NodePtr parentNode, 
-                                                                ResourceHandle& yamlResouce) const
+                                                                ResourceHandle& yamlResource) const
         {
             DS_ASSERT_TRUE(parentNode->IsSequence());
-            NodePtr clonedThis = Clone(false, yamlResouce).DS_TRY();
+            NodePtr clonedThis = Clone(false, yamlResource).DS_TRY();
             clonedThis->Parent = parentNode.get();
             mpark::get_if<Sequence>(&parentNode->Value)->push_back(clonedThis);
             return clonedThis;
         }
         
+        inline DS::Result<void> Node::RemoveSequenceChildAt(uint32_t index)
+        {
+            DS_ASSERT_TRUE(IsSequence());
+            DS_ASSERT_LT(index, mpark::get<Sequence>(Value).size());
+            mpark::get<Sequence>(Value).erase(mpark::get<Sequence>(Value).begin() + index);
+            return {};
+        }
+        
+        inline DS::Result<NodePtr> Node::CreateSequenceChild()
+        {
+            DS_ASSERT_TRUE(IsSequence());
+            mpark::get<Sequence>(Value).emplace_back();
+            return mpark::get<Sequence>(Value).back();
+        }
+        
+        inline DS::Result<NodePtr> Node::CreateSequenceChildAt(uint32_t index)
+        {
+            DS_ASSERT_TRUE(IsSequence());
+            DS_ASSERT_LT_EQ(index, mpark::get<Sequence>(Value).size());
+            mpark::get<Sequence>(Value).insert(mpark::get<Sequence>(Value).begin() + index, {});
+            return mpark::get<Sequence>(Value)[index];
+        }
+        
+        inline DS::Result<void> Node::InitMap()
+        {
+            Value = OrderedMap();
+            return {};
+        }
+        
         inline DS::Result<NodePtr> Node::CloneToMapChild(   StringView key, 
                                                             NodePtr parentNode, 
-                                                            ResourceHandle& yamlResouce) const
+                                                            ResourceHandle& yamlResource) const
         {
             DS_ASSERT_TRUE(parentNode->IsMap());
-            NodePtr clonedThis = Clone(false, yamlResouce).DS_TRY();
+            NodePtr clonedThis = Clone(false, yamlResource).DS_TRY();
             clonedThis->Parent = parentNode.get();
-            yamlResouce.second.StoreString(std::string(key));
-            StringView keyView = StringView(*yamlResouce.second.WriteData.back());
             NodePtr keyNode = CreateNodePtr();
-            keyNode->Value = keyView;
+            std::string& keyStr = yamlResource.second.CreateString(key);
+            keyNode->Value = keyStr;
             keyNode->LineNumber = LineNumber;
             
             mpark::get_if<OrderedMap>(&parentNode->Value)->InsertedKeys.push_back(keyNode);
             mpark::get_if<OrderedMap>(&parentNode->Value)->Map[keyNode] = clonedThis;
-            mpark::get_if<OrderedMap>(&parentNode->Value)->StringMap[keyView] = clonedThis;
+            mpark::get_if<OrderedMap>(&parentNode->Value)->StringMap[keyStr] = clonedThis;
             return clonedThis;
         }
         
@@ -853,6 +944,91 @@ namespace runcpp2
             orderedMap.Map.erase(keyNode);
             orderedMap.StringMap.erase(key);
             return {};
+        }
+        
+        inline DS::Result<void> Node::RemoveMapChildAt(uint32_t index)
+        {
+            DS_ASSERT_TRUE(IsMap());
+            OrderedMap& orderedMap = *mpark::get_if<OrderedMap>(&Value);
+            
+            DS_ASSERT_LT(index, orderedMap.InsertedKeys.size());
+            
+            NodePtr keyNode = orderedMap.InsertedKeys[index];
+            DS_ASSERT_NOT_EQ(orderedMap.Map.count(keyNode), 0);
+            
+            StringView keyView = orderedMap.Map.at(keyNode)->GetScalar<StringView>().DS_TRY();
+            return RemoveMapChild(keyView);
+        }
+        
+        inline DS::Result<void> Node::UpdateMapKey( StringView oldKey, 
+                                                    StringView newKey, 
+                                                    ResourceHandle& resourceHandle)
+        {
+            DS_ASSERT_TRUE(IsMap());
+            OrderedMap& orderedMap = *mpark::get_if<OrderedMap>(&Value);
+            
+            DS_ASSERT_GT(orderedMap.StringMap.count(oldKey), 0);
+            
+            NodePtr keyNode = nullptr;
+            for(int i = 0; i < orderedMap.InsertedKeys.size(); ++i)
+            {
+                if( orderedMap.InsertedKeys[i]->IsScalar() && 
+                    orderedMap.InsertedKeys.at(i)->GetScalar<StringView>().Value() == oldKey)
+                {
+                    keyNode = orderedMap.InsertedKeys[i];
+                    break;
+                }
+            }
+            
+            DS_ASSERT_TRUE(keyNode != nullptr);
+            std::string& newKeyStr = resourceHandle.second.CreateString(newKey);
+            keyNode->Value = newKeyStr;
+            orderedMap.StringMap.erase(oldKey);
+            DS_ASSERT_GT(orderedMap.Map.count(keyNode), 0);
+            orderedMap.StringMap[newKey] = orderedMap.Map[keyNode];
+            return {};
+        }
+        
+        inline DS::Result<NodePtr> Node::CreateMapChild(StringView key, 
+                                                        ResourceHandle& resourceHandle)
+        {
+            DS_ASSERT_TRUE(IsMap());
+            OrderedMap& orderedMap = *mpark::get_if<OrderedMap>(&Value);
+            
+            DS_ASSERT_EQ(orderedMap.StringMap.count(key), 0);
+            
+            std::string& keyStr = resourceHandle.second.CreateString(key);
+            NodePtr keyNode = CreateNodePtr();
+            keyNode->Value = keyStr;
+            keyNode->Parent = Parent;
+            
+            orderedMap.InsertedKeys.emplace_back(keyNode);
+            orderedMap.Map[keyNode] = {};
+            orderedMap.StringMap[keyStr] = orderedMap.Map[keyNode];
+            
+            return orderedMap.Map[keyNode];
+        }
+        
+        inline DS::Result<NodePtr> Node::CreateMapChildAt(  StringView key, 
+                                                            uint32_t index, 
+                                                            ResourceHandle& resourceHandle)
+        {
+            DS_ASSERT_TRUE(IsMap());
+            OrderedMap& orderedMap = *mpark::get_if<OrderedMap>(&Value);
+            
+            DS_ASSERT_EQ(orderedMap.StringMap.count(key), 0);
+            DS_ASSERT_LT_EQ(index, orderedMap.InsertedKeys.size());
+            
+            std::string& keyStr = resourceHandle.second.CreateString(key);
+            NodePtr keyNode = CreateNodePtr();
+            keyNode->Value = keyStr;
+            keyNode->Parent = Parent;
+            
+            orderedMap.InsertedKeys.insert(orderedMap.InsertedKeys.begin() + index, keyNode);
+            orderedMap.Map[keyNode] = {};
+            orderedMap.StringMap[keyStr] = orderedMap.Map[keyNode];
+            
+            return orderedMap.Map[keyNode];
         }
         
         inline DS::Result<void> Node::ToString(std::string& outString) const
@@ -1007,7 +1183,7 @@ namespace runcpp2
             return {};
         }
         
-        inline DS::Result<NodePtr> Node::Clone(bool shallow, ResourceHandle& yamlResouce) const
+        inline DS::Result<NodePtr> Node::Clone(bool shallow, ResourceHandle& yamlResource) const
         {
             std::stack<std::pair<NodePtr, const Node*>> nodesToCloneStack;    //Dst, src
             
@@ -1032,23 +1208,19 @@ namespace runcpp2
                 if(shallow)
                     break;
                 
-                yamlResouce.second.StoreString(std::string(src->Anchor));
-                dst->Anchor = StringView(*yamlResouce.second.WriteData.back());
-                
+                dst->Anchor = yamlResource.second.CreateString(src->Anchor);
                 switch(src->GetType())
                 {
                     case NodeType::Scalar:
                     {
                         std::string val = src->GetScalar<std::string>().DS_TRY();
-                        yamlResouce.second.StoreString(val);
-                        dst->Value = ScalarValue(*yamlResouce.second.WriteData.back());
+                        dst->Value = yamlResource.second.CreateString(val);
                         break;
                     }
                     case NodeType::Alias:
                     {
                         std::string val = src->GetAlias<std::string>().DS_TRY();
-                        yamlResouce.second.StoreString(val);
-                        dst->Value = Alias{ StringView(*yamlResouce.second.WriteData.back()) };
+                        dst->Value = Alias{ yamlResource.second.CreateString(val) };
                         break;
                     }
                     case NodeType::Sequence:
@@ -1094,8 +1266,7 @@ namespace runcpp2
                             if(keyNode->IsScalar())
                             {
                                 std::string key = keyNode->GetScalar<std::string>().DS_TRY();
-                                yamlResouce.second.StoreString(key);
-                                StringView keyView = StringView(*yamlResouce.second.WriteData.back());
+                                StringView keyView = yamlResource.second.CreateString(key);
                                 dstMap.StringMap[keyView] = clonedValNode;
                             }
                         }
