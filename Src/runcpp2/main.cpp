@@ -186,11 +186,12 @@ int main(int argc, char* argv[])
 {
     ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_WARNING);
     
+    //TODO: Rework this
     //Parse command line options
     int currentArgIndex = 0;
     std::unordered_map<runcpp2::CmdOptions, std::string> currentOptions;
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 19, "Update this");
+        static_assert((int)runcpp2::CmdOptions::COUNT == 20, "Update this");
         std::unordered_map<std::string, runcpp2::OptionInfo> longOptionsMap =
         {
             {
@@ -265,9 +266,13 @@ int main(int argc, char* argv[])
                 "--tutorial",
                 runcpp2::OptionInfo(runcpp2::CmdOptions::TUTORIAL, false)
             },
+            {
+                "--parameters",
+                runcpp2::OptionInfo(runcpp2::CmdOptions::PARAMETERS, true)
+            }
         };
         
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 19, "Update this");
+        static_assert((int)runcpp2::CmdOptions::COUNT == 20, "Update this");
         std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
         {
             {"-rb", longOptionsMap.at("--rebuild")},
@@ -286,6 +291,7 @@ int main(int argc, char* argv[])
             {"-cu", longOptionsMap.at("--cleanup")},
             {"-s", longOptionsMap.at("--source-only")},
             {"-j", longOptionsMap.at("--jobs")},
+            {"-p", longOptionsMap.at("--parameters")},
         };
         
         currentArgIndex = ParseArgs(longOptionsMap, shortOptionsMap, currentOptions, argc, argv);
@@ -302,33 +308,34 @@ int main(int argc, char* argv[])
     //Help message
     if(currentOptions.count(runcpp2::CmdOptions::HELP))
     {
-        static_assert(static_cast<int>(runcpp2::CmdOptions::COUNT) == 19, "Update this");
+        static_assert((int)runcpp2::CmdOptions::COUNT == 20, "Update this");
         ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
         ssLOG_BASE("Options:");
         ssLOG_BASE("  Run/Build:");
-        ssLOG_BASE("    -b,  --[b]uild                          Build the script but don't run it");
-        ssLOG_BASE("    -o,  --[o]utput <Output Dir>            Output files to the directory specified, must be used with --build");
-        ssLOG_BASE("    -w,  --[w]atch                          Watch script changes and output any compiling errors");
-        ssLOG_BASE("    -l,  --[l]ocal                          Build in the current working directory under .runcpp2 directory");
-        ssLOG_BASE("    -e,  --[e]xecutable                     Runs as executable instead of shared library");
-        ssLOG_BASE("    -c,  --[c]onfig <file>                  Use specified config file instead of default");
-        ssLOG_BASE("    -t,  --create-script-[t]emplate <file>  Creates/prepend runcpp2 script info template");
-        ssLOG_BASE("    -s,  --[s]ource-only                    (Re)Builds source files only without building dependencies.");
-        ssLOG_BASE("                                                The previous built binaries will be used for dependencies.");
-        ssLOG_BASE("                                                Requires dependencies to be built already.");
-        ssLOG_BASE("    -j,  --[j]obs                           Maximum number of threads running. Defaults to 8");
+        ssLOG_BASE("    -b,  --[b]uild                                  Build the script but don't run it");
+        ssLOG_BASE("    -o,  --[o]utput <Output Dir>                    Output files to the directory specified, must be used with --build");
+        ssLOG_BASE("    -w,  --[w]atch                                  Watch script changes and output any compiling errors");
+        ssLOG_BASE("    -l,  --[l]ocal                                  Build in the current working directory under .runcpp2 directory");
+        ssLOG_BASE("    -e,  --[e]xecutable                             Runs as executable instead of shared library");
+        ssLOG_BASE("    -c,  --[c]onfig <file>                          Use specified config file instead of default");
+        ssLOG_BASE("    -t,  --create-script-[t]emplate <file>          Creates/prepend runcpp2 script info template");
+        ssLOG_BASE("    -s,  --[s]ource-only                            (Re)Builds source files only without building dependencies.");
+        ssLOG_BASE("                                                    The previous built binaries will be used for dependencies.");
+        ssLOG_BASE("                                                    Requires dependencies to be built already.");
+        ssLOG_BASE("    -j,  --[j]obs                                   Maximum number of threads running. Defaults to 8");
+        ssLOG_BASE("    -p,  --[p]arameters <name1:val1:name2:val2:...> Parameter values in the order of name and value separated by colons");
         ssLOG_BASE("  Reset/Cleanup:");
-        ssLOG_BASE("    -rb, --[r]e[b]uild                      Deletes compiled source files cache and rebuild");
-        ssLOG_BASE("    -ru, --[r]eset-[u]ser-config            Replace current user config with the default one");
-        ssLOG_BASE("    -rd, --[r]eset-[d]ependencies <names>   Reset dependencies (comma-separated names, or \"all\" for all)");
-        ssLOG_BASE("    -cu, --[c]lean[u]p                      Run cleanup commands and remove build directory");
+        ssLOG_BASE("    -rb, --[r]e[b]uild                              Deletes compiled source files cache and rebuild");
+        ssLOG_BASE("    -ru, --[r]eset-[u]ser-config                    Replace current user config with the default one");
+        ssLOG_BASE("    -rd, --[r]eset-[d]ependencies <names>           Reset dependencies (comma-separated names, or \"all\" for all)");
+        ssLOG_BASE("    -cu, --[c]lean[u]p                              Run cleanup commands and remove build directory");
         ssLOG_BASE("  Settings:");
-        ssLOG_BASE("    -sc, --[s]how-[c]onfig-path             Show where runcpp2 is reading the config from");
-        ssLOG_BASE("    -v,  --[v]ersion                        Show the version of runcpp2");
-        ssLOG_BASE("    -h,  --[h]elp                           Show this help message");
-        ssLOG_BASE("         --log-level <level>                Sets the log level (Normal, Info, Debug) for runcpp2");
+        ssLOG_BASE("    -sc, --[s]how-[c]onfig-path                     Show where runcpp2 is reading the config from");
+        ssLOG_BASE("    -v,  --[v]ersion                                Show the version of runcpp2");
+        ssLOG_BASE("    -h,  --[h]elp                                   Show this help message");
+        ssLOG_BASE("         --log-level <level>                        Sets the log level (Normal, Info, Debug) for runcpp2");
         ssLOG_BASE("  Others:");
-        ssLOG_BASE("         --tutorial                         Start interactive tutorial");
+        ssLOG_BASE("         --tutorial                                 Start interactive tutorial");
         return 0;
     }
     
@@ -475,9 +482,8 @@ int main(int argc, char* argv[])
                 if(runcpp2::CheckSourcesNeedUpdate( script,
                                                     profiles,
                                                     preferredProfile,
-                                                    lastParsedScriptInfo ? 
-                                                        *lastParsedScriptInfo : 
-                                                        parsedScriptInfo,
+                                                    lastParsedScriptInfo ?  *lastParsedScriptInfo : 
+                                                                            parsedScriptInfo,
                                                     currentOptions,
                                                     lastFinalSourceWriteTime,
                                                     lastFinalIncludeWriteTime,

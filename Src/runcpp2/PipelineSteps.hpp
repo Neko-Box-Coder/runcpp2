@@ -327,6 +327,7 @@ namespace runcpp2
                                 const ghc::filesystem::path& scriptDirectory,
                                 const std::string& scriptName,
                                 const bool buildExecutable,
+                                const std::unordered_map<std::string, std::string>& inputParameters,
                                 Data::ScriptInfo& outScriptInfo)
     {
         ssLOG_FUNC_INFO();
@@ -398,7 +399,7 @@ namespace runcpp2
         }
         
         //Try to parse the runcpp2 info
-        ParseScriptInfo(parsableInfo, outScriptInfo)
+        ParseScriptInfo(parsableInfo, inputParameters, outScriptInfo)
             .DS_TRY_ACT(DS_APPEND_TRACE(DS_TMP_ERROR);
                         DS_TMP_ERROR.Message += "\nContent trying to parse: \n" + parsableInfo;
                         DS_TMP_ERROR.ErrorCode = (int)PipelineResult::INVALID_SCRIPT_INFO;
@@ -550,15 +551,17 @@ namespace runcpp2
         return {};
     }
     
-    inline DS::Result<void> CheckScriptInfoChanges( const ghc::filesystem::path& buildDir,
-                                                    const Data::ScriptInfo& scriptInfo,
-                                                    const Data::Profile& profile,
-                                                    const ghc::filesystem::path& scriptDirectory,
-                                                    const Data::ScriptInfo* lastScriptInfo,
-                                                    const int maxThreads,
-                                                    bool& outAllRecompileNeeded,
-                                                    bool& outRelinkNeeded,
-                                                    std::vector<std::string>& outChangedDependencies)
+    inline DS::Result<void> 
+    CheckScriptInfoChanges( const ghc::filesystem::path& buildDir,
+                            const Data::ScriptInfo& scriptInfo,
+                            const Data::Profile& profile,
+                            const ghc::filesystem::path& scriptDirectory,
+                            const Data::ScriptInfo* lastScriptInfo,
+                            const int maxThreads,
+                            const std::unordered_map<std::string, std::string> parameters,
+                            bool& outAllRecompileNeeded,
+                            bool& outRelinkNeeded,
+                            std::vector<std::string>& outChangedDependencies)
     {
         ssLOG_FUNC_INFO();
 
@@ -594,8 +597,12 @@ namespace runcpp2
             
             do
             {
-                if(!ParseScriptInfo(lastScriptInfoBuffer.str(), lastScriptInfoFromDisk).HasValue())
+                if(!ParseScriptInfo(lastScriptInfoBuffer.str(), 
+                                    parameters, 
+                                    lastScriptInfoFromDisk).HasValue())
+                {
                     break;
+                }
                 
                 //Resolve imports for last script info
                 ResolveScriptImports(lastScriptInfoFromDisk, scriptDirectory, buildDir).DS_TRY();
@@ -671,6 +678,10 @@ namespace runcpp2
             writeOutputFile << scriptInfo.ToString("");
             ssLOG_DEBUG("Wrote current script info to " << lastScriptInfoFilePath.string());
         }
+
+        //NOTE: No need to worry about parameters values affecting the cache because the replacement 
+        //      happens before we parse the script info and therefore if the user has changed the 
+        //      parameters values, it will affect the script info and hence affect the cache.
 
         return {};
     }

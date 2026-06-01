@@ -6,6 +6,8 @@
 
 DS::Result<void> TestMain()
 {
+    std::unordered_map<std::string, std::string> tempParameters;
+    
     //ScriptInfo Should Parse Valid YAML
     {
         //NOTE: This is just a test YAML for validating parsing, don't use it for actual config
@@ -16,6 +18,12 @@ DS::Result<void> TestMain()
             RequiredProfiles:
                 Windows: [MSVC]
                 Unix: [GCC]
+            Parameters:
+                Param1:
+                    Optional: true
+                    Default: "All"
+                    Array: false
+                    Constraint: ["A", "B", "C", "All:A,B,C"]
             OverrideCompileFlags:
                 Windows:
                     MSVC:
@@ -114,7 +122,8 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        DS_ASSERT_TRUE(scriptInfo.ParseYAML_Node(root));
+        //TODO(NOW)
+        DS_ASSERT_TRUE(scriptInfo.ParseYAML_Node(root, tempParameters));
         
         //Verify basic fields
         DS_ASSERT_EQ(scriptInfo.Language, "C++");
@@ -127,6 +136,22 @@ DS::Result<void> TestMain()
         
         DS_ASSERT_EQ(scriptInfo.RequiredProfiles.at("Unix").size(), 1);
         DS_ASSERT_EQ(scriptInfo.RequiredProfiles.at("Unix").at(0), "GCC");
+        
+        
+        //Verify Parameters
+        std::unordered_map<std::string, ParameterValue> Parameters;
+        DS_ASSERT_EQ(scriptInfo.Parameters.count("Param1"), 1);
+        ParameterValue& paramVal = scriptInfo.Parameters["Param1"];
+        DS_ASSERT_TRUE(paramVal.Optional);
+        DS_ASSERT_EQ(paramVal.Default, "All");
+        DS_ASSERT_FALSE(paramVal.Array);
+        DS_ASSERT_TRUE( paramVal.CurrentConstraintType == 
+                        runcpp2::Data::ParameterValue::ConstraintType::Choices);
+        DS_ASSERT_TRUE(mpark::is<std::vector<std::string>>(paramVal.ConstraintValue));
+        std::vector<std::string>& constraintVals = 
+            mpark::get<std::vector<std::string>>(paramVal.ConstraintValue);
+        DS_ASSERT_EQ(constraintVals.size(), 4);
+        DS_ASSERT_EQ(constraintVals[2], "C");
         
         //Verify OverrideCompileFlags
         const runcpp2::Data::FlagsOverrideInfo& msvcCompileFlags = 
@@ -229,7 +254,7 @@ DS::Result<void> TestMain()
         DS_ASSERT_EQ(roots.size(), 1);
         
         runcpp2::Data::ScriptInfo parsedOutput;
-        parsedOutput.ParseYAML_Node(roots.front());
+        parsedOutput.ParseYAML_Node(roots.front(), tempParameters);
         DS_ASSERT_TRUE(scriptInfo.Equals(parsedOutput));
     }
     
@@ -253,7 +278,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        DS_ASSERT_TRUE(scriptInfo.ParseYAML_Node(root));
+        DS_ASSERT_TRUE(scriptInfo.ParseYAML_Node(root, tempParameters));
         
         //Verify SourceFiles
         const std::vector<ghc::filesystem::path>& msvcCompileFiles = 
@@ -306,7 +331,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        DS_ASSERT_TRUE(scriptInfo.ParseYAML_Node(root));
+        DS_ASSERT_TRUE(scriptInfo.ParseYAML_Node(root, tempParameters));
         
         //Verify basic fields
         DS_ASSERT_EQ(scriptInfo.Language, "C++");
