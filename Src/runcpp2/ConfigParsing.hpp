@@ -483,6 +483,8 @@ namespace runcpp2
     }
     
     inline DS::Result<void> ParseScriptInfo(const std::string& scriptInfo, 
+                                            const std::unordered_map<   std::string, 
+                                                                        std::string> inputParameters,
                                             Data::ScriptInfo& outScriptInfo)
     {
         if(scriptInfo.empty())
@@ -496,7 +498,7 @@ namespace runcpp2
         //NOTE: Use the first one
         YAML::ResolveAnchors(scriptNodes.front()).DS_TRY();
         YAML::NodePtr rootScriptNode = scriptNodes.front();
-        DS_ASSERT_TRUE(outScriptInfo.ParseYAML_Node(rootScriptNode));
+        DS_ASSERT_TRUE(outScriptInfo.ParseYAML_Node(rootScriptNode, inputParameters));
         outScriptInfo.Populated = true;
         return {};
     }

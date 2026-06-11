@@ -37,19 +37,28 @@
 #     Linux: ["g++"]
 #     MacOS: ["g++"]
 
-# Parameters:                         # Parameters that can be substituted to the script info
+# Parameters:                         # (Optional) Parameters are user supplied input that can be substituted into any keys or values, with the syntax of `{<parameter name>}`
 #     Param1:                         # Name of the parameter
-#         Default: "ParamDefault"     # (Optional if "Optional" is false) Default value of the parameter, must be in string
-#         Constraints: "None"         # (Optional) Constraints of this parameter value. 
+#         Optional: true              # (Optional) If this parameter is mandatory. Defaults to `true`
+#         Default: ""                 # (Optional) Default value of the parameter. Defaults to empty
+#         Array: false                # (Optional) Parameter for array. If this is true, comma separated values is expected. Defaults to false.
+#                                     #            If this is true, this parameter can only be used in config values that expect an array.
+#         Constraint: "None"          # (Optional) Constraint of this parameter value. An array means a multiple choice constraint.
 #                                     # Can be one of the following
-#                                     # - "None": No constraints, can be any value. Non string type will be converted to string before substitution
-#                                     # - "Bool": Value can only be true or false
-#                                     # - "<Integer>,<Integer>": Value must be an integer that falls between specified range inclusively
-#                                     #     - i.e. Constraints: "5,9"
-#                                     #     - i.e. Constraints: "-9,9"
-#                                     # - ["Choice1", "Choice2", "Choice3"]: Value must be one of the listed item in the array, case-sensitive.
-#                                     #     - i.e. Constraints: ["A", "B", "C"]
-#         Optional: true              # If this parameter must be specified or not. If this is true, "Default" must be provided
+#                                     #     "None": No constraint
+#                                     #     "Bool": `true`, `false`, `1` or `0`
+#                                     #     "Float[:<Min Float>,<Max Float>]": Floating point number with optional inclusive min and max
+#                                     #     "Int[:<Min Int>,<Max Int>]": Integer number  with optional inclusive min and max
+#                                     #     ["<Choice 1>[:Mapped Value 1]", "<Choice 2>[:Mapped Value 2]", ...]: List of choices with optional corresponding mapped values
+
+# TODO: Conditional variables
+# Variables:                                          # (Optional) Variables can be substituted into any keys or values (excluding "Parameters"), with the syntax of `{<variable name>}`
+#     VarName1: "Some string {Param1} substitution"   # A variable can be created by substituting a parameter into a string, using syntax of `{<parameter name>}`
+#                                                     # If this contains an array parameter value, the substition is performed for each parameter array value and 
+#                                                     # this variable will become an array variable, meaning this can only be used in config values that expect an array.
+
+# # If all the platforms share the same set of config values, the config values can be listed under `DefaultPlatform`.
+# # If all the profiles share the same set of config values, the config values can be listed under `DefaultProfile`.
 
 # OverrideCompileFlags:       # (Optional) Override the default compile flags for each platform.
 #     DefaultPlatform:        # Target Platform
@@ -57,11 +66,11 @@
 #             Remove: ""      # (Optional) Flags to be removed from the default compile flags, separated by space
 #             Append: ""      # (Optional) Additional flags to be appended to the default compile flags, separated by space
 
-# # If you only have DefaultPlatform and DefaultProfile for a given config, you can omit both and specify the values directly
-# # So for example for OverrideCompileFlags
+# # If the desired config values apply to ALL platforms and profiles, then the config values can be listed directly
+# # So for example, to add `--no-warnings` to all the platforms (Linux, Windows, MacOS, etc.) and also for all the profiles (gcc, clang, etc.)
 # OverrideCompileFlags:
 #     Remove: ""
-#     Append: ""
+#     Append: "--no-warnings"
 
 # OverrideLinkFlags:          # (Optional) Override the default link flags for each platform.
 #     DefaultPlatform:        # Target Platform

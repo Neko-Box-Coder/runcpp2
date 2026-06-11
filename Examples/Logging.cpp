@@ -1,4 +1,17 @@
 /* runcpp2
+Parameters:
+    LogText:
+        Optional: false
+
+Variables:
+    LogSentence: "LogText is {LogText}"
+
+Defines:
+-   "_CRT_SECURE_NO_WARNINGS=1"
+-   "LOG_SEN=\\\"{LogSentence}\\\""
+# Uncomment this to log things below warning
+# -   "ssLOG_LEVEL=5"
+
 Dependencies:
 -   Name: ssLogger
     Platforms: [DefaultPlatform]
@@ -7,10 +20,6 @@ Dependencies:
             URL: "https://github.com/Neko-Box-Coder/ssLogger.git"
     LibraryType: Header
     IncludePaths: ["Include"]
-    Defines:
-    -   "_CRT_SECURE_NO_WARNINGS=1"
-    # Uncomment this to log things below warning
-    # -   "ssLOG_LEVEL=5"
 */
 
 
@@ -23,6 +32,8 @@ int main(int, char**)
     ssLOG_FATAL("Hello World");
     ssLOG_ERROR("Hello World");
     ssLOG_WARNING("Hello World");
+    
+    ssLOG_LINE(LOG_SEN);
     
     //You won't see the following logs since anything below warnings are evaluated to nothing
     ssLOG_INFO("Hello World");

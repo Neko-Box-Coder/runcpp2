@@ -430,6 +430,27 @@ namespace runcpp2
         INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
     }
 
+    inline void CreateParameterValues(  const std::unordered_map<   CmdOptions, 
+                                                                    std::string>& currentOptions,
+                                        std::unordered_map<std::string, std::string>& outParameters)
+    {
+        if(currentOptions.count(CmdOptions::PARAMETERS) == 0)
+            return;
+    
+        const std::string& rawParams = currentOptions.at(CmdOptions::PARAMETERS);
+        
+        std::vector<std::string> paramNameVals;
+        SplitString(rawParams, ":", paramNameVals);
+        if(paramNameVals.size() % 2 != 0)
+        {
+            ssLOG_ERROR("Failed to parse parameters. Defaults to no parameters");
+            return;
+        }
+        
+        for(int i = 0; i < paramNameVals.size(); i += 2)
+            outParameters[paramNameVals[i]] = paramNameVals[i + 1];
+    }
+
     inline PipelineResult StartPipeline(const std::string& scriptPath, 
                                         const std::vector<Data::Profile>& profiles,
                                         const std::string& configPreferredProfile,
@@ -459,12 +480,17 @@ namespace runcpp2
                                             return PipelineResult::INVALID_CONFIG_PATH);
         ghc::filesystem::path buildDir;
 
+        //Create parameters
+        std::unordered_map<std::string, std::string> parameterValues;
+        CreateParameterValues(currentOptions, parameterValues);
+
         //Parse script info
         Data::ScriptInfo scriptInfo;
         ParseAndValidateScriptInfo( absoluteScriptPath,
                                     scriptDirectory,
                                     scriptName,
                                     currentOptions.count(CmdOptions::EXECUTABLE) > 0,
+                                    parameterValues,
                                     scriptInfo)
             .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
                         return (PipelineResult)DS_TMP_ERROR.ErrorCode);
@@ -491,7 +517,7 @@ namespace runcpp2
                                                         profiles, 
                                                         configPreferredProfile)
                                 .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                                            return PipelineResult::NO_AVAILABLE_PROFILE);;
+                                            return PipelineResult::NO_AVAILABLE_PROFILE);
 
         //Parsing the script, setting up dependencies, compiling and linking
         std::vector<std::string> filesToCopyPaths;
@@ -546,6 +572,7 @@ namespace runcpp2
                                     absoluteScriptPath.parent_path(),
                                     lastScriptInfo, 
                                     maxThreads,
+                                    parameterValues,
                                     recompileNeeded, 
                                     relinkNeeded, 
                                     changedDependencies)
