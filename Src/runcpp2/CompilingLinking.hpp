@@ -193,6 +193,7 @@ namespace
         }
         
         //Add script and dependency include paths
+        substitutionMapTemplate["{IncludeDirectoryPath}"] = {};
         for(const ghc::filesystem::path& includePath : includePaths)
         {
             std::string processedInclude = runcpp2::ProcessPath(includePath.string());
@@ -200,6 +201,9 @@ namespace
         }
         
         //Add defines
+        substitutionMapTemplate["{DefineName}"] = {};
+        substitutionMapTemplate["{DefineValue}"] = {};
+        substitutionMapTemplate["{DefineNameOnly}"] = {};
         if(runcpp2::HasValueFromPlatformMap(scriptInfo.Defines))
         {
             const runcpp2::Data::ProfilesDefines& platformDefines = 
@@ -677,6 +681,19 @@ namespace
                 
                 static_assert(  static_cast<int>(Data::DependencyLibraryType::COUNT) == 4, 
                                 "Add new type to be processed");
+                
+                substitutionMap["{LinkStaticFileName}"] = {};
+                substitutionMap["{LinkStaticFileExt}"] = {};
+                substitutionMap["{LinkStaticFileDirectory}"] = {};
+                substitutionMap["{LinkStaticFilePath}"] = {};
+                substitutionMap["{LinkSharedFileName}"] = {};
+                substitutionMap["{LinkSharedFileExt}"] = {};
+                substitutionMap["{LinkSharedFileDirectory}"] = {};
+                substitutionMap["{LinkSharedFilePath}"] = {};
+                substitutionMap["{LinkObjectFileName}"] = {};
+                substitutionMap["{LinkObjectFileExt}"] = {};
+                substitutionMap["{LinkObjectFileDirectory}"] = {};
+                substitutionMap["{LinkObjectFilePath}"] = {};
                 switch(currentLinkType)
                 {
                     case Data::DependencyLibraryType::STATIC:
