@@ -129,7 +129,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        DS_ASSERT_TRUE(scriptInfo.ParseYAML_Node(root, tempParameters));
+        scriptInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
         
         //Verify basic fields
         DS_ASSERT_EQ(scriptInfo.Language, "C++");
@@ -270,12 +270,12 @@ DS::Result<void> TestMain()
                         (int)runcpp2::Data::DependencyLibraryType::SHARED);
 
         //Test ToString() and Equals()
-        std::string yamlOutput = scriptInfo.ToString("");
+        std::string yamlOutput = scriptInfo.ToString("").DS_TRY();
         roots = runcpp2::YAML::ParseYAML(yamlOutput, resource).DS_TRY();
         DS_ASSERT_EQ(roots.size(), 1);
         
         runcpp2::Data::ScriptInfo parsedOutput;
-        parsedOutput.ParseYAML_Node(roots.front(), tempParameters);
+        parsedOutput.ParseYAML_Node(roots.front(), tempParameters).DS_TRY();
         DS_ASSERT_TRUE(scriptInfo.Equals(parsedOutput));
     }
     
@@ -299,7 +299,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        DS_ASSERT_TRUE(scriptInfo.ParseYAML_Node(root, tempParameters));
+        scriptInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
         
         //Verify SourceFiles
         const std::vector<ghc::filesystem::path>& msvcCompileFiles = 
@@ -352,7 +352,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        DS_ASSERT_TRUE(scriptInfo.ParseYAML_Node(root, tempParameters));
+        scriptInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
         
         //Verify basic fields
         DS_ASSERT_EQ(scriptInfo.Language, "C++");
@@ -461,7 +461,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        DS_ASSERT_TRUE(scriptInfo.ParseYAML_Node(root, parameters));
+        scriptInfo.ParseYAML_Node(root, parameters).DS_TRY();
         const std::vector<runcpp2::Data::Define>& defaultDefines = 
             scriptInfo.Defines.at("DefaultPlatform").Defines.at("DefaultProfile");
         

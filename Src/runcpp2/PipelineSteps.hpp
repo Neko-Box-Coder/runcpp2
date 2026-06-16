@@ -675,7 +675,8 @@ namespace runcpp2
                                         (int)PipelineResult::INVALID_BUILD_DIR);
             }
 
-            writeOutputFile << scriptInfo.ToString("");
+            std::string scriptInfoString = scriptInfo.ToString("").DS_TRY();
+            writeOutputFile << scriptInfoString;
             ssLOG_DEBUG("Wrote current script info to " << lastScriptInfoFilePath.string());
         }
 

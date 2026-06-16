@@ -110,29 +110,26 @@ namespace Data
             return {};
         }
         
-        //TODO: Use DS::Result instead
-        inline bool ParseYAML_Node( YAML::ConstNodePtr node, 
-                                    const std::unordered_map<   std::string, 
-                                                                std::string>& inputParameters)
+        inline DS::Result<void> 
+        ParseYAML_Node( YAML::ConstNodePtr node, 
+                        const std::unordered_map<std::string, std::string>& inputParameters)
         {
             ssLOG_FUNC_DEBUG();
             
-            #define TRY_RET() DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false)
-            
-            ParseParametersAndVariables(node).TRY_RET();
+            ParseParametersAndVariables(node).DS_TRY();
             
             //Remove parameters and variables in the cloned node.
             YAML::ResourceHandle resourceHandle;
-            YAML::NodePtr clonedNode = node->Clone(false, resourceHandle).TRY_RET();
+            YAML::NodePtr clonedNode = node->Clone(false, resourceHandle).DS_TRY();
             DEFER { YAML::FreeYAMLResource(resourceHandle); };
             
             if(clonedNode->HasMapKey("Parameters"))
             {
-                clonedNode->RemoveMapChild("Parameters").TRY_RET();
+                clonedNode->RemoveMapChild("Parameters").DS_TRY();
             }
             if(clonedNode->HasMapKey("Variables"))
             {
-                clonedNode->RemoveMapChild("Variables").TRY_RET();
+                clonedNode->RemoveMapChild("Variables").DS_TRY();
             }
             
             std::unordered_map<std::string, std::vector<std::string>> substitutionMap;
@@ -159,28 +156,25 @@ namespace Data
                         SplitString(valueToParse, ",", inputValues);
                         for(int i = 0; i < inputValues.size(); ++i)
                         {
-                            bool inConstraint = it  ->second
-                                                    .IsInputInConstraint(inputValues[i])
-                                                    .TRY_RET();
+                            bool inConstraint = it->second.IsInputInConstraint(inputValues[i]).DS_TRY();
                             if(!inConstraint)
                             {
-                                ssLOG_ERROR("Input parameter[" << i << "]: " << inputValues[i] << 
-                                            (isDefault ? "(Default)" : "") << " is not in constraint");
-                                return false;
+                                return DS_ERROR_MSG("Input parameter[" + DS_STR(i) + "]: " + 
+                                                    inputValues[i] +
+                                                    (isDefault ? "(Default)" : "") + 
+                                                    " is not in constraint");
                             }
                         }
                         substitutionMap[subKey] = inputValues;
                     }
                     else
                     {
-                        bool inConstraint = it  ->second
-                                                .IsInputInConstraint(valueToParse)
-                                                .TRY_RET();
+                        bool inConstraint = it->second.IsInputInConstraint(valueToParse).DS_TRY();
                         if(!inConstraint)
                         {
-                            ssLOG_ERROR("Input parameter: " << it->first << 
-                                        (isDefault ? "(Default)" : "") << " is not in constraint");
-                            return false;
+                            return DS_ERROR_MSG("Input parameter: " + it->first +
+                                                (isDefault ? "(Default)" : "") + 
+                                                " is not in constraint");
                         }
                         substitutionMap[subKey] = {valueToParse};
                     }
@@ -195,8 +189,9 @@ namespace Data
                 //Check if the same key already exists in the parameter
                 if(Parameters.count(it->first) != 0)
                 {
-                    ssLOG_ERROR("Variable name " << it->first << " already exists in Parameters");
-                    return false;
+                    return DS_ERROR_MSG("Variable name " + 
+                                        it->first + 
+                                        " already exists in Parameters");
                 }
                 
                 std::string subKey = "{" + it->first + "}";
@@ -204,7 +199,7 @@ namespace Data
                 PerformMultiSubstitutions(  substitutionMap, 
                                             {}, 
                                             it->second, 
-                                            variablesMap[subKey]).TRY_RET();
+                                            variablesMap[subKey]).DS_TRY();
             }
             substitutionMap.insert(variablesMap.begin(), variablesMap.end());
             
@@ -222,22 +217,19 @@ namespace Data
                     case YAML::NodeType::Scalar:
                     {
                         YAML::Node* parent = currentNode->GetParent();
-                        std::string scalarValue = currentNode->GetScalar<std::string>().TRY_RET();
+                        std::string scalarValue = currentNode->GetScalar<std::string>().DS_TRY();
                         if(parent && parent->GetType() == YAML::NodeType::Sequence)
                         {
                             std::vector<std::string> newValues;
                             PerformMultiSubstitutions(  substitutionMap, 
                                                         {}, 
                                                         scalarValue, 
-                                                        newValues).TRY_RET();
+                                                        newValues).DS_TRY();
                             if(newValues.empty())
-                            {
-                                ssLOG_ERROR("Substitution array returned empty");
-                                return false;
-                            }
+                                return DS_ERROR_MSG("Substitution array returned empty");
                             
                             //Update the current value
-                            currentNode->InitScalar(newValues[0], resourceHandle).TRY_RET();
+                            currentNode->InitScalar(newValues[0], resourceHandle).DS_TRY();
                             
                             //Find the index of the current node
                             int currentIndex = -1;
@@ -251,10 +243,7 @@ namespace Data
                             }
                             
                             if(currentIndex == -1)
-                            {
-                                ssLOG_ERROR("Cannot find current node from parent?");
-                                return false;
-                            }
+                                return DS_ERROR_MSG("Cannot find current node from parent?");
                             
                             //Then insert the rest of the substituted values after the current one
                             if(newValues.size() > 1)
@@ -262,21 +251,20 @@ namespace Data
                                 for(int i = 1; i < newValues.size(); ++i)
                                 {
                                     YAML::NodePtr newChild = 
-                                        parent->CreateSequenceChildAt(currentIndex + i).TRY_RET();
-                                    newChild->InitScalar(newValues[i], resourceHandle).TRY_RET();
+                                        parent->CreateSequenceChildAt(currentIndex + i).DS_TRY();
+                                    newChild->InitScalar(newValues[i], resourceHandle).DS_TRY();
                                 }
                             }
                         }
                         else
                         {
-                            PerformSubstitutions(substitutionMap, {}, scalarValue).TRY_RET();
-                            currentNode->InitScalar(scalarValue, resourceHandle).TRY_RET();
+                            PerformSubstitutions(substitutionMap, {}, scalarValue).DS_TRY();
+                            currentNode->InitScalar(scalarValue, resourceHandle).DS_TRY();
                         }
                         break;
                     } //case YAML::NodeType::Scalar:
                     case YAML::NodeType::Alias:
-                        ssLOG_ERROR("Anchors should be resolved. This should not be reached");
-                        return false;
+                        return DS_ERROR_MSG("Anchors should be resolved. This should not be reached");
                     case YAML::NodeType::Sequence:
                         for(int i = currentNode->GetChildrenCount() - 1; i >= 0; --i)
                             nodesToVisit.push_back(currentNode->GetSequenceChildNode(i));
@@ -314,15 +302,12 @@ namespace Data
             };
             
             if(!CheckNodeRequirements(clonedNode, requirements))
-            {
-                ssLOG_ERROR("ScriptInfo: Failed to meet requirements");
-                return false;
-            }
+                return DS_ERROR_MSG("ScriptInfo: Failed to meet requirements");
             
             if(ExistAndHasChild(clonedNode, "PassScriptPath"))
             {
                 std::string passScriptPathStr = 
-                    clonedNode->GetMapValueScalar<std::string>("PassScriptPath").TRY_RET();
+                    clonedNode->GetMapValueScalar<std::string>("PassScriptPath").DS_TRY();
                 for(size_t i = 0; i < passScriptPathStr.length(); ++i)
                     passScriptPathStr[i] = std::tolower(passScriptPathStr[i]);
                 
@@ -332,26 +317,23 @@ namespace Data
                     PassScriptPath = false;
                 else
                 {
-                    ssLOG_ERROR("ScriptInfo: Invalid value for PassScriptPath: " << passScriptPathStr);
-                    ssLOG_ERROR("Expected true/false or 1/0");
-                    return false;
+                    return DS_ERROR_MSG("ScriptInfo: Invalid value for PassScriptPath: " + 
+                                        passScriptPathStr + "\n" +
+                                        "Expected true/false or 1/0");
                 }
             }
             
             if(ExistAndHasChild(clonedNode, "Language"))
             {
-                Language = clonedNode->GetMapValueScalar<std::string>("Language").TRY_RET();
+                Language = clonedNode->GetMapValueScalar<std::string>("Language").DS_TRY();
             }
             
             if(ExistAndHasChild(clonedNode, "BuildType"))
             {
-                std::string typeStr = clonedNode->GetMapValueScalar<std::string>("BuildType").TRY_RET();
+                std::string typeStr = clonedNode->GetMapValueScalar<std::string>("BuildType").DS_TRY();
                 BuildType buildType = StringToBuildType(typeStr);
                 if(buildType == BuildType::COUNT)
-                {
-                    ssLOG_ERROR("ScriptInfo: Invalid build type: " << typeStr);
-                    return false;
-                }
+                    return DS_ERROR_MSG("ScriptInfo: Invalid build type: " + typeStr);
                 CurrentBuildType = buildType;
             }
             
@@ -362,13 +344,13 @@ namespace Data
                 for(int i = 0; i < requiredProfilesNode->GetChildrenCount(); ++i)
                 {
                     PlatformName platform = requiredProfilesNode->GetMapKeyScalarAt<std::string>(i)
-                                                                .TRY_RET();
+                                                                .DS_TRY();
                     std::vector<ProfileName> profiles;
                     YAML::ConstNodePtr platformNode = requiredProfilesNode->GetMapValueNodeAt(i);
                     for(int j = 0; j < platformNode->GetChildrenCount(); ++j)
                     {
                         std::string profile = platformNode  ->GetSequenceChildScalar<std::string>(j)
-                                                            .TRY_RET();
+                                                            .DS_TRY();
                         profiles.push_back(profile);
                     }
                     
@@ -376,46 +358,27 @@ namespace Data
                 }
             }
             
-            if(!ParsePlatformProfileMap<ProfilesFlagsOverride>( clonedNode, 
-                                                                "OverrideCompileFlags", 
-                                                                OverrideCompileFlags, 
-                                                                "OverrideCompileFlags"))
-            {
-                return false;
-            }
-            
-            if(!ParsePlatformProfileMap<ProfilesFlagsOverride>( clonedNode, 
-                                                                "OverrideLinkFlags", 
-                                                                OverrideLinkFlags, 
-                                                                "OverrideLinkFlags"))
-            {
-                return false;
-            }
-            
-            if(!ParsePlatformProfileMap<ProfilesProcessPaths>(  clonedNode, 
-                                                                "OtherFilesToBeCompiled", 
-                                                                OtherFilesToBeCompiled, 
-                                                                "OtherFilesToBeCompiled"))
-            {
-                return false;
-            }
-            
-            if(!ParsePlatformProfileMap<ProfilesProcessPaths>(  clonedNode, 
-                                                                "SourceFiles", 
-                                                                OtherFilesToBeCompiled, 
-                                                                "SourceFiles"))
-            {
-                return false;
-            }
-            
-            if(!ParsePlatformProfileMap<ProfilesProcessPaths>(  clonedNode, 
-                                                                "IncludePaths", 
-                                                                IncludePaths, 
-                                                                "IncludePaths"))
-            {
-                return false;
-            }
-            
+            //TODO: Use DS::Result for ParsePlatformProfileMap
+            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesFlagsOverride>(  clonedNode, 
+                                                                            "OverrideCompileFlags", 
+                                                                            OverrideCompileFlags, 
+                                                                            "OverrideCompileFlags"));
+            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesFlagsOverride>(  clonedNode, 
+                                                                            "OverrideLinkFlags", 
+                                                                            OverrideLinkFlags, 
+                                                                            "OverrideLinkFlags"));
+            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesProcessPaths>(   clonedNode, 
+                                                                            "OtherFilesToBeCompiled", 
+                                                                            OtherFilesToBeCompiled, 
+                                                                            "OtherFilesToBeCompiled"));
+            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesProcessPaths>(   clonedNode, 
+                                                                            "SourceFiles", 
+                                                                            OtherFilesToBeCompiled, 
+                                                                            "SourceFiles"));
+            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesProcessPaths>(   clonedNode, 
+                                                                            "IncludePaths", 
+                                                                            IncludePaths, 
+                                                                            "IncludePaths"));
             if(ExistAndHasChild(clonedNode, "Dependencies"))
             {
                 YAML::ConstNodePtr dependenciesNode = clonedNode->GetMapValueNode("Dependencies");
@@ -425,45 +388,39 @@ namespace Data
                     YAML::ConstNodePtr dependencyNode = dependenciesNode->GetSequenceChildNode(i);
                     if(!info.ParseYAML_Node(dependencyNode))
                     {
-                        ssLOG_ERROR("ScriptInfo: Failed to parse DependencyInfo at index " << i);
-                        return false;
+                        return DS_ERROR_MSG("ScriptInfo: Failed to parse DependencyInfo at index " + 
+                                            DS_STR(i));
                     }
-                    
                     Dependencies.push_back(info);
                 }
             }
             
-            if(!ParsePlatformProfileMap<ProfilesDefines>(clonedNode, "Defines", Defines, "Defines"))
-                return false;
-            
-            if(!ParsePlatformProfileMap<ProfilesCommands>(clonedNode, "Setup", Setup, "Setup"))
-                return false;
-            
-            if(!ParsePlatformProfileMap<ProfilesCommands>(clonedNode, "PreBuild", PreBuild, "PreBuild"))
-                return false;
-            
-            if(!ParsePlatformProfileMap<ProfilesCommands>(  clonedNode, 
-                                                            "PostBuild", 
-                                                            PostBuild, 
-                                                            "PostBuild"))
-            {
-                return false;
-            }
-            
-            if(!ParsePlatformProfileMap<ProfilesCommands>(clonedNode, "Cleanup", Cleanup, "Cleanup"))
-                return false;
-            
-            return true;
-            
-            #undef TRY_RET
+            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesDefines>(clonedNode, 
+                                                                    "Defines", 
+                                                                    Defines, 
+                                                                    "Defines"));
+            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesCommands>(   clonedNode, 
+                                                                        "Setup", 
+                                                                        Setup, 
+                                                                        "Setup"));
+            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesCommands>(   clonedNode, 
+                                                                        "PreBuild", 
+                                                                        PreBuild, 
+                                                                        "PreBuild"));
+            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesCommands>(   clonedNode, 
+                                                                        "PostBuild", 
+                                                                        PostBuild, 
+                                                                        "PostBuild"));
+            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesCommands>(   clonedNode, 
+                                                                        "Cleanup", 
+                                                                        Cleanup, 
+                                                                        "Cleanup"));
+            return {};
         }
 
-        //TODO: Use DS::Result
         //TODO: Text escaping?
-        inline std::string ToString(std::string indentation) const
+        inline DS::Result<std::string> ToString(std::string indentation) const
         {
-            #define TRY_RET() DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return "")
-            
             std::string out;
             
             out += indentation + "PassScriptPath: " + (PassScriptPath ? "true" : "false") + "\n";
@@ -498,7 +455,7 @@ namespace Data
                 for(auto it = Parameters.begin(); it != Parameters.end(); ++it)
                 {
                     out += indentation + "    " + it->first + ":\n";
-                    std::string paramerterStr = it->second.ToString(indentation + "        ").TRY_RET();
+                    std::string paramerterStr = it->second.ToString(indentation + "        ").DS_TRY();
                     out += paramerterStr;
                 }
             }
@@ -619,7 +576,6 @@ namespace Data
             }
             
             return out;
-            #undef TRY_RET
         }
 
         inline bool IsAllCompiledCacheInvalidated(const ScriptInfo& other) const
