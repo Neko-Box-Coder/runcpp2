@@ -6,7 +6,7 @@
     #if defined(RUNCPP2_FIELD_BEGIN) 
         #undef RUNCPP2_FIELD_BEGIN
         #undef RUNCPP2_FIELD
-        #undef RUNCPP2_FIELD_END
+        #undef RUNCPP2_FIELD_COUNT
     #endif
     
     #define RUNCPP2_FIELD_BEGIN() MPT_START_COUNTER_AND_INCREMENT( RUNCPP2_CURRENT_CLASS_NAME )

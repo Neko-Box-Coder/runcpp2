@@ -327,6 +327,7 @@ namespace runcpp2
                                 const ghc::filesystem::path& scriptDirectory,
                                 const std::string& scriptName,
                                 const bool buildExecutable,
+                                const std::unordered_map<std::string, std::string>& inputParameters,
                                 Data::ScriptInfo& outScriptInfo)
     {
         ssLOG_FUNC_INFO();
@@ -398,7 +399,7 @@ namespace runcpp2
         }
         
         //Try to parse the runcpp2 info
-        ParseScriptInfo(parsableInfo, outScriptInfo)
+        ParseScriptInfo(parsableInfo, inputParameters, outScriptInfo)
             .DS_TRY_ACT(DS_APPEND_TRACE(DS_TMP_ERROR);
                         DS_TMP_ERROR.Message += "\nContent trying to parse: \n" + parsableInfo;
                         DS_TMP_ERROR.ErrorCode = (int)PipelineResult::INVALID_SCRIPT_INFO;
@@ -536,13 +537,13 @@ namespace runcpp2
     }
 
     inline DS::Result<void> ResolveScriptImports(   Data::ScriptInfo& scriptInfo,
-                                                    const ghc::filesystem::path& scriptPath,
+                                                    const ghc::filesystem::path& scriptDirectory,
                                                     const ghc::filesystem::path& buildDir)
     {
         ssLOG_FUNC_INFO();
 
         //Resolve all the script info imports first before evaluating it
-        ResolveImports(scriptInfo, scriptPath, buildDir)
+        ResolveImports(scriptInfo, scriptDirectory, buildDir)
             .DS_TRY_ACT(DS_TMP_ERROR.ErrorCode = (int)PipelineResult::UNEXPECTED_FAILURE;
                         DS_APPEND_TRACE(DS_TMP_ERROR);
                         return DS::Error(DS_TMP_ERROR));
@@ -550,19 +551,20 @@ namespace runcpp2
         return {};
     }
     
-    inline DS::Result<void> CheckScriptInfoChanges( const ghc::filesystem::path& buildDir,
-                                                    const Data::ScriptInfo& scriptInfo,
-                                                    const Data::Profile& profile,
-                                                    const ghc::filesystem::path& absoluteScriptPath,
-                                                    const Data::ScriptInfo* lastScriptInfo,
-                                                    const int maxThreads,
-                                                    bool& outAllRecompileNeeded,
-                                                    bool& outRelinkNeeded,
-                                                    std::vector<std::string>& outChangedDependencies)
+    inline DS::Result<void> 
+    CheckScriptInfoChanges( const ghc::filesystem::path& buildDir,
+                            const Data::ScriptInfo& scriptInfo,
+                            const Data::Profile& profile,
+                            const ghc::filesystem::path& scriptDirectory,
+                            const Data::ScriptInfo* lastScriptInfo,
+                            const int maxThreads,
+                            const std::unordered_map<std::string, std::string> parameters,
+                            bool& outAllRecompileNeeded,
+                            bool& outRelinkNeeded,
+                            std::vector<std::string>& outChangedDependencies)
     {
         ssLOG_FUNC_INFO();
 
-        const ghc::filesystem::path scriptDirectory = absoluteScriptPath.parent_path();
         ghc::filesystem::path lastScriptInfoFilePath = buildDir / "LastScriptInfo.yaml";
         Data::ScriptInfo lastScriptInfoFromDisk;
 
@@ -595,11 +597,15 @@ namespace runcpp2
             
             do
             {
-                if(!ParseScriptInfo(lastScriptInfoBuffer.str(), lastScriptInfoFromDisk).HasValue())
+                if(!ParseScriptInfo(lastScriptInfoBuffer.str(), 
+                                    parameters, 
+                                    lastScriptInfoFromDisk).HasValue())
+                {
                     break;
+                }
                 
                 //Resolve imports for last script info
-                ResolveScriptImports(lastScriptInfoFromDisk, absoluteScriptPath, buildDir).DS_TRY();
+                ResolveScriptImports(lastScriptInfoFromDisk, scriptDirectory, buildDir).DS_TRY();
                 lastInfo = &lastScriptInfoFromDisk;
             }
             while(false);
@@ -669,9 +675,14 @@ namespace runcpp2
                                         (int)PipelineResult::INVALID_BUILD_DIR);
             }
 
-            writeOutputFile << scriptInfo.ToString("");
+            std::string scriptInfoString = scriptInfo.ToString("").DS_TRY();
+            writeOutputFile << scriptInfoString;
             ssLOG_DEBUG("Wrote current script info to " << lastScriptInfoFilePath.string());
         }
+
+        //NOTE: No need to worry about parameters values affecting the cache because the replacement 
+        //      happens before we parse the script info and therefore if the user has changed the 
+        //      parameters values, it will affect the script info and hence affect the cache.
 
         return {};
     }
@@ -680,7 +691,7 @@ namespace runcpp2
     inline DS::Result<void>
     ProcessDependencies(Data::ScriptInfo& scriptInfo,
                         const Data::Profile& profile,
-                        const ghc::filesystem::path& absoluteScriptPath,
+                        const ghc::filesystem::path& scriptDirectory,
                         const ghc::filesystem::path& buildDir,
                         const std::unordered_map<CmdOptions, std::string>& currentOptions,
                         const std::vector<std::string>& changedDependencies,
@@ -701,7 +712,7 @@ namespace runcpp2
         GetDependenciesPaths(   outAvailableDependencies,
                                 dependenciesLocalCopiesPaths,
                                 dependenciesSourcePaths,
-                                absoluteScriptPath,
+                                scriptDirectory,
                                 buildDir)
             .DS_TRY_ACT(DS_TMP_ERROR.ErrorCode = (int)PipelineResult::DEPENDENCIES_FAILED;
                         DS_APPEND_TRACE(DS_TMP_ERROR);
@@ -1086,7 +1097,7 @@ namespace runcpp2
                     outSourcePaths.push_back(currentPath);
                 }
             }
-        }
+        } //do
         while(0);
         
         if(outSourcePaths.empty())

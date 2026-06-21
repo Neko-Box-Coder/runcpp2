@@ -5,6 +5,7 @@
 #include "mpark/variant.hpp"
 #include "nonstd/string_view.hpp"
 #include "yaml.h"
+#include "runcpp2/DeferUtil.hpp"
 #include "ssLogger/ssLog.hpp"
 
 #include <stack>
@@ -27,6 +28,22 @@ typedef yaml_parser_s yaml_parser_t;
 #else
     #define RUNCPP2_YAML_PRINT(...) do{} while(false)
 #endif
+
+//Alias mpark::holds_alternative to mpark::is
+namespace mpark
+{
+    template <std::size_t I, typename... Ts>
+    inline constexpr bool is(const variant<Ts...> &v) noexcept 
+    {
+        return holds_alternative<I, Ts...>(v);
+    }
+    
+    template <typename T, typename... Ts>
+    inline constexpr bool is(const variant<Ts...> &v) noexcept 
+    {
+        return holds_alternative<T, Ts...>(v);
+    }
+}
 
 namespace runcpp2
 {
@@ -91,7 +108,8 @@ namespace runcpp2
             Scalar, 
             Alias,
             Sequence, 
-            Map
+            Map,
+            Count //4
         };
         
         inline StringView NodeTypeToString(NodeType type);
@@ -103,7 +121,7 @@ namespace runcpp2
         {
             std::vector<std::shared_ptr<yaml_event_t>> ReadData = {};
             //NOTE: Needs to be unique_ptr due to small string optimizations
-            std::vector<std::unique_ptr<std::string>> WriteData = {};
+            std::vector<std::shared_ptr<std::string>> WriteData = {};
             
             inline std::string& CreateString()
             {
@@ -111,9 +129,11 @@ namespace runcpp2
                 return *WriteData.back().get();
             }
             
-            inline void StoreString(const std::string& str)
+            inline std::string& CreateString(StringView view)
             {
-                CreateString() = str;
+                WriteData.emplace_back(std::unique_ptr<std::string>(new std::string(view.data(), 
+                                                                                    view.size())));
+                return *WriteData.back().get();
             }
         };
         
@@ -124,10 +144,24 @@ namespace runcpp2
         //NOTE: all parameters must be alive while using the node
         inline DS::Result<std::vector<NodePtr>> ParseYAML(  StringView yamlString, 
                                                             ResourceHandle& outResource);
-    
+        #ifdef ParseYAML_TryDefer
+            #error "ParseYAML_TryDefer is already defined"
+        #else
+            //Same as:
+            //inline std::vector<NodePtr> ParseYAML_TryDefer( StringView yamlString, 
+            //                                                ResourceHandle& outResource);
+            #define ParseYAML_TryDefer(yamlString, outResource) \
+                ParseYAML(yamlString, outResource).DS_VALUE_OR(); \
+                DEFER { FreeYAMLResource(outResource); }; \
+                DS_CHECK_PREV()
+        #endif
+        
         inline DS::Result<void> ResolveAnchors(NodePtr rootNode);
         
-        inline DS::Result<void> FreeYAMLResource(ResourceHandle& resourceHandleToFree);
+        inline void FreeYAMLResource(ResourceHandle& resourceHandleToFree);
+        
+        inline std::vector<NodePtr> ParseYAML_DeferTry( StringView yamlString, 
+                                                        ResourceHandle& outResource);
         
         struct Alias
         {
@@ -153,13 +187,15 @@ namespace runcpp2
             int LineNumber = -1;
             Node* Parent = nullptr;
             
+            //--------------------------------------------------
             //Reading
+            //--------------------------------------------------
             inline NodeType GetType() const { return (NodeType)Value.index(); }
             
-            inline bool IsAlias() const { return mpark::holds_alternative<Alias>(Value); };
-            inline bool IsScalar() const { return mpark::holds_alternative<ScalarValue>(Value); };
-            inline bool IsSequence() const { return mpark::holds_alternative<Sequence>(Value); };
-            inline bool IsMap() const { return mpark::holds_alternative<OrderedMap>(Value); };
+            inline bool IsAlias() const { return mpark::is<Alias>(Value); };
+            inline bool IsScalar() const { return mpark::is<ScalarValue>(Value); };
+            inline bool IsSequence() const { return mpark::is<Sequence>(Value); };
+            inline bool IsMap() const { return mpark::is<OrderedMap>(Value); };
             
             template<typename T>
             inline DS::Result<T> GetAlias() const;
@@ -204,34 +240,55 @@ namespace runcpp2
             template<typename T>
             inline DS::Result<T> GetMapValueScalarAt(uint32_t index) const;
             
+            inline Node* GetParent() const;
+            
             inline uint32_t GetChildrenCount() const;
             
+            //--------------------------------------------------
             //Writing
-            DS::Result<NodePtr> CloneToSequenceChild(   NodePtr parentNode, 
-                                                        ResourceHandle& yamlResouce) const;
+            //--------------------------------------------------
+            //NOTE: `val` will be copied
+            inline DS::Result<void> InitScalar(ScalarValue val, ResourceHandle& yamlResource);
+            
+            //NOTE: `alias` will be copied
+            inline DS::Result<void> InitAlias(ScalarValue alias, ResourceHandle& yamlResource);
             
             //TODO: Support ordering sequence child
-            
-            //TODO: Support erasing sequence child
+            inline DS::Result<void> InitSequence();
+            inline DS::Result<NodePtr> CloneToSequenceChild(NodePtr parentNode, 
+                                                            ResourceHandle& yamlResource) const;
+            inline DS::Result<void> RemoveSequenceChildAt(uint32_t index);
+            inline DS::Result<NodePtr> CreateSequenceChild();
+            inline DS::Result<NodePtr> CreateSequenceChildAt(uint32_t index);
             
             //NOTE: `key` will be copied
-            DS::Result<NodePtr> CloneToMapChild(StringView key, 
-                                                NodePtr parentNode, 
-                                                ResourceHandle& yamlResouce) const;
-            
+            inline DS::Result<void> InitMap();
+            inline DS::Result<NodePtr> CloneToMapChild( StringView key, 
+                                                        NodePtr parentNode, 
+                                                        ResourceHandle& yamlResource) const;
             //TODO: Support ordering map child
-            
-            //TODO: Support erasing map child
             inline DS::Result<void> RemoveMapChild(StringView key);
+            inline DS::Result<void> RemoveMapChildAt(uint32_t index);
             
+            //NOTE: `newKey` will be copied
+            inline DS::Result<void> UpdateMapKey(   StringView oldKey, 
+                                                    StringView newKey, 
+                                                    ResourceHandle& resourceHandle);
+            inline DS::Result<void> UpdateMapValue(   StringView oldKey, 
+                                                    StringView newKey, 
+                                                    ResourceHandle& resourceHandle);
             
-            //TODO: Proper Writing
+            //NOTE: `key` will be copied
+            inline DS::Result<NodePtr> CreateMapChild(StringView key, ResourceHandle& resourceHandle);
+            inline DS::Result<NodePtr> CreateMapChildAt(StringView key, 
+                                                        uint32_t index, 
+                                                        ResourceHandle& resourceHandle);
             
             //TODO: Support null (null tag and ~)?
             
-            DS::Result<void> ToString(std::string& outString) const;
+            inline DS::Result<void> ToString(std::string& outString) const;
             
-            DS::Result<NodePtr> Clone(bool shallow, ResourceHandle& yamlResouce) const;
+            inline DS::Result<NodePtr> Clone(bool shallow, ResourceHandle& yamlResource) const;
         };
         
         //==================================================
@@ -355,8 +412,8 @@ namespace runcpp2
         
         inline DS::Result<void> ResolveAnchors(NodePtr rootNode)
         {
-            DS_ASSERT_FALSE(mpark::holds_alternative<ScalarValue>(rootNode->Value) || 
-                            mpark::holds_alternative<Alias>(rootNode->Value));
+            DS_ASSERT_FALSE(mpark::is<ScalarValue>(rootNode->Value) || 
+                            mpark::is<Alias>(rootNode->Value));
             
             std::stack<std::pair<Node*, int>> nodeValCountStack;
             nodeValCountStack.push(std::pair<Node*, int>(rootNode.get(), 0));
@@ -376,7 +433,7 @@ namespace runcpp2
                     continue;
                 }
                 
-                if(mpark::holds_alternative<Alias>(currentNode.Value))
+                if(mpark::is<Alias>(currentNode.Value))
                 {
                     StringView aliasValue = mpark::get_if<Alias>(&currentNode.Value)->Value;
                     DS_ASSERT_FALSE(aliasValue.empty());
@@ -406,7 +463,7 @@ namespace runcpp2
                     
                     //Check if parent is map, remember to update the string map
                     if( currentNode.Parent != nullptr && 
-                        mpark::holds_alternative<OrderedMap>(currentNode.Parent->Value))
+                        mpark::is<OrderedMap>(currentNode.Parent->Value))
                     {
                         mapsToUpdateStringMapKeys.push_back(currentNode.Parent);
                     }
@@ -414,15 +471,15 @@ namespace runcpp2
                     //The parent entry for this node is correct, but not the children, update them.
                     DS_UNWRAP_VOID(UpdateParentsRecursively(currentNode));
                 }
-                else if(mpark::holds_alternative<ScalarValue>(currentNode.Value))
+                else if(mpark::is<ScalarValue>(currentNode.Value))
                     ++(nodeValCountStack.top().second);
-                else if(mpark::holds_alternative<Sequence>(currentNode.Value))
+                else if(mpark::is<Sequence>(currentNode.Value))
                 {
                     Sequence& sequence = *mpark::get_if<Sequence>(&currentNode.Value);
                     for(int i = sequence.size() - 1; i >= 0; --i)
                         nodeValCountStack.push(std::pair<Node*, int>(sequence[i].get(), 0));
                 }
-                else if(mpark::holds_alternative<OrderedMap>(currentNode.Value))
+                else if(mpark::is<OrderedMap>(currentNode.Value))
                 {
                     OrderedMap& orderedMap = *mpark::get_if<OrderedMap>(&currentNode.Value);
                     bool hasMergeKeys = false;
@@ -431,7 +488,7 @@ namespace runcpp2
                     for(int i = 0; i < orderedMap.InsertedKeys.size(); ++i)
                     {
                         NodePtr currentKey = orderedMap.InsertedKeys[i];
-                        if(!mpark::holds_alternative<Alias>(currentKey->Value))
+                        if(!mpark::is<Alias>(currentKey->Value))
                             continue;
                         
                         //TODO: Add support for alias map key
@@ -470,15 +527,16 @@ namespace runcpp2
             //Update string map for maps in mapsToUpdateStringMapKeys for any missing scalar keys
             for(int i = 0; i < mapsToUpdateStringMapKeys.size(); ++i)
             {
-                DS_ASSERT_TRUE(mpark::holds_alternative<OrderedMap>(mapsToUpdateStringMapKeys[i]->Value));
-                OrderedMap& currentMap = *mpark::get_if<OrderedMap>(&mapsToUpdateStringMapKeys[i]->Value);
+                DS_ASSERT_TRUE(mpark::is<OrderedMap>(mapsToUpdateStringMapKeys[i]->Value));
+                OrderedMap& currentMap = 
+                    *mpark::get_if<OrderedMap>(&mapsToUpdateStringMapKeys[i]->Value);
                 
                 for(int j = 0; j < currentMap.InsertedKeys.size(); ++j)
                 {
-                    if(mpark::holds_alternative<ScalarValue>(currentMap.InsertedKeys[j]->Value))
+                    if(mpark::is<ScalarValue>(currentMap.InsertedKeys[j]->Value))
                     {
-                        ScalarValue& curKey = *mpark::get_if<ScalarValue>(&currentMap   .InsertedKeys[j]
-                                                                                        ->Value);
+                        ScalarValue& curKey = 
+                            *mpark::get_if<ScalarValue>(&currentMap.InsertedKeys[j]->Value);
                         DS_ASSERT_TRUE(currentMap.Map.count(currentMap.InsertedKeys[j]) > 0);
                         if(currentMap.StringMap.count(curKey) == 0)
                             currentMap.StringMap[curKey] = currentMap.Map[currentMap.InsertedKeys[j]];
@@ -489,19 +547,18 @@ namespace runcpp2
             return {};
         }
         
-        inline DS::Result<void> FreeYAMLResource(ResourceHandle& resourceHandleToFree)
+        inline void FreeYAMLResource(ResourceHandle& resourceHandleToFree)
         {
-            DS_ASSERT_TRUE(resourceHandleToFree.first != nullptr);
+            if(resourceHandleToFree.first != nullptr)
+            {
+                for(int i = 0; i < resourceHandleToFree.second.ReadData.size(); ++i)
+                    yaml_event_delete(resourceHandleToFree.second.ReadData[i].get());
+                yaml_parser_delete(resourceHandleToFree.first);
+                delete resourceHandleToFree.first;
+            }
             
-            for(int i = 0; i < resourceHandleToFree.second.ReadData.size(); ++i)
-                yaml_event_delete(resourceHandleToFree.second.ReadData[i].get());
-            
-            yaml_parser_delete(resourceHandleToFree.first);
-            
-            delete resourceHandleToFree.first;
             resourceHandleToFree.first = nullptr;
             resourceHandleToFree.second = ReadWriteBuffer();
-            return {};
         }
         
         template<>
@@ -768,6 +825,11 @@ namespace runcpp2
             return mpark::get_if<OrderedMap>(&Value)->Map.at(keyNode)->GetScalar<T>();
         }
         
+        inline Node* Node::GetParent() const
+        {
+            return Parent;
+        }
+        
         inline uint32_t Node::GetChildrenCount() const
         {
             if(IsAlias() || IsScalar())
@@ -780,33 +842,79 @@ namespace runcpp2
                 return 0;
         }
         
+        inline DS::Result<void> Node::InitScalar(ScalarValue val, ResourceHandle& yamlResource)
+        {
+            Value = StringView(yamlResource.second.CreateString(val));
+            return {};
+        }
+            
+        inline DS::Result<void> Node::InitAlias(ScalarValue alias, ResourceHandle& yamlResource)
+        {
+            Value = Alias{StringView(yamlResource.second.CreateString(alias))};
+            return {};
+        }
+        
+        inline DS::Result<void> Node::InitSequence()
+        {
+            Value = Sequence();
+            return {};
+        }
+        
         //TODO: Reorder the whole thing to match declaration order
         inline DS::Result<NodePtr> Node::CloneToSequenceChild(  NodePtr parentNode, 
-                                                                ResourceHandle& yamlResouce) const
+                                                                ResourceHandle& yamlResource) const
         {
             DS_ASSERT_TRUE(parentNode->IsSequence());
-            NodePtr clonedThis = Clone(false, yamlResouce).DS_TRY();
+            NodePtr clonedThis = Clone(false, yamlResource).DS_TRY();
             clonedThis->Parent = parentNode.get();
             mpark::get_if<Sequence>(&parentNode->Value)->push_back(clonedThis);
             return clonedThis;
         }
         
+        inline DS::Result<void> Node::RemoveSequenceChildAt(uint32_t index)
+        {
+            DS_ASSERT_TRUE(IsSequence());
+            DS_ASSERT_LT(index, mpark::get<Sequence>(Value).size());
+            mpark::get<Sequence>(Value).erase(mpark::get<Sequence>(Value).begin() + index);
+            return {};
+        }
+        
+        inline DS::Result<NodePtr> Node::CreateSequenceChild()
+        {
+            DS_ASSERT_TRUE(IsSequence());
+            mpark::get<Sequence>(Value).emplace_back();
+            return mpark::get<Sequence>(Value).back();
+        }
+        
+        inline DS::Result<NodePtr> Node::CreateSequenceChildAt(uint32_t index)
+        {
+            DS_ASSERT_TRUE(IsSequence());
+            DS_ASSERT_LT_EQ(index, mpark::get<Sequence>(Value).size());
+            mpark::get<Sequence>(Value).insert(mpark::get<Sequence>(Value).begin() + index, {});
+            return mpark::get<Sequence>(Value)[index];
+        }
+        
+        inline DS::Result<void> Node::InitMap()
+        {
+            Value = OrderedMap();
+            return {};
+        }
+        
         inline DS::Result<NodePtr> Node::CloneToMapChild(   StringView key, 
                                                             NodePtr parentNode, 
-                                                            ResourceHandle& yamlResouce) const
+                                                            ResourceHandle& yamlResource) const
         {
             DS_ASSERT_TRUE(parentNode->IsMap());
-            NodePtr clonedThis = Clone(false, yamlResouce).DS_TRY();
+            NodePtr clonedThis = Clone(false, yamlResource).DS_TRY();
             clonedThis->Parent = parentNode.get();
-            yamlResouce.second.StoreString(std::string(key));
-            StringView keyView = StringView(*yamlResouce.second.WriteData.back());
             NodePtr keyNode = CreateNodePtr();
-            keyNode->Value = keyView;
+            std::string& keyStr = yamlResource.second.CreateString(key);
+            keyNode->Value = keyStr;
             keyNode->LineNumber = LineNumber;
             
             mpark::get_if<OrderedMap>(&parentNode->Value)->InsertedKeys.push_back(keyNode);
             mpark::get_if<OrderedMap>(&parentNode->Value)->Map[keyNode] = clonedThis;
-            mpark::get_if<OrderedMap>(&parentNode->Value)->StringMap[keyView] = clonedThis;
+            mpark::get_if<OrderedMap>(&parentNode->Value)->StringMap[keyStr] = clonedThis;
             return clonedThis;
         }
         
@@ -838,13 +946,98 @@ namespace runcpp2
             return {};
         }
         
+        inline DS::Result<void> Node::RemoveMapChildAt(uint32_t index)
+        {
+            DS_ASSERT_TRUE(IsMap());
+            OrderedMap& orderedMap = *mpark::get_if<OrderedMap>(&Value);
+            
+            DS_ASSERT_LT(index, orderedMap.InsertedKeys.size());
+            
+            NodePtr keyNode = orderedMap.InsertedKeys[index];
+            DS_ASSERT_NOT_EQ(orderedMap.Map.count(keyNode), 0);
+            
+            StringView keyView = orderedMap.Map.at(keyNode)->GetScalar<StringView>().DS_TRY();
+            return RemoveMapChild(keyView);
+        }
+        
+        inline DS::Result<void> Node::UpdateMapKey( StringView oldKey, 
+                                                    StringView newKey, 
+                                                    ResourceHandle& resourceHandle)
+        {
+            DS_ASSERT_TRUE(IsMap());
+            OrderedMap& orderedMap = *mpark::get_if<OrderedMap>(&Value);
+            
+            DS_ASSERT_GT(orderedMap.StringMap.count(oldKey), 0);
+            
+            NodePtr keyNode = nullptr;
+            for(int i = 0; i < orderedMap.InsertedKeys.size(); ++i)
+            {
+                if( orderedMap.InsertedKeys[i]->IsScalar() && 
+                    orderedMap.InsertedKeys.at(i)->GetScalar<StringView>().Value() == oldKey)
+                {
+                    keyNode = orderedMap.InsertedKeys[i];
+                    break;
+                }
+            }
+            
+            DS_ASSERT_TRUE(keyNode != nullptr);
+            std::string& newKeyStr = resourceHandle.second.CreateString(newKey);
+            keyNode->Value = newKeyStr;
+            orderedMap.StringMap.erase(oldKey);
+            DS_ASSERT_GT(orderedMap.Map.count(keyNode), 0);
+            orderedMap.StringMap[newKey] = orderedMap.Map[keyNode];
+            return {};
+        }
+        
+        inline DS::Result<NodePtr> Node::CreateMapChild(StringView key, 
+                                                        ResourceHandle& resourceHandle)
+        {
+            DS_ASSERT_TRUE(IsMap());
+            OrderedMap& orderedMap = *mpark::get_if<OrderedMap>(&Value);
+            
+            DS_ASSERT_EQ(orderedMap.StringMap.count(key), 0);
+            
+            std::string& keyStr = resourceHandle.second.CreateString(key);
+            NodePtr keyNode = CreateNodePtr();
+            keyNode->Value = keyStr;
+            keyNode->Parent = Parent;
+            
+            orderedMap.InsertedKeys.emplace_back(keyNode);
+            orderedMap.Map[keyNode] = {};
+            orderedMap.StringMap[keyStr] = orderedMap.Map[keyNode];
+            
+            return orderedMap.Map[keyNode];
+        }
+        
+        inline DS::Result<NodePtr> Node::CreateMapChildAt(  StringView key, 
+                                                            uint32_t index, 
+                                                            ResourceHandle& resourceHandle)
+        {
+            DS_ASSERT_TRUE(IsMap());
+            OrderedMap& orderedMap = *mpark::get_if<OrderedMap>(&Value);
+            
+            DS_ASSERT_EQ(orderedMap.StringMap.count(key), 0);
+            DS_ASSERT_LT_EQ(index, orderedMap.InsertedKeys.size());
+            
+            std::string& keyStr = resourceHandle.second.CreateString(key);
+            NodePtr keyNode = CreateNodePtr();
+            keyNode->Value = keyStr;
+            keyNode->Parent = Parent;
+            
+            orderedMap.InsertedKeys.insert(orderedMap.InsertedKeys.begin() + index, keyNode);
+            orderedMap.Map[keyNode] = {};
+            orderedMap.StringMap[keyStr] = orderedMap.Map[keyNode];
+            
+            return orderedMap.Map[keyNode];
+        }
+        
         inline DS::Result<void> Node::ToString(std::string& outString) const
         {
             std::stack<const Node*> nodeStack;
             std::stack<std::string> nodePrefixStack;
             std::stack<int> nodeIndentLevelStack;
             
-            //if(!mpark::holds_alternative<OrderedMap>(Value) && !mpark::holds_alternative<Sequence>(Value))
+            //if(!mpark::is<OrderedMap>(Value) && !mpark::is<Sequence>(Value))
             //    return DS_ERROR_MSG("Starting value must be a map or sequence");
             
             nodeStack.push(this);
@@ -858,7 +1051,7 @@ namespace runcpp2
                 /* Scalar Output Format:
                 <prefix>[anchor]<scalar><newline>
                 */
-                if(mpark::holds_alternative<ScalarValue>(nodeStack.top()->Value))
+                if(mpark::is<ScalarValue>(nodeStack.top()->Value))
                 {
                     if(!nodeStack.top()->Anchor.empty())
                         outString += " &" + std::string(nodeStack.top()->Anchor) + " ";
@@ -872,7 +1065,7 @@ namespace runcpp2
                 /* Alias Output Format:
                 <prefix>*<alias><newline>
                 */
-                else if(mpark::holds_alternative<Alias>(nodeStack.top()->Value))
+                else if(mpark::is<Alias>(nodeStack.top()->Value))
                 {
                     if(!nodeStack.top()->Anchor.empty())
                         return DS_ERROR_MSG("Alias node cannot have anchor");
@@ -887,7 +1080,7 @@ namespace runcpp2
                 <prefix>-   <child>
                 <indent>-   <child>
                 */
-                else if(mpark::holds_alternative<Sequence>(nodeStack.top()->Value))
+                else if(mpark::is<Sequence>(nodeStack.top()->Value))
                 {
                     const Sequence* seq = mpark::get_if<Sequence>(&nodeStack.top()->Value);
                     int indentLevel = nodeIndentLevelStack.top();
@@ -913,7 +1106,7 @@ namespace runcpp2
                 <indent><scalar key>: [child map anchor]
                 <indent + 4><child map>
                 */
-                else if(mpark::holds_alternative<OrderedMap>(nodeStack.top()->Value))
+                else if(mpark::is<OrderedMap>(nodeStack.top()->Value))
                 {
                     const OrderedMap& map = *mpark::get_if<OrderedMap>(&(nodeStack.top()->Value));
                     int indentLevel = nodeIndentLevelStack.top();
@@ -928,9 +1121,12 @@ namespace runcpp2
                     for(int i = map.InsertedKeys.size() - 1; i >= 0; --i)
                     {
                         std::string prefix;
-                        if(mpark::holds_alternative<ScalarValue>(map.InsertedKeys[i]->Value))
-                            prefix = (std::string)*mpark::get_if<ScalarValue>(&map.InsertedKeys[i]->Value);
-                        else if(mpark::holds_alternative<Alias>(map.InsertedKeys[i]->Value))
+                        if(mpark::is<ScalarValue>(map.InsertedKeys[i]->Value))
+                        {
+                            prefix = 
+                                (std::string)*mpark::get_if<ScalarValue>(&map.InsertedKeys[i]->Value);
+                        }
+                        else if(mpark::is<Alias>(map.InsertedKeys[i]->Value))
                         {
                             //TODO: Add support for alias map key
                             const Alias& aliasVal = *mpark::get_if<Alias>(&map.InsertedKeys[i]->Value);
@@ -955,22 +1151,22 @@ namespace runcpp2
                         std::string anchor =    childNode->Anchor.empty() ? 
                                                 "" : 
                                                 "&" + std::string(childNode->Anchor);
-                        if(mpark::holds_alternative<Sequence>(childNode->Value))
+                        if(mpark::is<Sequence>(childNode->Value))
                         {
                             nodeStack.push(childNode.get());
                             nodePrefixStack.push(   prefix + anchor + "\n" + 
                                                     std::string(indentLevel, ' '));
                             nodeIndentLevelStack.push(indentLevel);
                         }
-                        else if(mpark::holds_alternative<OrderedMap>(childNode->Value))
+                        else if(mpark::is<OrderedMap>(childNode->Value))
                         {
                             nodeStack.push(childNode.get());
                             nodePrefixStack.push(   prefix + anchor + "\n" + 
                                                     std::string(indentLevel + 4, ' '));
                             nodeIndentLevelStack.push(indentLevel + 4);
                         }
-                        else if(mpark::holds_alternative<ScalarValue>(childNode->Value) ||
-                                mpark::holds_alternative<Alias>(childNode->Value))
+                        else if(mpark::is<ScalarValue>(childNode->Value) ||
+                                mpark::is<Alias>(childNode->Value))
                         {
                             nodeStack.push(childNode.get());
                             nodePrefixStack.push(prefix);
@@ -979,7 +1175,7 @@ namespace runcpp2
                         else
                             return DS_ERROR_MSG("Invalid type");
                     } //for(int i = map.InsertedKeys.size() - 1; i >= 0; --i)
-                } //else if(mpark::holds_alternative<OrderedMap>(nodeStack.top()->Value))
+                } //else if(mpark::is<OrderedMap>(nodeStack.top()->Value))
                 else
                     return DS_ERROR_MSG("Invalid type");
             } //while(!nodeStack.empty())
@@ -987,7 +1183,7 @@ namespace runcpp2
             return {};
         }
         
-        inline DS::Result<NodePtr> Node::Clone(bool shallow, ResourceHandle& yamlResouce) const
+        inline DS::Result<NodePtr> Node::Clone(bool shallow, ResourceHandle& yamlResource) const
         {
             std::stack<std::pair<NodePtr, const Node*>> nodesToCloneStack;    //Dst, src
             
@@ -1012,23 +1208,19 @@ namespace runcpp2
                 if(shallow)
                     break;
                 
-                yamlResouce.second.StoreString(std::string(src->Anchor));
-                dst->Anchor = StringView(*yamlResouce.second.WriteData.back());
-                
+                dst->Anchor = yamlResource.second.CreateString(src->Anchor);
                 switch(src->GetType())
                 {
                     case NodeType::Scalar:
                     {
                         std::string val = src->GetScalar<std::string>().DS_TRY();
-                        yamlResouce.second.StoreString(val);
-                        dst->Value = ScalarValue(*yamlResouce.second.WriteData.back());
+                        dst->Value = yamlResource.second.CreateString(val);
                         break;
                     }
                     case NodeType::Alias:
                     {
                         std::string val = src->GetAlias<std::string>().DS_TRY();
-                        yamlResouce.second.StoreString(val);
-                        dst->Value = Alias{ StringView(*yamlResouce.second.WriteData.back()) };
+                        dst->Value = Alias{ yamlResource.second.CreateString(val) };
                         break;
                     }
                     case NodeType::Sequence:
@@ -1074,8 +1266,7 @@ namespace runcpp2
                             if(keyNode->IsScalar())
                             {
                                 std::string key = keyNode->GetScalar<std::string>().DS_TRY();
-                                yamlResouce.second.StoreString(key);
-                                StringView keyView = StringView(*yamlResouce.second.WriteData.back());
+                                StringView keyView = yamlResource.second.CreateString(key);
                                 dstMap.StringMap[keyView] = clonedValNode;
                             }
                         }
@@ -1158,7 +1349,7 @@ namespace
         currentMap->Map[lastKey]->Parent = nodeValCountStack.top().first;
         
         //Add to KeyMap if key is scalar
-        if(mpark::holds_alternative<runcpp2::YAML::ScalarValue>(lastKey->Value))
+        if(mpark::is<runcpp2::YAML::ScalarValue>(lastKey->Value))
         {
             auto* scalarVal = mpark::get_if<runcpp2::YAML::ScalarValue>(&lastKey->Value);
             currentMap->StringMap[*scalarVal] = currentMap->Map[lastKey];
@@ -1191,20 +1382,20 @@ namespace
                 runcpp2::YAML::NodeValue& currentParentValue = nodeValCountStack.top().first->Value;
 
                 //We can only start a map as key in sequence node, error out
-                if(!mpark::holds_alternative<runcpp2::YAML::Sequence>(currentParentValue))
+                if(!mpark::is<runcpp2::YAML::Sequence>(currentParentValue))
                 {
                     //If we are in a map node, that means it is a complex key. 
                     //We don't support complex key.
-                    if(mpark::holds_alternative<runcpp2::YAML::OrderedMap>(currentParentValue))
+                    if(mpark::is<runcpp2::YAML::OrderedMap>(currentParentValue))
                         return DS_ERROR_MSG("Complex key is not supported");
                     //If we are in scalar node, what?
-                    else if(mpark::holds_alternative<runcpp2::YAML::ScalarValue>(currentParentValue))
+                    else if(mpark::is<runcpp2::YAML::ScalarValue>(currentParentValue))
                     {
                         return DS_ERROR_MSG("Trying to create map in scalar node. "
                                             "Missed node creation?");
                     }
                     //If we are in alias, what?
-                    else if(mpark::holds_alternative<runcpp2::YAML::Alias>(currentParentValue))
+                    else if(mpark::is<runcpp2::YAML::Alias>(currentParentValue))
                     {
                         return DS_ERROR_MSG("Trying to create map in alias node. "
                                             "Missed node creation?");
@@ -1232,19 +1423,19 @@ namespace
                 runcpp2::YAML::NodeValue& currentParentValue = nodeValCountStack.top().first->Value;
                 
                 //We can only fill a value after key in a map node, error out
-                if(!mpark::holds_alternative<runcpp2::YAML::OrderedMap>(currentParentValue))
+                if(!mpark::is<runcpp2::YAML::OrderedMap>(currentParentValue))
                 {
-                    if(mpark::holds_alternative<runcpp2::YAML::Sequence>(currentParentValue))
+                    if(mpark::is<runcpp2::YAML::Sequence>(currentParentValue))
                     {
                         return DS_ERROR_MSG("Trying to fill value in sequnce node. "
                                             "Missed node creation?");
                     }
-                    else if(mpark::holds_alternative<runcpp2::YAML::ScalarValue>(currentParentValue))
+                    else if(mpark::is<runcpp2::YAML::ScalarValue>(currentParentValue))
                     {
                         return DS_ERROR_MSG("Trying to fill value in scalar node. "
                                             "Missed node creation?");
                     }
-                    else if(mpark::holds_alternative<runcpp2::YAML::Alias>(currentParentValue))
+                    else if(mpark::is<runcpp2::YAML::Alias>(currentParentValue))
                     {
                         return DS_ERROR_MSG("Trying to fill value in alias node. "
                                             "Missed node creation?");
@@ -1306,7 +1497,7 @@ namespace
                 runcpp2::YAML::NodeValue& currentParentValue = nodeValCountStack.top().first->Value;
                 //If we are in a sequence node, this means it is a nested sequence.
                 //    fill it and append to stack
-                if(mpark::holds_alternative<runcpp2::YAML::Sequence>(currentParentValue))
+                if(mpark::is<runcpp2::YAML::Sequence>(currentParentValue))
                 {
                     runcpp2::YAML::NodePtr newNode = runcpp2::YAML::CreateNodePtr();
                     newNode->Value = runcpp2::YAML::Sequence();
@@ -1317,13 +1508,13 @@ namespace
                 }
                 //If we are in a map node, that means it is a complex key. 
                 //We don't support complex key.
-                else if(mpark::holds_alternative<runcpp2::YAML::OrderedMap>(currentParentValue))
+                else if(mpark::is<runcpp2::YAML::OrderedMap>(currentParentValue))
                     return DS_ERROR_MSG("Complex key is not supported");
                 //If we are in scalar node, what?
-                else if(mpark::holds_alternative<runcpp2::YAML::ScalarValue>(currentParentValue))
+                else if(mpark::is<runcpp2::YAML::ScalarValue>(currentParentValue))
                     return DS_ERROR_MSG("Trying to create map in scalar node. Missed node creation?");
                 //If we are in alias node, what?
-                else if(mpark::holds_alternative<runcpp2::YAML::Alias>(currentParentValue))
+                else if(mpark::is<runcpp2::YAML::Alias>(currentParentValue))
                     return DS_ERROR_MSG("Trying to create map in alias node. Missed node creation?");
                 //Invalid type
                 else
@@ -1339,13 +1530,13 @@ namespace
                 
                 //If we are in a map node, that means the value is a sequence
                 //     fill it and append to stack
-                if(mpark::holds_alternative<runcpp2::YAML::OrderedMap>(currentParentValue))
+                if(mpark::is<runcpp2::YAML::OrderedMap>(currentParentValue))
                     DS_UNWRAP_VOID(AddValueToMap<true>(nodeValCountStack, newSeq, event));
-                else if(mpark::holds_alternative<runcpp2::YAML::Sequence>(currentParentValue))
+                else if(mpark::is<runcpp2::YAML::Sequence>(currentParentValue))
                     return DS_ERROR_MSG("Trying to fill value in sequnce node. Missed node creation?");
-                else if(mpark::holds_alternative<runcpp2::YAML::ScalarValue>(currentParentValue))
+                else if(mpark::is<runcpp2::YAML::ScalarValue>(currentParentValue))
                     return DS_ERROR_MSG("Trying to fill value in scalar node. Missed node creation?");
-                else if(mpark::holds_alternative<runcpp2::YAML::Alias>(currentParentValue))
+                else if(mpark::is<runcpp2::YAML::Alias>(currentParentValue))
                     return DS_ERROR_MSG("Trying to fill value in alias node. Missed node creation?");
                 //Invalid type
                 else
@@ -1449,17 +1640,17 @@ namespace
                 newNode->Parent = nodeValCountStack.top().first;
                 bool mergeKey = scalarView == "<<" && 
                                 event.data.scalar.style == YAML_PLAIN_SCALAR_STYLE &&
-                                mpark::holds_alternative<runcpp2::YAML::OrderedMap>(nodeValue);
+                                mpark::is<runcpp2::YAML::OrderedMap>(nodeValue);
                 if(!mergeKey)
                     newNode->Value = scalarView;
                 else
                     newNode->Value = runcpp2::YAML::Alias{scalarView};
                 
                 //If we are in a sequence node, we just need to append the value
-                if(mpark::holds_alternative<runcpp2::YAML::Sequence>(nodeValue))
+                if(mpark::is<runcpp2::YAML::Sequence>(nodeValue))
                     mpark::get_if<runcpp2::YAML::Sequence>(&nodeValue)->emplace_back(newNode);
                 //If we are in a map node, we need to set the key
-                else if(mpark::holds_alternative<runcpp2::YAML::OrderedMap>(nodeValue))
+                else if(mpark::is<runcpp2::YAML::OrderedMap>(nodeValue))
                 {
                     mpark::get_if<runcpp2::YAML::OrderedMap>(&nodeValue)->InsertedKeys
                                                                         .push_back(newNode);
@@ -1467,10 +1658,10 @@ namespace
                     ++(nodeValCountStack.top().second);
                 }
                 //We should never in a scalar node
-                else if(mpark::holds_alternative<runcpp2::YAML::ScalarValue>(nodeValue))
+                else if(mpark::is<runcpp2::YAML::ScalarValue>(nodeValue))
                     return DS_ERROR_MSG("Should not be in a scalar node");
                 //We should never in a alias node
-                else if(mpark::holds_alternative<runcpp2::YAML::Alias>(nodeValue))
+                else if(mpark::is<runcpp2::YAML::Alias>(nodeValue))
                     return DS_ERROR_MSG("Should not be in a alias node");
                 //Invalid type
                 else
@@ -1484,15 +1675,15 @@ namespace
                 runcpp2::YAML::NodeValue& nodeValue = nodeValCountStack.top().first->Value;
                 
                 //If we are in a map node, that means the value is scalar
-                if(mpark::holds_alternative<runcpp2::YAML::OrderedMap>(nodeValue))
+                if(mpark::is<runcpp2::YAML::OrderedMap>(nodeValue))
                     DS_UNWRAP_VOID(AddValueToMap<false>(nodeValCountStack, scalarView, event));
-                else if(mpark::holds_alternative<runcpp2::YAML::Sequence>(nodeValue))
+                else if(mpark::is<runcpp2::YAML::Sequence>(nodeValue))
                     return DS_ERROR_MSG("Trying to fill value in sequnce node. Missed node creation?");
                 //We should never in a scalar node
-                else if(mpark::holds_alternative<runcpp2::YAML::ScalarValue>(nodeValue))
+                else if(mpark::is<runcpp2::YAML::ScalarValue>(nodeValue))
                     return DS_ERROR_MSG("Should not be in a scalar node");
                 //We should never in a alias node
-                else if(mpark::holds_alternative<runcpp2::YAML::Alias>(nodeValue))
+                else if(mpark::is<runcpp2::YAML::Alias>(nodeValue))
                     return DS_ERROR_MSG("Should not be in a alias node");
                 //Invalid type
                 else
@@ -1540,17 +1731,17 @@ namespace
                 newNode->Parent = nodeValCountStack.top().first;
                 
                 //If we are in a sequence node, we just need to append the alias
-                if(mpark::holds_alternative<runcpp2::YAML::Sequence>(currentParentValue))
+                if(mpark::is<runcpp2::YAML::Sequence>(currentParentValue))
                     mpark::get_if<runcpp2::YAML::Sequence>(&currentParentValue)->emplace_back(newNode);
                 //Alias should never be map key
                 //TODO: Actually, it can. But I guess we can forget about it for now?
-                else if(mpark::holds_alternative<runcpp2::YAML::OrderedMap>(currentParentValue))
+                else if(mpark::is<runcpp2::YAML::OrderedMap>(currentParentValue))
                     return DS_ERROR_MSG("Alias cannot be map key");
                 //We should never in a scalar node
-                else if(mpark::holds_alternative<runcpp2::YAML::ScalarValue>(currentParentValue))
+                else if(mpark::is<runcpp2::YAML::ScalarValue>(currentParentValue))
                     return DS_ERROR_MSG("Should not be in a scalar node");
                 //We should never in a alias node
-                else if(mpark::holds_alternative<runcpp2::YAML::Alias>(currentParentValue))
+                else if(mpark::is<runcpp2::YAML::Alias>(currentParentValue))
                     return DS_ERROR_MSG("Should not be in a alias node");
                 //Invalid type
                 else
@@ -1564,20 +1755,20 @@ namespace
                 runcpp2::YAML::NodeValue& currentParentValue = nodeValCountStack.top().first->Value;
                 
                 //If we are in a map node, that means the value is alias
-                if(mpark::holds_alternative<runcpp2::YAML::OrderedMap>(currentParentValue))
+                if(mpark::is<runcpp2::YAML::OrderedMap>(currentParentValue))
                 {
                     runcpp2::YAML::Alias alias = 
                         { runcpp2::StringView((const char*)event.data.alias.anchor) };
                     
                     DS_UNWRAP_VOID(AddValueToMap<false>(nodeValCountStack, alias, event));
                 }
-                else if(mpark::holds_alternative<runcpp2::YAML::Sequence>(currentParentValue))
+                else if(mpark::is<runcpp2::YAML::Sequence>(currentParentValue))
                     return DS_ERROR_MSG("Trying to fill value in sequnce node. Missed node creation?");
                 //We should never in a scalar node
-                else if(mpark::holds_alternative<runcpp2::YAML::ScalarValue>(currentParentValue))
+                else if(mpark::is<runcpp2::YAML::ScalarValue>(currentParentValue))
                     return DS_ERROR_MSG("Should not be in a scalar node");
                 //We should never in a alias node
-                else if(mpark::holds_alternative<runcpp2::YAML::Alias>(currentParentValue))
+                else if(mpark::is<runcpp2::YAML::Alias>(currentParentValue))
                     return DS_ERROR_MSG("Should not be in a alias node");
                 //Invalid type
                 else
@@ -1595,13 +1786,13 @@ namespace
     
     DS::Result<void> CopyVariant(runcpp2::YAML::NodeValue& dest, const runcpp2::YAML::NodeValue& src)
     {
-        if(mpark::holds_alternative<runcpp2::YAML::ScalarValue>(src))
+        if(mpark::is<runcpp2::YAML::ScalarValue>(src))
             dest = *mpark::get_if<runcpp2::YAML::ScalarValue>(&src);
-        else if(mpark::holds_alternative<runcpp2::YAML::Alias>(src))
+        else if(mpark::is<runcpp2::YAML::Alias>(src))
             dest = *mpark::get_if<runcpp2::YAML::Alias>(&src);
-        else if(mpark::holds_alternative<runcpp2::YAML::Sequence>(src))
+        else if(mpark::is<runcpp2::YAML::Sequence>(src))
             dest = *mpark::get_if<runcpp2::YAML::Sequence>(&src);
-        else if(mpark::holds_alternative<runcpp2::YAML::OrderedMap>(src))
+        else if(mpark::is<runcpp2::YAML::OrderedMap>(src))
             dest = *mpark::get_if<runcpp2::YAML::OrderedMap>(&src);
         else
             return DS_ERROR_MSG("Invalid type");
@@ -1620,11 +1811,11 @@ namespace
             runcpp2::YAML::Node& node = *nodesToProcess.top();
             nodesToProcess.pop();
             
-            if(mpark::holds_alternative<runcpp2::YAML::ScalarValue>(node.Value))
+            if(mpark::is<runcpp2::YAML::ScalarValue>(node.Value))
                 continue;
-            else if(mpark::holds_alternative<runcpp2::YAML::Alias>(node.Value))
+            else if(mpark::is<runcpp2::YAML::Alias>(node.Value))
                 continue;
-            else if(mpark::holds_alternative<runcpp2::YAML::Sequence>(node.Value))
+            else if(mpark::is<runcpp2::YAML::Sequence>(node.Value))
             {
                 auto& seq = *mpark::get_if<runcpp2::YAML::Sequence>(&node.Value);
                 for(int i = 0; i < seq.size(); ++i)
@@ -1642,7 +1833,7 @@ namespace
                     nodesToProcess.push(seq[i].get());
                 }
             }
-            else if(mpark::holds_alternative<runcpp2::YAML::OrderedMap>(node.Value))
+            else if(mpark::is<runcpp2::YAML::OrderedMap>(node.Value))
             {
                 auto& map = *mpark::get_if<runcpp2::YAML::OrderedMap>(&node.Value);
                 for(int i = 0; i < map.InsertedKeys.size(); ++i)
@@ -1671,7 +1862,7 @@ namespace
                             map.Map.erase(currentKey);
                             map.Map[newKey] = newVal;
                             
-                            if(mpark::holds_alternative<runcpp2::YAML::ScalarValue>(currentKey->Value))
+                            if(mpark::is<runcpp2::YAML::ScalarValue>(currentKey->Value))
                             {
                                 auto& keyScalar = 
                                     *mpark::get_if<runcpp2::YAML::ScalarValue>(&currentKey->Value);
@@ -1713,9 +1904,9 @@ namespace
         std::vector<runcpp2::YAML::NodePtr> aliasNodes;
         std::vector<runcpp2::YAML::OrderedMap*> mapsForMerging;
         
-        if(mpark::holds_alternative<runcpp2::YAML::Alias>(currentValueNode->Value))
+        if(mpark::is<runcpp2::YAML::Alias>(currentValueNode->Value))
             aliasNodes.push_back(currentValueNode);
-        else if(mpark::holds_alternative<runcpp2::YAML::Sequence>(currentValueNode->Value))
+        else if(mpark::is<runcpp2::YAML::Sequence>(currentValueNode->Value))
         {
             auto& sequence = *mpark::get_if<runcpp2::YAML::Sequence>(&currentValueNode->Value);
             for(int i = 0; i < sequence.size(); ++i)
@@ -1728,7 +1919,7 @@ namespace
         {
             runcpp2::YAML::NodeValue& currentAliasValue = aliasNodes[i]->Value;
             
-            if(!mpark::holds_alternative<runcpp2::YAML::Alias>(currentAliasValue))
+            if(!mpark::is<runcpp2::YAML::Alias>(currentAliasValue))
                 return DS_ERROR_MSG(defaultErrorMessage);
             
             auto& alias = *mpark::get_if<runcpp2::YAML::Alias>(&currentAliasValue);
@@ -1739,7 +1930,7 @@ namespace
             }
             
             runcpp2::YAML::Node* anchorNode = anchors.at(alias.Value);
-            if(!mpark::holds_alternative<runcpp2::YAML::OrderedMap>(anchorNode->Value))
+            if(!mpark::is<runcpp2::YAML::OrderedMap>(anchorNode->Value))
             {
                 return DS_ERROR_MSG("Target anchor must be a map. Line " + 
                                     DS_STR(aliasNodes[i]->LineNumber));

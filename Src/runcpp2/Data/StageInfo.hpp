@@ -22,7 +22,6 @@ namespace runcpp2
 namespace Data
 {
     struct OutputTypeInfo;
-    using SubstitutionMap = std::unordered_map<std::string, std::vector<std::string>>;
 }
 }
 
@@ -38,107 +37,6 @@ namespace
                                     const std::unordered_map<   PlatformName, 
                                                                 OutputTypeInfo>& toStringMap,
                                     std::string& outString);
-    
-    using SubMap = runcpp2::Data::SubstitutionMap;
-    bool PerformSubstituionsWithInfo(   const SubMap& substitutionMap, 
-                                        const std::string& escapedString,
-                                        const std::vector<std::string>& foundSubstitutions,
-                                        const std::vector<int>& substitutionsLocations,
-                                        const std::vector<int>& substitutionsLengths,
-                                        std::string& inOutSubstitutedString,
-                                        int substituteValueIndex = 0);
-    
-    //NOTE: This extracts substitutions and also allow escapes to happen for substitution characters.
-    //      To escape a substitution character, just repeat it. (i.e. {{text}} will be escaped as {text})
-    void GetEscapedStringAndExtractSubstitutions(   const std::string& processString, 
-                                                    std::string& outEscapedString,
-                                                    std::vector<std::string>& outFoundSubstitutions,
-                                                    std::vector<int>& outFoundLocations,
-                                                    std::vector<int>& outFoundLength)
-    {
-        ssLOG_FUNC_DEBUG();
-        
-        outEscapedString.clear();
-        std::string currentSubstitution;
-        
-        int lastOpenBracketIndex = -1;
-        for(int i = 0; i < processString.size(); ++i)
-        {
-            if(processString[i] == '{')
-            {
-                if(i == processString.size() - 1)
-                {
-                    if(lastOpenBracketIndex == -1 || lastOpenBracketIndex != i - 1)
-                        ssLOG_WARNING("Unescaped { at the end: " << processString);
-                    
-                    outEscapedString += '{';
-                    continue;
-                }
-                
-                //If we have opening bracket for the next character, 
-                //this is an escaping character
-                if(processString[i + 1] == '{')
-                {
-                    outEscapedString += '{';
-                    if(lastOpenBracketIndex != -1)
-                        currentSubstitution += '{';
-                    
-                    ++i;
-                    continue;
-                }
-                
-                if(lastOpenBracketIndex != -1)
-                {
-                    ssLOG_WARNING(  "Unescaped { at index " << lastOpenBracketIndex << 
-                                    ": " << processString);
-                }
-                
-                lastOpenBracketIndex = i;
-                currentSubstitution = "{";
-                outEscapedString += '{';
-            }
-            else if(processString[i] == '}')
-            {
-                //If we have closing bracket for the next character, 
-                //this is an escaping character
-                if(i < processString.size() - 1 && processString[i + 1] == '}')
-                {
-                    outEscapedString += '}';
-                    if(lastOpenBracketIndex != -1)
-                        currentSubstitution += '}';
-                    
-                    ++i;
-                    continue;
-                }
-                
-                //If there's no open bracket, give warning
-                if(lastOpenBracketIndex == -1)
-                {
-                    ssLOG_WARNING("Unescaped } at index " << i << ": " << processString);
-                    continue;
-                }
-                
-                //Add substitution
-                outEscapedString += '}';
-                currentSubstitution += '}';
-                ssLOG_DEBUG("Substitution " << currentSubstitution << " found");
-                outFoundSubstitutions.push_back(currentSubstitution);
-                outFoundLocations.push_back(outEscapedString.size() - currentSubstitution.size());
-                outFoundLength.push_back(currentSubstitution.size());
-                
-                //Reset
-                lastOpenBracketIndex = -1;
-                currentSubstitution.clear();
-            }
-            //Normal characters
-            else
-            {
-                outEscapedString += processString[i];
-                if(lastOpenBracketIndex != -1)
-                    currentSubstitution += processString[i];
-            }
-        }
-    }
 }
 
 namespace runcpp2
@@ -182,43 +80,9 @@ namespace Data
             std::unordered_map<PlatformName, OutputTypeInfo> Shared;
         } OutputTypes;
         
-        using SubstitutionMap = std::unordered_map<std::string, std::vector<std::string>>;
-        
-        //TODO: Make this static function?
-        inline bool PerformSubstituions(const SubstitutionMap& substitutionMap, 
-                                        std::string& inOutSubstitutedString) const
-        {
-            std::string escapedString;
-            std::vector<std::string> foundSubstitutions;
-            std::vector<int> substitutionsLocations;
-            std::vector<int> substitutionsLengths;
-            
-            GetEscapedStringAndExtractSubstitutions(inOutSubstitutedString, 
-                                                    escapedString,
-                                                    foundSubstitutions,
-                                                    substitutionsLocations,
-                                                    substitutionsLengths);
-            
-            if( foundSubstitutions.size() != substitutionsLocations.size() ||
-                foundSubstitutions.size() != substitutionsLengths.size())
-            {
-                ssLOG_ERROR("Substitution size mismatch");
-                ssLOG_ERROR("foundSubstitutions.size(): " << foundSubstitutions.size());
-                ssLOG_ERROR("substitutionsLocations.size(): " << substitutionsLocations.size());
-                ssLOG_ERROR("substitutionsLengths.size(): " << substitutionsLengths.size());
-                return false;
-            }
-            
-            return PerformSubstituionsWithInfo( substitutionMap, 
-                                                escapedString, 
-                                                foundSubstitutions, 
-                                                substitutionsLocations, 
-                                                substitutionsLengths,
-                                                inOutSubstitutedString);
-        }
-
         inline bool ConstructCommand(   const SubstitutionMap& substitutionMap, 
                                         const BuildType buildType,
+                                        const std::vector<char>& escapeChars,
                                         std::string& outCommand) const
         {
             ssLOG_FUNC_DEBUG();   
@@ -260,113 +124,33 @@ namespace Data
                 ssLOG_DEBUG("Parsing run part at index: " << i);
                 ssLOG_DEBUG("Which is: \"" << currentRunParts.at(i).CommandPart << "\"");
                 
-                std::string currentEscapedPart;
-                std::vector<std::string> substitutionsInCurrentPart;
-                std::vector<int> substitutionsLocations;
-                std::vector<int> substitutionsLengths;
-                
-                GetEscapedStringAndExtractSubstitutions(currentRunParts.at(i).CommandPart, 
-                                                        currentEscapedPart,
-                                                        substitutionsInCurrentPart,
-                                                        substitutionsLocations,
-                                                        substitutionsLengths);
-                
-                if( substitutionsInCurrentPart.size() != substitutionsLocations.size() ||
-                    substitutionsInCurrentPart.size() != substitutionsLengths.size())
-                {
-                    ssLOG_ERROR("Substitution size mismatch");
-                    ssLOG_ERROR("substitutionsInCurrentPart.size(): " << substitutionsInCurrentPart.size());
-                    ssLOG_ERROR("substitutionsLocations.size(): " << substitutionsLocations.size());
-                    ssLOG_ERROR("substitutionsLengths.size(): " << substitutionsLengths.size());
-                    return false;
-                }
-                
                 static_assert(  static_cast<int>(RunPart::RunType::COUNT) == 2, 
                                 "Update parsing for new runtype");
                 
                 //Check RunType::ONCE if all the substitutions are present
                 if(currentRunParts.at(i).Type == RunPart::RunType::ONCE)
                 {
-                    std::string substitutedPart;
+                    std::string substitutedPart = currentRunParts.at(i).CommandPart;
                     
-                    if(!PerformSubstituionsWithInfo(substitutionMap, 
-                                                    currentEscapedPart, 
-                                                    substitutionsInCurrentPart, 
-                                                    substitutionsLocations, 
-                                                    substitutionsLengths,
-                                                    substitutedPart))
-                    {
-                        return false;
-                    }
-                    
+                    PerformSubstitutions(substitutionMap, escapeChars, substitutedPart)
+                        .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                                    return false);
                     outCommand += substitutedPart;
                 }
                 //Check RunType::REPEATS, all the substitutions must have the same number of values.
                 //Otherwise, bail
                 else
                 {
-                    int firstCount = -1;
+                    std::vector<std::string> substitutedParts;
+                    PerformMultiSubstitutions(  substitutionMap, 
+                                                escapeChars,
+                                                currentRunParts.at(i).CommandPart,
+                                                substitutedParts)
+                        .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
+                                    return false);
                     
-                    //If there are no substitution, report this
-                    if(substitutionsInCurrentPart.empty())
-                    {
-                        ssLOG_ERROR("There are no substitutions found in " << currentEscapedPart << 
-                                    " but it is set to be of RunType::REPEATS.");
-                        
-                        ssLOG_ERROR("Substitutions are needed to determine " << 
-                                    "how many times to repeat this part");
-                        
-                        return false;
-                    }
-                    
-                    //Check all the substitution found in the run part
-                    for(int j = 0; j < substitutionsInCurrentPart.size(); ++j)
-                    {
-                        if(substitutionMap.count(substitutionsInCurrentPart.at(j)) == 0)
-                        {
-                            ssLOG_DEBUG("No substitution found for " << substitutionsInCurrentPart.at(j) << 
-                                        " in " << currentRunParts.at(i).CommandPart);
-                            
-                            ssLOG_DEBUG("Current run part is type repeat, skipping to next");
-                            continue;
-                        }
-                        
-                        int substitutionValuesCount = 
-                            substitutionMap.at(substitutionsInCurrentPart.at(j)).size();
-                        
-                        if(firstCount == -1)
-                            firstCount = substitutionValuesCount;
-                        else if(substitutionValuesCount != firstCount)
-                        {
-                            ssLOG_ERROR("The number of substitution values found for " << 
-                                        substitutionsInCurrentPart.at(j) << " which is " << 
-                                        substitutionValuesCount << " does not match " <<
-                                        "the number of other substitution values which is " << 
-                                        firstCount);
-
-                            return false;
-                        }
-                    }
-                    
-                    //Once we agreed on how many repeats we need to do based on 
-                    //the substitution values count, we can then do substitution.
-                    for(int j = 0; j < firstCount; ++j)
-                    {
-                        std::string substitutedPart;
-                                    
-                        if(!PerformSubstituionsWithInfo(substitutionMap, 
-                                                        currentEscapedPart, 
-                                                        substitutionsInCurrentPart, 
-                                                        substitutionsLocations, 
-                                                        substitutionsLengths,
-                                                        substitutedPart,
-                                                        j))
-                        {
-                            return false;
-                        }
-                        
-                        outCommand += substitutedPart;
-                    }
+                    for(int j = 0; j < substitutedParts.size(); ++j)
+                        outCommand += substitutedParts[j];
                 }
             }
             
@@ -784,86 +568,6 @@ namespace
                 }
             }
         }
-    }
-    
-    using SubMap = runcpp2::Data::SubstitutionMap;
-    bool PerformSubstituionsWithInfo(   const SubMap& substitutionMap, 
-                                        const std::string& escapedString,
-                                        const std::vector<std::string>& foundSubstitutions,
-                                        const std::vector<int>& substitutionsLocations,
-                                        const std::vector<int>& substitutionsLengths,
-                                        std::string& inOutSubstitutedString,
-                                        int substituteValueIndex)
-    {
-        ssLOG_FUNC_DEBUG();
-
-        inOutSubstitutedString = escapedString;
-        
-        for(int i = foundSubstitutions.size() - 1; i >= 0; --i)
-        {
-            const std::string& substitution = foundSubstitutions.at(i);
-            if(substitutionMap.count(substitution) == 0)
-            {
-                ssLOG_ERROR("INTERNAL ERROR, missing substitution value for \"" << substitution << "\"");
-                return false;
-            }
-            
-            std::string currentValue = substitutionMap.at(substitution).at(substituteValueIndex);
-            
-            //Escape escapes character at the end if any
-            {
-                std::vector<char> escapeChars = {'\\'};
-                #ifdef _WIN32
-                    escapeChars.emplace_back('^');
-                #endif
-                if(!currentValue.empty())
-                {
-                    int currentValIndex = currentValue.size();
-                    while(currentValIndex > 0)
-                    {
-                        --currentValIndex;
-                        bool found = false;
-                        for(int j = 0; j < escapeChars.size(); ++j)
-                        {
-                            if(currentValue[currentValIndex] == escapeChars[j])
-                            {
-                                found = true;
-                                break;
-                            }
-                        }
-                        
-                        if(!found)
-                        {
-                            ++currentValIndex;
-                            break;
-                        }
-                    }
-                    
-                    if(currentValIndex < currentValue.size())
-                    {
-                        const std::string foundEscapes = currentValue.substr(currentValIndex);
-                        std::string newEndEscapes;
-                        //Just repeat the escape characters
-                        for(int j = 0; j < foundEscapes.size(); ++j)
-                        {
-                            newEndEscapes.push_back(foundEscapes[j]);
-                            newEndEscapes.push_back(foundEscapes[j]);
-                        }
-                    
-                        currentValue = currentValue.substr(0, currentValIndex) + newEndEscapes;
-                    }
-                }
-            }
-            
-            ssLOG_DEBUG("Replacing \"" << substitution << "\" with \"" << currentValue << 
-                        "\" in \"" << escapedString << "\"");
-            
-            inOutSubstitutedString.replace( substitutionsLocations.at(i), 
-                                            substitutionsLengths.at(i), 
-                                            currentValue);
-        }
-        
-        return true;
     }
 }
 

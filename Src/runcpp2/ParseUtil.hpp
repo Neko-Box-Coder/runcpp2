@@ -448,6 +448,280 @@ namespace runcpp2
         }
         return true;
     }
+    
+    using SubstitutionMap = std::unordered_map<std::string, std::vector<std::string>>;
+    DS::Result<void> 
+    PerformSubstitutionsWithInfo(   const SubstitutionMap& substitutionMap, 
+                                    const std::string& escapedString,
+                                    const std::vector<std::string>& foundSubstitutions,
+                                    const std::vector<int>& substitutionsLocations,
+                                    const std::vector<int>& substitutionsLengths,
+                                    std::string& inOutSubstitutedString,
+                                    const std::vector<char>& escapeChars,
+                                    int substituteValueIndex = 0)
+    {
+        ssLOG_FUNC_DEBUG();
+
+        inOutSubstitutedString = escapedString;
+        for(int i = foundSubstitutions.size() - 1; i >= 0; --i)
+        {
+            const std::string& substitution = foundSubstitutions[i];
+            if(substitutionMap.count(substitution) == 0)
+            {
+                ssLOG_DEBUG("substitution: " << substitution << " not found in substitution map, "
+                            "skipping...");
+                continue;
+            }
+            
+            //The substitution values can either be 1 
+            //(in which case will be the same value regardless of substituteValueIndex)
+            //Or the index being requested.
+            int useIndex = substituteValueIndex;
+            if(substitutionMap.at(substitution).size() == 1)
+                useIndex = 0;
+            
+            DS_ASSERT_LT(useIndex, substitutionMap.at(substitution).size());
+            std::string currentValue = substitutionMap.at(substitution).at(useIndex);
+            
+            //Escape escapes character at the end if any
+            {
+                if(!currentValue.empty())
+                {
+                    int currentValIndex = currentValue.size();
+                    while(currentValIndex-- > 0)
+                    {
+                        bool found = false;
+                        for(int j = 0; j < escapeChars.size(); ++j)
+                        {
+                            if(currentValue[currentValIndex] == escapeChars[j])
+                            {
+                                found = true;
+                                break;
+                            }
+                        }
+                        
+                        if(!found)
+                        {
+                            ++currentValIndex;
+                            break;
+                        }
+                    }
+                    
+                    if(currentValIndex < currentValue.size())
+                    {
+                        const std::string foundEscapes = currentValue.substr(currentValIndex);
+                        std::string newEndEscapes;
+                        //Just repeat the escape characters
+                        for(int j = 0; j < foundEscapes.size(); ++j)
+                        {
+                            newEndEscapes.push_back(foundEscapes[j]);
+                            newEndEscapes.push_back(foundEscapes[j]);
+                        }
+                    
+                        currentValue = currentValue.substr(0, currentValIndex) + newEndEscapes;
+                    }
+                }
+            }
+            
+            ssLOG_DEBUG("Replacing \"" << substitution << "\" with \"" << currentValue << 
+                        "\" in \"" << escapedString << "\"");
+            
+            //TODO: Instead of doing replace, we should just memcpy and rebuild the string
+            inOutSubstitutedString.replace( substitutionsLocations.at(i), 
+                                            substitutionsLengths.at(i), 
+                                            currentValue);
+        }
+        
+        return {};
+    }
+    
+    //NOTE: This extracts substitutions and also allow escapes to happen for substitution characters.
+    //      To escape a substitution character, just repeat it. (i.e. {{text}} will be escaped as {text})
+    void GetEscapedStringAndExtractSubstitutions(   const std::string& processString, 
+                                                    std::string& outEscapedString,
+                                                    std::vector<std::string>& outFoundSubstitutions,
+                                                    std::vector<int>& outFoundLocations,
+                                                    std::vector<int>& outFoundLength)
+    {
+        ssLOG_FUNC_DEBUG();
+        
+        outEscapedString.clear();
+        std::string currentSubstitution;
+        
+        int lastOpenBracketIndex = -1;
+        for(int i = 0; i < processString.size(); ++i)
+        {
+            if(processString[i] == '{')
+            {
+                if(i == processString.size() - 1)
+                {
+                    if(lastOpenBracketIndex == -1 || lastOpenBracketIndex != i - 1)
+                        ssLOG_WARNING("Unescaped { at the end: " << processString);
+                    
+                    outEscapedString += '{';
+                    continue;
+                }
+                
+                //If we have opening bracket for the next character, 
+                //this is an escaping character
+                if(processString[i + 1] == '{')
+                {
+                    outEscapedString += '{';
+                    if(lastOpenBracketIndex != -1)
+                        currentSubstitution += '{';
+                    
+                    ++i;
+                    continue;
+                }
+                
+                if(lastOpenBracketIndex != -1)
+                {
+                    ssLOG_WARNING(  "Unescaped { at index " << lastOpenBracketIndex << 
+                                    ": " << processString);
+                }
+                
+                lastOpenBracketIndex = i;
+                currentSubstitution = "{";
+                outEscapedString += '{';
+            }
+            else if(processString[i] == '}')
+            {
+                //If we have closing bracket for the next character, 
+                //this is an escaping character
+                if(i < processString.size() - 1 && processString[i + 1] == '}')
+                {
+                    outEscapedString += '}';
+                    if(lastOpenBracketIndex != -1)
+                        currentSubstitution += '}';
+                    
+                    ++i;
+                    continue;
+                }
+                
+                //If there's no open bracket, give warning
+                if(lastOpenBracketIndex == -1)
+                {
+                    ssLOG_WARNING("Unescaped } at index " << i << ": " << processString);
+                    continue;
+                }
+                
+                //Add substitution
+                outEscapedString += '}';
+                currentSubstitution += '}';
+                ssLOG_DEBUG("Substitution " << currentSubstitution << " found");
+                outFoundSubstitutions.push_back(currentSubstitution);
+                outFoundLocations.push_back(outEscapedString.size() - currentSubstitution.size());
+                outFoundLength.push_back(currentSubstitution.size());
+                
+                //Reset
+                lastOpenBracketIndex = -1;
+                currentSubstitution.clear();
+            }
+            //Normal characters
+            else
+            {
+                outEscapedString += processString[i];
+                if(lastOpenBracketIndex != -1)
+                    currentSubstitution += processString[i];
+            }
+        }
+    }
+    
+    inline DS::Result<void> PerformSubstitutions(   const SubstitutionMap& substitutionMap, 
+                                                    const std::vector<char>& escapeChars,
+                                                    std::string& inOutSubstitutedString)
+    {
+        std::string escapedString;
+        std::vector<std::string> foundSubstitutions;
+        std::vector<int> substitutionsLocations;
+        std::vector<int> substitutionsLengths;
+        
+        GetEscapedStringAndExtractSubstitutions(inOutSubstitutedString, 
+                                                escapedString,
+                                                foundSubstitutions,
+                                                substitutionsLocations,
+                                                substitutionsLengths);
+        
+        DS_ASSERT_EQ(foundSubstitutions.size(), substitutionsLocations.size());
+        DS_ASSERT_EQ(foundSubstitutions.size(), substitutionsLengths.size());
+        PerformSubstitutionsWithInfo(   substitutionMap, 
+                                        escapedString, 
+                                        foundSubstitutions, 
+                                        substitutionsLocations, 
+                                        substitutionsLengths,
+                                        inOutSubstitutedString,
+                                        escapeChars)
+            .DS_TRY();
+        return {};
+    }
+    
+    inline DS::Result<void> PerformMultiSubstitutions(  const SubstitutionMap& substitutionMap, 
+                                                        const std::vector<char>& escapeChars,
+                                                        const std::string& inString,
+                                                        std::vector<std::string>& outStrings)
+    {
+        std::string escapedString;
+        std::vector<std::string> foundSubstitutions;
+        std::vector<int> substitutionsLocations;
+        std::vector<int> substitutionsLengths;
+        
+        GetEscapedStringAndExtractSubstitutions(inString, 
+                                                escapedString,
+                                                foundSubstitutions,
+                                                substitutionsLocations,
+                                                substitutionsLengths);
+        
+        DS_ASSERT_EQ(foundSubstitutions.size(), substitutionsLocations.size());
+        DS_ASSERT_EQ(foundSubstitutions.size(), substitutionsLengths.size());
+        
+        int foundSize = -1;
+        for(int i = 0; i < foundSubstitutions.size(); ++i)
+        {
+            if(substitutionMap.count(foundSubstitutions[i]) > 0)
+            {
+                if(foundSize == -1)
+                    foundSize = substitutionMap.at(foundSubstitutions[i]).size();
+                else
+                {
+                    if(substitutionMap.at(foundSubstitutions[i]).size() != 1)
+                    {
+                        if(foundSize == 1)
+                        {
+                            foundSize = substitutionMap.at(foundSubstitutions[i]).size();
+                            continue;
+                        }
+                        else if(foundSize ==  substitutionMap.at(foundSubstitutions[i]).size())
+                            continue;
+                        
+                        return DS_ERROR_MSG("Mismatching array size when substituting with " +
+                                            foundSubstitutions[i]);
+                    }
+                }
+            }
+        }
+        
+        //No substitutions in the input, just pass it back out
+        if(foundSize == -1)
+        {
+            outStrings.emplace_back(inString);
+            return {};
+        }
+        
+        for(int i = 0; i < foundSize; ++i)
+        {
+            outStrings.emplace_back(std::string());
+            PerformSubstitutionsWithInfo(   substitutionMap, 
+                                            escapedString, 
+                                            foundSubstitutions, 
+                                            substitutionsLocations, 
+                                            substitutionsLengths,
+                                            outStrings.back(),
+                                            escapeChars,
+                                            i)
+                .DS_TRY();
+        }
+        return {};
+    }
 }
 
 #endif

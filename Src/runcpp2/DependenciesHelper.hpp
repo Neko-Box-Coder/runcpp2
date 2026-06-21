@@ -46,7 +46,7 @@
 namespace
 {
     DS::Result<void> GetDependencyPath( const runcpp2::Data::DependencyInfo& dependency,
-                                        const ghc::filesystem::path& scriptPath,
+                                        const ghc::filesystem::path& scriptDirectory,
                                         const ghc::filesystem::path& buildDir,
                                         ghc::filesystem::path& outCopyPath,
                                         ghc::filesystem::path& outSourcePath);
@@ -89,7 +89,7 @@ namespace runcpp2
     GetDependenciesPaths(   const std::vector<Data::DependencyInfo*>& availableDependencies,
                             std::vector<std::string>& outCopiesPaths,
                             std::vector<std::string>& outSourcesPaths,
-                            const ghc::filesystem::path& scriptPath,
+                            const ghc::filesystem::path& scriptDirectory,
                             const ghc::filesystem::path& buildDir)
     {
         ssLOG_FUNC_INFO();
@@ -99,7 +99,7 @@ namespace runcpp2
             ghc::filesystem::path currentCopyPath;
             ghc::filesystem::path currentSourcePath;
             GetDependencyPath(  *availableDependencies.at(i),
-                                scriptPath,
+                                scriptDirectory,
                                 buildDir,
                                 currentCopyPath,
                                 currentSourcePath).DS_TRY();
@@ -763,7 +763,7 @@ namespace runcpp2
     }
 
     inline DS::Result<void> ResolveImports( Data::ScriptInfo& scriptInfo,
-                                            const ghc::filesystem::path& scriptPath,
+                                            const ghc::filesystem::path& scriptDirectory,
                                             const ghc::filesystem::path& buildDir)
     {
         ssLOG_FUNC_INFO();
@@ -783,7 +783,7 @@ namespace runcpp2
 
             ghc::filesystem::path copyPath;
             ghc::filesystem::path sourcePath;
-            GetDependencyPath(dependency, scriptPath, buildDir, copyPath, sourcePath).DS_TRY();
+            GetDependencyPath(dependency, scriptDirectory, buildDir, copyPath, sourcePath).DS_TRY();
 
             bool prePopulated = false;
             PopulateLocalDependency(dependency, copyPath, sourcePath, buildDir, prePopulated).DS_TRY();
@@ -980,15 +980,14 @@ namespace runcpp2
 namespace
 {
     DS::Result<void> GetDependencyPath( const runcpp2::Data::DependencyInfo& dependency,
-                                        const ghc::filesystem::path& scriptPath,
+                                        const ghc::filesystem::path& scriptDirectory,
                                         const ghc::filesystem::path& buildDir,
                                         ghc::filesystem::path& outCopyPath,
                                         ghc::filesystem::path& outSourcePath)
     {
         ssLOG_FUNC_INFO();
+        DS_ASSERT_TRUE(ghc::filesystem::is_directory(scriptDirectory));
 
-        ghc::filesystem::path scriptDirectory = scriptPath.parent_path();
-        
         const runcpp2::Data::DependencySource& currentSource = dependency.Source;
 
         if(mpark::get_if<runcpp2::Data::GitSource>(&currentSource.Source))

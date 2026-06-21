@@ -50,7 +50,7 @@ namespace runcpp2 { namespace Data { struct DependencyInfo; } }
 
 namespace
 {
-    DS::Result<bool> HasCompiledCache(  const ghc::filesystem::path& scriptPath,
+    DS::Result<bool> HasCompiledCache(  const ghc::filesystem::path& scriptDirectory,
                                         const std::vector<ghc::filesystem::path>& sourceFiles,
                                         const ghc::filesystem::path& buildDir,
                                         const runcpp2::Data::Profile& currentProfile,
@@ -80,7 +80,7 @@ namespace
         for(int i = 0; i < sourceFiles.size(); ++i)
         {
             ghc::filesystem::path relativeSourcePath = 
-                ghc::filesystem::relative(sourceFiles.at(i), scriptPath.parent_path(), e);
+                ghc::filesystem::relative(sourceFiles.at(i), scriptDirectory, e);
             
             if(e)
             {
@@ -403,7 +403,7 @@ namespace runcpp2
         ghc::filesystem::file_time_type finalSourceWriteTime;
         ghc::filesystem::file_time_type finalIncludeWriteTime;
         
-        HasCompiledCache(   absoluteScriptPath,
+        HasCompiledCache(   absoluteScriptPath.parent_path(),
                             sourceFiles,
                             buildDir,
                             currentProfile,
@@ -428,6 +428,27 @@ namespace runcpp2
         return PipelineResult::SUCCESS;
 
         INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
+    }
+
+    inline void CreateParameterValues(  const std::unordered_map<   CmdOptions, 
+                                                                    std::string>& currentOptions,
+                                        std::unordered_map<std::string, std::string>& outParameters)
+    {
+        if(currentOptions.count(CmdOptions::PARAMETERS) == 0)
+            return;
+    
+        const std::string& rawParams = currentOptions.at(CmdOptions::PARAMETERS);
+        
+        std::vector<std::string> paramNameVals;
+        SplitString(rawParams, ":", paramNameVals);
+        if(paramNameVals.size() % 2 != 0)
+        {
+            ssLOG_ERROR("Failed to parse parameters. Defaults to no parameters");
+            return;
+        }
+        
+        for(int i = 0; i < paramNameVals.size(); i += 2)
+            outParameters[paramNameVals[i]] = paramNameVals[i + 1];
     }
 
     inline PipelineResult StartPipeline(const std::string& scriptPath, 
@@ -459,12 +480,17 @@ namespace runcpp2
                                             return PipelineResult::INVALID_CONFIG_PATH);
         ghc::filesystem::path buildDir;
 
+        //Create parameters
+        std::unordered_map<std::string, std::string> parameterValues;
+        CreateParameterValues(currentOptions, parameterValues);
+
         //Parse script info
         Data::ScriptInfo scriptInfo;
         ParseAndValidateScriptInfo( absoluteScriptPath,
                                     scriptDirectory,
                                     scriptName,
                                     currentOptions.count(CmdOptions::EXECUTABLE) > 0,
+                                    parameterValues,
                                     scriptInfo)
             .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
                         return (PipelineResult)DS_TMP_ERROR.ErrorCode);
@@ -491,7 +517,7 @@ namespace runcpp2
                                                         profiles, 
                                                         configPreferredProfile)
                                 .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                                            return PipelineResult::NO_AVAILABLE_PROFILE);;
+                                            return PipelineResult::NO_AVAILABLE_PROFILE);
 
         //Parsing the script, setting up dependencies, compiling and linking
         std::vector<std::string> filesToCopyPaths;
@@ -531,7 +557,7 @@ namespace runcpp2
             }
             
             //Resolve imports
-            ResolveScriptImports(scriptInfo, absoluteScriptPath, buildDir)
+            ResolveScriptImports(scriptInfo, absoluteScriptPath.parent_path(), buildDir)
                 .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
                             return (PipelineResult)DS_TMP_ERROR.ErrorCode);
             
@@ -543,9 +569,10 @@ namespace runcpp2
             CheckScriptInfoChanges( buildDir, 
                                     scriptInfo, 
                                     profiles.at(profileIndex), 
-                                    absoluteScriptPath,
+                                    absoluteScriptPath.parent_path(),
                                     lastScriptInfo, 
                                     maxThreads,
+                                    parameterValues,
                                     recompileNeeded, 
                                     relinkNeeded, 
                                     changedDependencies)
@@ -561,7 +588,7 @@ namespace runcpp2
             std::vector<Data::DependencyInfo*> availableDependencies;
             ProcessDependencies(scriptInfo,
                                 profiles.at(profileIndex),
-                                absoluteScriptPath,
+                                absoluteScriptPath.parent_path(),
                                 buildDir,
                                 currentOptions,
                                 changedDependencies,
@@ -603,7 +630,7 @@ namespace runcpp2
                 sourceHasCache = std::vector<bool>(sourceFiles.size(), false);
             else
             {
-                HasCompiledCache(   absoluteScriptPath,
+                HasCompiledCache(   absoluteScriptPath.parent_path(),
                                     sourceFiles, 
                                     buildDir, 
                                     profiles.at(profileIndex),
@@ -707,7 +734,7 @@ namespace runcpp2
                 if(currentOptions.count(CmdOptions::WATCH) > 0)
                 {
                     CompileScriptOnly(  buildDir,
-                                        absoluteScriptPath,
+                                        absoluteScriptPath.parent_path(),
                                         sourceFiles,
                                         sourceHasCache,
                                         includePaths, 
@@ -723,7 +750,7 @@ namespace runcpp2
                 else
                 {
                     CompileAndLinkScript(   buildDir,
-                                            absoluteScriptPath,
+                                            absoluteScriptPath.parent_path(),
                                             ghc::filesystem::path(absoluteScriptPath).stem(), 
                                             sourceFiles,
                                             sourceHasCache,

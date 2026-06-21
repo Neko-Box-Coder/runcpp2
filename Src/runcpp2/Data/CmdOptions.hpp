@@ -1,6 +1,7 @@
 #ifndef RUNCPP2_DATA_CMD_OPTIONS_HPP
 #define RUNCPP2_DATA_CMD_OPTIONS_HPP
 
+//TODO: Get rid of this
 namespace runcpp2
 {
     enum class CmdOptions
@@ -24,6 +25,7 @@ namespace runcpp2
         BUILD_SOURCE_ONLY,
         THREADS,
         TUTORIAL,
+        PARAMETERS,
         COUNT
     };
 }

@@ -6,6 +6,8 @@
 
 DS::Result<void> TestMain()
 {
+    std::unordered_map<std::string, std::string> tempParameters;
+    
     //ScriptInfo Should Parse Valid YAML
     {
         //NOTE: This is just a test YAML for validating parsing, don't use it for actual config
@@ -16,6 +18,19 @@ DS::Result<void> TestMain()
             RequiredProfiles:
                 Windows: [MSVC]
                 Unix: [GCC]
+            Parameters:
+                Param1:
+                    Optional: true
+                    Default: "All"
+                    Array: false
+                    Constraint: ["A", "B", "C", "All:A,B,C"]
+                Param2:
+                    Optional: true
+                    Default: "123"
+                    Array: false
+                    Constraint: "Int"
+            Variables:
+                VarName1: "Some string {Param1} substitution"
             OverrideCompileFlags:
                 Windows:
                     MSVC:
@@ -114,7 +129,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        DS_ASSERT_TRUE(scriptInfo.ParseYAML_Node(root));
+        scriptInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
         
         //Verify basic fields
         DS_ASSERT_EQ(scriptInfo.Language, "C++");
@@ -127,6 +142,37 @@ DS::Result<void> TestMain()
         
         DS_ASSERT_EQ(scriptInfo.RequiredProfiles.at("Unix").size(), 1);
         DS_ASSERT_EQ(scriptInfo.RequiredProfiles.at("Unix").at(0), "GCC");
+        
+        //Verify Parameters
+        DS_ASSERT_EQ(scriptInfo.Parameters.count("Param1"), 1);
+        {
+            ParameterValue& paramVal = scriptInfo.Parameters["Param1"];
+            DS_ASSERT_TRUE(paramVal.Optional);
+            DS_ASSERT_EQ(paramVal.Default, "All");
+            DS_ASSERT_FALSE(paramVal.Array);
+            DS_ASSERT_TRUE( paramVal.CurrentConstraintType == 
+                            runcpp2::Data::ParameterValue::ConstraintType::Choices);
+            DS_ASSERT_TRUE(mpark::is<std::vector<std::string>>(paramVal.ConstraintValue));
+            std::vector<std::string>& constraintVals = 
+                mpark::get<std::vector<std::string>>(paramVal.ConstraintValue);
+            DS_ASSERT_EQ(constraintVals.size(), 4);
+            DS_ASSERT_EQ(constraintVals[2], "C");
+        }
+        
+        DS_ASSERT_EQ(scriptInfo.Parameters.count("Param2"), 1);
+        {
+            ParameterValue& paramVal = scriptInfo.Parameters["Param2"];
+            DS_ASSERT_TRUE(paramVal.Optional);
+            DS_ASSERT_EQ(paramVal.Default, "123");
+            DS_ASSERT_FALSE(paramVal.Array);
+            DS_ASSERT_TRUE( paramVal.CurrentConstraintType == 
+                            runcpp2::Data::ParameterValue::ConstraintType::Int);
+            //DS_ASSERT_TRUE(mpark::is<std::string>(paramVal.ConstraintValue));
+        }
+        
+        //Verify Variables
+        DS_ASSERT_EQ(scriptInfo.Variables.count("VarName1"), 1);
+        DS_ASSERT_EQ(scriptInfo.Variables["VarName1"], "Some string {Param1} substitution");
         
         //Verify OverrideCompileFlags
         const runcpp2::Data::FlagsOverrideInfo& msvcCompileFlags = 
@@ -224,12 +270,12 @@ DS::Result<void> TestMain()
                         (int)runcpp2::Data::DependencyLibraryType::SHARED);
 
         //Test ToString() and Equals()
-        std::string yamlOutput = scriptInfo.ToString("");
+        std::string yamlOutput = scriptInfo.ToString("").DS_TRY();
         roots = runcpp2::YAML::ParseYAML(yamlOutput, resource).DS_TRY();
         DS_ASSERT_EQ(roots.size(), 1);
         
         runcpp2::Data::ScriptInfo parsedOutput;
-        parsedOutput.ParseYAML_Node(roots.front());
+        parsedOutput.ParseYAML_Node(roots.front(), tempParameters).DS_TRY();
         DS_ASSERT_TRUE(scriptInfo.Equals(parsedOutput));
     }
     
@@ -253,7 +299,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        DS_ASSERT_TRUE(scriptInfo.ParseYAML_Node(root));
+        scriptInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
         
         //Verify SourceFiles
         const std::vector<ghc::filesystem::path>& msvcCompileFiles = 
@@ -306,7 +352,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        DS_ASSERT_TRUE(scriptInfo.ParseYAML_Node(root));
+        scriptInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
         
         //Verify basic fields
         DS_ASSERT_EQ(scriptInfo.Language, "C++");
@@ -378,6 +424,50 @@ DS::Result<void> TestMain()
         DS_ASSERT_EQ(defaultCleanupCommands.size(), 2);
         DS_ASSERT_EQ(defaultCleanupCommands.at(0), "echo 7");
         DS_ASSERT_EQ(defaultCleanupCommands.at(1), "echo 8");
+    }
+    
+    //ScriptInfo Should Perform substitutions correctly
+    {
+        std::unordered_map<std::string, std::string> parameters =   {
+                                                                        {"ChoiceParam", "B"}, 
+                                                                        {"IntParam", "7"}
+                                                                    };
+
+        const char* yamlStr = R"(
+            Language: C++
+            Parameters:
+                ChoiceParam:
+                    Optional: true
+                    Array: false
+                    Constraint: ["A", "B", "C", "All:A,B,C"]
+                IntParam:
+                    Optional: true
+                    Array: false
+                    Constraint: "Int"
+            Variables:
+                Var1: "The choice is {ChoiceParam}"
+                Var2: "5+{IntParam}"
+            Defines:
+            -   "TEST_DEFINE_1=\"{Var1}\""
+            -   "TEST_DEFINE_2={Var2}"
+        )";
+    
+        runcpp2::YAML::ResourceHandle resource;
+        std::vector<runcpp2::YAML::NodePtr> roots = runcpp2::YAML::ParseYAML(yamlStr, resource)
+                                                        .DS_TRY();
+        DEFER { FreeYAMLResource(resource); };
+        
+        DS_ASSERT_EQ(roots.size(), 1);
+        runcpp2::YAML::NodePtr root = roots.front();
+        runcpp2::Data::ScriptInfo scriptInfo;
+        
+        scriptInfo.ParseYAML_Node(root, parameters).DS_TRY();
+        const std::vector<runcpp2::Data::Define>& defaultDefines = 
+            scriptInfo.Defines.at("DefaultPlatform").Defines.at("DefaultProfile");
+        
+        DS_ASSERT_EQ(defaultDefines.size(), 2);
+        DS_ASSERT_EQ(defaultDefines[0].Value, std::string("\"The choice is B\""));
+        DS_ASSERT_EQ(defaultDefines[1].Value, std::string("5+7"));
     }
     
     return {};

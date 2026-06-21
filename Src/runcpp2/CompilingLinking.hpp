@@ -39,7 +39,7 @@ namespace
 {
     using OverrideFlags = 
         std::unordered_map<PlatformName, runcpp2::Data::ProfilesFlagsOverride>;
- 
+
     //TODO: Add option to add/remove flags for each run option (executable, shared, static)
     void AppendAndRemoveFlags(  const runcpp2::Data::Profile& profile,
                                 const OverrideFlags overrideFlags,
@@ -124,7 +124,7 @@ namespace
     }
     
     bool CompileScript( const ghc::filesystem::path& buildDir,
-                        const ghc::filesystem::path& scriptPath,
+                        const ghc::filesystem::path& scriptDirectory,
                         const std::vector<ghc::filesystem::path>& sourceFiles,
                         const std::vector<ghc::filesystem::path>& includePaths,
                         const runcpp2::Data::ScriptInfo& scriptInfo,
@@ -193,6 +193,7 @@ namespace
         }
         
         //Add script and dependency include paths
+        substitutionMapTemplate["{IncludeDirectoryPath}"] = {};
         for(const ghc::filesystem::path& includePath : includePaths)
         {
             std::string processedInclude = runcpp2::ProcessPath(includePath.string());
@@ -200,6 +201,9 @@ namespace
         }
         
         //Add defines
+        substitutionMapTemplate["{DefineName}"] = {};
+        substitutionMapTemplate["{DefineValue}"] = {};
+        substitutionMapTemplate["{DefineNameOnly}"] = {};
         if(runcpp2::HasValueFromPlatformMap(scriptInfo.Defines))
         {
             const runcpp2::Data::ProfilesDefines& platformDefines = 
@@ -237,6 +241,11 @@ namespace
         //Cache logs for worker threads
         ssLOG_ENABLE_CACHE_OUTPUT_FOR_NEW_THREADS();
         int logLevel = ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL();
+        #ifdef _WIN32
+            const std::vector<char> escapeChars = {'\\', '^'};
+        #else
+            const std::vector<char> escapeChars = {'\\'};
+        #endif
         
         //Compile async, allow compilation for all source files whether if it succeeded or not
         bool failedAny = false;
@@ -245,7 +254,7 @@ namespace
             std::error_code e;
             ghc::filesystem::path currentSource = sourceFiles.at(i);
             ghc::filesystem::path relativeSourcePath = 
-                ghc::filesystem::relative(currentSource, scriptPath.parent_path(), e);
+                ghc::filesystem::relative(currentSource, scriptDirectory, e);
             
             if(e)
             {
@@ -288,15 +297,18 @@ namespace
                 for(int j = 0; j < currentOutputTypeInfo->ExpectedOutputFiles.size(); ++j)
                 {
                     std::string currentPath = currentOutputTypeInfo->ExpectedOutputFiles.at(j);
-                    if(!profile.Compiler.PerformSubstituions(substitutionMap, currentPath))
+                    DS::Result<void> res = runcpp2::PerformSubstitutions(   substitutionMap, 
+                                                                            escapeChars, 
+                                                                            currentPath);
+                    if(!res.HasValue())
                     {
-                        ssLOG_ERROR("Failed to substitute \"" << currentPath << "\"");
+                        ssLOG_ERROR(res.Error().ToString());
                         actions.emplace_back(std::async(std::launch::deferred, []{return false;}));
                         finished.emplace_back(false);
                         continue;
                     }
                     
-                    auto path = ghc::filesystem::path(currentPath);
+                    ghc::filesystem::path path = currentPath;
                     ghc::filesystem::create_directories(path.parent_path(), e);
                     if(e)
                     {
@@ -332,7 +344,8 @@ namespace
                                             //      therefore need to copy it.
                         &buildDir,
                         &scriptInfo,
-                        logLevel
+                        logLevel,
+                        &escapeChars
                     ]()
                     {
                         ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(logLevel);
@@ -347,9 +360,12 @@ namespace
                         {
                             std::string setupStep = currentOutputTypeInfo->Setup.at(j);
                             
-                            if(!profile.Compiler.PerformSubstituions(substitutionMap, setupStep))
+                            DS::Result<void> res = runcpp2::PerformSubstitutions(   substitutionMap, 
+                                                                                    escapeChars, 
+                                                                                    setupStep);
+                            if(!res.HasValue())
                             {
-                                ssLOG_ERROR("Failed to substitute \"" << setupStep << "\"");
+                                ssLOG_ERROR(res.Error().ToString());
                                 return false;
                             }
                             
@@ -379,6 +395,7 @@ namespace
                             std::string runPartSubstitutedCommand;
                             if(!profile.Compiler.ConstructCommand(  substitutionMap, 
                                                                     scriptInfo.CurrentBuildType,
+                                                                    escapeChars,
                                                                     runPartSubstitutedCommand))
                             {
                                 ssLOG_ERROR("Failed to construct compile command");
@@ -423,12 +440,8 @@ namespace
                         for(int j = 0; j < currentOutputTypeInfo->Cleanup.size(); ++j)
                         {
                             std::string cleanupStep = currentOutputTypeInfo->Cleanup.at(j);
-                            
-                            if(!profile.Compiler.PerformSubstituions(substitutionMap, cleanupStep))
-                            {
-                                ssLOG_ERROR("Failed to substitute \"" << cleanupStep << "\"");
-                                return false;
-                            }
+                            runcpp2::PerformSubstitutions(substitutionMap, escapeChars, cleanupStep)
+                                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                             
                             if(!preRun.empty())
                                 cleanupStep = preRun + " && " + cleanupStep;
@@ -668,6 +681,19 @@ namespace
                 
                 static_assert(  static_cast<int>(Data::DependencyLibraryType::COUNT) == 4, 
                                 "Add new type to be processed");
+                
+                substitutionMap["{LinkStaticFileName}"] = {};
+                substitutionMap["{LinkStaticFileExt}"] = {};
+                substitutionMap["{LinkStaticFileDirectory}"] = {};
+                substitutionMap["{LinkStaticFilePath}"] = {};
+                substitutionMap["{LinkSharedFileName}"] = {};
+                substitutionMap["{LinkSharedFileExt}"] = {};
+                substitutionMap["{LinkSharedFileDirectory}"] = {};
+                substitutionMap["{LinkSharedFilePath}"] = {};
+                substitutionMap["{LinkObjectFileName}"] = {};
+                substitutionMap["{LinkObjectFileExt}"] = {};
+                substitutionMap["{LinkObjectFileDirectory}"] = {};
+                substitutionMap["{LinkObjectFilePath}"] = {};
                 switch(currentLinkType)
                 {
                     case Data::DependencyLibraryType::STATIC:
@@ -711,11 +737,8 @@ namespace
             for(int i = 0; i < currentOutputTypeInfo->ExpectedOutputFiles.size(); ++i)
             {
                 std::string currentPath = currentOutputTypeInfo->ExpectedOutputFiles.at(i);
-                if(!profile.Linker.PerformSubstituions(substitutionMap, currentPath))
-                {
-                    ssLOG_ERROR("Failed to substitute \"" << currentPath << "\"");
-                    return false;
-                }
+                runcpp2::PerformSubstitutions(substitutionMap, currentPath)
+                    .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                 
                 outObjectsFilesPaths.push_back(currentPath);
             }
@@ -723,6 +746,12 @@ namespace
         
         //Link the script
         {
+            #ifdef _WIN32
+                const std::vector<char> escapeChars = {'\\', '^'};
+            #else
+                const std::vector<char> escapeChars = {'\\'};
+            #endif
+            
             //Getting PreRun command
             std::string preRun =    runcpp2::HasValueFromPlatformMap(profile.Linker.PreRun) ?
                                     *runcpp2::GetValueFromPlatformMap(profile.Linker.PreRun) : "";
@@ -731,12 +760,8 @@ namespace
             for(int i = 0; i < currentOutputTypeInfo->Setup.size(); ++i)
             {
                 std::string setupStep = currentOutputTypeInfo->Setup.at(i);
-                
-                if(!profile.Linker.PerformSubstituions(substitutionMap, setupStep))
-                {
-                    ssLOG_ERROR("Failed to substitute \"" << setupStep << "\"");
-                    return false;
-                }
+                runcpp2::PerformSubstitutions(substitutionMap, escapeChars, setupStep)
+                    .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                 
                 if(!preRun.empty())
                     setupStep = preRun + " && " + setupStep;
@@ -766,6 +791,7 @@ namespace
                 std::string runPartSubstitutedCommand;
                 if(!profile.Linker.ConstructCommand(substitutionMap, 
                                                     scriptInfo.CurrentBuildType,
+                                                    escapeChars,
                                                     runPartSubstitutedCommand))
                 {
                     ssLOG_ERROR("Failed to construct link command");
@@ -801,12 +827,8 @@ namespace
             for(int i = 0; i < currentOutputTypeInfo->Cleanup.size(); ++i)
             {
                 std::string cleanupStep = currentOutputTypeInfo->Cleanup.at(i);
-                
-                if(!profile.Linker.PerformSubstituions(substitutionMap, cleanupStep))
-                {
-                    ssLOG_ERROR("Failed to substitute \"" << cleanupStep << "\"");
-                    return false;
-                }
+                runcpp2::PerformSubstitutions(substitutionMap, escapeChars, cleanupStep)
+                    .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                 
                 if(!preRun.empty())
                     cleanupStep = preRun + " && " + cleanupStep;
@@ -874,7 +896,7 @@ namespace runcpp2
 {
     inline DS::Result<void>  
     CompileScriptOnly(  const ghc::filesystem::path& buildDir,
-                        const ghc::filesystem::path& scriptPath,
+                        const ghc::filesystem::path& scriptDirectory,
                         const std::vector<ghc::filesystem::path>& sourceFiles,
                         const std::vector<bool>& sourceHasCache,
                         const std::vector<ghc::filesystem::path>& includePaths,
@@ -897,7 +919,7 @@ namespace runcpp2
         std::vector<ghc::filesystem::path> objectsFilesPaths;
 
         if(!CompileScript(  buildDir,
-                            scriptPath,
+                            scriptDirectory,
                             sourceFilesNeededToCompile, 
                             includePaths,
                             scriptInfo, 
@@ -921,7 +943,7 @@ namespace runcpp2
     //TODO: Convert string paths to filesystem paths
     inline DS::Result<void> 
     CompileAndLinkScript(   const ghc::filesystem::path& buildDir,
-                            const ghc::filesystem::path& scriptPath,
+                            const ghc::filesystem::path& scriptDirectory,
                             const std::string& outputName,
                             const std::vector<ghc::filesystem::path>& sourceFiles,
                             const std::vector<bool>& sourceHasCache,
@@ -946,7 +968,7 @@ namespace runcpp2
 
         //Compile source files that don't have cache
         if(!CompileScript(  buildDir,
-                            scriptPath,
+                            scriptDirectory,
                             sourceFilesNeededToCompile, 
                             includePaths,
                             scriptInfo, 
