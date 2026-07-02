@@ -2,10 +2,8 @@
 #define RUNCPP2_PIPELINE_STEPS_HPP
 
 #include "runcpp2/Data/Profile.hpp"
-#include "runcpp2/Data/PipelineResult.hpp"
 #include "runcpp2/Data/ProfilesCommands.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
-#include "runcpp2/Data/CmdOptions.hpp"
 #include "runcpp2/Data/BuildTypeHelper.hpp"
 #include "runcpp2/Data/BuildType.hpp"
 #include "runcpp2/Data/DependencyInfo.hpp"
@@ -272,7 +270,7 @@ namespace runcpp2
                                                 " with return code " + DS_STR(returnCode) + "\n";
                         errorMsg += "Was trying to run: " + cmd + "\n";
                         errorMsg += "Output: \n" + output;
-                        return DS_ERROR_MSG_EC(errorMsg, (int)PipelineResult::UNEXPECTED_FAILURE);
+                        return DS_ERROR_MSG(errorMsg);
                     }
                     
                     ssLOG_INFO(commandType << " command ran: \n" << cmd);
@@ -281,44 +279,6 @@ namespace runcpp2
             }
         }
         
-        return {};
-    }
-
-    inline DS::Result<void> ValidateInputs( const std::string& scriptPath, 
-                                            const std::vector<Data::Profile>& profiles,
-                                            ghc::filesystem::path& outAbsoluteScriptPath,
-                                            ghc::filesystem::path& outScriptDirectory,
-                                            std::string& outScriptName)
-    {
-        ssLOG_FUNC_INFO();
-        
-        if(profiles.empty())
-            return DS_ERROR_MSG_EC("No compiler profiles found", (int)PipelineResult::EMPTY_PROFILES);
-
-        //Check if input file exists
-        std::error_code _;
-        if(!ghc::filesystem::exists(scriptPath, _))
-        {
-            return DS_ERROR_MSG_EC( "File does not exist: " + scriptPath, 
-                                    (int)PipelineResult::INVALID_SCRIPT_PATH);
-        }
-        
-        if(ghc::filesystem::is_directory(scriptPath, _))
-        {
-            return DS_ERROR_MSG_EC( "The input file must not be a directory: " + scriptPath,
-                                    (int)PipelineResult::INVALID_SCRIPT_PATH);
-        }
-
-        outAbsoluteScriptPath = ghc::filesystem::absolute(ghc::filesystem::canonical(scriptPath, _));
-        outScriptDirectory = outAbsoluteScriptPath.parent_path();
-        outScriptName = outAbsoluteScriptPath.stem().string();
-
-        ssLOG_DEBUG("scriptPath: " << scriptPath);
-        ssLOG_DEBUG("absoluteScriptPath: " << outAbsoluteScriptPath.string());
-        ssLOG_DEBUG("scriptDirectory: " << outScriptDirectory.string());
-        ssLOG_DEBUG("scriptName: " << outScriptName);
-        ssLOG_DEBUG("is_directory: " << ghc::filesystem::is_directory(outScriptDirectory));
-
         return {};
     }
 
@@ -370,16 +330,13 @@ namespace runcpp2
             {
                 std::string errorMsg = e.message();
                 errorMsg += "\nFailed to get last write time for: " + scriptInfoFile.string();
-                return DS_ERROR_MSG_EC(errorMsg, (int)PipelineResult::INVALID_SCRIPT_INFO);
+                return DS_ERROR_MSG(errorMsg);
             }
 
             inputFile.open(scriptInfoFile);
             
             if(!inputFile)
-            {
-                return DS_ERROR_MSG_EC( "Failed to open file: " + scriptInfoFile.string(), 
-                                        (int)PipelineResult::INVALID_SCRIPT_PATH);
-            }
+                return DS_ERROR_MSG( "Failed to open file: " + scriptInfoFile.string());
 
             std::stringstream buffer;
             buffer << inputFile.rdbuf();
@@ -392,7 +349,6 @@ namespace runcpp2
                     .DS_TRY_ACT(DS_TMP_ERROR.Message += 
                                     "\nAn error has been encountered when parsing info: " + 
                                     scriptInfoFile.string();
-                                DS_TMP_ERROR.ErrorCode = (int)PipelineResult::INVALID_SCRIPT_INFO;
                                 DS_APPEND_TRACE(DS_TMP_ERROR);
                                 return DS::Error(DS_TMP_ERROR));
             }
@@ -402,7 +358,6 @@ namespace runcpp2
         ParseScriptInfo(parsableInfo, inputParameters, outScriptInfo)
             .DS_TRY_ACT(DS_APPEND_TRACE(DS_TMP_ERROR);
                         DS_TMP_ERROR.Message += "\nContent trying to parse: \n" + parsableInfo;
-                        DS_TMP_ERROR.ErrorCode = (int)PipelineResult::INVALID_SCRIPT_INFO;
                         return DS::Error(DS_TMP_ERROR));
         
         if(!parsableInfo.empty())
@@ -448,9 +403,8 @@ namespace runcpp2
                     
                     if(!runcpp2::RunCommand(cmd, true, scriptDirectory, output, returnCode))
                     {
-                        return DS_ERROR_MSG_EC( "Cleanup command failed: " + cmd + " with return code " + 
-                                                DS_STR(returnCode) + "\nOutput: \n"  + output, 
-                                                (int)PipelineResult::UNEXPECTED_FAILURE);
+                        return DS_ERROR_MSG("Cleanup command failed: " + cmd + " with return code " + 
+                                            DS_STR(returnCode) + "\nOutput: \n"  + output);
                     }
                     
                     ssLOG_INFO("Cleanup command ran: \n" << cmd);
@@ -462,28 +416,19 @@ namespace runcpp2
         //Remove build directory
         std::error_code e;
         if(!ghc::filesystem::remove_all(buildDir, e))
-        {
-            return DS_ERROR_MSG_EC( "Failed to remove build directory: " + buildDir.string(),
-                                    (int)PipelineResult::UNEXPECTED_FAILURE);
-        }
+            return DS_ERROR_MSG("Failed to remove build directory: " + buildDir.string());
         
         if(!buildsManager.RemoveBuildMapping(absoluteScriptPath))
-        {
-            return DS_ERROR_MSG_EC( "Failed to remove build mapping", 
-                                    (int)PipelineResult::UNEXPECTED_FAILURE);
-        }
+            return DS_ERROR_MSG("Failed to remove build mapping");
         
         if(!buildsManager.SaveBuildsMappings())
-        {
-            return DS_ERROR_MSG_EC( "Failed to save build mappings", 
-                                    (int)PipelineResult::UNEXPECTED_FAILURE);
-        }
+            return DS_ERROR_MSG("Failed to save build mappings");
         
         return {};
     }
 
     inline DS::Result<void> 
-    InitializeBuildDirectory(   const ghc::filesystem::path& configDir,
+    InitializeBuildDirectory(   const ghc::filesystem::path& defaultBuildDir,
                                 const ghc::filesystem::path& absoluteScriptPath,
                                 bool useLocalBuildDir,
                                 BuildsManager& outBuildsManager,
@@ -495,16 +440,13 @@ namespace runcpp2
         //Create build directory
         ghc::filesystem::path buildDirPath = useLocalBuildDir ?
                                             ghc::filesystem::current_path() / ".runcpp2" :
-                                            configDir;
+                                            defaultBuildDir;
         
         //Create a class that manages build folder
         outBuildsManager = BuildsManager(buildDirPath);
         
         if(!outBuildsManager.Initialize())
-        {
-            return DS_ERROR_MSG_EC( "Failed to initialize builds manager", 
-                                    (int)PipelineResult::INVALID_BUILD_DIR);
-        }
+            return DS_ERROR_MSG("Failed to initialize builds manager");
         
         bool createdBuildDir = false;
         bool writeMapping = false;
@@ -521,17 +463,13 @@ namespace runcpp2
 
         if(!createdBuildDir)
         {
-            return DS_ERROR_MSG_EC( "Failed to create local build directory for: " + 
-                                    DS_STR(absoluteScriptPath), 
-                                    (int)PipelineResult::INVALID_BUILD_DIR);
+            return DS_ERROR_MSG("Failed to create local build directory for: " + 
+                                DS_STR(absoluteScriptPath));
         }
 
         outIncludeManager = IncludeManager();
         if(!outIncludeManager.Initialize(outBuildDir))
-        {
-            return DS_ERROR_MSG_EC( "Failed to initialize include manager", 
-                                    (int)PipelineResult::INVALID_BUILD_DIR);
-        }
+            return DS_ERROR_MSG("Failed to initialize include manager");
 
         return {};
     }
@@ -543,11 +481,7 @@ namespace runcpp2
         ssLOG_FUNC_INFO();
 
         //Resolve all the script info imports first before evaluating it
-        ResolveImports(scriptInfo, scriptDirectory, buildDir)
-            .DS_TRY_ACT(DS_TMP_ERROR.ErrorCode = (int)PipelineResult::UNEXPECTED_FAILURE;
-                        DS_APPEND_TRACE(DS_TMP_ERROR);
-                        return DS::Error(DS_TMP_ERROR));
-        
+        ResolveImports(scriptInfo, scriptDirectory, buildDir).DS_TRY();
         return {};
     }
     
@@ -557,7 +491,6 @@ namespace runcpp2
                             const Data::Profile& profile,
                             const ghc::filesystem::path& scriptDirectory,
                             const Data::ScriptInfo* lastScriptInfo,
-                            const int maxThreads,
                             const std::unordered_map<std::string, std::string> parameters,
                             bool& outAllRecompileNeeded,
                             bool& outRelinkNeeded,
@@ -670,10 +603,7 @@ namespace runcpp2
         {
             std::ofstream writeOutputFile(lastScriptInfoFilePath);
             if(!writeOutputFile)
-            {
-                return DS_ERROR_MSG_EC( "Failed to open file: " + DS_STR(lastScriptInfoFilePath), 
-                                        (int)PipelineResult::INVALID_BUILD_DIR);
-            }
+                return DS_ERROR_MSG( "Failed to open file: " + DS_STR(lastScriptInfoFilePath));
 
             std::string scriptInfoString = scriptInfo.ToString("").DS_TRY();
             writeOutputFile << scriptInfoString;
@@ -687,14 +617,47 @@ namespace runcpp2
         return {};
     }
     
+    inline DS::Result<void> 
+    ResetDependencies(  Data::ScriptInfo& scriptInfo,
+                        const Data::Profile& profile,
+                        const ghc::filesystem::path& scriptDirectory,
+                        const ghc::filesystem::path& buildDir,
+                        const std::string& targetDepToReset)
+    {
+        ssLOG_FUNC_INFO();
+        
+        std::vector<Data::DependencyInfo*> availableDependencies;
+        for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+        {
+            if(IsDependencyAvailableForThisPlatform(scriptInfo.Dependencies.at(i)))
+                availableDependencies.push_back(&scriptInfo.Dependencies.at(i));
+        }
+        
+        std::vector<std::string> dependenciesLocalCopiesPaths;
+        std::vector<std::string> dependenciesSourcePaths;
+        GetDependenciesPaths(   availableDependencies,
+                                dependenciesLocalCopiesPaths,
+                                dependenciesSourcePaths,
+                                scriptDirectory,
+                                buildDir).DS_TRY();
+        
+        CleanupDependencies(profile,
+                            scriptInfo,
+                            availableDependencies,
+                            dependenciesLocalCopiesPaths,
+                            targetDepToReset).DS_TRY();
+        
+        return {};
+    }
+    
     
     inline DS::Result<void>
     ProcessDependencies(Data::ScriptInfo& scriptInfo,
                         const Data::Profile& profile,
                         const ghc::filesystem::path& scriptDirectory,
                         const ghc::filesystem::path& buildDir,
-                        const std::unordered_map<CmdOptions, std::string>& currentOptions,
                         const std::vector<std::string>& changedDependencies,
+                        bool buildSourceOnly,
                         const int maxThreads,
                         std::vector<Data::DependencyInfo*>& outAvailableDependencies,
                         std::vector<std::string>& outGatheredBinariesPaths)
@@ -713,43 +676,27 @@ namespace runcpp2
                                 dependenciesLocalCopiesPaths,
                                 dependenciesSourcePaths,
                                 scriptDirectory,
-                                buildDir)
-            .DS_TRY_ACT(DS_TMP_ERROR.ErrorCode = (int)PipelineResult::DEPENDENCIES_FAILED;
-                        DS_APPEND_TRACE(DS_TMP_ERROR);
-                        return DS::Error(DS_TMP_ERROR));
+                                buildDir).DS_TRY();
         
-        if(currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 || !changedDependencies.empty())
+        if(!changedDependencies.empty())
         {
-            if(currentOptions.count(CmdOptions::BUILD_SOURCE_ONLY) > 0)
+            if(buildSourceOnly)
             {
-                std::string errorMsg = 
-                    "Dependencies settings have changed or being reset explicitly.\n"
-                    "Cannot just build source files only without building dependencies";
-                return DS_ERROR_MSG_EC(errorMsg, (int)PipelineResult::INVALID_OPTION);
+                return DS_ERROR_MSG("Dependencies settings have changed or being reset explicitly.\n"
+                                    "Cannot just build source files only without building "
+                                    "dependencies");
             }
             
-            std::string depsToReset = "all";
-            if(!changedDependencies.empty())
-            {
-                depsToReset = changedDependencies[0];
-                for(int i = 1; i < changedDependencies.size(); ++i)
-                    depsToReset += "," + changedDependencies[i];
-            }
+            std::string depsToReset = changedDependencies[0];
+            for(int i = 1; i < changedDependencies.size(); ++i)
+                depsToReset += "," + changedDependencies[i];
             
             CleanupDependencies(profile,
                                 scriptInfo,
                                 outAvailableDependencies,
                                 dependenciesLocalCopiesPaths,
-                                currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0 ?
-                                currentOptions.at(CmdOptions::RESET_DEPENDENCIES) : 
-                                depsToReset)
-                .DS_TRY_ACT(DS_TMP_ERROR.ErrorCode = (int)PipelineResult::DEPENDENCIES_FAILED;
-                            DS_APPEND_TRACE(DS_TMP_ERROR);
-                            return DS::Error(DS_TMP_ERROR));
+                                depsToReset).DS_TRY();
         }
-        
-        if(currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0)
-            return {};
         
         SetupDependenciesIfNeeded(  profile, 
                                     buildDir,
@@ -757,20 +704,14 @@ namespace runcpp2
                                     outAvailableDependencies,
                                     dependenciesLocalCopiesPaths,
                                     dependenciesSourcePaths,
-                                    maxThreads)
-            .DS_TRY_ACT(DS_TMP_ERROR.ErrorCode = (int)PipelineResult::DEPENDENCIES_FAILED;
-                        DS_APPEND_TRACE(DS_TMP_ERROR);
-                        return DS::Error(DS_TMP_ERROR));
+                                    maxThreads).DS_TRY();
 
         //Sync local dependencies before building
         SyncLocalDependencies(  outAvailableDependencies,
                                 dependenciesSourcePaths,
-                                dependenciesLocalCopiesPaths)
-            .DS_TRY_ACT(DS_TMP_ERROR.ErrorCode = (int)PipelineResult::DEPENDENCIES_FAILED;
-                        DS_APPEND_TRACE(DS_TMP_ERROR);
-                        return DS::Error(DS_TMP_ERROR));
+                                dependenciesLocalCopiesPaths).DS_TRY();
 
-        if(currentOptions.count(CmdOptions::BUILD_SOURCE_ONLY) == 0)
+        if(buildSourceOnly)
         {
             BuildDependencies(  profile,
                                 scriptInfo,
@@ -781,8 +722,7 @@ namespace runcpp2
                 (
                     DS_TMP_ERROR.Message += 
                         "\nFailed to build script dependencies. Maybe try resetting dependencies "
-                        "with \"-rd all\" and run again?";
-                    DS_TMP_ERROR.ErrorCode = (int)PipelineResult::DEPENDENCIES_FAILED;
+                        "and run again?";
                     DS_APPEND_TRACE(DS_TMP_ERROR);
                     return DS::Error(DS_TMP_ERROR);
                 );
@@ -791,10 +731,7 @@ namespace runcpp2
         GatherDependenciesBinaries( outAvailableDependencies,
                                     dependenciesLocalCopiesPaths,
                                     profile,
-                                    outGatheredBinariesPaths)
-            .DS_TRY_ACT(DS_TMP_ERROR.ErrorCode = (int)PipelineResult::DEPENDENCIES_FAILED;
-                        DS_APPEND_TRACE(DS_TMP_ERROR);
-                        return DS::Error(DS_TMP_ERROR));
+                                    outGatheredBinariesPaths).DS_TRY();
 
         return {};
     }
@@ -891,7 +828,6 @@ namespace runcpp2
                         const ghc::filesystem::path& absoluteScriptPath,
                         const Data::ScriptInfo& scriptInfo,
                         const std::vector<std::string>& runArgs,
-                        const std::unordered_map<CmdOptions, std::string>& currentOptions,
                         int& returnStatus)
     {
         ssLOG_FUNC_INFO();
@@ -906,10 +842,7 @@ namespace runcpp2
         
         std::error_code e;
         if(target.empty() || !ghc::filesystem::exists(target, e))
-        {
-            return DS_ERROR_MSG_EC( "Failed to find the compiled file to run", 
-                                    (int)PipelineResult::COMPILE_LINK_FAILED);
-        }
+            return DS_ERROR_MSG("Failed to find the compiled file to run");
         
         //Prepare run arguments
         std::vector<std::string> finalRunArgs;
@@ -925,13 +858,13 @@ namespace runcpp2
         {
             //Running the script with modified args
             if(!RunCompiledScript(target, absoluteScriptPath, finalRunArgs, returnStatus))
-                return DS_ERROR_MSG_EC("Failed to run script", (int)PipelineResult::RUN_SCRIPT_FAILED);
+                return DS_ERROR_MSG("Failed to run script");
         }
         else
         {
             //Load the shared library and run it with modified args
             if(!RunCompiledSharedLib(absoluteScriptPath, target, finalRunArgs, returnStatus))
-                return DS_ERROR_MSG_EC("Failed to run script", (int)PipelineResult::RUN_SCRIPT_FAILED);
+                return DS_ERROR_MSG("Failed to run script");
         }
         
         return {};
@@ -941,8 +874,7 @@ namespace runcpp2
     GetBuiltTargetPaths(const ghc::filesystem::path& buildDir,
                         const std::string& scriptName,
                         const Data::Profile& profile,
-                        const std::unordered_map<   CmdOptions, 
-                                                    std::string>& currentOptions,
+                        bool buildExecutable,
                         const Data::ScriptInfo& scriptInfo,
                         std::vector<ghc::filesystem::path>& outTargets,
                         ghc::filesystem::path* outRunnableTarget)
@@ -953,7 +885,7 @@ namespace runcpp2
         outTargets.clear();
 
         //Validate executable option against build type
-        if( currentOptions.count(CmdOptions::EXECUTABLE) > 0 && 
+        if( buildExecutable &&
             scriptInfo.CurrentBuildType != Data::BuildType::INTERNAL_EXECUTABLE_SHARED &&
             scriptInfo.CurrentBuildType != Data::BuildType::INTERNAL_EXECUTABLE_EXECUTABLE)
         {
@@ -962,7 +894,7 @@ namespace runcpp2
                 Data::BuildTypeToString(scriptInfo.CurrentBuildType) +
                 " output. Please remove --executable flag or change build type to Executable";
             
-            return DS_ERROR_MSG_EC(errMsg, (int)PipelineResult::INVALID_OPTION);
+            return DS_ERROR_MSG(errMsg);
         }
 
         //Get all target paths
@@ -974,9 +906,8 @@ namespace runcpp2
                                                             outTargets,
                                                             isRunnable))
         {
-            return DS_ERROR_MSG_EC( "Extension or prefix not found in compiler profile for build type: " +
-                                    runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType), 
-                                    (int)PipelineResult::INVALID_SCRIPT_INFO);
+            return DS_ERROR_MSG("Extension or prefix not found in compiler profile for build type: " +
+                                runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));
         }
         
         //Verify all targets exist
@@ -986,7 +917,6 @@ namespace runcpp2
             {
                 ssLOG_WARNING("Failed to find the compiled file: " << target.string());
                 continue;
-                //return PipelineResult::COMPILE_LINK_FAILED;
             }
         }
 
