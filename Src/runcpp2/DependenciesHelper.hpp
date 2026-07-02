@@ -140,7 +140,7 @@ namespace runcpp2
         DS_ASSERT_EQ(availableDependencies.size(), dependenciesLocalCopiesPaths.size());
         
         //Split dependency names if not "all"
-        std::unordered_set<std::string> dependencyNames;
+        std::unordered_map<std::string, bool> dependencyNames;
         if(dependenciesToReset != "all")
         {
             std::string currentName;
@@ -154,11 +154,12 @@ namespace runcpp2
                     if(!currentName.empty())
                     {
                         runcpp2::Trim(currentName);
+                        //TODO: v Maybe this is not a good idea?
                         //Convert to lowercase for case-insensitive comparison
                         for(int j = 0; j < currentName.size(); ++j)
                             currentName[j] = std::tolower(currentName[j]);
                         
-                        dependencyNames.insert(currentName);
+                        dependencyNames[currentName] = false;
                         currentName.clear();
                     }
                 }
@@ -182,6 +183,8 @@ namespace runcpp2
                     ssLOG_DEBUG(availableDependencies.at(i)->Name << " not in list to remove");
                     continue;
                 }
+                
+                dependencyNames[depName] = true;
             }
 
             std::error_code e;
@@ -209,6 +212,14 @@ namespace runcpp2
             }
             
             ssLOG_DEBUG(availableDependencies.at(i)->Name << " removed");
+        }
+        
+        for(std::unordered_map<std::string, bool>::iterator it = dependencyNames.begin(); 
+            it != dependencyNames.end();
+            ++it)
+        {
+            if(!it->second)
+                ssLOG_WARNING("Dependency " << it->first << " not found for resetting");
         }
         
         return {};
