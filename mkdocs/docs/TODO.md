@@ -8,6 +8,8 @@
 - Rename "OtherFilesToBeCompiled" to "SourceFiles"
 - Migrate to libyaml
 - Migrate to DSResult and remove ssTest
+- Parameters for build config/script
+- Ability to compile runcpp2 as single cpp
 
 ### v0.3.1
 - Check last run is shared lib or executable. Reset cache when necessary if different type
@@ -32,11 +34,11 @@
 
 ### v0.4.0
 - Allow runcpp2 to be library for scriptable pipeline
-- Parameters for build config/script
+- Parameters for dependencies
 - Parameters for profiles
 - Add more default profiles
-- Ability to compile runcpp2 as single cpp, ditch cmake
-- Move to variant-lite, mpark-variant is unreadable
+- Ditch cmake
+- Move to variant-lite instead of mpark-variant
 
 ## High Priority
 

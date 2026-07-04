@@ -50,12 +50,12 @@ runcpp2 ./script.cpp <any arguments>
     ```
 
 !!! note
-    On Unix, if you have added runcpp2 to your PATH and add this line `//bin/true;runcpp2 "$0" "$@"; exit $?;` 
+    On Unix, if you have added runcpp2 to your PATH and add this line `//bin/true;runcpp2 run "$0" "$@"; exit $?;` 
     to the top of your script, you can run the script directly by `./script.cpp <arguments>`
     
     ??? example
         ```cpp title="script.cpp"
-        //bin/true;runcpp2 "$0" "$@"; exit $?;
+        //bin/true;runcpp2 run "$0" "$@"; exit $?;
         #include <iostream>
         int main(int, char**) { std::cout << "Hello World" << std::endl; }
         ```
@@ -73,7 +73,7 @@ binary will be the name of the YAML file.
 If you want to edit the script but want to have feedback for any error, you can use "watch" mode.
 
 ```shell title="shell"
-runcpp2 --watch ./script.cpp
+runcpp2 watch ./script.cpp
 ```
 
 ---
@@ -122,9 +122,8 @@ can be spcified inlined inside a source file or as a separate yaml file in the f
 
 For a complete list of build settings, see [Build Settings](../build_settings.md) or generate the template with
 ```shell
-runcpp2 --create-script-template ./script.cpp   # Embeds the build settings template as comment
-runcpp2 --create-script-template ./script.yaml  # Creates the build settings template as dedicated yaml file
-runcpp2 -t ./script.cpp                         # Short form
+runcpp2 template ./script.cpp   # Embeds the build settings template as comment
+runcpp2 template ./script.yaml  # Creates the build settings template as dedicated yaml file
 ```
 
 ---
