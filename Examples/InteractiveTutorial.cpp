@@ -40,6 +40,7 @@ Dependencies:
 std::string runcpp2ExecutablePath = "";
 std::string downloadBranch = "heads/master";
 bool integrationTest = false;
+std::string extraOptions = "";
 
 #define DELAYED_OUTPUT(str) \
     do \
@@ -124,7 +125,7 @@ bool InitializeRuncpp2ExecutablePath()
     while(true)
     {
         System2CommandInfo commandInfo = {0};
-        SYSTEM2_RESULT result = System2CppRun("runcpp2 --version", commandInfo);
+        SYSTEM2_RESULT result = System2CppRun("runcpp2 version", commandInfo);
         if(result != SYSTEM2_RESULT_SUCCESS)
             return false;
         
@@ -309,17 +310,16 @@ int main(int, char**)
     
     DELAYED_OUTPUT("A simple hello world file is created (\"tutorial/main.cpp\").");
     DELAYED_OUTPUT("Now, let's run it.");
-    if(!RunCommandWithPrompt(runcpp2ExecutablePath + " tutorial/main.cpp"))
+    if(!RunCommandWithPrompt(runcpp2ExecutablePath + " run" + extraOptions + " tutorial/main.cpp"))
         return false;
 
     DELAYED_OUTPUT("Seems simple enough.\n");
     
     DELAYED_OUTPUT("Let's build the script instead of running it.");
-    DELAYED_OUTPUT("Unless specified, input file is treated as `Executable`\n");
     
     DELAYED_OUTPUT( "We can get the binary files of the script by "
-                    "using the `--build` (or `-b`) option.");
-    DELAYED_OUTPUT( "And we can specify the output directory for the binary files with `--output` "
+                    "using the `build` option.");
+    DELAYED_OUTPUT( "And we can specify the output directory for the binary files with `--output-dir` "
                     "(or `-o`)");
     DELAYED_OUTPUT( "We also need to pass the `--executable` (or `-e`) option to "
                     "explicitly get an executable file. \n"
@@ -328,8 +328,8 @@ int main(int, char**)
     
     DELAYED_OUTPUT("Let's try it");
     if(!RunCommandWithPrompt(   runcpp2ExecutablePath + 
-                                " --build --output ./tutorial --executable "
-                                "tutorial/main.cpp"))
+                                " build --output-dir ./tutorial --executable" + extraOptions + 
+                                " tutorial/main.cpp"))
     {
         return false;
     }
@@ -355,37 +355,43 @@ int main(int, char**)
     
     DELAYED_OUTPUT( "Sometimes you want to remove the cache of the script before running it again.\n"
                     "You can do that by using the `--rebuild` (or `-rb`) option.");
-    if(!RunCommandWithPrompt(runcpp2ExecutablePath + " --rebuild ./tutorial/main.cpp"))
-        return false;
-
-    DELAYED_OUTPUT("You can also see the build/run process by changing the log level to `info`.");
-    DELAYED_OUTPUT("Let's rebuild the cache again and see the build process.");
-    if(!RunCommandWithPrompt(   runcpp2ExecutablePath + 
-                                " --rebuild --log-level info ./tutorial/main.cpp"))
+    if(!RunCommandWithPrompt(   runcpp2ExecutablePath + " build --rebuild" + extraOptions + 
+                                " ./tutorial/main.cpp"))
     {
         return false;
     }
 
-    DELAYED_OUTPUT( "runcpp2 also can give realtime error feedback by using "
-                    "the `--watch` (or `-w`) option.");
+    DELAYED_OUTPUT("You can also see the build/run process by changing the log level to `info`.");
+    DELAYED_OUTPUT("Let's rebuild the cache again and see the build process.");
+    if(!RunCommandWithPrompt(   runcpp2ExecutablePath + 
+                                " build --rebuild --log-level info" + extraOptions + 
+                                " ./tutorial/main.cpp"))
+    {
+        return false;
+    }
+
+    DELAYED_OUTPUT( "runcpp2 also can give realtime error feedback by using the `watch` option.");
     DELAYED_OUTPUT("I would love to show it here but it will block this tutorial.");
     DELAYED_OUTPUT("Feel free to try it yourself. "
-                   "Make a change, or an error, then run `runcpp2 --watch tutorial/main.cpp`");
+                   "Make a change, or an error, then run `runcpp2 watch tutorial/main.cpp`");
     DELAYED_OUTPUT("Once you are done, you can revert the changes and continue the tutorial.");
     DELAYED_OUTPUT("Press enter to continue...");
     GetInput(true);
 
     DELAYED_OUTPUT( "You can find the path to your config file and all the builds "
-                    "with the `--show-config-path` (or `-sc`) option.");
-    if(!RunCommandWithPrompt(runcpp2ExecutablePath + " --show-config-path"))
+                    "with the `show-config-path` option.");
+    if(!RunCommandWithPrompt(runcpp2ExecutablePath + " show-config-path"))
         return false;
     DELAYED_OUTPUT("Feel free to make any changes to the config file.\n");
 
     DELAYED_OUTPUT( "Finally, you can specify your script to be built in the current directory "
                     "with the `--local` (or `-l`) option. \n"
                     "This will create and build in the `.runcpp2` directory");
-    if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " --local main.cpp"))
+    if(!RunCommandWithPrompt(   "cd tutorial && " + runcpp2ExecutablePath + " run --local" + 
+                                extraOptions + " main.cpp"))
+    {
         return false;
+    }
 
     #ifdef _WIN32
         if(!RunCommandWithPrompt("dir tutorial"))
@@ -485,8 +491,11 @@ Defines:
 
     DELAYED_OUTPUT("I have just added the output line");
     DELAYED_OUTPUT("Now let's run the script");
-    if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " main.cpp"))
+    if(!RunCommandWithPrompt(   "cd tutorial && " + runcpp2ExecutablePath + " run" + extraOptions + 
+                                " main.cpp"))
+    {
         return false;
+    }
 
     DELAYED_OUTPUT( "You should see the output `42`. \n"
                     "You can specify different settings for different platforms and profiles.");
@@ -560,8 +569,11 @@ Defines:
     }
 
     DELAYED_OUTPUT("Now let me run the script again, nothing should have changed.");
-    if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " main.cpp"))
+    if(!RunCommandWithPrompt(   "cd tutorial && " + runcpp2ExecutablePath + " run" + extraOptions + 
+                                " main.cpp"))
+    {
         return false;
+    }
 
     DELAYED_OUTPUT("");
     DELAYED_OUTPUT("A common build config is to specify other source files.");
@@ -664,8 +676,11 @@ IncludePaths:
     }
 
     DELAYED_OUTPUT("Let's run the script again.");
-    if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " main.cpp"))
+    if(!RunCommandWithPrompt(   "cd tutorial && " + runcpp2ExecutablePath + " run" + extraOptions + 
+                                " main.cpp"))
+    {
         return false;
+    }
     
     DELAYED_OUTPUT("You should see the output `Hello from another C++ file`.");
     DELAYED_OUTPUT("");
@@ -687,8 +702,11 @@ IncludePaths: ["./"]
     
     DELAYED_OUTPUT("I have just updated the YAML file to omit `DefaultPlatform` and `DefaultProfile`.");
     DELAYED_OUTPUT("It's much more concise now. Let's run the script again.");
-    if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " main.cpp"))
+    if(!RunCommandWithPrompt(   "cd tutorial && " + runcpp2ExecutablePath + " run" + extraOptions + 
+                                " main.cpp"))
+    {
         return false;
+    }
     
     DELAYED_OUTPUT("You should see the same output as before.");
     DELAYED_OUTPUT("");
@@ -723,7 +741,8 @@ OverrideCompileFlags:
                     "it will use the \"-E\" flag.");
     DELAYED_OUTPUT("If you are using msvc and you are on Windows, it will use the \"/P\" flag.");
     DELAYED_OUTPUT("Let's run the script now.");
-    RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " main.cpp");
+    RunCommandWithPrompt(   "cd tutorial && " + runcpp2ExecutablePath + " run" + extraOptions + 
+                            " main.cpp");
     
     DELAYED_OUTPUT("");
     DELAYED_OUTPUT( "You probably see some errors for linking, this is expected since the "
@@ -746,7 +765,7 @@ IncludePaths: ["./"]
     DELAYED_OUTPUT("You can do that by using the `--create-script-template`/ `-t` option.");
     DELAYED_OUTPUT("This will either create a new file or prepend the template to the existing file.");
     
-    if(!RunCommandWithPrompt(runcpp2ExecutablePath + " -t tutorial/template.yaml"))
+    if(!RunCommandWithPrompt(runcpp2ExecutablePath + " template tutorial/template.yaml"))
         return false;
     
     DELAYED_OUTPUT("You can see the template in tutorial/template.yaml");
@@ -809,8 +828,11 @@ bool Chapter3_ExternalDependencies()
     DELAYED_OUTPUT( "Next, you have \"LibraryType\" which tells runcpp2 what type of dependency "
                     "this is. Other options include \"Static\", \"Object\" and \"Shared\"");
     DELAYED_OUTPUT("That's pretty much it for a header only library. Let's run it shall we?");
-    if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " Logging.cpp"))
+    if(!RunCommandWithPrompt(   "cd tutorial && " + runcpp2ExecutablePath + " run" + extraOptions + 
+                                " Logging.cpp"))
+    {
         return false;
+    }
     
     DELAYED_OUTPUT("Let's try an external shared library");
     DELAYED_OUTPUT("Let me query and download an example for you.");
@@ -864,14 +886,20 @@ bool Chapter3_ExternalDependencies()
                     "the script for the first time. Let's run it now.");
     if(!integrationTest)
     {
-        if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " SDLWindow.cpp"))
+        if(!RunCommandWithPrompt(   "cd tutorial && " + runcpp2ExecutablePath + " run" + 
+                                    extraOptions + " SDLWindow.cpp"))
+        {
             return false;
+        }
     }
     else
     {
         DELAYED_OUTPUT("running SDLWindow.cpp skipped for integration testing");
-        if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " --build SDLWindow.cpp"))
+        if(!RunCommandWithPrompt(   "cd tutorial && " + runcpp2ExecutablePath + " build" + 
+                                    extraOptions + " SDLWindow.cpp"))
+        {
             return false;
+        }
     }
 
     DELAYED_OUTPUT("You can also have a dependency as a standalone YAML file which you can import.");
@@ -1021,14 +1049,20 @@ Dependencies:
     DELAYED_OUTPUT("Let's run it now.");
     if(!integrationTest)
     {
-        if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " SDLWindow.cpp"))
+        if(!RunCommandWithPrompt(   "cd tutorial && " + runcpp2ExecutablePath + " run" + 
+                                    extraOptions + " SDLWindow.cpp"))
+        {
             return false;
+        }
     }
     else
     {
         DELAYED_OUTPUT("running SDLWindow.cpp skipped for integration testing");
-        if(!RunCommandWithPrompt("cd tutorial && " + runcpp2ExecutablePath + " --build SDLWindow.cpp"))
+        if(!RunCommandWithPrompt(   "cd tutorial && " + runcpp2ExecutablePath + " build" + 
+                                    extraOptions + " SDLWindow.cpp"))
+        {
             return false;
+        }
     }
     
     DELAYED_OUTPUT("This concludes the 3rd chapter of the tutorial.");
@@ -1077,14 +1111,15 @@ int main(int argc, char* argv[])
             return 1;
         }
         
-        runcpp2ExecutablePath = exePath.string() + " -l -c " + configPath.string();
+        runcpp2ExecutablePath = exePath.string();
+        extraOptions = " -l -c " + configPath.string();
     }
     
     //Get runcpp2 version
     {
         System2CommandInfo commandInfo = {0};
         commandInfo.RedirectOutput = true;
-        SYSTEM2_RESULT result = System2CppRun(runcpp2ExecutablePath + " --version", commandInfo);
+        SYSTEM2_RESULT result = System2CppRun(runcpp2ExecutablePath + " version", commandInfo);
         #define CHECK_RESULT() \
             if(result != SYSTEM2_RESULT_SUCCESS) \
             { \

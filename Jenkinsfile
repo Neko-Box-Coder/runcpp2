@@ -358,10 +358,10 @@ pipeline
                         unstash 'linux_build'
                         bash "ls -lah"
                         bash "ls -lah ./Build/Src/Tests"
-                        bash    "cd ./Build && ./runcpp2 -l " + 
+                        bash    "cd ./Build && ./runcpp2 run -l " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "--log-level info ../Tests/Test.cpp"
-                        bash    "cd ./Build && ./runcpp2 -l -b -o . " + 
+                        bash    "cd ./Build && ./runcpp2 build -l -o . " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "--log-level info ../Tests/Test.cpp"
                         bash "ls -lah ./Build"
@@ -372,7 +372,7 @@ pipeline
                         unstash 'linux_build'
                         bash "ls -lah"
                         bash "ls -lah ./Build/Src/Tests"
-                        bash    "cd ./Build && ./runcpp2 -l -b -o . " + 
+                        bash    "cd ./Build && ./runcpp2 build -l -o . " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "--log-level info ../Tests/TestStatic.cpp"
                         bash "ls -lah ./Build"
@@ -383,7 +383,7 @@ pipeline
                         unstash 'linux_build'
                         bash "ls -lah"
                         bash "ls -lah ./Build/Src/Tests"
-                        bash    "cd ./Build && ./runcpp2 -l " + 
+                        bash    "cd ./Build && ./runcpp2 run -l " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "--log-level info ../Tests/TestLocalDependency.cpp"
                         
@@ -392,7 +392,7 @@ pipeline
                         unstash 'linux_build'
                         bash "ls -lah"
                         bash "ls -lah ./Build/Src/Tests"
-                        bash    "cd ./Build && ./runcpp2 -l " + 
+                        bash    "cd ./Build && ./runcpp2 run -l " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "--log-level info ../Tests/TestSeparateYaml.cpp"
                         
@@ -404,7 +404,7 @@ pipeline
                         script
                         {
                             def retResult = 
-                                sh( script: "cd ./Build && ./runcpp2 -l " + 
+                                sh( script: "cd ./Build && ./runcpp2 run -l " + 
                                             "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
                                             "--log-level info ../Tests/TestMissingSource.yaml", 
                                     returnStatus: true)
@@ -416,7 +416,7 @@ pipeline
                         unstash 'linux_build'
                         bash "ls -lah"
                         bash "ls -lah ./Build/Src/Tests"
-                        bash    "cd ./Build && ./runcpp2 -l " + 
+                        bash    "cd ./Build && ./runcpp2 run -l " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "--log-level info ../Tests/YamlOnlyTest.yaml"
                         
@@ -425,7 +425,7 @@ pipeline
                         unstash 'linux_build'
                         bash "ls -lah"
                         bash "ls -lah ./Build/Src/Tests"
-                        bash    "cd ./Build && ./runcpp2 -l " + 
+                        bash    "cd ./Build && ./runcpp2 run -l " + 
                                 "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "../Examples/InteractiveTutorial.cpp --test " + 
                                 "./runcpp2 ../DefaultYAMLs/DefaultUserConfig.yaml"
@@ -458,10 +458,10 @@ pipeline
                         bat 'dir'
                         unstash 'windows_build'
                         bat 'dir'
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l " + 
+                        bat "cd .\\Build\\Debug && .\\runcpp2.exe run -l " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
                             "--log-level info ..\\..\\Tests\\Test.cpp"
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l -b -o . " + 
+                        bat "cd .\\Build\\Debug && .\\runcpp2.exe build -l -o . " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
                             "--log-level info ..\\..\\Tests\\Test.cpp"
                         bat "dir .\\Build\\Debug"
@@ -471,7 +471,7 @@ pipeline
                         bat 'dir'
                         unstash 'windows_build'
                         bat 'dir'
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l -b -o . " + 
+                        bat "cd .\\Build\\Debug && .\\runcpp2.exe build -l -o . " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
                             "--log-level info ..\\..\\Tests\\TestStatic.cpp"
                         bat "dir .\\Build\\Debug"
@@ -481,7 +481,7 @@ pipeline
                         bat 'dir'
                         unstash 'windows_build'
                         bat 'dir'
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l " + 
+                        bat "cd .\\Build\\Debug && .\\runcpp2.exe run -l " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
                             "--log-level info ..\\..\\Tests\\TestLocalDependency.cpp"
                     
@@ -489,7 +489,7 @@ pipeline
                         bat 'dir'
                         unstash 'windows_build'
                         bat 'dir'
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l " + 
+                        bat "cd .\\Build\\Debug && .\\runcpp2.exe run -l " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
                             "--log-level info ..\\..\\Tests\\TestSeparateYaml.cpp"
                         
@@ -500,7 +500,7 @@ pipeline
                         script
                         {
                             def retResult = 
-                                bat(script: "cd .\\Build\\Debug && .\\runcpp2.exe -l " + 
+                                bat(script: "cd .\\Build\\Debug && .\\runcpp2.exe run -l " + 
                                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
                                             "--log-level info ..\\..\\Tests\\TestMissingSource.yaml",
                                     returnStatus: true)
@@ -511,7 +511,7 @@ pipeline
                         bat 'dir'
                         unstash 'windows_build'
                         bat 'dir'
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l " + 
+                        bat "cd .\\Build\\Debug && .\\runcpp2.exe run -l " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
                             "--log-level info ..\\..\\Tests\\YamlOnlyTest.yaml"
                     
@@ -519,7 +519,7 @@ pipeline
                         bat 'dir'
                         unstash 'windows_build'
                         bat 'dir'
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe -l " + 
+                        bat "cd .\\Build\\Debug && .\\runcpp2.exe run -l " + 
                             "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
                             "..\\..\\Examples\\InteractiveTutorial.cpp --test " + 
                             ".\\runcpp2.exe ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml"

@@ -1,6 +1,4 @@
-#include "runcpp2/Data/CmdOptions.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
-#include "runcpp2/Data/PipelineResult.hpp"
 #include "runcpp2/Data/Profile.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
 
@@ -26,43 +24,38 @@
 #include <utility>
 #include <vector>
 
-#define OUTPUT_ERROR() ssLOG_ERROR(DS_TMP_ERROR.ToString());
+struct OptionInfo
+{
+    std::string LongOption;
+    bool ValueExists;
+};
 
 //TODO: Merge long and short options into a single structure
-int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& longOptionsMap,
-                const std::unordered_map<std::string, const runcpp2::OptionInfo&>& shortOptionsMap,
-                std::unordered_map<runcpp2::CmdOptions, std::string>& outOptions,
+int ParseArgs(  const std::unordered_map<std::string, OptionInfo>& longOptionsMap,
+                const std::unordered_map<std::string, const OptionInfo&>& shortOptionsMap,
+                std::unordered_map<std::string, std::string>& outLongOptions,
                 int argc, 
                 char* argv[])
 {
     int currentArgIndex = 0;
-    runcpp2::CmdOptions optionForCapturingValue = runcpp2::CmdOptions::NONE;
+    std::string optionForCapturingValue = "";
     
     for(int i = 1; i < argc; ++i)
     {
         std::string currentArg = std::string(argv[i]);
         
         //Storing value for last option
-        if(optionForCapturingValue != runcpp2::CmdOptions::NONE)
+        if(!optionForCapturingValue.empty())
         {
             //If the current argument matches one of the options, error out
             if(longOptionsMap.count(currentArg) || shortOptionsMap.count(currentArg))
             {
-                //Find the string for the option to error out
-                for(auto it = longOptionsMap.begin(); it != longOptionsMap.end(); ++it)
-                {
-                    if(it->second.Option == optionForCapturingValue)
-                    {
-                        ssLOG_ERROR("Missing value for option: " << it->first);
-                        return -1;
-                    }
-                }
-                
+                ssLOG_ERROR("Missing value for option: " << optionForCapturingValue);
                 return -1;
             }
             
-            outOptions[optionForCapturingValue] = currentArg;
-            optionForCapturingValue = runcpp2::CmdOptions::NONE;
+            outLongOptions[optionForCapturingValue] = currentArg;
+            optionForCapturingValue.clear();
             currentArgIndex = i;
             ssLOG_DEBUG("currentArgIndex: " << currentArgIndex);
             ssLOG_DEBUG("argv: " << argv[i]);
@@ -75,13 +68,13 @@ int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& long
             currentArgIndex = i;
             ssLOG_DEBUG("currentArgIndex: " << currentArgIndex);
             ssLOG_DEBUG("argv: " << argv[i]);
-            const runcpp2::OptionInfo& currentInfo =    longOptionsMap.count(currentArg) ?
-                                                        longOptionsMap.at(currentArg) :
-                                                        shortOptionsMap.at(currentArg);
+            const OptionInfo& currentInfo = longOptionsMap.count(currentArg) ?
+                                            longOptionsMap.at(currentArg) :
+                                            shortOptionsMap.at(currentArg);
             if(currentInfo.ValueExists)
-                optionForCapturingValue = currentInfo.Option;
+                optionForCapturingValue = currentInfo.LongOption;
             else
-                outOptions[currentInfo.Option] = "";
+                outLongOptions[currentInfo.LongOption] = "";
             
             continue;
         }
@@ -98,38 +91,29 @@ int ParseArgs(  const std::unordered_map<std::string, runcpp2::OptionInfo>& long
     return currentArgIndex;
 }
 
-bool GenerateScriptTemplate(const std::string& outputFilePathStr)
+DS::Result<void> GenerateScriptTemplate(const ghc::filesystem::path& outputFilePath)
 {
-    if(outputFilePathStr.empty())
-    {
-        ssLOG_ERROR("Missing output file path for -t/--create-script-template option");
-        return false;
-    }
+    DS_ASSERT_FALSE(outputFilePath.empty());
     
     std::string defaultScriptInfo;
     runcpp2::GetDefaultScriptInfo(defaultScriptInfo);
     
     //Check if output filepath exists, if so check if it is a directory
     std::error_code e;
-    if(ghc::filesystem::exists(outputFilePathStr, e))
+    if(ghc::filesystem::exists(outputFilePath, e))
     {
-        if(ghc::filesystem::is_directory(outputFilePathStr, e))
+        if(ghc::filesystem::is_directory(outputFilePath, e))
         {
-            ssLOG_ERROR(outputFilePathStr << " is a directory. " << 
-                        "Cannot output script template to a directory");
-            return false;
+            return DS_ERROR_MSG(outputFilePath.string() + " is a directory. " +
+                                "Cannot output script template to a directory");
         }
         
         //If exists, check if it is a cpp/cc file.
-        ghc::filesystem::path outputFilePath = outputFilePathStr;
         std::ifstream readOutputFile(outputFilePath);
         std::stringstream buffer;
         
         if(!readOutputFile)
-        {
-            ssLOG_ERROR("Failed to open file: " << outputFilePathStr);
-            return false;
-        }
+            return DS_ERROR_MSG("Failed to open file: " + outputFilePath.string());
         
         if(outputFilePath.extension() == ".cpp" || outputFilePath.extension() == ".cc")
         {
@@ -158,195 +142,45 @@ bool GenerateScriptTemplate(const std::string& outputFilePathStr)
         
         std::ofstream writeOutputFile(outputFilePath);
         if(!writeOutputFile)
-        {
-            ssLOG_ERROR("Failed to open file: " << outputFilePathStr);
-            return false;
-        }
+            return DS_ERROR_MSG("Failed to open file: " + outputFilePath.string());
 
         writeOutputFile << buffer.rdbuf();
     }
     //Otherwise write it to the file
     else
     {
-        std::ofstream writeOutputFile(outputFilePathStr);
+        std::ofstream writeOutputFile(outputFilePath);
         if(!writeOutputFile)
-        {
-            ssLOG_ERROR("Failed to open file: " << outputFilePathStr);
-            return false;
-        }
+            return DS_ERROR_MSG("Failed to open file: " + outputFilePath.string());
         
         writeOutputFile << defaultScriptInfo;
     }
     
-    return true;
+    return {};
 }
 
-
-int main(int argc, char* argv[])
+std::string PadSpaceRight(const std::string& s, int padCol)
 {
-    ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_WARNING);
-    
-    //TODO: Rework this
-    //Parse command line options
-    int currentArgIndex = 0;
-    std::unordered_map<runcpp2::CmdOptions, std::string> currentOptions;
+    if(s.size() > padCol)
+        return s;
+    return s + std::string(padCol - s.size(), ' ');
+}
+
+const int CMD_COLS_BEFORE_DESC = 56;
+void PrintGeneralOptions()
+{
+    ssLOG_BASE( PadSpaceRight("       --log-level <level>", CMD_COLS_BEFORE_DESC) + 
+                "Sets the log level (Normal, Info, Debug) for runcpp2");
+}
+
+DS::Result<bool> ProcessGeneralOptions(int argc, char* argv[], int& argIndex)
+{
+    if(strcmp(argv[argIndex], "--log-level") == 0)
     {
-        static_assert((int)runcpp2::CmdOptions::COUNT == 20, "Update this");
-        std::unordered_map<std::string, runcpp2::OptionInfo> longOptionsMap =
-        {
-            {
-                "--rebuild", 
-                runcpp2::OptionInfo(runcpp2::CmdOptions::RESET_CACHE, false)
-            },
-            {
-                "--reset-user-config", 
-                runcpp2::OptionInfo(runcpp2::CmdOptions::RESET_USER_CONFIG, false)
-            },
-            {
-                "--executable", 
-                runcpp2::OptionInfo(runcpp2::CmdOptions::EXECUTABLE, false)
-            },
-            {
-                "--help", 
-                runcpp2::OptionInfo(runcpp2::CmdOptions::HELP, false)
-            },
-            {
-                "--reset-dependencies", 
-                runcpp2::OptionInfo(runcpp2::CmdOptions::RESET_DEPENDENCIES, true)
-            },
-            {
-                "--local",
-                runcpp2::OptionInfo(runcpp2::CmdOptions::LOCAL, false)
-            },
-            {
-                "--show-config-path",
-                runcpp2::OptionInfo(runcpp2::CmdOptions::SHOW_USER_CONFIG, false)
-            },
-            {
-                "--create-script-template",
-                runcpp2::OptionInfo(runcpp2::CmdOptions::SCRIPT_TEMPLATE, true)
-            },
-            {
-                "--watch",
-                runcpp2::OptionInfo(runcpp2::CmdOptions::WATCH, false)
-            },
-            {
-                "--build",
-                runcpp2::OptionInfo(runcpp2::CmdOptions::BUILD, false)
-            },
-            {
-                "--output",
-                runcpp2::OptionInfo(runcpp2::CmdOptions::OUTPUT, true)
-            },
-            {
-                "--version",
-                runcpp2::OptionInfo(runcpp2::CmdOptions::VERSION, false)
-            },
-            {
-                "--log-level",
-                runcpp2::OptionInfo(runcpp2::CmdOptions::LOG_LEVEL, true)
-            },
-            {
-                "--config",
-                runcpp2::OptionInfo(runcpp2::CmdOptions::CONFIG_FILE, true)
-            },
-            {
-                "--cleanup",
-                runcpp2::OptionInfo(runcpp2::CmdOptions::CLEANUP, false)
-            },
-            {
-                "--source-only",
-                runcpp2::OptionInfo(runcpp2::CmdOptions::BUILD_SOURCE_ONLY, false)
-            },
-            {
-                "--jobs",
-                runcpp2::OptionInfo(runcpp2::CmdOptions::THREADS, true)
-            },
-            {
-                "--tutorial",
-                runcpp2::OptionInfo(runcpp2::CmdOptions::TUTORIAL, false)
-            },
-            {
-                "--parameters",
-                runcpp2::OptionInfo(runcpp2::CmdOptions::PARAMETERS, true)
-            }
-        };
+        if(argIndex == argc - 1)
+            return DS_ERROR_MSG("Expecting value after --log-level");
         
-        static_assert((int)runcpp2::CmdOptions::COUNT == 20, "Update this");
-        std::unordered_map<std::string, const runcpp2::OptionInfo&> shortOptionsMap = 
-        {
-            {"-rb", longOptionsMap.at("--rebuild")},
-            {"-ru", longOptionsMap.at("--reset-user-config")},
-            {"-e", longOptionsMap.at("--executable")},
-            {"-h", longOptionsMap.at("--help")},
-            {"-rd", longOptionsMap.at("--reset-dependencies")},
-            {"-l", longOptionsMap.at("--local")},
-            {"-sc", longOptionsMap.at("--show-config-path")},
-            {"-t", longOptionsMap.at("--create-script-template")},
-            {"-w", longOptionsMap.at("--watch")},
-            {"-b", longOptionsMap.at("--build")},
-            {"-o", longOptionsMap.at("--output")},
-            {"-v", longOptionsMap.at("--version")},
-            {"-c", longOptionsMap.at("--config")},
-            {"-cu", longOptionsMap.at("--cleanup")},
-            {"-s", longOptionsMap.at("--source-only")},
-            {"-j", longOptionsMap.at("--jobs")},
-            {"-p", longOptionsMap.at("--parameters")},
-        };
-        
-        currentArgIndex = ParseArgs(longOptionsMap, shortOptionsMap, currentOptions, argc, argv);
-        
-        if(currentArgIndex == -1)
-        {
-            ssLOG_ERROR("Failed to parse arguments. See --help for details");
-            return -1;
-        }
-        
-        ++currentArgIndex;
-    }
-    
-    //Help message
-    if(currentOptions.count(runcpp2::CmdOptions::HELP))
-    {
-        static_assert((int)runcpp2::CmdOptions::COUNT == 20, "Update this");
-        ssLOG_BASE("Usage: runcpp2 [options] [input_file]");
-        ssLOG_BASE("Options:");
-        ssLOG_BASE("  Run/Build:");
-        ssLOG_BASE("    -b,  --[b]uild                                  Build the script but don't run it");
-        ssLOG_BASE("    -o,  --[o]utput <Output Dir>                    Output files to the directory specified, must be used with --build");
-        ssLOG_BASE("    -w,  --[w]atch                                  Watch script changes and output any compiling errors");
-        ssLOG_BASE("    -l,  --[l]ocal                                  Build in the current working directory under .runcpp2 directory");
-        ssLOG_BASE("    -e,  --[e]xecutable                             Runs as executable instead of shared library");
-        ssLOG_BASE("    -c,  --[c]onfig <file>                          Use specified config file instead of default");
-        ssLOG_BASE("    -t,  --create-script-[t]emplate <file>          Creates/prepend runcpp2 script info template");
-        ssLOG_BASE("    -s,  --[s]ource-only                            (Re)Builds source files only without building dependencies.");
-        ssLOG_BASE("                                                    The previous built binaries will be used for dependencies.");
-        ssLOG_BASE("                                                    Requires dependencies to be built already.");
-        ssLOG_BASE("    -j,  --[j]obs                                   Maximum number of threads running. Defaults to 8");
-        ssLOG_BASE("    -p,  --[p]arameters <name1:val1:name2:val2:...> Parameter values in the order of name and value separated by colons");
-        ssLOG_BASE("  Reset/Cleanup:");
-        ssLOG_BASE("    -rb, --[r]e[b]uild                              Deletes compiled source files cache and rebuild");
-        ssLOG_BASE("    -ru, --[r]eset-[u]ser-config                    Replace current user config with the default one");
-        ssLOG_BASE("    -rd, --[r]eset-[d]ependencies <names>           Reset dependencies (comma-separated names, or \"all\" for all)");
-        ssLOG_BASE("    -cu, --[c]lean[u]p                              Run cleanup commands and remove build directory");
-        ssLOG_BASE("  Settings:");
-        ssLOG_BASE("    -sc, --[s]how-[c]onfig-path                     Show where runcpp2 is reading the config from");
-        ssLOG_BASE("    -v,  --[v]ersion                                Show the version of runcpp2");
-        ssLOG_BASE("    -h,  --[h]elp                                   Show this help message");
-        ssLOG_BASE("         --log-level <level>                        Sets the log level (Normal, Info, Debug) for runcpp2");
-        ssLOG_BASE("  Others:");
-        ssLOG_BASE("         --tutorial                                 Start interactive tutorial");
-        return 0;
-    }
-    
-    //Set Log level
-    if(currentOptions.count(runcpp2::CmdOptions::LOG_LEVEL))
-    {
-        std::string level = currentOptions.at(runcpp2::CmdOptions::LOG_LEVEL);
-        runcpp2::Trim(level);
-        for(int i = 0; i < level.size(); ++i)
-            level[i] = std::tolower(level[i]);
-        
+        std::string level = argv[++argIndex];
         if(level == "info")
             ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_INFO);
         else if(level == "debug")
@@ -354,266 +188,600 @@ int main(int argc, char* argv[])
         else if(level == "normal")
             ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_WARNING);
         else
-        {
-            ssLOG_ERROR("Invalid level: " << level);
-            return -1;
-        }
+            return DS_ERROR_MSG("Invalid level: " + DS_STR(level));
+        
+        return true;
     }
     
-    ssLOG_FUNC_INFO();
-    INTERNAL_RUNCPP2_SAFE_START();
-    
-    //Show user config path
-    std::string configFilePath = runcpp2::GetConfigFilePath().DS_TRY_ACT(OUTPUT_ERROR(); return 1);
-    if(currentOptions.count(runcpp2::CmdOptions::SHOW_USER_CONFIG))
-    {
-        ssLOG_BASE(configFilePath);
-        return 0;
-    }
+    return false;
+}
 
-    //Check if the version flag is present
-    if(currentOptions.count(runcpp2::CmdOptions::VERSION))
+void PrintRunBuildWatchCommonOptions(bool includeSourceOnly)
+{
+    ssLOG_BASE(PadSpaceRight("  -h,  --[h]elp", CMD_COLS_BEFORE_DESC) + "Show this help message");
+    ssLOG_BASE( PadSpaceRight("  -l,  --[l]ocal", CMD_COLS_BEFORE_DESC) + 
+                "Build in the current working directory under .runcpp2 directory");
+    ssLOG_BASE( PadSpaceRight("  -e,  --[e]xecutable", CMD_COLS_BEFORE_DESC) + 
+                "Runs as executable instead of shared library");
+    if(includeSourceOnly)
     {
-        ssLOG_BASE("runcpp2 version " << RUNCPP2_VERSION);
+        ssLOG_BASE( PadSpaceRight("  -s,  --[s]ource-only", CMD_COLS_BEFORE_DESC) + 
+                    "Builds source files only without building dependencies.\n" +
+                    PadSpaceRight("", CMD_COLS_BEFORE_DESC) + 
+                    "The previous built binaries will be used for dependencies.\n" +
+                    PadSpaceRight("", CMD_COLS_BEFORE_DESC) + 
+                    "Requires dependencies to be built already.");
+    }
+    ssLOG_BASE( PadSpaceRight(   "  -p,  --[p]arameters <name1:val1:name2:val2:...>", 
+                                CMD_COLS_BEFORE_DESC) +
+                "Colon separated parameter name value pairs that perform text replacement on the "
+                "build config");
+    
+    ssLOG_BASE( PadSpaceRight("  -j,  --[j]obs <number>", CMD_COLS_BEFORE_DESC) +
+                "Maximum number of threads running. Defaults to 8");
+    ssLOG_BASE( PadSpaceRight("  -c,  --[c]onfig <file>", CMD_COLS_BEFORE_DESC) +
+                "Use specified config file instead of default");
+}
+
+DS::Result<bool> ExtractRunBuildWatchOptions(   int argc, 
+                                                char* argv[],
+                                                int& argIndex,
+                                                bool includeSourceOnly,
+                                                
+                                                bool& outLocal,
+                                                bool& outExecutable,
+                                                bool& outSourceOnly,
+                                                std::string& outParams,
+                                                std::string& outJobs,
+                                                std::string& outConfigPath)
+{
+    if(strcmp(argv[argIndex], "-l") == 0 || strcmp(argv[argIndex], "--local") == 0)
+        outLocal = true;
+    else if(strcmp(argv[argIndex], "-e") == 0 || strcmp(argv[argIndex], "--executable") == 0)
+        outExecutable = true;
+    else if(includeSourceOnly && 
+            (strcmp(argv[argIndex], "-s") == 0 || strcmp(argv[argIndex], "--source-only") == 0))
+    {
+        outSourceOnly = true;
+    }
+    else if(strcmp(argv[argIndex], "-p") == 0 || strcmp(argv[argIndex], "--parameters") == 0)
+    {
+        if(argIndex == argc - 1)
+            return DS_ERROR_MSG("Expecting value after -p or --parameters");
+        outParams = argv[++argIndex];
+    }
+    else if(strcmp(argv[argIndex], "-j") == 0 || strcmp(argv[argIndex], "--jobs") == 0)
+    {
+        if(argIndex == argc - 1)
+            return DS_ERROR_MSG("Expecting value after -j or --jobs");
+        outJobs = argv[++argIndex];
+    }
+    else if(strcmp(argv[argIndex], "-c") == 0 || strcmp(argv[argIndex], "--config") == 0)
+    {
+        if(argIndex == argc - 1)
+            return DS_ERROR_MSG("Expecting value after -c or --config");
+        outConfigPath = argv[++argIndex];
+    }
+    else
+        return false;
+    
+    return true;
+}
+
+DS::Result<int> HandleRun(int argc, char* argv[])
+{
+    //runcpp2 run <...>
+    if(argc <= 2 || strcmp(argv[2], "--help") == 0 || strcmp(argv[2], "-h") == 0)
+    {
+        ssLOG_BASE("Usage: runcpp2 run [options] <input file> [run args]");
+        ssLOG_BASE("Options:");
+        
+        PrintRunBuildWatchCommonOptions(true);
+        PrintGeneralOptions();
+        
         return 0;
     }
     
-    //Download tutorial
-    if(currentOptions.count(runcpp2::CmdOptions::TUTORIAL))
+    bool local = false;
+    bool executable = false;
+    bool sourceOnly = false;
+    std::string params = "";
+    int argIndex;
+    std::string jobs = "";
+    std::string configPath = "";
+    for(argIndex = 2; argIndex < argc; ++argIndex)
     {
-        if(!runcpp2::DownloadTutorial(argv[0]))
-            return -1;
-        return 0;
-    }
-    
-    //Resetting user config
-    if(currentOptions.count(runcpp2::CmdOptions::RESET_USER_CONFIG))
-    {
-        ssLOG_INFO("Resetting user config");
-        runcpp2::WriteDefaultConfigs(configFilePath, true, true).DS_TRY_ACT(OUTPUT_ERROR(); return -1);
-        ssLOG_BASE("User config reset successful");
-        return 0;
-    }
-    
-    //TODO: Rename this to build template
-    //Generate script info template
-    if(currentOptions.count(runcpp2::CmdOptions::SCRIPT_TEMPLATE))
-    {
-        if(!GenerateScriptTemplate(currentOptions.at(runcpp2::CmdOptions::SCRIPT_TEMPLATE)))
-            return -1;
-        else
+        bool parsed = ExtractRunBuildWatchOptions(  argc, 
+                                                    argv, 
+                                                    argIndex, 
+                                                    true,
+                                                    local, 
+                                                    executable, 
+                                                    sourceOnly,
+                                                    params,
+                                                    jobs,
+                                                    configPath).DS_TRY();
+        if(!parsed)
         {
-            ssLOG_BASE("Script template generated");
-            return 0;
+            parsed = ProcessGeneralOptions(argc, argv, argIndex).DS_TRY();
+            if(!parsed)
+                break;
         }
+    }
+    
+    if(argIndex >= argc)
+        return DS_ERROR_MSG("Input file expected");
+    ghc::filesystem::path script = argv[argIndex++];
+    
+    std::vector<std::string> scriptArgs;
+    for(; argIndex < argc; ++argIndex)
+    {
+        ssLOG_DEBUG("argv[" << argIndex << "]: " << argv[argIndex]);
+        scriptArgs.emplace_back(argv[argIndex]);
     }
     
     std::vector<runcpp2::Data::Profile> profiles;
     std::string preferredProfile;
-    
-    std::string configPath;
-    if(currentOptions.count(runcpp2::CmdOptions::CONFIG_FILE))
-        configPath = currentOptions.at(runcpp2::CmdOptions::CONFIG_FILE);
-
-    runcpp2::ReadUserConfig(profiles, 
-                            preferredProfile, 
-                            configPath).DS_TRY_ACT(OUTPUT_ERROR(); return -1);
+    runcpp2::ReadUserConfig(profiles, preferredProfile, configPath).DS_TRY();
     
     ssLOG_DEBUG("\nprofiles:");
     for(int i = 0; i < profiles.size(); ++i)
         ssLOG_DEBUG("\n" << profiles.at(i).ToString("    "));
     
-    std::vector<std::string> scriptArgs;
-    if(currentArgIndex >= argc)
-    {
-        ssLOG_ERROR("An input file is required. See --help for details");
-        return 1;
-    }
-    
-    std::string script = argv[currentArgIndex++];
-    
-    if(currentOptions.count(runcpp2::CmdOptions::WATCH) && currentArgIndex < argc)
-        ssLOG_WARNING("-w/--watch doesn't run the script and doesn't except any run arguments");
-    else
-    {
-        for(; currentArgIndex < argc; ++currentArgIndex)
-        {
-            ssLOG_DEBUG("argv[" << currentArgIndex << "]: " << argv[currentArgIndex]);
-            scriptArgs.push_back(std::string(argv[currentArgIndex]));
-        }
-    }
-    
-    if( currentOptions.count(runcpp2::CmdOptions::BUILD) > 0 &&
-        currentOptions.count(runcpp2::CmdOptions::WATCH) > 0)
-    {
-        ssLOG_ERROR("--build option is not compatible with --watch option");
-        return -1;
-    }
-    
-    if( currentOptions.count(runcpp2::CmdOptions::OUTPUT) > 0 &&
-        currentOptions.count(runcpp2::CmdOptions::BUILD) == 0)
-    {
-        ssLOG_ERROR("--build option must be supplied when specifying output directory");
-        return -1;
-    }
-    
     runcpp2::Data::ScriptInfo parsedScriptInfo;
-    
-    if(currentOptions.count(runcpp2::CmdOptions::WATCH))
-    {
-        std::error_code e;
-        if(!ghc::filesystem::exists(script, e))
-        {
-            ssLOG_ERROR("Script path " << script << " doesn't exist");
-            return -1;
-        }
-        
-        runcpp2::Data::ScriptInfo* lastParsedScriptInfo = nullptr;
-        ghc::filesystem::file_time_type lastFinalSourceWriteTime;
-        ghc::filesystem::file_time_type lastFinalIncludeWriteTime;
-        bool needsRunning = true;  //First run always needs running
-        
-        while(true)
-        {
-            //Check if sources need update
-            bool needsUpdate = false;
-            if(!needsRunning)  //Skip check on first run
-            {
-                if(runcpp2::CheckSourcesNeedUpdate( script,
-                                                    profiles,
-                                                    preferredProfile,
-                                                    lastParsedScriptInfo ?  *lastParsedScriptInfo : 
-                                                                            parsedScriptInfo,
-                                                    currentOptions,
-                                                    lastFinalSourceWriteTime,
-                                                    lastFinalIncludeWriteTime,
-                                                    needsUpdate) != runcpp2::PipelineResult::SUCCESS)
-                {
-                    ssLOG_ERROR("Failed to check if sources need update");
-                    return -1;
-                }
-                
-                if(needsUpdate)
-                {
-                    ssLOG_INFO("Source files have changed");
-                    needsRunning = true;
-                }
-            }
-
-            if(needsRunning)
-            {
-                //Clear the screen
-                if(ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL() <= ssLOG_LEVEL_WARNING)
-                {
-                    #if defined(_WIN32)
-                        system("cls");
-                    #else
-                        //https://stackoverflow.com/a/53925508
-                        std::cout << "\033c";
-                    #endif
-                }
-                
-                ssLOG_LINE("Changes detected, running...");
-                
-                int result = 0;
-                runcpp2::PipelineResult pipelineResult = 
-                    runcpp2::StartPipeline( script, 
-                                            profiles, 
-                                            preferredProfile, 
-                                            currentOptions, 
-                                            scriptArgs,
-                                            lastParsedScriptInfo,
-                                            "",
-                                            parsedScriptInfo,
-                                            lastFinalSourceWriteTime,
-                                            lastFinalIncludeWriteTime,
-                                            result);
-            
-                static_assert(static_cast<int>(runcpp2::PipelineResult::COUNT) == 13, "Update this");
-                switch(pipelineResult)
-                {
-                    case runcpp2::PipelineResult::INVALID_SCRIPT_PATH:
-                    case runcpp2::PipelineResult::INVALID_CONFIG_PATH:
-                    case runcpp2::PipelineResult::EMPTY_PROFILES:
-                        ssLOG_ERROR("Watch failed");
-                        return -1;
-                    
-                    case runcpp2::PipelineResult::UNEXPECTED_FAILURE:
-                    case runcpp2::PipelineResult::INVALID_BUILD_DIR:
-                    case runcpp2::PipelineResult::INVALID_SCRIPT_INFO:
-                    case runcpp2::PipelineResult::NO_AVAILABLE_PROFILE:
-                    case runcpp2::PipelineResult::DEPENDENCIES_FAILED:
-                    case runcpp2::PipelineResult::COMPILE_LINK_FAILED:
-                    case runcpp2::PipelineResult::INVALID_PROFILE:
-                    case runcpp2::PipelineResult::RUN_SCRIPT_FAILED:
-                    case runcpp2::PipelineResult::INVALID_OPTION:
-                        ssLOG_LINE("Watching...");
-                        break;
-                    case runcpp2::PipelineResult::SUCCESS:
-                        ssLOG_LINE("No error. Watching...");
-                        break;
-                }
-                
-                lastParsedScriptInfo = &parsedScriptInfo;
-                needsRunning = false;
-            }
-
-            std::this_thread::sleep_for(std::chrono::seconds(5));
-        } //while(true)
-    } //if(currentOptions.count(runcpp2::CmdOptions::WATCH))
-    
-    int result = 0;
-    
-    std::string outputDir;
-    if( currentOptions.count(runcpp2::CmdOptions::BUILD) > 0 &&
-        currentOptions.count(runcpp2::CmdOptions::OUTPUT) > 0)
-    {
-        auto buildOutputDir = ghc::filesystem::path(currentOptions.at(runcpp2::CmdOptions::OUTPUT));
-        if(buildOutputDir.is_absolute())
-            outputDir = buildOutputDir.string();
-        else
-            outputDir = (ghc::filesystem::current_path() / buildOutputDir).string();
-    }
-    
     ghc::filesystem::file_time_type finalSourceWriteTime;
     ghc::filesystem::file_time_type finalIncludeWriteTime;
-    if(runcpp2::StartPipeline(  script, 
-                                profiles, 
-                                preferredProfile, 
-                                currentOptions, 
-                                scriptArgs,
-                                nullptr,
-                                outputDir,
+    runcpp2::RunParams runParams 
+    { 
+        { 
+            script, 
+            profiles, 
+            params, 
+            executable, 
+            local, 
+            preferredProfile 
+        },
+        false, 
+        false, 
+        sourceOnly, 
+        false, 
+        scriptArgs, 
+        jobs, 
+        nullptr,
+        ""
+    };
+    int result = runcpp2::Run(  runParams,
+                                //Outputs
                                 parsedScriptInfo,
                                 finalSourceWriteTime,
-                                finalIncludeWriteTime,
-                                result) != runcpp2::PipelineResult::SUCCESS)
-    {
-        return -1;
-    }
-    
-    std::vector<std::string> actions;
-    if(currentOptions.count(runcpp2::CmdOptions::RESET_CACHE) > 0)
-        actions.push_back("Rebuild");
-    if(currentOptions.count(runcpp2::CmdOptions::CLEANUP) > 0)
-        actions.push_back("Cleanup");
-    if(currentOptions.count(runcpp2::CmdOptions::RESET_DEPENDENCIES) > 0)
-        actions.push_back("Dependencies Reset");
-    if(currentOptions.count(runcpp2::CmdOptions::BUILD) > 0)
-        actions.push_back("Build");
-    
-    std::string action;
-    if(!actions.empty())
-    {
-        action = actions.front();
-        for(int i = 1; i < actions.size(); ++i)
-            action += ", " + actions[i];
-        
-        ssLOG_BASE(action << " success");
-    }
+                                finalIncludeWriteTime).DS_TRY();
     return result;
+}
+
+DS::Result<void> HandleBuild(int argc, char* argv[])
+{
+    //runcpp2 build <...>
+    if(argc <= 2 || strcmp(argv[2], "--help") == 0 || strcmp(argv[2], "-h") == 0)
+    {
+        ssLOG_BASE("Usage: runcpp2 build [options] <input file>");
+        ssLOG_BASE("Options:");
+        PrintRunBuildWatchCommonOptions(true);
+        ssLOG_BASE( PadSpaceRight("  -rb, --[r]e[b]uild", CMD_COLS_BEFORE_DESC) + 
+                    "Deletes compiled source files cache and rebuild");
+        ssLOG_BASE( PadSpaceRight("  -o, --[o]utput-dir", CMD_COLS_BEFORE_DESC) + 
+                    "Specify a directory to output to.");
+        PrintGeneralOptions();
+        return {};
+    }
     
-    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(-1);
+    bool local = false;
+    bool executable = false;
+    bool sourceOnly = false;
+    std::string params = "";
+    int argIndex;
+    std::string jobs = "";
+    std::string configPath = "";
+    bool rebuild = false;
+    ghc::filesystem::path outputDir = "";
+    for(argIndex = 2; argIndex < argc; ++argIndex)
+    {
+        bool parsed = ExtractRunBuildWatchOptions(  argc, 
+                                                    argv, 
+                                                    argIndex, 
+                                                    true,
+                                                    local, 
+                                                    executable, 
+                                                    sourceOnly,
+                                                    params,
+                                                    jobs,
+                                                    configPath).DS_TRY();
+        if(!parsed)
+        {
+            if(strcmp(argv[argIndex], "-rb") == 0 || strcmp(argv[argIndex], "--rebuild") == 0)
+                rebuild = true;
+            else if(strcmp(argv[argIndex], "-o") == 0 || strcmp(argv[argIndex], "--output-dir") == 0)
+            {
+                if(argIndex == argc - 1)
+                    return DS_ERROR_MSG("Expecting value after -o or --output-dir");
+                outputDir = argv[++argIndex];
+            }
+            else
+            {
+                parsed = ProcessGeneralOptions(argc, argv, argIndex).DS_TRY();
+                if(!parsed)
+                    break;
+            }
+        }
+    }
+    
+    if(argIndex >= argc)
+        return DS_ERROR_MSG("Input file expected");
+    ghc::filesystem::path script = argv[argIndex++];
+    
+    std::vector<runcpp2::Data::Profile> profiles;
+    std::string preferredProfile;
+    runcpp2::ReadUserConfig(profiles, preferredProfile, configPath).DS_TRY();
+    
+    ssLOG_DEBUG("\nprofiles:");
+    for(int i = 0; i < profiles.size(); ++i)
+        ssLOG_DEBUG("\n" << profiles.at(i).ToString("    "));
+    
+    runcpp2::Data::ScriptInfo parsedScriptInfo;
+    ghc::filesystem::file_time_type finalSourceWriteTime;
+    ghc::filesystem::file_time_type finalIncludeWriteTime;
+    runcpp2::RunParams runParams 
+    { 
+        { 
+            script, 
+            profiles, 
+            params, 
+            executable, 
+            local, 
+            preferredProfile 
+        },
+        rebuild, 
+        false, 
+        sourceOnly, 
+        true, 
+        {}, 
+        jobs, 
+        nullptr,
+        outputDir
+    };
+    runcpp2::Run(   runParams,
+                    //Outputs
+                    parsedScriptInfo,
+                    finalSourceWriteTime,
+                    finalIncludeWriteTime).DS_TRY();
+    return {};
+}
+
+DS::Result<void> HandleWatch(int argc, char* argv[])
+{
+    //runcpp2 watch <input file>
+    if(argc <= 2 || strcmp(argv[2], "--help") == 0 || strcmp(argv[2], "-h") == 0)
+    {
+        ssLOG_BASE("Usage: runcpp2 watch [options] <input file>");
+        ssLOG_BASE("Options:");
+        PrintRunBuildWatchCommonOptions(true);
+        PrintGeneralOptions();
+        return {};
+    }
+    
+    bool local = false;
+    bool executable = false;
+    bool sourceOnly = false;
+    std::string params = "";
+    int argIndex;
+    std::string jobs = "";
+    std::string configPath = "";
+    for(argIndex = 2; argIndex < argc; ++argIndex)
+    {
+        bool parsed = ExtractRunBuildWatchOptions(  argc, 
+                                                    argv, 
+                                                    argIndex, 
+                                                    true,
+                                                    local, 
+                                                    executable, 
+                                                    sourceOnly,
+                                                    params,
+                                                    jobs,
+                                                    configPath).DS_TRY();
+        parsed = ProcessGeneralOptions(argc, argv, argIndex).DS_TRY();
+        if(!parsed)
+            break;
+    }
+    
+    if(argIndex >= argc)
+        return DS_ERROR_MSG("Input file expected");
+    ghc::filesystem::path script = argv[argIndex++];
+    
+    std::vector<runcpp2::Data::Profile> profiles;
+    std::string preferredProfile;
+    runcpp2::ReadUserConfig(profiles, preferredProfile, configPath).DS_TRY();
+    
+    ssLOG_DEBUG("\nprofiles:");
+    for(int i = 0; i < profiles.size(); ++i)
+        ssLOG_DEBUG("\n" << profiles.at(i).ToString("    "));
+    
+    runcpp2::Data::ScriptInfo* lastParsedScriptInfo = nullptr;
+    runcpp2::Data::ScriptInfo parsedScriptInfo;
+    ghc::filesystem::file_time_type lastFinalSourceWriteTime;
+    ghc::filesystem::file_time_type lastFinalIncludeWriteTime;
+    bool needsRunning = true;  //First run always needs running
+    
+    runcpp2::CoreParams coreParams = { script, profiles, params, executable, local, preferredProfile };
+    while(true)
+    {
+        //Check if sources need update
+        bool needsUpdate = false;
+        if(!needsRunning)   //Skip check on first run
+        {
+            needsRunning = runcpp2::CheckSourcesNeedUpdate( coreParams,
+                                                            jobs,
+                                                            lastParsedScriptInfo,
+                                                            lastFinalSourceWriteTime,
+                                                            lastFinalIncludeWriteTime).DS_TRY();
+            if(needsUpdate)
+            {
+                ssLOG_INFO("Source files have changed");
+                needsRunning = true;
+            }
+        }
+        
+        if(needsRunning)
+        {
+            //Clear the screen
+            if(ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL() <= ssLOG_LEVEL_WARNING)
+            {
+                #if defined(_WIN32)
+                    system("cls");
+                #else
+                    //https://stackoverflow.com/a/53925508
+                    std::cout << "\033c";
+                #endif
+            }
+            
+            ssLOG_LINE("Changes detected, running...");
+            runcpp2::RunParams runParams 
+            { 
+                coreParams, 
+                false, 
+                true, 
+                sourceOnly, 
+                true, 
+                {}, 
+                jobs, 
+                lastParsedScriptInfo,
+                ""
+            };
+            runcpp2::Run(   runParams,
+                            //Outputs
+                            parsedScriptInfo,
+                            lastFinalSourceWriteTime,
+                            lastFinalIncludeWriteTime).DS_TRY();
+            
+            lastParsedScriptInfo = &parsedScriptInfo;
+            needsRunning = false;
+        } //if(needsRunning)
+        
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+    }
+    
+    return {};
+}
+
+DS::Result<void> HandleTemplate(int argc, char* argv[])
+{
+    //runcpp2 template <output path>
+    if(argc <= 2 || strcmp(argv[2], "--help") == 0 || strcmp(argv[2], "-h") == 0)
+    {
+        ssLOG_BASE("Usage: runcpp2 template [options] <output file>");
+        ssLOG_BASE("Options:");
+        PrintGeneralOptions();
+        return {};
+    }
+    
+    int argIndex;
+    for(argIndex = 2; argIndex < argc; ++argIndex)
+    {
+        bool parsed = ProcessGeneralOptions(argc, argv, argIndex).DS_TRY();
+        if(!parsed)
+            break;
+    }
+    
+    if(argIndex >= argc)
+        return DS_ERROR_MSG("Output file expected");
+    ghc::filesystem::path templatePath = argv[argIndex++];
+    
+    GenerateScriptTemplate(templatePath).DS_TRY();
+    ssLOG_BASE("Script template generated");
+    return {};
+}
+
+DS::Result<void> HandleRegenUserConfig(int argc, char* argv[])
+{
+    //runcpp2 reset-user-config
+    if(argc <= 2 || strcmp(argv[2], "--help") == 0 || strcmp(argv[2], "-h") == 0)
+    {
+        ssLOG_BASE("Usage: runcpp2 regen-user-config [options]");
+        ssLOG_BASE("Options:");
+        ssLOG_BASE( PadSpaceRight("  -c,  --[c]onfig-directory <directory>", CMD_COLS_BEFORE_DESC) +
+                    "Use specified config directory instead of default");
+        PrintGeneralOptions();
+        return {};
+    }
+    
+    int argIndex;
+    for(argIndex = 2; argIndex < argc; ++argIndex)
+    {
+        bool parsed = ProcessGeneralOptions(argc, argv, argIndex).DS_TRY();
+        if(!parsed)
+            break;
+    }
+    
+    ghc::filesystem::path configFilePath = runcpp2::GetConfigFilePath().DS_TRY();
+    runcpp2::WriteDefaultConfigs(configFilePath, true, true).DS_TRY();
+    ssLOG_BASE("User config regenerated");
+    return {};
+}
+
+DS::Result<void> HandleReset(int argc, char* argv[])
+{
+    //runcpp2 reset [options] <input file>
+    if(argc <= 2 || strcmp(argv[2], "--help") == 0 || strcmp(argv[2], "-h") == 0)
+    {
+        ssLOG_BASE("Usage: runcpp2 reset [options] <input file>");
+        ssLOG_BASE("Options:");
+        PrintRunBuildWatchCommonOptions(false);
+        ssLOG_BASE( PadSpaceRight("  -d,  --[d]ependencies <dependencies>", 
+                    CMD_COLS_BEFORE_DESC) + 
+                    "Reset dependencies only (comma-separated names, or \"all\" for all dependencies)");
+        PrintGeneralOptions();
+        return {};
+    }
+    
+    bool local = false;
+    bool executable = false;
+    bool sourceOnly = false;
+    std::string params = "";
+    int argIndex;
+    std::string jobs = "";
+    std::string configPath = "";
+    std::string deps = "all";
+    bool depsOnly = false;
+    for(argIndex = 2; argIndex < argc; ++argIndex)
+    {
+        bool parsed = ExtractRunBuildWatchOptions(  argc, 
+                                                    argv, 
+                                                    argIndex, 
+                                                    false,
+                                                    local, 
+                                                    executable, 
+                                                    sourceOnly,
+                                                    params,
+                                                    jobs,
+                                                    configPath).DS_TRY();
+        if(!parsed)
+        {
+            if(strcmp(argv[argIndex], "-d") == 0 || strcmp(argv[argIndex], "--dependencies") == 0)
+            {
+                if(argIndex == argc - 1)
+                    return DS_ERROR_MSG("Expecting value after -d or --dependencies");
+                deps = argv[++argIndex];
+                depsOnly = true;
+            }
+            else
+            {
+                parsed = ProcessGeneralOptions(argc, argv, argIndex).DS_TRY();
+                if(!parsed)
+                    break;
+            }
+        }
+    }
+    
+    if(argIndex >= argc)
+        return DS_ERROR_MSG("Input file expected");
+    ghc::filesystem::path script = argv[argIndex++];
+    
+    std::vector<runcpp2::Data::Profile> profiles;
+    std::string preferredProfile;
+    runcpp2::ReadUserConfig(profiles, preferredProfile, configPath).DS_TRY();
+    
+    ssLOG_DEBUG("\nprofiles:");
+    for(int i = 0; i < profiles.size(); ++i)
+        ssLOG_DEBUG("\n" << profiles.at(i).ToString("    "));
+
+    runcpp2::CoreParams coreParams = { script, profiles, params, executable, local, preferredProfile };
+    runcpp2::RunResetDependencies(coreParams, deps).DS_TRY();
+    if(!depsOnly)
+    {
+        runcpp2::RunCleanup(coreParams).DS_TRY();
+    }
+    
+    return {};
+}
+
+DS::Result<int> Main(int argc, char* argv[])
+{
+    INTERNAL_RUNCPP2_SAFE_START()
+    
+    ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_WARNING);
+    
+    //Help
+    if( argc == 1 || 
+        strcmp(argv[1], "--help") == 0 || 
+        strcmp(argv[1], "-h") == 0 || 
+        strcmp(argv[1], "help") == 0)
+    {
+        ssLOG_BASE("Usage: runcpp2 <action> [options] [input file] [run args]");
+        ssLOG_BASE("Actions:");
+        ssLOG_BASE(PadSpaceRight("    run", CMD_COLS_BEFORE_DESC) + "Runs the input file");
+        ssLOG_BASE(PadSpaceRight("    build", CMD_COLS_BEFORE_DESC) + "Build the input file");
+        ssLOG_BASE( PadSpaceRight("    watch", CMD_COLS_BEFORE_DESC) + 
+                    "Watch for any changes in source files and output any compiling errors");
+        ssLOG_BASE( PadSpaceRight("    template", CMD_COLS_BEFORE_DESC) + 
+                    "Creates/prepend runcpp2 build info template to the input file");
+        ssLOG_BASE( PadSpaceRight("    regen-user-config", CMD_COLS_BEFORE_DESC) + 
+                    "Replace current user config with the default one");
+        ssLOG_BASE( PadSpaceRight("    reset", CMD_COLS_BEFORE_DESC) +
+                    "Perform cleanup on both/either the source and/or the dependencies");
+        ssLOG_BASE( PadSpaceRight("    show-config-path", CMD_COLS_BEFORE_DESC) + 
+                    "Show where runcpp2 is reading the config from");
+        ssLOG_BASE(PadSpaceRight("    version", CMD_COLS_BEFORE_DESC) + "Show the version of runcpp2");
+        ssLOG_BASE(PadSpaceRight("    tutorial", CMD_COLS_BEFORE_DESC) + "Start interactive tutorial");
+        ssLOG_BASE(PadSpaceRight("    help", CMD_COLS_BEFORE_DESC) + "Show this help message");
+        return 0;
+    }
+    
+    if(strcmp(argv[1], "run") == 0)
+    {
+        int result = HandleRun(argc, argv).DS_TRY();
+        return result;
+    }
+    else if(strcmp(argv[1], "build") == 0)
+    {
+        HandleBuild(argc, argv).DS_TRY();
+    }
+    else if(strcmp(argv[1], "watch") == 0)
+    {
+        HandleWatch(argc, argv).DS_TRY();
+    }
+    else if(strcmp(argv[1], "template") == 0)
+    {
+        HandleTemplate(argc, argv).DS_TRY();
+    }
+    else if(strcmp(argv[1], "regen-user-config") == 0)
+    {
+        HandleRegenUserConfig(argc, argv).DS_TRY();
+    }
+    else if(strcmp(argv[1], "reset") == 0)
+    {
+        HandleReset(argc, argv).DS_TRY();
+    }
+    else if(strcmp(argv[1], "show-config-path") == 0)
+    {
+        ghc::filesystem::path configFilePath = runcpp2::GetConfigFilePath().DS_TRY();
+        ssLOG_BASE(configFilePath);
+    }
+    else if(strcmp(argv[1], "version") == 0)
+        ssLOG_BASE("runcpp2 version " << RUNCPP2_VERSION);
+    else if(strcmp(argv[1], "tutorial") == 0)
+    {
+        runcpp2::DownloadTutorial(argv[0]).DS_TRY();
+    }
+    else
+        return DS_ERROR_MSG("Invalid action: " + DS_STR(argv[1]));
+    
+    return 0;
+    
+    INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(-1)
+}
+
+int main(int argc, char* argv[])
+{
+    int result = Main(argc, argv).DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return 1);
+    return result;
 }
 
 #include "runcpp2/DefaultYAMLs.c"

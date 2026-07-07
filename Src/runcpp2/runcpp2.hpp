@@ -2,10 +2,8 @@
 #define RUNCPP2_RUNCPP2_HPP
 
 #include "runcpp2/Data/BuildTypeHelper.hpp"
-#include "runcpp2/Data/CmdOptions.hpp"
 #include "runcpp2/Data/Profile.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
-#include "runcpp2/Data/PipelineResult.hpp"
 #include "runcpp2/Data/FileProperties.hpp"
 #include "runcpp2/Data/FilesTypesInfo.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
@@ -272,20 +270,6 @@ namespace
 
 namespace runcpp2
 {
-    struct OptionInfo
-    {
-        CmdOptions Option;
-        bool ValueExists;
-        std::string Value;
-        
-        inline OptionInfo(  CmdOptions option, 
-                            bool valueExists = false, 
-                            const std::string& value = "") :    Option(option), 
-                                                                ValueExists(valueExists), 
-                                                                Value(value)
-        {}
-    };
-
     inline void GetDefaultScriptInfo(std::string& scriptInfo)
     {
         scriptInfo = std::string(   reinterpret_cast<const char*>(DefaultScriptInfo), 
@@ -304,141 +288,10 @@ namespace runcpp2
         else
             ssLOG_ERROR("Invalid log level: " << logLevel);
     }
-    
-    //NOTE: This should be run after running StartPipeline first
-    inline PipelineResult 
-    CheckSourcesNeedUpdate( const std::string& scriptPath,
-                            const std::vector<Data::Profile>& profiles,
-                            const std::string& configPreferredProfile,
-                            const Data::ScriptInfo& scriptInfo,
-                            const std::unordered_map<   CmdOptions, 
-                                                        std::string>& currentOptions,
-                            const ghc::filesystem::file_time_type& prevFinalSourceWriteTime,
-                            const ghc::filesystem::file_time_type& prevFinalIncludeWriteTime,
-                            bool& outNeedsUpdate)
-    {
-        INTERNAL_RUNCPP2_SAFE_START();
-        ssLOG_FUNC_INFO();
 
-        //Validate inputs and get paths
-        ghc::filesystem::path absoluteScriptPath;
-        ghc::filesystem::path scriptDirectory;
-        std::string scriptName;
-        
-        ValidateInputs(scriptPath, profiles, absoluteScriptPath, scriptDirectory, scriptName)
-            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                        return (PipelineResult)DS_TMP_ERROR.ErrorCode);
-
-        //First check if script info file has changed
-        std::error_code e;
-        ghc::filesystem::path dedicatedYamlLoc = 
-            scriptDirectory / ghc::filesystem::path(scriptName + ".yaml");
-        
-        ghc::filesystem::file_time_type currentWriteTime;
-        if(ghc::filesystem::exists(dedicatedYamlLoc, e))
-            currentWriteTime = ghc::filesystem::last_write_time(dedicatedYamlLoc, e);
-        else
-            currentWriteTime = ghc::filesystem::last_write_time(absoluteScriptPath, e);
-
-        if(e)
-        {
-            ssLOG_ERROR("Failed to get write time for script info");
-            return PipelineResult::UNEXPECTED_FAILURE;
-        }
-
-        //If script info file is newer than last check, we need to update
-        if(currentWriteTime > scriptInfo.LastWriteTime)
-        {
-            outNeedsUpdate = true;
-            return PipelineResult::SUCCESS;
-        }
-
-        //Initialize BuildsManager and IncludeManager
-        ghc::filesystem::path configDir = 
-            GetConfigFilePath().DS_TRY_ACT( ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
-                                            return PipelineResult::INVALID_CONFIG_PATH);
-        
-        configDir = configDir.parent_path();
-        if(!ghc::filesystem::is_directory(configDir, e))
-        {
-            ssLOG_FATAL("Unexpected path for config directory: " << configDir.string());
-            return PipelineResult::INVALID_CONFIG_PATH;
-        }
-        
-        ghc::filesystem::path buildDir;
-        BuildsManager buildsManager("/tmp");
-        IncludeManager includeManager;
-        
-        const bool useLocalBuildDir = currentOptions.count(CmdOptions::LOCAL) > 0;
-        InitializeBuildDirectory(   configDir,
-                                    absoluteScriptPath,
-                                    useLocalBuildDir,
-                                    buildsManager,
-                                    buildDir,
-                                    includeManager)
-            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                        return (PipelineResult)DS_TMP_ERROR.ErrorCode);
-            
-        //Get profile and gather source files
-        const int profileIndex =    GetPreferredProfileIndex(   scriptPath, 
-                                                                scriptInfo, 
-                                                                profiles, 
-                                                                configPreferredProfile)
-                                        .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                                                    return PipelineResult::NO_AVAILABLE_PROFILE);
-        
-        const Data::Profile& currentProfile = profiles.at(profileIndex);
-        
-        std::vector<ghc::filesystem::path> sourceFiles;
-        GatherSourceFiles(absoluteScriptPath, scriptInfo, currentProfile, sourceFiles)
-            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                        return PipelineResult::UNEXPECTED_FAILURE);
-
-        for(int i = 0; i < sourceFiles.size(); ++i)
-            ssLOG_DEBUG("sourceFiles.at(i).string(): " << sourceFiles.at(i).string());
-
-        std::vector<bool> sourceHasCache;
-        std::vector<ghc::filesystem::path> cachedObjectsFiles;
-        ghc::filesystem::file_time_type finalObjectWriteTime;
-        ghc::filesystem::file_time_type finalSourceWriteTime;
-        ghc::filesystem::file_time_type finalIncludeWriteTime;
-        
-        HasCompiledCache(   absoluteScriptPath.parent_path(),
-                            sourceFiles,
-                            buildDir,
-                            currentProfile,
-                            includeManager,
-                            sourceHasCache,
-                            cachedObjectsFiles,
-                            finalObjectWriteTime,
-                            finalSourceWriteTime,
-                            finalIncludeWriteTime)
-            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                        //TODO: Maybe add a pipeline result for this?
-                        return PipelineResult::UNEXPECTED_FAILURE);
-        
-        if( finalSourceWriteTime > prevFinalSourceWriteTime ||
-            finalIncludeWriteTime > prevFinalIncludeWriteTime)
-        {
-            outNeedsUpdate = true;
-        }
-        else
-            outNeedsUpdate = false;
-        
-        return PipelineResult::SUCCESS;
-
-        INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
-    }
-
-    inline void CreateParameterValues(  const std::unordered_map<   CmdOptions, 
-                                                                    std::string>& currentOptions,
+    inline void CreateParameterValues(  const std::string rawParams,
                                         std::unordered_map<std::string, std::string>& outParameters)
     {
-        if(currentOptions.count(CmdOptions::PARAMETERS) == 0)
-            return;
-    
-        const std::string& rawParams = currentOptions.at(CmdOptions::PARAMETERS);
-        
         std::vector<std::string> paramNameVals;
         SplitString(rawParams, ":", paramNameVals);
         if(paramNameVals.size() % 2 != 0)
@@ -451,205 +304,462 @@ namespace runcpp2
             outParameters[paramNameVals[i]] = paramNameVals[i + 1];
     }
 
-    inline PipelineResult StartPipeline(const std::string& scriptPath, 
-                                        const std::vector<Data::Profile>& profiles,
-                                        const std::string& configPreferredProfile,
-                                        const std::unordered_map<   CmdOptions, 
-                                                                    std::string>& currentOptions,
-                                        const std::vector<std::string>& runArgs,
-                                        const Data::ScriptInfo* lastScriptInfo,
-                                        const std::string& buildOutputDir,
-                                        Data::ScriptInfo& outScriptInfo,
-                                        ghc::filesystem::file_time_type& outFinalSourceWriteTime,
-                                        ghc::filesystem::file_time_type& outFinalIncludeWriteTime,
-                                        int& returnStatus)
+    inline DS::Result<void> GetScriptInfoData(  const ghc::filesystem::path& scriptPath, 
+                                                const std::string& rawParameters,
+                                                bool executable,
+                                                
+                                                Data::ScriptInfo& outScriptInfo,
+                                                ghc::filesystem::path& outAbsoluteScriptPath,
+                                                ghc::filesystem::path& outScriptDirectory,
+                                                std::string& outScriptName,
+                                                std::unordered_map< std::string, 
+                                                                    std::string>& outParameterValues)
     {
-        INTERNAL_RUNCPP2_SAFE_START();
         ssLOG_FUNC_INFO();
-
+        
         //Validate inputs and get paths
-        ghc::filesystem::path absoluteScriptPath;
-        ghc::filesystem::path scriptDirectory;
-        std::string scriptName;
-        ValidateInputs(scriptPath, profiles, absoluteScriptPath, scriptDirectory, scriptName)
-            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                        return (PipelineResult)DS_TMP_ERROR.ErrorCode);
+        {
+            //Check if input file exists
+            std::error_code _;
+            if(!ghc::filesystem::exists(scriptPath, _))
+                return DS_ERROR_MSG("File does not exist: " + scriptPath.string());
+            
+            if(ghc::filesystem::is_directory(scriptPath, _))
+                return DS_ERROR_MSG( "The input file must not be a directory: " + scriptPath.string());
 
-        ghc::filesystem::path configDir = 
-            GetConfigFilePath().DS_TRY_ACT( ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
-                                            return PipelineResult::INVALID_CONFIG_PATH);
-        ghc::filesystem::path buildDir;
+            outAbsoluteScriptPath = 
+                ghc::filesystem::absolute(ghc::filesystem::canonical(scriptPath, _));
+            outScriptDirectory = outAbsoluteScriptPath.parent_path();
+            outScriptName = outAbsoluteScriptPath.stem().string();
+
+            ssLOG_DEBUG("scriptPath: " << scriptPath);
+            ssLOG_DEBUG("absoluteScriptPath: " << outAbsoluteScriptPath.string());
+            ssLOG_DEBUG("scriptDirectory: " << outScriptDirectory.string());
+            ssLOG_DEBUG("scriptName: " << outScriptName);
+            ssLOG_DEBUG("is_directory: " << ghc::filesystem::is_directory(outScriptDirectory));
+        }
 
         //Create parameters
         std::unordered_map<std::string, std::string> parameterValues;
-        CreateParameterValues(currentOptions, parameterValues);
+        CreateParameterValues(rawParameters, parameterValues);
 
         //Parse script info
-        Data::ScriptInfo scriptInfo;
-        ParseAndValidateScriptInfo( absoluteScriptPath,
-                                    scriptDirectory,
-                                    scriptName,
-                                    currentOptions.count(CmdOptions::EXECUTABLE) > 0,
+        ParseAndValidateScriptInfo( outAbsoluteScriptPath,
+                                    outScriptDirectory,
+                                    outScriptName,
+                                    executable,
                                     parameterValues,
-                                    scriptInfo)
-            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
-                        return (PipelineResult)DS_TMP_ERROR.ErrorCode);
+                                    outScriptInfo).DS_TRY();
+        
+        return {};
+    }
+
+    inline DS::Result<ghc::filesystem::path> GetDefaultBuildDir()
+    {
+        ghc::filesystem::path configDir = GetConfigFilePath().DS_TRY();
         
         //Parse and get the config directory
         {
             std::error_code e;
             if(ghc::filesystem::is_directory(configDir, e))
-            {
-                ssLOG_FATAL("Unexpected path for config file: " << configDir.string());
-                return PipelineResult::INVALID_CONFIG_PATH;
-            }
+                return DS_ERROR_MSG("Unexpected path for config file: " + configDir.string());
             
             configDir = configDir.parent_path();
             if(!ghc::filesystem::is_directory(configDir, e))
-            {
-                ssLOG_FATAL("Unexpected path for config directory: " << configDir.string());
-                return PipelineResult::INVALID_CONFIG_PATH;
-            }
+                return DS_ERROR_MSG("Unexpected path for config directory: " + configDir.string());
         }
+        
+        return configDir;
+    }
+
+    struct CoreParams
+    {
+        const ghc::filesystem::path& scriptPath;
+        const std::vector<Data::Profile>& profiles;
+        const std::string rawParameters;
+        bool runAsExecutable;
+        bool buildLocally;
+        const std::string& configPreferredProfile;
+    };
+
+    inline DS::Result<void> RunCleanup(CoreParams params)
+    {
+        ghc::filesystem::path absoluteScriptPath;
+        ghc::filesystem::path scriptDirectory;
+        std::string scriptName;
+        std::unordered_map<std::string, std::string> parameters;
+        Data::ScriptInfo scriptInfo;
+        GetScriptInfoData(  params.scriptPath, 
+                            params.rawParameters, 
+                            params.runAsExecutable, 
+                            
+                            //Output:
+                            scriptInfo,
+                            absoluteScriptPath,
+                            scriptDirectory,
+                            scriptName,
+                            parameters).DS_TRY();
+        
+        if(params.profiles.empty())
+            return DS_ERROR_MSG("No compiler profiles found");
         
         int profileIndex =  GetPreferredProfileIndex(   absoluteScriptPath, 
                                                         scriptInfo, 
-                                                        profiles, 
-                                                        configPreferredProfile)
-                                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                                            return PipelineResult::NO_AVAILABLE_PROFILE);
-
-        //Parsing the script, setting up dependencies, compiling and linking
-        std::vector<std::string> filesToCopyPaths;
+                                                        params.profiles, 
+                                                        params.configPreferredProfile).DS_TRY();
         {
-            const int maxThreads = 
-                currentOptions.count(CmdOptions::THREADS) ? 
-                strtol(currentOptions.at(CmdOptions::THREADS).c_str(), nullptr, 10) : 
-                8;
-            if(maxThreads == 0)
-            {
-                ssLOG_ERROR("Invalid number of threads passed in");
-                return PipelineResult::INVALID_OPTION;
-            }
-            
+            ghc::filesystem::path buildDir = GetDefaultBuildDir().DS_TRY();
             BuildsManager buildsManager("/tmp");
             IncludeManager includeManager;
-            InitializeBuildDirectory(   configDir,
+            InitializeBuildDirectory(   buildDir,
                                         absoluteScriptPath,
-                                        currentOptions.count(CmdOptions::LOCAL) > 0,
+                                        params.buildLocally,
                                         buildsManager,
                                         buildDir,
-                                        includeManager)
-                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                            return (PipelineResult)DS_TMP_ERROR.ErrorCode);
-                
-            //Handle cleanup command if present
-            if(currentOptions.count(CmdOptions::CLEANUP) > 0)
-            {
-                HandleCleanup(  scriptInfo, 
-                                profiles.at(profileIndex),
+                                        includeManager).DS_TRY();
+            HandleCleanup(  scriptInfo, 
+                            params.profiles.at(profileIndex),
+                            scriptDirectory,
+                            buildDir,
+                            absoluteScriptPath,
+                            buildsManager).DS_TRY();
+        }
+        
+        return {};
+    }
+
+    inline DS::Result<void> RunResetDependencies(   CoreParams params,
+                                                    const std::string& targetDepToReset)
+    {
+        ghc::filesystem::path absoluteScriptPath;
+        ghc::filesystem::path scriptDirectory;
+        std::string scriptName;
+        std::unordered_map<std::string, std::string> parameters;
+        Data::ScriptInfo scriptInfo;
+        GetScriptInfoData(  params.scriptPath, 
+                            params.rawParameters, 
+                            false, //NOTE: Don't care
+                            //Output:
+                            scriptInfo,
+                            absoluteScriptPath,
+                            scriptDirectory,
+                            scriptName,
+                            parameters).DS_TRY();
+        
+        if(params.profiles.empty())
+            return DS_ERROR_MSG("No compiler profiles found");
+        
+        int profileIndex =  GetPreferredProfileIndex(   absoluteScriptPath, 
+                                                        scriptInfo, 
+                                                        params.profiles, 
+                                                        params.configPreferredProfile).DS_TRY();
+        
+        
+        //Parsing the script, setting up dependencies, compiling and linking
+        std::vector<std::string> filesToCopyPaths;
+        ghc::filesystem::path buildDir = GetDefaultBuildDir().DS_TRY();
+        
+        BuildsManager buildsManager("/tmp");
+        IncludeManager includeManager;
+        InitializeBuildDirectory(   buildDir,
+                                    absoluteScriptPath,
+                                    params.buildLocally,
+                                    buildsManager,
+                                    buildDir,
+                                    includeManager).DS_TRY();
+        
+        //Resolve imports
+        ResolveScriptImports(scriptInfo, scriptDirectory, buildDir).DS_TRY();
+        
+        //Process Dependencies
+        ResetDependencies(  scriptInfo,
+                            params.profiles.at(profileIndex), 
+                            scriptDirectory,
+                            buildDir,
+                            targetDepToReset).DS_TRY();
+        return {};
+    }
+
+    inline DS::Result<bool> 
+    CheckSourcesNeedUpdate( CoreParams params,
+                            const std::string rawMaxThreads,
+                            const Data::ScriptInfo* lastScriptInfo,
+                            const ghc::filesystem::file_time_type& prevFinalSourceWriteTime,
+                            const ghc::filesystem::file_time_type& prevFinalIncludeWriteTime)
+    {
+        ghc::filesystem::path absoluteScriptPath;
+        ghc::filesystem::path scriptDirectory;
+        std::string scriptName;
+        std::unordered_map<std::string, std::string> parameters;
+        Data::ScriptInfo scriptInfo;
+        
+        //TODO: Reduce number of parameters here
+        GetScriptInfoData(  params.scriptPath, 
+                            params.rawParameters, 
+                            params.runAsExecutable, 
+                            
+                            //Output:
+                            scriptInfo,
+                            absoluteScriptPath,
+                            scriptDirectory,
+                            scriptName,
+                            parameters).DS_TRY();
+        
+        //First check if script info file has changed
+        {
+            std::error_code e;
+            ghc::filesystem::path dedicatedYamlLoc = 
+                scriptDirectory / ghc::filesystem::path(scriptName + ".yaml");
+            
+            ghc::filesystem::file_time_type currentWriteTime;
+            if(ghc::filesystem::exists(dedicatedYamlLoc, e))
+                currentWriteTime = ghc::filesystem::last_write_time(dedicatedYamlLoc, e);
+            else
+                currentWriteTime = ghc::filesystem::last_write_time(absoluteScriptPath, e);
+
+            if(e)
+                return DS_ERROR_MSG("Failed to get write time for script info" + e.message());
+
+            //If script info file is newer than last check, we need to update
+            if(currentWriteTime > scriptInfo.LastWriteTime)
+                return true;
+        }
+        
+        if(params.profiles.empty())
+            return DS_ERROR_MSG("No compiler profiles found");
+        
+        int profileIndex =  GetPreferredProfileIndex(   absoluteScriptPath, 
+                                                        scriptInfo, 
+                                                        params.profiles, 
+                                                        params.configPreferredProfile).DS_TRY();
+        
+        //Parsing the script, setting up dependencies, compiling and linking
+        std::vector<std::string> filesToCopyPaths;
+        ghc::filesystem::path buildDir = GetDefaultBuildDir().DS_TRY();
+        BuildsManager buildsManager("/tmp");
+        IncludeManager includeManager;
+        InitializeBuildDirectory(   buildDir,
+                                    absoluteScriptPath,
+                                    params.buildLocally,
+                                    buildsManager,
+                                    buildDir,
+                                    includeManager).DS_TRY();
+        
+        const int maxThreads = rawMaxThreads.empty() ? 8 : strtol(  rawMaxThreads.c_str(), 
+                                                                    nullptr, 
+                                                                    10);
+        if(maxThreads <= 0)
+            return DS_ERROR_MSG("Invalid number of threads passed in");
+        
+        //Resolve imports
+        ResolveScriptImports(scriptInfo, scriptDirectory, buildDir).DS_TRY();
+        
+        //Check if script info has changed if provided and run setup if needed
+        bool recompileNeeded = false;
+        bool relinkNeeded = false;
+        std::vector<std::string> changedDependencies;
+        CheckScriptInfoChanges( buildDir, 
+                                scriptInfo, 
+                                params.profiles.at(profileIndex), 
                                 scriptDirectory,
-                                buildDir,
-                                absoluteScriptPath,
-                                buildsManager)
-                    .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
-                                return (PipelineResult)DS_TMP_ERROR.ErrorCode);
-            }
+                                lastScriptInfo, 
+                                parameters,
+                                recompileNeeded, 
+                                relinkNeeded, 
+                                changedDependencies).DS_TRY();
+        if(relinkNeeded)
+            return true;
+        
+        std::vector<std::string> gatheredBinariesPaths;
+        
+        //Process Dependencies
+        std::vector<Data::DependencyInfo*> availableDependencies;
+        ProcessDependencies(scriptInfo,
+                            params.profiles.at(profileIndex),
+                            scriptDirectory,
+                            buildDir,
+                            changedDependencies,
+                            maxThreads,
+                            false,
+                            availableDependencies,
+                            gatheredBinariesPaths).DS_TRY();
+        
+        //Get all the files we are trying to compile
+        std::vector<ghc::filesystem::path> sourceFiles;
+        GatherSourceFiles(  absoluteScriptPath, 
+                            scriptInfo, 
+                            params.profiles.at(profileIndex), 
+                            sourceFiles).DS_TRY();
+
+        //Get all include paths
+        std::vector<ghc::filesystem::path> includePaths;
+        GatherIncludePaths( scriptDirectory,
+                            scriptInfo,
+                            params.profiles.at(profileIndex),
+                            availableDependencies,
+                            includePaths).DS_TRY();
+
+        //Check if we have already compiled before.
+        std::vector<bool> sourceHasCache;
+        std::vector<ghc::filesystem::path> cachedObjectsFiles;
+        ghc::filesystem::file_time_type finalObjectWriteTime;
+        ghc::filesystem::file_time_type finalSourceWriteTime;
+        ghc::filesystem::file_time_type finalIncludeWriteTime;
+        HasCompiledCache(   scriptDirectory,
+                            sourceFiles, 
+                            buildDir, 
+                            params.profiles.at(profileIndex),
+                            includeManager,
+                            sourceHasCache,
+                            cachedObjectsFiles,
+                            finalObjectWriteTime,
+                            finalSourceWriteTime,
+                            finalIncludeWriteTime).DS_TRY();
+        
+        if( finalSourceWriteTime > prevFinalSourceWriteTime ||
+            finalIncludeWriteTime > prevFinalIncludeWriteTime)
+        {
+            return true;
+        }
+        else
+            return false;
+    }
+
+    struct RunParams
+    {
+        CoreParams Core;
+        bool rebuild;
+        bool compileOnly;
+        bool buildSourceOnly;
+        bool buildOnly;
+        const std::vector<std::string>& runArgs;
+        const std::string rawMaxThreads;
+        const Data::ScriptInfo* lastScriptInfo;
+        const ghc::filesystem::path& buildOutputDir;
+    };
+
+    inline DS::Result<int> Run( RunParams runParams,
+                                Data::ScriptInfo& outScriptInfo,
+                                ghc::filesystem::file_time_type& outFinalSourceWriteTime,
+                                ghc::filesystem::file_time_type& outFinalIncludeWriteTime)
+    {
+        ghc::filesystem::path absoluteScriptPath;
+        ghc::filesystem::path scriptDirectory;
+        std::string scriptName;
+        std::unordered_map<std::string, std::string> parameters;
+        Data::ScriptInfo scriptInfo;
+        
+        //TODO: Reduce number of parameters here
+        GetScriptInfoData(  runParams.Core.scriptPath, 
+                            runParams.Core.rawParameters, 
+                            runParams.Core.runAsExecutable, 
+                            
+                            //Output:
+                            scriptInfo,
+                            absoluteScriptPath,
+                            scriptDirectory,
+                            scriptName,
+                            parameters).DS_TRY();
+        
+        if(runParams.Core.profiles.empty())
+            return DS_ERROR_MSG("No compiler profiles found");
+        
+        int profileIndex =  GetPreferredProfileIndex(   absoluteScriptPath, 
+                                                        scriptInfo, 
+                                                        runParams.Core.profiles, 
+                                                        runParams.Core.configPreferredProfile).DS_TRY();
+        
+        //Parsing the script, setting up dependencies, compiling and linking
+        std::vector<std::string> filesToCopyPaths;
+        ghc::filesystem::path buildDir = GetDefaultBuildDir().DS_TRY();
+        {
+            BuildsManager buildsManager("/tmp");
+            IncludeManager includeManager;
+            InitializeBuildDirectory(   buildDir,
+                                        absoluteScriptPath,
+                                        runParams.Core.buildLocally,
+                                        buildsManager,
+                                        buildDir,
+                                        includeManager).DS_TRY();
+            
+            const int maxThreads =  runParams.rawMaxThreads.empty() ? 
+                                    8 : 
+                                    strtol(runParams.rawMaxThreads.c_str(), nullptr, 10);
+            if(maxThreads <= 0)
+                return DS_ERROR_MSG("Invalid number of threads passed in");
             
             //Resolve imports
-            ResolveScriptImports(scriptInfo, absoluteScriptPath.parent_path(), buildDir)
-                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                            return (PipelineResult)DS_TMP_ERROR.ErrorCode);
+            ResolveScriptImports(scriptInfo, scriptDirectory, buildDir).DS_TRY();
             
             //Check if script info has changed if provided and run setup if needed
             bool recompileNeeded = false;
             bool relinkNeeded = false;
             std::vector<std::string> changedDependencies;
-            
             CheckScriptInfoChanges( buildDir, 
                                     scriptInfo, 
-                                    profiles.at(profileIndex), 
-                                    absoluteScriptPath.parent_path(),
-                                    lastScriptInfo, 
-                                    maxThreads,
-                                    parameterValues,
+                                    runParams.Core.profiles.at(profileIndex), 
+                                    scriptDirectory,
+                                    runParams.lastScriptInfo, 
+                                    parameters,
                                     recompileNeeded, 
                                     relinkNeeded, 
-                                    changedDependencies)
-                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                            return (PipelineResult)DS_TMP_ERROR.ErrorCode);
-            
-            //if(!lastScriptInfo || recompileNeeded || !changedDependencies.empty() || relinkNeeded)
-                outScriptInfo = scriptInfo;
+                                    changedDependencies).DS_TRY();
+            outScriptInfo = scriptInfo;
             
             std::vector<std::string> gatheredBinariesPaths;
             
             //Process Dependencies
             std::vector<Data::DependencyInfo*> availableDependencies;
             ProcessDependencies(scriptInfo,
-                                profiles.at(profileIndex),
-                                absoluteScriptPath.parent_path(),
+                                runParams.Core.profiles.at(profileIndex),
+                                scriptDirectory,
                                 buildDir,
-                                currentOptions,
                                 changedDependencies,
                                 maxThreads,
+                                runParams.buildSourceOnly,
                                 availableDependencies,
-                                gatheredBinariesPaths)
-                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                            return (PipelineResult)DS_TMP_ERROR.ErrorCode);
+                                gatheredBinariesPaths).DS_TRY();
             
-            if(currentOptions.count(CmdOptions::RESET_DEPENDENCIES) > 0)
-                return PipelineResult::SUCCESS;
-
             //Get all the files we are trying to compile
             std::vector<ghc::filesystem::path> sourceFiles;
             GatherSourceFiles(  absoluteScriptPath, 
                                 scriptInfo, 
-                                profiles.at(profileIndex), 
-                                sourceFiles)
-                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                            return PipelineResult::INVALID_SCRIPT_INFO);
+                                runParams.Core.profiles.at(profileIndex), 
+                                sourceFiles).DS_TRY();
 
             //Get all include paths
             std::vector<ghc::filesystem::path> includePaths;
             GatherIncludePaths( scriptDirectory,
                                 scriptInfo,
-                                profiles.at(profileIndex),
+                                runParams.Core.profiles.at(profileIndex),
                                 availableDependencies,
-                                includePaths)
-                .DS_TRY_ACT(DS_TMP_ERROR.Message += "Failed to gather include paths";
-                            ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                            return PipelineResult::INVALID_SCRIPT_INFO);
+                                includePaths).DS_TRY();
 
             //Check if we have already compiled before.
             std::vector<bool> sourceHasCache;
             std::vector<ghc::filesystem::path> cachedObjectsFiles;
             ghc::filesystem::file_time_type finalObjectWriteTime;
-            
-            if(currentOptions.count(CmdOptions::RESET_CACHE) > 0 || recompileNeeded)
+            if(runParams.rebuild || recompileNeeded)
                 sourceHasCache = std::vector<bool>(sourceFiles.size(), false);
             else
             {
-                HasCompiledCache(   absoluteScriptPath.parent_path(),
+                HasCompiledCache(   scriptDirectory,
                                     sourceFiles, 
                                     buildDir, 
-                                    profiles.at(profileIndex),
+                                    runParams.Core.profiles.at(profileIndex),
                                     includeManager,
                                     sourceHasCache,
                                     cachedObjectsFiles,
                                     finalObjectWriteTime,
                                     outFinalSourceWriteTime,
-                                    outFinalIncludeWriteTime)
-                    .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                                //TODO: Maybe add a pipeline result for this?
-                                return PipelineResult::UNEXPECTED_FAILURE);
+                                    outFinalIncludeWriteTime).DS_TRY();
             }
             
             runcpp2::SourceIncludeMap sourcesIncludes;
-            runcpp2::GatherFilesIncludes(sourceFiles, sourceHasCache, includePaths, sourcesIncludes)
-                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                            return PipelineResult::UNEXPECTED_FAILURE);
-            
+            runcpp2::GatherFilesIncludes(   sourceFiles, 
+                                            sourceHasCache, 
+                                            includePaths, 
+                                            sourcesIncludes).DS_TRY();
             for(int i = 0; i < sourceFiles.size(); ++i)
             {
                 if(!sourceHasCache.at(i))
@@ -668,8 +778,8 @@ namespace runcpp2
                                         );
                     if(!writeResult)
                     {
-                        ssLOG_ERROR("Failed to write include record for " << sourceFiles.at(i).string());
-                        return PipelineResult::UNEXPECTED_FAILURE;
+                        return DS_ERROR_MSG("Failed to write include record for " + 
+                                            sourceFiles.at(i).string());
                     }
                 }
                 else
@@ -680,7 +790,7 @@ namespace runcpp2
             }
             
             std::vector<std::string> linkFilesPaths;
-            SeparateDependencyFiles(profiles.at(profileIndex).FilesTypes, 
+            SeparateDependencyFiles(runParams.Core.profiles.at(profileIndex).FilesTypes, 
                                     gatheredBinariesPaths, 
                                     linkFilesPaths, 
                                     filesToCopyPaths);
@@ -692,10 +802,7 @@ namespace runcpp2
             for(int i = 0; i < linkFilesPaths.size(); ++i)
             {
                 if(!ghc::filesystem::exists(linkFilesPaths.at(i), e))
-                {
-                    ssLOG_ERROR(linkFilesPaths.at(i) << " reported as cached but doesn't exist");
-                    return PipelineResult::UNEXPECTED_FAILURE;
-                }
+                    return DS_ERROR_MSG(linkFilesPaths.at(i) + " reported as cached but doesn't exist");
                 
                 ghc::filesystem::file_time_type lastWriteTime = 
                     ghc::filesystem::last_write_time(linkFilesPaths.at(i), e);
@@ -705,15 +812,13 @@ namespace runcpp2
             }
             
             //Run PreBuild commands before compilation
-            HandlePreBuild(scriptInfo, profiles.at(profileIndex), buildDir)
-                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
-                            return (PipelineResult)DS_TMP_ERROR.ErrorCode);
+            HandlePreBuild(scriptInfo, runParams.Core.profiles.at(profileIndex), buildDir).DS_TRY();
             
             //Compiling/Linking
             bool outputCache = false;
             if(!HasOutputCache( sourceHasCache, 
                                 buildDir, 
-                                profiles.at(profileIndex),
+                                runParams.Core.profiles.at(profileIndex),
                                 scriptInfo,
                                 scriptName,
                                 linkFilesPaths,
@@ -722,7 +827,6 @@ namespace runcpp2
             {
                 ssLOG_WARNING(  "Error detected when trying to use output cache. "
                                 "A cleanup is recommended");
-                //return PipelineResult::UNEXPECTED_FAILURE;
             }
             
             if(!outputCache || relinkNeeded)
@@ -731,145 +835,103 @@ namespace runcpp2
                     linkFilesPaths.push_back(cachedObjectsFiles.at(i));
                 
                 //TODO: Compile and link for watch as well. Load library as well
-                if(currentOptions.count(CmdOptions::WATCH) > 0)
+                if(runParams.compileOnly)
                 {
                     CompileScriptOnly(  buildDir,
-                                        absoluteScriptPath.parent_path(),
+                                        scriptDirectory,
                                         sourceFiles,
                                         sourceHasCache,
                                         includePaths, 
                                         scriptInfo,
                                         availableDependencies,
-                                        profiles.at(profileIndex),
-                                        maxThreads)
-                        .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
-                                    return PipelineResult::COMPILE_LINK_FAILED);
-                    
-                    return PipelineResult::SUCCESS;
+                                        runParams.Core.profiles.at(profileIndex),
+                                        maxThreads).DS_TRY();
+                    return 0;
                 }
                 else
                 {
                     CompileAndLinkScript(   buildDir,
-                                            absoluteScriptPath.parent_path(),
-                                            ghc::filesystem::path(absoluteScriptPath).stem(), 
+                                            scriptDirectory,
+                                            ghc::filesystem::path(scriptName), 
                                             sourceFiles,
                                             sourceHasCache,
                                             includePaths,  
                                             scriptInfo,
                                             availableDependencies,
-                                            profiles.at(profileIndex),
+                                            runParams.Core.profiles.at(profileIndex),
                                             linkFilesPaths,
                                             maxThreads)
                         .DS_TRY_ACT(DS_TMP_ERROR.Message += "\nFailed to compile or link script.";
-                                    ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
-                                    return PipelineResult::COMPILE_LINK_FAILED);
+                                    DS_APPEND_TRACE(DS_TMP_ERROR);
+                                    return DS::Error(DS_TMP_ERROR));
                 }
             }
         }
-
+        
         //Trigger post build and run the script if needed
+        int returnStatus = -1;
         {
             std::vector<ghc::filesystem::path> targets;
             ghc::filesystem::path runnableTarget;
             GetBuiltTargetPaths(buildDir, 
                                 scriptName, 
-                                profiles.at(profileIndex), 
-                                currentOptions,
+                                runParams.Core.profiles.at(profileIndex), 
+                                runParams.Core.runAsExecutable,
                                 scriptInfo,
                                 targets,
-                                &runnableTarget)
-                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                            return (PipelineResult)DS_TMP_ERROR.ErrorCode);
+                                &runnableTarget).DS_TRY();
             
             if(targets.empty())
             {
                 ssLOG_WARNING("No target files found");
-                return PipelineResult::SUCCESS;
+                return 0;
             }
             
             //Copy files to build directory
             std::vector<std::string> copiedPaths;
-            if(!buildOutputDir.empty())
+            if(!runParams.buildOutputDir.empty())
             {
-                buildDir = buildOutputDir;
+                std::error_code e;
+                if(!ghc::filesystem::exists(runParams.buildOutputDir, e))
+                {
+                    if(!ghc::filesystem::create_directories(runParams.buildOutputDir, e))
+                        return DS_ERROR_MSG("Failed to create output directory");
+                }
+                
+                buildDir = runParams.buildOutputDir;
                 //filesToCopyPaths.push_back(runnableTarget.string());
                 for(const ghc::filesystem::path& target : targets)
                     filesToCopyPaths.push_back(target.string());
             }
 
             CopyFiles(buildDir, filesToCopyPaths, copiedPaths)
-                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                            ssLOG_ERROR("Failed to copy binaries before running the script");
-                            return PipelineResult::UNEXPECTED_FAILURE);
+                .DS_TRY_ACT(DS_TMP_ERROR.Message += "\nFailed to copy binaries before running the "
+                                                    "script";
+                            DS_APPEND_TRACE(DS_TMP_ERROR);
+                            return DS::Error(DS_TMP_ERROR));
             
             //Run PostBuild commands after successful compilation
-            HandlePostBuild(scriptInfo, profiles.at(profileIndex), buildDir.string())
-                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
-                            return (PipelineResult)DS_TMP_ERROR.ErrorCode);
-
-            //Don't run if we are just watching, reseting source cache or building
-            if( currentOptions.count(CmdOptions::WATCH) > 0 || 
-                currentOptions.count(CmdOptions::RESET_CACHE) > 0 ||
-                currentOptions.count(CmdOptions::BUILD) > 0)
-            {
-                return PipelineResult::SUCCESS;
-            }
+            HandlePostBuild(scriptInfo, 
+                            runParams.Core.profiles.at(profileIndex), 
+                            buildDir.string()).DS_TRY();
+            
+            //Don't run if we are just watching or building
+            if(runParams.buildOnly)
+                return 0;
             
             //Run otherwise
             ssLOG_INFO("Running script...");
             RunCompiledOutput(  runnableTarget,
                                 absoluteScriptPath, 
                                 scriptInfo, 
-                                runArgs, 
-                                currentOptions, 
-                                returnStatus)
-                .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
-                            return (PipelineResult)DS_TMP_ERROR.ErrorCode);
+                                runParams.runArgs, 
+                                returnStatus).DS_TRY();
         }
-
-        return PipelineResult::SUCCESS;
         
-        INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(PipelineResult::UNEXPECTED_FAILURE);
+        return returnStatus;
     }
-    
-    inline std::string PipelineResultToString(PipelineResult result)
-    {
-        static_assert(static_cast<int>(PipelineResult::COUNT) == 13, "PipelineResult enum has changed");
 
-        switch(result)
-        {
-            case PipelineResult::UNEXPECTED_FAILURE:
-                return "UNEXPECTED_FAILURE";
-            case PipelineResult::SUCCESS:
-                return "SUCCESS";
-            case PipelineResult::EMPTY_PROFILES:
-                return "EMPTY_PROFILES";
-            case PipelineResult::INVALID_SCRIPT_PATH:
-                return "INVALID_SCRIPT_PATH";
-            case PipelineResult::INVALID_CONFIG_PATH:
-                return "INVALID_CONFIG_PATH";
-            case PipelineResult::INVALID_BUILD_DIR:
-                return "INVALID_BUILD_DIR";
-            case PipelineResult::INVALID_SCRIPT_INFO:
-                return "INVALID_SCRIPT_INFO";
-            case PipelineResult::NO_AVAILABLE_PROFILE:
-                return "NO_AVAILABLE_PROFILE";
-            case PipelineResult::DEPENDENCIES_FAILED:
-                return "DEPENDENCIES_FAILED";
-            case PipelineResult::COMPILE_LINK_FAILED:
-                return "COMPILE_LINK_FAILED";
-            case PipelineResult::INVALID_PROFILE:
-                return "INVALID_PROFILE";
-            case PipelineResult::RUN_SCRIPT_FAILED:
-                return "RUN_SCRIPT_FAILED";
-            case PipelineResult::INVALID_OPTION:
-                return "INVALID_OPTION";
-            default:
-                return "UNKNOWN_PIPELINE_RESULT";
-        }
-    }
-    
-    inline bool DownloadTutorial(char* runcppPath)
+    inline DS::Result<void> DownloadTutorial(char* runcppPath)
     {
         std::string dummy;
         int returnCode = 0;
@@ -882,10 +944,7 @@ namespace runcpp2
                         "Continue? [Y/n]");
             
             if(!std::getline(std::cin, input))
-            {
-                ssLOG_ERROR("IO Error when trying to get cin");
-                return false;
-            }
+                return DS_ERROR_MSG("IO Error when trying to get cin");
             
             if(!input.empty())
             {
@@ -894,7 +953,7 @@ namespace runcpp2
                 else if(input == "n" || input == "N")
                 {
                     ssLOG_BASE("Not continuing");
-                    return 0;
+                    return {};
                 }
                 else
                     ssLOG_BASE("Please only answer with y or n");
@@ -918,7 +977,7 @@ namespace runcpp2
                             dummy,
                             returnCode))
             {
-                return false;
+                return DS_ERROR_MSG("Failed to download tutorial");
             }    
         #else
             if(!RunCommand( "curl -L -o InteractiveTutorial.cpp "
@@ -929,15 +988,15 @@ namespace runcpp2
                             dummy,
                             returnCode))
             {
-                return false;
+                return DS_ERROR_MSG("Failed to download tutorial");
             }
         #endif
         
         ssLOG_INFO("targetBranch: " << targetBranch);
         ssLOG_BASE("Downloaded InteractiveTutorial.cpp from github.");
-        ssLOG_BASE("Do `" << runcppPath << " InteractiveTutorial.cpp to start the tutorial.");
+        ssLOG_BASE("Do `" << runcppPath << " run InteractiveTutorial.cpp to start the tutorial.");
         
-        return true;
+        return {};
     }
 }
 

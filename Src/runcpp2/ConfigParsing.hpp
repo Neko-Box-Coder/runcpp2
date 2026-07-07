@@ -264,7 +264,7 @@ namespace
 
 namespace runcpp2
 {
-    inline DS::Result<std::string> GetConfigFilePath()
+    inline DS::Result<ghc::filesystem::path> GetConfigFilePath()
     {
         CO_INSERT_IMPL(OverrideInstance, DS::Result<std::string>, ());
         
@@ -416,7 +416,7 @@ namespace runcpp2
         ssLOG_FUNC_INFO();
         
         ghc::filesystem::path configPath =  !customConfigPath.empty() ? 
-                                            customConfigPath : 
+                                            ghc::filesystem::path(customConfigPath) : 
                                             GetConfigFilePath().DS_VALUE_OR();
         DS_CHECK_PREV();
         ghc::filesystem::path configVersionPath = configPath.parent_path() / ".version";

@@ -4,7 +4,7 @@
 
 runcpp2 is a simple declarable, scriptable, flexible cross-platform build system build system for c or c++
 
-- 🚀 **Simple**: `runcpp2 main.cpp`, this is all you need to get started
+- 🚀 **Simple**: `runcpp2 run main.cpp`, this is all you need to get started
 - 📝 **Declarable**: *Quick, Concise, Minimal* YAML format
 - 🔧 **Scriptable**: *Customize, Run And Debug* your build pipeline with c++, or just use it as a script. 
                      No longer need to juggle between CMake, Python, Bash, Batch, Lua, etc...
@@ -32,7 +32,7 @@ you can run c++ files anywhere you want.
 
 ### Interactive Tutorial
 
-You can get started by running the tutorial with `runcpp2 --tutorial` and follow the instructions
+You can get started by running the tutorial with `runcpp2 tutorial` and follow the instructions
 
 ### User Guide
 
