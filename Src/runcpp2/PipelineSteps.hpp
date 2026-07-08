@@ -363,7 +363,8 @@ namespace runcpp2
         if(!parsableInfo.empty())
         {
             ssLOG_DEBUG("Parsed script info YAML:");
-            ssLOG_DEBUG("\n" << outScriptInfo.ToString(""));
+            std::string scriptInfoStr = outScriptInfo.ToString("").DS_TRY();
+            ssLOG_DEBUG("\n" << scriptInfoStr);
         }
 
         //Replace build type with internal executable type to trigger recompiling when switching to 
