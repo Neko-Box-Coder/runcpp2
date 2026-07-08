@@ -579,8 +579,8 @@ namespace runcpp2
                             scriptDirectory,
                             buildDir,
                             changedDependencies,
-                            maxThreads,
                             false,
+                            maxThreads,
                             availableDependencies,
                             gatheredBinariesPaths).DS_TRY();
         
@@ -717,8 +717,8 @@ namespace runcpp2
                                 scriptDirectory,
                                 buildDir,
                                 changedDependencies,
-                                maxThreads,
                                 runParams.buildSourceOnly,
+                                maxThreads,
                                 availableDependencies,
                                 gatheredBinariesPaths).DS_TRY();
             
