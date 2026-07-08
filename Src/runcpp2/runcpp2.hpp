@@ -643,6 +643,8 @@ namespace runcpp2
                                 ghc::filesystem::file_time_type& outFinalSourceWriteTime,
                                 ghc::filesystem::file_time_type& outFinalIncludeWriteTime)
     {
+        ssLOG_FUNC_INFO();
+        
         ghc::filesystem::path absoluteScriptPath;
         ghc::filesystem::path scriptDirectory;
         std::string scriptName;
@@ -664,10 +666,10 @@ namespace runcpp2
         if(runParams.Core.profiles.empty())
             return DS_ERROR_MSG("No compiler profiles found");
         
-        int profileIndex =  GetPreferredProfileIndex(   absoluteScriptPath, 
-                                                        scriptInfo, 
-                                                        runParams.Core.profiles, 
-                                                        runParams.Core.configPreferredProfile).DS_TRY();
+        int profileIndex = GetPreferredProfileIndex(absoluteScriptPath, 
+                                                    scriptInfo, 
+                                                    runParams.Core.profiles, 
+                                                    runParams.Core.configPreferredProfile).DS_TRY();
         
         //Parsing the script, setting up dependencies, compiling and linking
         std::vector<std::string> filesToCopyPaths;
