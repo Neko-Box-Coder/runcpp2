@@ -601,8 +601,8 @@ DS::Result<void> HandleTemplate(int argc, char* argv[])
 
 DS::Result<void> HandleRegenUserConfig(int argc, char* argv[])
 {
-    //runcpp2 reset-user-config
-    if(argc <= 2 || strcmp(argv[2], "--help") == 0 || strcmp(argv[2], "-h") == 0)
+    //runcpp2 regen-user-config
+    if(argc == 3 && (strcmp(argv[2], "--help") == 0 || strcmp(argv[2], "-h") == 0))
     {
         ssLOG_BASE("Usage: runcpp2 regen-user-config [options]");
         ssLOG_BASE("Options:");
@@ -699,6 +699,7 @@ DS::Result<void> HandleReset(int argc, char* argv[])
         runcpp2::RunCleanup(coreParams).DS_TRY();
     }
     
+    ssLOG_BASE("Reset finished");
     return {};
 }
 

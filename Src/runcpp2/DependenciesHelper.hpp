@@ -814,7 +814,7 @@ namespace runcpp2
                                                 const ghc::filesystem::path& sourcePath,
                                                 const ghc::filesystem::path& copyPath)
     {
-        ssLOG_FUNC_DEBUG();
+        ssLOG_FUNC_INFO();
         std::error_code ec;
 
         //Only sync if it's a local dependency
@@ -946,7 +946,11 @@ namespace runcpp2
                         {
                             ssLOG_DEBUG("Hardlink failed: " << ec.message());
                             ec.clear();
-                            ghc::filesystem::copy(srcPath, targetPath, ec);
+                            ghc::filesystem::copy_options copyOptions = 
+                                ghc::filesystem::copy_options::overwrite_existing |
+                                ghc::filesystem::copy_options::recursive |
+                                ghc::filesystem::copy_options::copy_symlinks;
+                            ghc::filesystem::copy(srcPath, targetPath, copyOptions, ec);
                         }
                     }
                     break;
@@ -1069,7 +1073,7 @@ namespace
                                                 const ghc::filesystem::path& buildDir,
                                                 bool& outPrePopulated)
     {
-        ssLOG_FUNC_DEBUG();
+        ssLOG_FUNC_INFO();
         
         std::error_code e;
         
