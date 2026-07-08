@@ -711,7 +711,7 @@ namespace runcpp2
                                 dependenciesSourcePaths,
                                 dependenciesLocalCopiesPaths).DS_TRY();
 
-        if(buildSourceOnly)
+        if(!buildSourceOnly)
         {
             BuildDependencies(  profile,
                                 scriptInfo,
