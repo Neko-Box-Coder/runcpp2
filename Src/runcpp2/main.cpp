@@ -699,6 +699,7 @@ DS::Result<void> HandleReset(int argc, char* argv[])
         runcpp2::RunCleanup(coreParams).DS_TRY();
     }
     
+    ssLOG_BASE("Reset finished");
     return {};
 }
 
