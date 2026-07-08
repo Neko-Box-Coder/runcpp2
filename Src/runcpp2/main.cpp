@@ -453,6 +453,7 @@ DS::Result<void> HandleBuild(int argc, char* argv[])
                     parsedScriptInfo,
                     finalSourceWriteTime,
                     finalIncludeWriteTime).DS_TRY();
+    ssLOG_BASE("Build finished");
     return {};
 }
 
@@ -513,6 +514,8 @@ DS::Result<void> HandleWatch(int argc, char* argv[])
     runcpp2::CoreParams coreParams = { script, profiles, params, executable, local, preferredProfile };
     while(true)
     {
+        ssLOG_BASE("Watching...");
+        
         //Check if sources need update
         bool needsUpdate = false;
         if(!needsRunning)   //Skip check on first run
