@@ -21,6 +21,8 @@ namespace
 {
     bool IsProfileAvailableOnSystem(const runcpp2::Data::Profile& profile)
     {
+        ssLOG_FUNC_INFO();
+        
         if(!runcpp2::HasValueFromPlatformMap(profile.Compiler.CheckExistence))
         {
             ssLOG_INFO( "Compiler for profile " << profile.Name << 
@@ -188,6 +190,8 @@ namespace
                             const runcpp2::Data::ScriptInfo& scriptInfo,
                             const std::string& scriptPath)
     {
+        ssLOG_FUNC_INFO();
+        
         std::string scriptExtension = ghc::filesystem::path(scriptPath).extension().string();
         bool isYaml = scriptExtension == ".yaml" || scriptExtension == ".yml";
         const ProfilesProcessPaths* sources = 
@@ -237,6 +241,8 @@ namespace runcpp2
                                                     const std::vector<Data::Profile>& profiles, 
                                                     const std::string& configPreferredProfile)
     {
+        ssLOG_FUNC_INFO();
+        
         std::vector<int> availableProfiles = GetAvailableProfiles(  profiles, 
                                                                     scriptInfo, 
                                                                     scriptPath).DS_TRY();
