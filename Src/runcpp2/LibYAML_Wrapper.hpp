@@ -137,6 +137,7 @@ namespace runcpp2
             }
         };
         
+        //TODO: Rename this to resource
         using ResourceHandle = std::pair<yaml_parser_t*, ReadWriteBuffer>;
         
         inline NodePtr CreateNodePtr() { return std::make_shared<Node>(); }
@@ -890,7 +891,8 @@ namespace runcpp2
         {
             DS_ASSERT_TRUE(IsSequence());
             DS_ASSERT_LT_EQ(index, mpark::get<Sequence>(Value).size());
-            mpark::get<Sequence>(Value).insert(mpark::get<Sequence>(Value).begin() + index, {});
+            mpark::get<Sequence>(Value).insert( mpark::get<Sequence>(Value).begin() + index, 
+                                                CreateNodePtr());
             return mpark::get<Sequence>(Value)[index];
         }
         
