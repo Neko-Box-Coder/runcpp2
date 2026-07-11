@@ -4,6 +4,7 @@
 #include "runcpp2/LibYAML_Wrapper.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/StringUtil.hpp"
+#include "runcpp2/NodeRequirement.hpp"
 
 #include "ssLogger/ssLog.hpp"
 #include "DSResult/DSResult.hpp"
@@ -19,29 +20,6 @@
 
 namespace runcpp2
 {
-    struct NodeRequirement
-    {
-        std::string Name;
-        YAML::NodeType NodeType;
-        bool Required;
-        bool Nullable;
-        
-        inline NodeRequirement() :  Name(""),
-                                    NodeType(YAML::NodeType::Scalar),
-                                    Required(false),
-                                    Nullable(true)
-        {}
-        
-        inline NodeRequirement( const std::string& name, 
-                                YAML::NodeType nodeType, 
-                                bool required,
-                                bool nullable) :    Name(name), 
-                                                                NodeType(nodeType),
-                                                                Required(required), 
-                                                                Nullable(nullable)
-        {}
-    };
-    
     inline bool ExistAndHasChild(   YAML::ConstNodePtr node, 
                                     const std::string& childName,
                                     bool nullable = false)

@@ -8,6 +8,7 @@
 #include "runcpp2/Data/ProfilesCommands.hpp"
 #include "runcpp2/Data/BuildType.hpp"
 #include "runcpp2/Data/ParameterValue.hpp"
+#include "runcpp2/ParameterUtil.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/LibYAML_Wrapper.hpp"
@@ -58,223 +59,20 @@ namespace Data
         bool Populated = false;
         ghc::filesystem::file_time_type LastWriteTime = ghc::filesystem::file_time_type::min();
         
-        inline DS::Result<void> ParseParametersAndVariables(YAML::ConstNodePtr node)
-        {
-            std::vector<NodeRequirement> requirements =
-            {
-                NodeRequirement("Parameters", YAML::NodeType::Map, false, true),
-                NodeRequirement("Variables", YAML::NodeType::Map, false, true),
-            };
-            
-            DS_ASSERT_TRUE(CheckNodeRequirements(node, requirements));
-            
-            //NOTE: Evaluate Parameters first, since we need to perform substitutions
-            if(ExistAndHasChild(node, "Parameters"))
-            {
-               YAML::ConstNodePtr parametersNode = node->GetMapValueNode("Parameters");
-               for(int i = 0; i < parametersNode->GetChildrenCount(); ++i)
-               {
-                    std::string parameterName = parametersNode  ->GetMapKeyScalarAt<std::string>(i)
-                                                                .DS_TRY();
-                    YAML::ConstNodePtr valueNode = parametersNode->GetMapValueNodeAt(i);
-                    ParameterValue paramValue;
-                    paramValue.ParseYAML_Node(valueNode).DS_TRY();
-                    if(Parameters.count(parameterName) != 0)
-                    {
-                        return DS_ERROR_MSG("ScriptInfo: Same parameter (" + parameterName + 
-                                            ") is added more than once");
-                    }
-                    Parameters[parameterName] = paramValue;
-               }
-            }
-            
-            //NOTE: Evaluate Parameters first, since we need to perform substitutions
-            if(ExistAndHasChild(node, "Variables"))
-            {
-                YAML::ConstNodePtr variablesNode = node->GetMapValueNode("Variables");
-                for(int i = 0; i < variablesNode->GetChildrenCount(); ++i)
-                {
-                    std::string variableName = variablesNode->GetMapKeyScalarAt<std::string>(i)
-                                                            .DS_TRY();
-                    std::string variableValue = variablesNode   ->GetMapValueScalarAt<std::string>(i)
-                                                                .DS_TRY();
-                    if(Variables.count(variableName) != 0)
-                    {
-                        return DS_ERROR_MSG("ScriptInfo: Same variable (" + variableName + 
-                                            ") is added more than once");
-                    }
-                    Variables[variableName] = variableValue;
-                }
-            }
-            
-            return {};
-        }
-        
         inline DS::Result<void> 
         ParseYAML_Node( YAML::ConstNodePtr node, 
                         const std::unordered_map<std::string, std::string>& inputParameters)
         {
             ssLOG_FUNC_DEBUG();
             
-            ParseParametersAndVariables(node).DS_TRY();
+            ParseParametersAndVariables(*this, node).DS_TRY();
             
-            //Remove parameters and variables in the cloned node.
+            //Clone and modify the yaml node
             YAML::ResourceHandle resourceHandle;
             YAML::NodePtr clonedNode = node->Clone(false, resourceHandle).DS_TRY();
             DEFER { YAML::FreeYAMLResource(resourceHandle); };
             
-            if(clonedNode->HasMapKey("Parameters"))
-            {
-                clonedNode->RemoveMapChild("Parameters").DS_TRY();
-            }
-            if(clonedNode->HasMapKey("Variables"))
-            {
-                clonedNode->RemoveMapChild("Variables").DS_TRY();
-            }
-            
-            std::unordered_map<std::string, std::vector<std::string>> substitutionMap;
-            
-            //Populate parameters values first
-            for(auto it = Parameters.begin(); it != Parameters.end(); ++it)
-            {
-                bool isDefault = true;
-                std::string valueToParse;
-                if(inputParameters.count(it->first) == 0)
-                    valueToParse = it->second.Default;
-                else
-                {
-                    valueToParse = inputParameters.at(it->first);
-                    isDefault = false;
-                }
-                
-                //Parse the value
-                std::string subKey = "{" + it->first + "}";
-                {
-                    if(it->second.Array)
-                    {
-                        std::vector<std::string> inputValues;
-                        SplitString(valueToParse, ",", inputValues);
-                        for(int i = 0; i < inputValues.size(); ++i)
-                        {
-                            bool inConstraint = it->second.IsInputInConstraint(inputValues[i]).DS_TRY();
-                            if(!inConstraint)
-                            {
-                                return DS_ERROR_MSG("Input parameter[" + DS_STR(i) + "]: " + 
-                                                    inputValues[i] +
-                                                    (isDefault ? "(Default)" : "") + 
-                                                    " is not in constraint");
-                            }
-                        }
-                        substitutionMap[subKey] = inputValues;
-                    }
-                    else
-                    {
-                        bool inConstraint = it->second.IsInputInConstraint(valueToParse).DS_TRY();
-                        if(!inConstraint)
-                        {
-                            return DS_ERROR_MSG("Input parameter: " + it->first +
-                                                (isDefault ? "(Default)" : "") + 
-                                                " is not in constraint");
-                        }
-                        substitutionMap[subKey] = {valueToParse};
-                    }
-                }
-            } //for(auto it = Parameters.begin(); it != Parameters.end(); ++it)
-            
-            std::unordered_map<std::string, std::vector<std::string>> variablesMap;
-            
-            //Populate variables next
-            for(auto it = Variables.begin(); it != Variables.end(); ++it)
-            {
-                //Check if the same key already exists in the parameter
-                if(Parameters.count(it->first) != 0)
-                {
-                    return DS_ERROR_MSG("Variable name " + 
-                                        it->first + 
-                                        " already exists in Parameters");
-                }
-                
-                std::string subKey = "{" + it->first + "}";
-                variablesMap[subKey] = {};
-                PerformMultiSubstitutions(  substitutionMap, 
-                                            {}, 
-                                            it->second, 
-                                            variablesMap[subKey]).DS_TRY();
-            }
-            substitutionMap.insert(variablesMap.begin(), variablesMap.end());
-            
-            //TODO: Probably need to move this to a helper function for dependencies import
-            //Perform substitution recursively over the whole YAML object
-            std::deque<YAML::NodePtr> nodesToVisit;
-            nodesToVisit.push_back(clonedNode);
-            while(!nodesToVisit.empty())
-            {
-                YAML::NodePtr currentNode = nodesToVisit.front();
-                nodesToVisit.pop_front();
-                static_assert((int)YAML::NodeType::Count == 4, "");
-                switch(currentNode->GetType())
-                {
-                    case YAML::NodeType::Scalar:
-                    {
-                        YAML::Node* parent = currentNode->GetParent();
-                        std::string scalarValue = currentNode->GetScalar<std::string>().DS_TRY();
-                        if(parent && parent->GetType() == YAML::NodeType::Sequence)
-                        {
-                            std::vector<std::string> newValues;
-                            PerformMultiSubstitutions(  substitutionMap, 
-                                                        {}, 
-                                                        scalarValue, 
-                                                        newValues).DS_TRY();
-                            if(newValues.empty())
-                                return DS_ERROR_MSG("Substitution array returned empty");
-                            
-                            //Update the current value
-                            currentNode->InitScalar(newValues[0], resourceHandle).DS_TRY();
-                            
-                            //Find the index of the current node
-                            int currentIndex = -1;
-                            for(int i = 0; i < parent->GetChildrenCount(); ++i)
-                            {
-                                if(parent->GetSequenceChildNode(i) == currentNode)
-                                {
-                                    currentIndex = i;
-                                    break;
-                                }
-                            }
-                            
-                            if(currentIndex == -1)
-                                return DS_ERROR_MSG("Cannot find current node from parent?");
-                            
-                            //Then insert the rest of the substituted values after the current one
-                            if(newValues.size() > 1)
-                            {
-                                for(int i = 1; i < newValues.size(); ++i)
-                                {
-                                    YAML::NodePtr newChild = 
-                                        parent->CreateSequenceChildAt(currentIndex + i).DS_TRY();
-                                    newChild->InitScalar(newValues[i], resourceHandle).DS_TRY();
-                                }
-                            }
-                        }
-                        else
-                        {
-                            PerformSubstitutions(substitutionMap, {}, scalarValue).DS_TRY();
-                            currentNode->InitScalar(scalarValue, resourceHandle).DS_TRY();
-                        }
-                        break;
-                    } //case YAML::NodeType::Scalar:
-                    case YAML::NodeType::Alias:
-                        return DS_ERROR_MSG("Anchors should be resolved. This should not be reached");
-                    case YAML::NodeType::Sequence:
-                        for(int i = currentNode->GetChildrenCount() - 1; i >= 0; --i)
-                            nodesToVisit.push_back(currentNode->GetSequenceChildNode(i));
-                        break;
-                    case YAML::NodeType::Map:
-                        for(int i = currentNode->GetChildrenCount() - 1; i >= 0; --i)
-                            nodesToVisit.push_back(currentNode->GetMapValueNodeAt(i));
-                        break;
-                } //switch(currentNode->GetType())
-            } //while(!nodesToVisit.empty())
+            ApplyParametersAndVariables(*this, clonedNode, resourceHandle, inputParameters).DS_TRY();
             
             std::vector<NodeRequirement> requirements =
             {
