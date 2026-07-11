@@ -183,29 +183,8 @@ namespace
             }
         }
         
-        ghc::filesystem::file_time_type currentFinalBinaryWriteTime = finalBinaryWriteTime;
-        std::error_code e;
-        
-        for(int i = 0; i < copiedBinariesPaths.size(); ++i)
-        {
-            if(ghc::filesystem::exists(copiedBinariesPaths.at(i), e))
-            {
-                ghc::filesystem::file_time_type lastBinaryWriteTime = 
-                    ghc::filesystem::last_write_time(copiedBinariesPaths.at(i), e);
-            
-                if(lastBinaryWriteTime > currentFinalBinaryWriteTime)
-                    currentFinalBinaryWriteTime = lastBinaryWriteTime;
-            }
-            else
-            {
-                ssLOG_ERROR("Somehow copied binary path " << copiedBinariesPaths.at(i) << 
-                            " doesn't exist");
-                outOutputCache = false;
-                return false;
-            }
-        }
-        
         //Check if output is cached
+        std::error_code e;
         std::vector<ghc::filesystem::path> outputPaths;
         std::vector<bool> runnable;
         
@@ -219,6 +198,7 @@ namespace
             return false;
         }
         
+        ssLOG_INFO("finalBinaryWriteTime: " << runcpp2::SerializeTimePoint(finalBinaryWriteTime));
         int existCount = 0;
         for(const ghc::filesystem::path& outputPath : outputPaths)
         {
@@ -231,7 +211,8 @@ namespace
                 ghc::filesystem::file_time_type lastOutputBinary = 
                     ghc::filesystem::last_write_time(outputPath, e);
                 
-                if(lastOutputBinary >= currentFinalBinaryWriteTime)
+                ssLOG_INFO("lastOutputBinary: " << runcpp2::SerializeTimePoint(lastOutputBinary));
+                if(lastOutputBinary >= finalBinaryWriteTime)
                 {
                     ssLOG_INFO("Using output cache for " << outputPath.string());
                     continue;
@@ -241,8 +222,8 @@ namespace
                     ssLOG_INFO("Object files have more recent write time");
                     ssLOG_DEBUG("lastOutputBinary: " << 
                                 lastOutputBinary.time_since_epoch().count());
-                    ssLOG_DEBUG("currentFinalBinaryWriteTime: " << 
-                                currentFinalBinaryWriteTime.time_since_epoch().count());
+                    ssLOG_DEBUG("finalBinaryWriteTime: " << 
+                                finalBinaryWriteTime.time_since_epoch().count());
                     outOutputCache = false;
                     return true;
                 }

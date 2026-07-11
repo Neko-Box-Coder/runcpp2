@@ -16,6 +16,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 
 #if !defined(INTERNAL_RUNCPP2_UNIT_TESTS) || !INTERNAL_RUNCPP2_UNIT_TESTS
     #define CO_NO_OVERRIDE 1
@@ -235,6 +238,18 @@ namespace runcpp2
         }
         
         return "";
+    }
+    
+    //From https://stackoverflow.com/a/58523115
+    using time_point = std::chrono::system_clock::time_point;
+    std::string SerializeTimePoint(const time_point& time, const std::string& format = "%Y-%m-%d_%H:%M:%S")
+    {
+        std::time_t tt = std::chrono::system_clock::to_time_t(time);
+        std::tm tm = *std::gmtime(&tt); //GMT (UTC)
+        //std::tm tm = *std::localtime(&tt); //Locale time-zone, usually UTC by default.
+        std::stringstream ss;
+        ss << std::put_time( &tm, format.c_str() );
+        return ss.str();
     }
 }
 
