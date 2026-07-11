@@ -6,9 +6,11 @@
 #include "runcpp2/Data/DependencyLinkProperty.hpp"
 #include "runcpp2/Data/ProfilesCommands.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
+#include "runcpp2/Data/ParameterValue.hpp"
 #include "runcpp2/Data/FilesToCopyInfo.hpp"
 #include "runcpp2/LibYAML_Wrapper.hpp"
 #include "runcpp2/ParseUtil.hpp"
+#include "runcpp2/ParameterUtil.hpp"
 
 #include "ssLogger/ssLog.hpp"
 #include "DSResult/DSResult.hpp"
@@ -28,6 +30,8 @@ namespace Data
         std::string Name;
         std::unordered_set<PlatformName> Platforms;
         DependencySource Source;
+        std::unordered_map<std::string, ParameterValue> Parameters;
+        std::unordered_map<std::string, std::string> Variables;
         DependencyLibraryType LibraryType;
         std::vector<std::string> IncludePaths;
         std::vector<std::string> AbsoluteIncludePaths;
@@ -37,30 +41,36 @@ namespace Data
         std::unordered_map<PlatformName, ProfilesCommands> Build;
         std::unordered_map<PlatformName, FilesToCopyInfo> FilesToCopy;
         
-        inline bool ParseYAML_Node(YAML::ConstNodePtr node)
+        inline DS::Result<void> 
+        ParseYAML_Node( YAML::ConstNodePtr node,
+                        const std::unordered_map<std::string, std::string>& inputParameters)
         {
+            ParseParametersAndVariables(*this, node).DS_TRY();
+            
+            //Clone and modify the yaml node
+            YAML::ResourceHandle resourceHandle;
+            YAML::NodePtr clonedNode = node->Clone(false, resourceHandle).DS_TRY();
+            DEFER { YAML::FreeYAMLResource(resourceHandle); };
+            
+            ApplyParametersAndVariables(*this, clonedNode, resourceHandle, inputParameters).DS_TRY();
+            
             //If import is needed, we only need to parse the Source section
             do
             {
-                if(!ExistAndHasChild(node, "Source"))
-                {
-                    ssLOG_ERROR("DependencyInfo: Missing Source");
-                    return false;
-                }
+                
+                if(!ExistAndHasChild(clonedNode, "Source"))
+                    return DS_ERROR_MSG("DependencyInfo: Missing Source");
 
-                YAML::ConstNodePtr sourceNode = node->GetMapValueNode("Source");
+                YAML::ConstNodePtr sourceNode = clonedNode->GetMapValueNode("Source");
                 if(!ExistAndHasChild(sourceNode, "ImportPath"))
                     break;
 
                 if(!Source.ParseYAML_Node(sourceNode))
-                {
-                    ssLOG_ERROR("DependencyInfo: Failed to parse Source");
-                    return false;
-                }
+                    return DS_ERROR_MSG("DependencyInfo: Failed to parse Source");
 
                 ssLOG_DEBUG("DependencyInfo: Importing from " << Source.ImportPath.string());
                 ssLOG_DEBUG("Skipping the rest of the DependencyInfo");
-                return true;
+                return {};
             }
             while(false);
 
@@ -81,33 +91,23 @@ namespace Data
                 //FilesToCopy can be platform profile map or sequence of paths, handle later
             };
             
-            if(!CheckNodeRequirements(node, requirements))
-            {
-                ssLOG_ERROR("DependencyInfo: Failed to meet requirements");
-                return false;
-            }
+            if(!CheckNodeRequirements(clonedNode, requirements))
+                return DS_ERROR_MSG("DependencyInfo: Failed to meet requirements");
             
-            Name = node->GetMapValueScalar<std::string>("Name").DS_TRY_ACT(return false);
-            
-            YAML::ConstNodePtr platformsNode = node->GetMapValueNode("Platforms");
+            Name = clonedNode->GetMapValueScalar<std::string>("Name").DS_TRY();
+            YAML::ConstNodePtr platformsNode = clonedNode->GetMapValueNode("Platforms");
             for(int i = 0; i < platformsNode->GetChildrenCount(); ++i)
             {
-                std::string platform = platformsNode->GetSequenceChildScalar<std::string>(i)
-                                                    .DS_TRY_ACT(return false);
+                std::string platform = platformsNode->GetSequenceChildScalar<std::string>(i).DS_TRY();
                 Platforms.insert(platform);
             }
                 
-            YAML::ConstNodePtr sourceNode = node->GetMapValueNode("Source");
+            YAML::ConstNodePtr sourceNode = clonedNode->GetMapValueNode("Source");
             if(!Source.ParseYAML_Node(sourceNode))
-            {
-                ssLOG_ERROR("DependencyInfo: Failed to parse Source");
-                return false;
-            }
+                return DS_ERROR_MSG("DependencyInfo: Failed to parse Source");
             
             static_assert((int)DependencyLibraryType::COUNT == 4, "");
-            
-            std::string libType = node  ->GetMapValueScalar<std::string>("LibraryType")
-                                        .DS_TRY_ACT(return false);
+            std::string libType = clonedNode->GetMapValueScalar<std::string>("LibraryType").DS_TRY();
             if(libType == "Static")
                 LibraryType = DependencyLibraryType::STATIC;
             else if(libType == "Shared")
@@ -117,59 +117,49 @@ namespace Data
             else if(libType == "Header")
                 LibraryType = DependencyLibraryType::HEADER;
             else
-            {
-                ssLOG_ERROR("DependencyInfo: LibraryType is invalid");
-                return false;
-            }
+                return DS_ERROR_MSG("DependencyInfo: LibraryType is invalid");
             
-            if(ExistAndHasChild(node, "IncludePaths"))
+            if(ExistAndHasChild(clonedNode, "IncludePaths"))
             {
-                YAML::ConstNodePtr includePathsNode = node->GetMapValueNode("IncludePaths");
-                
+                YAML::ConstNodePtr includePathsNode = clonedNode->GetMapValueNode("IncludePaths");
                 for(int i = 0; i < includePathsNode->GetChildrenCount(); ++i)
                 {
                     std::string includePath = 
-                        includePathsNode->GetSequenceChildScalar<std::string>(i)
-                                        .DS_TRY_ACT(return false);
+                        includePathsNode->GetSequenceChildScalar<std::string>(i).DS_TRY();
                     IncludePaths.push_back(includePath);
                 }
             }
             
-            if(ExistAndHasChild(node, "LinkProperties"))
+            if(ExistAndHasChild(clonedNode, "LinkProperties"))
             {
-                if(!ParsePlatformProfileMap<DependencyLinkProperty>(node, 
-                                                                    "LinkProperties", 
-                                                                    LinkProperties, 
-                                                                    "LinkProperties"))
-                {
-                    return false;
-                }
+                DS_ASSERT_TRUE(ParsePlatformProfileMap<DependencyLinkProperty>( clonedNode, 
+                                                                                "LinkProperties", 
+                                                                                LinkProperties, 
+                                                                                "LinkProperties"));
             }
             else if(LibraryType != DependencyLibraryType::HEADER)
             {
-                ssLOG_ERROR("DependencyInfo: Missing LinkProperties with library type " << 
-                            Data::DependencyLibraryTypeToString(LibraryType));
-                return false;
+                return DS_ERROR_MSG("DependencyInfo: Missing LinkProperties with library type " + 
+                                    Data::DependencyLibraryTypeToString(LibraryType));
             }
 
-            if(!ParsePlatformProfileMap<ProfilesCommands>(node, "Setup", Setup, "Setup"))
-                return false;
-
-            if(!ParsePlatformProfileMap<ProfilesCommands>(node, "Cleanup", Cleanup, "Cleanup"))
-                return false;
-
-            if(!ParsePlatformProfileMap<ProfilesCommands>(node, "Build", Build, "Build"))
-                return false;
-
-            if(!ParsePlatformProfileMap<FilesToCopyInfo>(   node, 
-                                                            "FilesToCopy", 
-                                                            FilesToCopy, 
-                                                            "FilesToCopy"))
-            {
-                return false;
-            }
-
-            return true;
+            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesCommands>(   clonedNode, 
+                                                                        "Setup", 
+                                                                        Setup, 
+                                                                        "Setup"));
+            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesCommands>(   clonedNode, 
+                                                                        "Cleanup", 
+                                                                        Cleanup, 
+                                                                        "Cleanup"));
+            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesCommands>(   clonedNode, 
+                                                                        "Build", 
+                                                                        Build, 
+                                                                        "Build"));
+            DS_ASSERT_TRUE(ParsePlatformProfileMap<FilesToCopyInfo>(clonedNode, 
+                                                                    "FilesToCopy", 
+                                                                    FilesToCopy, 
+                                                                    "FilesToCopy"));
+            return {};
         }
 
         inline std::string ToString(std::string indentation) const

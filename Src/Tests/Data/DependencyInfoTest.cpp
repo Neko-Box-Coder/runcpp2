@@ -6,6 +6,8 @@
 
 DS::Result<void> TestMain()
 {
+    std::unordered_map<std::string, std::string> tempParameters;
+    
     //DependencyInfo Should Parse Valid YAML
     {
         //NOTE: This is just a test YAML for validating parsing, don't use it for actual config
@@ -77,7 +79,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         
         runcpp2::Data::DependencyInfo dependencyInfo;
-        DS_ASSERT_TRUE(dependencyInfo.ParseYAML_Node(root));
+        dependencyInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
         
         //Verify basic fields
         DS_ASSERT_EQ(dependencyInfo.Name, "MyLibrary");
@@ -120,8 +122,64 @@ DS::Result<void> TestMain()
         DS_ASSERT_EQ(roots.size(), 1);
         
         runcpp2::Data::DependencyInfo parsedOutput;
-        parsedOutput.ParseYAML_Node(roots.front());
+        parsedOutput.ParseYAML_Node(roots.front(), tempParameters).DS_TRY();
         DS_ASSERT_TRUE(dependencyInfo.Equals(parsedOutput));
+    }
+    
+    //DependencyInfo Should Perform Substitutions Correctly
+    {
+        std::unordered_map<std::string, std::string> parameters =   
+        {
+            {"Platforms", "Windows,Unix"}, 
+            {"SourceURL", "https://github.com/user/mylibrary.git"},
+            {"LibraryType", "Head"}
+        };
+    
+        const char* yamlStr = R"(
+            Name: MyLibrary
+            Parameters:
+                Platforms:
+                    Optional: false
+                    Array: true
+                SourceURL:
+                    Optional: false
+                LibraryType:
+                    Optional: false
+            Variables:
+                LibraryTypeVar: "{LibraryType}er"
+            Platforms: [ "{Platforms}" ]
+            Source:
+                Git:
+                    URL: "{SourceURL}"
+            LibraryType: "{LibraryTypeVar}"
+            IncludePaths:
+            -   include
+            -   src
+        )";
+    
+        runcpp2::YAML::ResourceHandle resource;
+        std::vector<runcpp2::YAML::NodePtr> roots = runcpp2::YAML::ParseYAML(   yamlStr, 
+                                                                                resource).DS_TRY();
+        DEFER { FreeYAMLResource(resource); };
+        
+        DS_ASSERT_EQ(roots.size(), 1);
+        runcpp2::YAML::NodePtr root = roots.front();
+        
+        runcpp2::Data::DependencyInfo dependencyInfo;
+        dependencyInfo.ParseYAML_Node(root, parameters).DS_TRY();
+        
+        DS_ASSERT_EQ(dependencyInfo.Platforms.size(), 2);
+        DS_ASSERT_TRUE(dependencyInfo.Platforms.count("Windows") > 0);
+        DS_ASSERT_TRUE(dependencyInfo.Platforms.count("Unix") > 0);
+
+        const runcpp2::Data::GitSource* git = 
+            mpark::get_if<runcpp2::Data::GitSource>(&dependencyInfo.Source.Source);
+        DS_ASSERT_TRUE(git != nullptr);
+        DS_ASSERT_EQ(git->URL, "https://github.com/user/mylibrary.git");
+        
+        DS_ASSERT_EQ(   (int)dependencyInfo.LibraryType, 
+                        (int)runcpp2::Data::DependencyLibraryType::HEADER);
+    
     }
     
     return {};

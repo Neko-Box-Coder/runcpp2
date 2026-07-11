@@ -476,17 +476,6 @@ namespace runcpp2
         return {};
     }
 
-    inline DS::Result<void> ResolveScriptImports(   Data::ScriptInfo& scriptInfo,
-                                                    const ghc::filesystem::path& scriptDirectory,
-                                                    const ghc::filesystem::path& buildDir)
-    {
-        ssLOG_FUNC_INFO();
-
-        //Resolve all the script info imports first before evaluating it
-        ResolveImports(scriptInfo, scriptDirectory, buildDir).DS_TRY();
-        return {};
-    }
-    
     inline DS::Result<void> 
     CheckScriptInfoChanges( const ghc::filesystem::path& buildDir,
                             const Data::ScriptInfo& scriptInfo,
@@ -540,7 +529,7 @@ namespace runcpp2
                 }
                 
                 //Resolve imports for last script info
-                ResolveScriptImports(lastScriptInfoFromDisk, scriptDirectory, buildDir).DS_TRY();
+                ResolveImports(lastScriptInfoFromDisk, scriptDirectory, buildDir, parameters).DS_TRY();
                 lastInfo = &lastScriptInfoFromDisk;
             }
             while(false);

@@ -184,11 +184,13 @@ namespace Data
                 {
                     DependencyInfo info;
                     YAML::ConstNodePtr dependencyNode = dependenciesNode->GetSequenceChildNode(i);
-                    if(!info.ParseYAML_Node(dependencyNode))
-                    {
-                        return DS_ERROR_MSG("ScriptInfo: Failed to parse DependencyInfo at index " + 
-                                            DS_STR(i));
-                    }
+                    info.ParseYAML_Node(dependencyNode, inputParameters).DS_TRY_ACT
+                    (
+                        DS_TMP_ERROR.Message += "\nScriptInfo: Failed to parse DependencyInfo at "
+                                                "index " + DS_STR(i);
+                        DS_APPEND_TRACE(DS_TMP_ERROR);
+                        return DS::Error(DS_TMP_ERROR)
+                    );
                     Dependencies.push_back(info);
                 }
             }

@@ -447,9 +447,7 @@ namespace runcpp2
                                     buildsManager,
                                     buildDir,
                                     includeManager).DS_TRY();
-        
-        //Resolve imports
-        ResolveScriptImports(scriptInfo, scriptDirectory, buildDir).DS_TRY();
+        ResolveImports(scriptInfo, scriptDirectory, buildDir, parameters).DS_TRY();
         
         //Process Dependencies
         ResetDependencies(  scriptInfo,
@@ -531,8 +529,7 @@ namespace runcpp2
         if(maxThreads <= 0)
             return DS_ERROR_MSG("Invalid number of threads passed in");
         
-        //Resolve imports
-        ResolveScriptImports(scriptInfo, scriptDirectory, buildDir).DS_TRY();
+        ResolveImports(scriptInfo, scriptDirectory, buildDir, parameters).DS_TRY();
         
         //Check if script info has changed if provided and run setup if needed
         bool recompileNeeded = false;
@@ -670,8 +667,7 @@ namespace runcpp2
             if(maxThreads <= 0)
                 return DS_ERROR_MSG("Invalid number of threads passed in");
             
-            //Resolve imports
-            ResolveScriptImports(scriptInfo, scriptDirectory, buildDir).DS_TRY();
+            ResolveImports(scriptInfo, scriptDirectory, buildDir, parameters).DS_TRY();
             
             //Check if script info has changed if provided and run setup if needed
             bool recompileNeeded = false;
