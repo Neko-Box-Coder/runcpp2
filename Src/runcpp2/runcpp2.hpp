@@ -777,9 +777,13 @@ namespace runcpp2
                                     linkFilesPaths, 
                                     filesToCopyPaths);
             
-            std::error_code e;
-
+            //Set dependencies files to be lower priority
+            std::vector<int> binaryFilesPriorities;
+            for(int i = 0; i < linkFilesPaths.size(); ++i)
+                binaryFilesPriorities.push_back(-100);
+            
             //Get finalBinaryWriteTime by combining final object and dependencies write times
+            std::error_code e;
             ghc::filesystem::file_time_type finalBinaryWriteTime = finalObjectWriteTime;
             for(int i = 0; i < linkFilesPaths.size(); ++i)
             {
@@ -816,7 +820,10 @@ namespace runcpp2
             if(!outputCache || relinkNeeded)
             {
                 for(int i = 0; i < cachedObjectsFiles.size(); ++i)
+                {
                     linkFilesPaths.push_back(cachedObjectsFiles.at(i));
+                    binaryFilesPriorities.push_back(0);
+                }
                 
                 //TODO: Compile and link for watch as well. Load library as well
                 if(runParams.compileOnly)
@@ -827,7 +834,6 @@ namespace runcpp2
                                         sourceHasCache,
                                         includePaths, 
                                         scriptInfo,
-                                        availableDependencies,
                                         runParams.Core.profiles.at(profileIndex),
                                         maxThreads).DS_TRY();
                     return 0;
@@ -844,6 +850,7 @@ namespace runcpp2
                                             availableDependencies,
                                             runParams.Core.profiles.at(profileIndex),
                                             linkFilesPaths,
+                                            binaryFilesPriorities,
                                             maxThreads)
                         .DS_TRY_ACT(DS_TMP_ERROR.Message += "\nFailed to compile or link script.";
                                     DS_APPEND_TRACE(DS_TMP_ERROR);

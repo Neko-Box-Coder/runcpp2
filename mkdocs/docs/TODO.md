@@ -94,6 +94,8 @@ endfunction()
 
 print_target_properties(matplot)
 -->
+- Add the ability to specify link order for source files and dependencies
+- Auto link order for source files, heuristically from include maps 
 - Add the ability to specify different profiles(?)/defines for different source files
 - Use `<csignal>` to handle potential segfaults
 - Use System2 subprocess if no prepend commands to be safer
