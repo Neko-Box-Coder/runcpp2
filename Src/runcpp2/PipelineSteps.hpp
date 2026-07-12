@@ -212,15 +212,15 @@ namespace
 namespace runcpp2
 {
     inline DS::Result<void> CopyFiles(  const ghc::filesystem::path& destDir,
-                                        const std::vector<std::string>& filePaths,
+                                        const std::vector<ghc::filesystem::path>& filePaths,
                                         std::vector<std::string>& outCopiedPaths)
     {
         ssLOG_FUNC_INFO();
         
         std::error_code e;
-        for (const std::string& srcPath : filePaths)
+        for (const ghc::filesystem::path& srcPath : filePaths)
         {
-            ghc::filesystem::path destPath = destDir / ghc::filesystem::path(srcPath).filename();
+            ghc::filesystem::path destPath = destDir / srcPath.filename();
 
             if(ghc::filesystem::exists(srcPath, e))
             {
@@ -230,16 +230,17 @@ namespace runcpp2
                                       e);
                 if(e)
                 {
-                    std::string errorMsg =  DS_STR("Failed to copy file from ") + srcPath + " to " + 
-                                            destPath.string() + "\nError: " + e.message();
+                    std::string errorMsg =  DS_STR("Failed to copy file from ") + srcPath.string() + 
+                                                    " to " + destPath.string() + "\nError: " + 
+                                                    e.message();
                     return DS_ERROR_MSG(errorMsg);
                 }
                 
-                ssLOG_INFO("Copied from " << srcPath << " to " << destPath.string());
+                ssLOG_INFO("Copied from " << srcPath.string() << " to " << destPath.string());
                 outCopiedPaths.push_back(ProcessPath(destPath));
             }
             else
-                return DS_ERROR_MSG("File to copy not found: " + srcPath);
+                return DS_ERROR_MSG("File to copy not found: " + srcPath.string());
         }
         
         return {};
@@ -739,8 +740,8 @@ namespace runcpp2
 
     inline void SeparateDependencyFiles(const Data::FilesTypesInfo& filesTypes,
                                         const std::vector<std::string>& gatheredBinariesPaths,
-                                        std::vector<std::string>& outLinkFilesPaths,
-                                        std::vector<std::string>& outFilesToCopyPaths)
+                                        std::vector<ghc::filesystem::path>& outLinkFilesPaths,
+                                        std::vector<ghc::filesystem::path>& outFilesToCopyPaths)
     {
         ssLOG_FUNC_INFO();
         INTERNAL_RUNCPP2_SAFE_START();
@@ -789,11 +790,11 @@ namespace runcpp2
 
         ssLOG_INFO("Files to link:");
         for(int i = 0; i < outLinkFilesPaths.size(); ++i)
-            ssLOG_INFO("  " << outLinkFilesPaths[i]);
+            ssLOG_INFO("  " << outLinkFilesPaths[i].string());
 
         ssLOG_INFO("Files to copy:");
         for(int i = 0; i < outFilesToCopyPaths.size(); ++i)
-            ssLOG_INFO("  " << outFilesToCopyPaths[i]);
+            ssLOG_INFO("  " << outFilesToCopyPaths[i].string());
         
         INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(void());
     }

@@ -951,7 +951,7 @@ namespace runcpp2
                             const Data::ScriptInfo& scriptInfo,
                             const std::vector<Data::DependencyInfo*>& availableDependencies,
                             const Data::Profile& profile,
-                            const std::vector<std::string>& compiledObjectsPaths,
+                            const std::vector<ghc::filesystem::path>& compiledObjectsPaths,
                             const int maxThreads)
     {
         if(!RunGlobalSteps(buildDir, profile.Setup))

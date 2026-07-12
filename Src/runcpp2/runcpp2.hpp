@@ -170,7 +170,6 @@ namespace
                             const runcpp2::Data::Profile& currentProfile,
                             const runcpp2::Data::ScriptInfo& scriptInfo,
                             const std::string& scriptName,
-                            const std::vector<std::string>& copiedBinariesPaths,
                             const ghc::filesystem::file_time_type& finalBinaryWriteTime,
                             bool& outOutputCache)
     {
@@ -653,7 +652,7 @@ namespace runcpp2
                                                     runParams.Core.configPreferredProfile).DS_TRY();
         
         //Parsing the script, setting up dependencies, compiling and linking
-        std::vector<std::string> filesToCopyPaths;
+        std::vector<ghc::filesystem::path> filesToCopyPaths;
         ghc::filesystem::path buildDir = GetDefaultBuildDir().DS_TRY();
         {
             BuildsManager buildsManager("/tmp");
@@ -772,7 +771,7 @@ namespace runcpp2
                 }
             }
             
-            std::vector<std::string> linkFilesPaths;
+            std::vector<ghc::filesystem::path> linkFilesPaths;
             SeparateDependencyFiles(runParams.Core.profiles.at(profileIndex).FilesTypes, 
                                     gatheredBinariesPaths, 
                                     linkFilesPaths, 
@@ -785,7 +784,10 @@ namespace runcpp2
             for(int i = 0; i < linkFilesPaths.size(); ++i)
             {
                 if(!ghc::filesystem::exists(linkFilesPaths.at(i), e))
-                    return DS_ERROR_MSG(linkFilesPaths.at(i) + " reported as cached but doesn't exist");
+                {
+                    return DS_ERROR_MSG(linkFilesPaths.at(i).string() + 
+                                        " reported as cached but doesn't exist");
+                }
                 
                 ghc::filesystem::file_time_type lastWriteTime = 
                     ghc::filesystem::last_write_time(linkFilesPaths.at(i), e);
@@ -804,7 +806,6 @@ namespace runcpp2
                                 runParams.Core.profiles.at(profileIndex),
                                 scriptInfo,
                                 scriptName,
-                                linkFilesPaths,
                                 finalBinaryWriteTime,
                                 outputCache))
             {
@@ -884,7 +885,7 @@ namespace runcpp2
                 buildDir = runParams.buildOutputDir;
                 //filesToCopyPaths.push_back(runnableTarget.string());
                 for(const ghc::filesystem::path& target : targets)
-                    filesToCopyPaths.push_back(target.string());
+                    filesToCopyPaths.push_back(target);
             }
 
             CopyFiles(buildDir, filesToCopyPaths, copiedPaths)
