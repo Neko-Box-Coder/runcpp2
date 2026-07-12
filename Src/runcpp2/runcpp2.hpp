@@ -170,7 +170,6 @@ namespace
                             const runcpp2::Data::Profile& currentProfile,
                             const runcpp2::Data::ScriptInfo& scriptInfo,
                             const std::string& scriptName,
-                            const std::vector<std::string>& copiedBinariesPaths,
                             const ghc::filesystem::file_time_type& finalBinaryWriteTime,
                             bool& outOutputCache)
     {
@@ -183,29 +182,8 @@ namespace
             }
         }
         
-        ghc::filesystem::file_time_type currentFinalBinaryWriteTime = finalBinaryWriteTime;
-        std::error_code e;
-        
-        for(int i = 0; i < copiedBinariesPaths.size(); ++i)
-        {
-            if(ghc::filesystem::exists(copiedBinariesPaths.at(i), e))
-            {
-                ghc::filesystem::file_time_type lastBinaryWriteTime = 
-                    ghc::filesystem::last_write_time(copiedBinariesPaths.at(i), e);
-            
-                if(lastBinaryWriteTime > currentFinalBinaryWriteTime)
-                    currentFinalBinaryWriteTime = lastBinaryWriteTime;
-            }
-            else
-            {
-                ssLOG_ERROR("Somehow copied binary path " << copiedBinariesPaths.at(i) << 
-                            " doesn't exist");
-                outOutputCache = false;
-                return false;
-            }
-        }
-        
         //Check if output is cached
+        std::error_code e;
         std::vector<ghc::filesystem::path> outputPaths;
         std::vector<bool> runnable;
         
@@ -219,6 +197,7 @@ namespace
             return false;
         }
         
+        ssLOG_INFO("finalBinaryWriteTime: " << runcpp2::SerializeTimePoint(finalBinaryWriteTime));
         int existCount = 0;
         for(const ghc::filesystem::path& outputPath : outputPaths)
         {
@@ -231,7 +210,8 @@ namespace
                 ghc::filesystem::file_time_type lastOutputBinary = 
                     ghc::filesystem::last_write_time(outputPath, e);
                 
-                if(lastOutputBinary >= currentFinalBinaryWriteTime)
+                ssLOG_INFO("lastOutputBinary: " << runcpp2::SerializeTimePoint(lastOutputBinary));
+                if(lastOutputBinary >= finalBinaryWriteTime)
                 {
                     ssLOG_INFO("Using output cache for " << outputPath.string());
                     continue;
@@ -241,8 +221,8 @@ namespace
                     ssLOG_INFO("Object files have more recent write time");
                     ssLOG_DEBUG("lastOutputBinary: " << 
                                 lastOutputBinary.time_since_epoch().count());
-                    ssLOG_DEBUG("currentFinalBinaryWriteTime: " << 
-                                currentFinalBinaryWriteTime.time_since_epoch().count());
+                    ssLOG_DEBUG("finalBinaryWriteTime: " << 
+                                finalBinaryWriteTime.time_since_epoch().count());
                     outOutputCache = false;
                     return true;
                 }
@@ -467,9 +447,7 @@ namespace runcpp2
                                     buildsManager,
                                     buildDir,
                                     includeManager).DS_TRY();
-        
-        //Resolve imports
-        ResolveScriptImports(scriptInfo, scriptDirectory, buildDir).DS_TRY();
+        ResolveImports(scriptInfo, scriptDirectory, buildDir, parameters).DS_TRY();
         
         //Process Dependencies
         ResetDependencies(  scriptInfo,
@@ -551,8 +529,7 @@ namespace runcpp2
         if(maxThreads <= 0)
             return DS_ERROR_MSG("Invalid number of threads passed in");
         
-        //Resolve imports
-        ResolveScriptImports(scriptInfo, scriptDirectory, buildDir).DS_TRY();
+        ResolveImports(scriptInfo, scriptDirectory, buildDir, parameters).DS_TRY();
         
         //Check if script info has changed if provided and run setup if needed
         bool recompileNeeded = false;
@@ -672,7 +649,7 @@ namespace runcpp2
                                                     runParams.Core.configPreferredProfile).DS_TRY();
         
         //Parsing the script, setting up dependencies, compiling and linking
-        std::vector<std::string> filesToCopyPaths;
+        std::vector<ghc::filesystem::path> filesToCopyPaths;
         ghc::filesystem::path buildDir = GetDefaultBuildDir().DS_TRY();
         {
             BuildsManager buildsManager("/tmp");
@@ -690,8 +667,7 @@ namespace runcpp2
             if(maxThreads <= 0)
                 return DS_ERROR_MSG("Invalid number of threads passed in");
             
-            //Resolve imports
-            ResolveScriptImports(scriptInfo, scriptDirectory, buildDir).DS_TRY();
+            ResolveImports(scriptInfo, scriptDirectory, buildDir, parameters).DS_TRY();
             
             //Check if script info has changed if provided and run setup if needed
             bool recompileNeeded = false;
@@ -791,20 +767,27 @@ namespace runcpp2
                 }
             }
             
-            std::vector<std::string> linkFilesPaths;
+            std::vector<ghc::filesystem::path> linkFilesPaths;
             SeparateDependencyFiles(runParams.Core.profiles.at(profileIndex).FilesTypes, 
                                     gatheredBinariesPaths, 
                                     linkFilesPaths, 
                                     filesToCopyPaths);
             
-            std::error_code e;
-
+            //Set dependencies files to be lower priority
+            std::vector<int> binaryFilesPriorities;
+            for(int i = 0; i < linkFilesPaths.size(); ++i)
+                binaryFilesPriorities.push_back(-100);
+            
             //Get finalBinaryWriteTime by combining final object and dependencies write times
+            std::error_code e;
             ghc::filesystem::file_time_type finalBinaryWriteTime = finalObjectWriteTime;
             for(int i = 0; i < linkFilesPaths.size(); ++i)
             {
                 if(!ghc::filesystem::exists(linkFilesPaths.at(i), e))
-                    return DS_ERROR_MSG(linkFilesPaths.at(i) + " reported as cached but doesn't exist");
+                {
+                    return DS_ERROR_MSG(linkFilesPaths.at(i).string() + 
+                                        " reported as cached but doesn't exist");
+                }
                 
                 ghc::filesystem::file_time_type lastWriteTime = 
                     ghc::filesystem::last_write_time(linkFilesPaths.at(i), e);
@@ -823,7 +806,6 @@ namespace runcpp2
                                 runParams.Core.profiles.at(profileIndex),
                                 scriptInfo,
                                 scriptName,
-                                linkFilesPaths,
                                 finalBinaryWriteTime,
                                 outputCache))
             {
@@ -834,7 +816,10 @@ namespace runcpp2
             if(!outputCache || relinkNeeded)
             {
                 for(int i = 0; i < cachedObjectsFiles.size(); ++i)
+                {
                     linkFilesPaths.push_back(cachedObjectsFiles.at(i));
+                    binaryFilesPriorities.push_back(0);
+                }
                 
                 //TODO: Compile and link for watch as well. Load library as well
                 if(runParams.compileOnly)
@@ -845,7 +830,6 @@ namespace runcpp2
                                         sourceHasCache,
                                         includePaths, 
                                         scriptInfo,
-                                        availableDependencies,
                                         runParams.Core.profiles.at(profileIndex),
                                         maxThreads).DS_TRY();
                     return 0;
@@ -862,6 +846,7 @@ namespace runcpp2
                                             availableDependencies,
                                             runParams.Core.profiles.at(profileIndex),
                                             linkFilesPaths,
+                                            binaryFilesPriorities,
                                             maxThreads)
                         .DS_TRY_ACT(DS_TMP_ERROR.Message += "\nFailed to compile or link script.";
                                     DS_APPEND_TRACE(DS_TMP_ERROR);
@@ -903,7 +888,7 @@ namespace runcpp2
                 buildDir = runParams.buildOutputDir;
                 //filesToCopyPaths.push_back(runnableTarget.string());
                 for(const ghc::filesystem::path& target : targets)
-                    filesToCopyPaths.push_back(target.string());
+                    filesToCopyPaths.push_back(target);
             }
 
             CopyFiles(buildDir, filesToCopyPaths, copiedPaths)

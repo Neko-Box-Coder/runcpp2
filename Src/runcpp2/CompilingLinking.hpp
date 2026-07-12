@@ -34,6 +34,7 @@
 #include <system_error>
 #include <unordered_map>
 #include <vector>
+#include <stdlib.h>
 
 namespace
 {
@@ -128,14 +129,11 @@ namespace
                         const std::vector<ghc::filesystem::path>& sourceFiles,
                         const std::vector<ghc::filesystem::path>& includePaths,
                         const runcpp2::Data::ScriptInfo& scriptInfo,
-                        const std::vector<runcpp2::Data::DependencyInfo*>& availableDependencies,
                         const runcpp2::Data::Profile& profile,
                         std::vector<ghc::filesystem::path>& outObjectsFilesPaths,
                         const int maxThreads)
     {
         ssLOG_FUNC_INFO();
-        
-        outObjectsFilesPaths.clear();
         
         using OutputTypeInfo = runcpp2::Data::OutputTypeInfo;
         OutputTypeInfo* tempOutputInfo = nullptr;
@@ -601,7 +599,7 @@ namespace
         {
             for(int i = 0; i < objectsFilesPaths.size(); ++i)
             {
-                ssLOG_DEBUG("Trying to link " << objectsFilesPaths.at(i));
+                ssLOG_INFO("Trying to link " << objectsFilesPaths.at(i));
                 using namespace runcpp2;
                 
                 //Check if this is a file we can link
@@ -663,7 +661,7 @@ namespace
                 processLinkFile:;
                 if(currentLinkType == Data::DependencyLibraryType::COUNT)
                 {
-                    ssLOG_DEBUG("Skip linking " << objectsFilesPaths.at(i));
+                    ssLOG_WARNING("Skip linking " << objectsFilesPaths.at(i));
                     continue;
                 }
                 
@@ -901,7 +899,6 @@ namespace runcpp2
                         const std::vector<bool>& sourceHasCache,
                         const std::vector<ghc::filesystem::path>& includePaths,
                         const Data::ScriptInfo& scriptInfo,
-                        const std::vector<Data::DependencyInfo*>& availableDependencies,
                         const Data::Profile& profile,
                         const int maxThreads)
     {
@@ -923,7 +920,6 @@ namespace runcpp2
                             sourceFilesNeededToCompile, 
                             includePaths,
                             scriptInfo, 
-                            availableDependencies, 
                             profile, 
                             objectsFilesPaths,
                             maxThreads))
@@ -951,9 +947,12 @@ namespace runcpp2
                             const Data::ScriptInfo& scriptInfo,
                             const std::vector<Data::DependencyInfo*>& availableDependencies,
                             const Data::Profile& profile,
-                            const std::vector<std::string>& compiledObjectsPaths,
+                            const std::vector<ghc::filesystem::path>& binaryFilesPaths,
+                            const std::vector<int>& binaryFilesPriorities,
                             const int maxThreads)
     {
+        DS_ASSERT_EQ(binaryFilesPaths.size(), binaryFilesPriorities.size());
+        
         if(!RunGlobalSteps(buildDir, profile.Setup))
             return DS_ERROR_MSG("Failed to run profile global setup steps");
         
@@ -972,7 +971,6 @@ namespace runcpp2
                             sourceFilesNeededToCompile, 
                             includePaths,
                             scriptInfo, 
-                            availableDependencies, 
                             profile, 
                             objectsFilesPaths,
                             maxThreads))
@@ -983,9 +981,45 @@ namespace runcpp2
             return DS_ERROR_MSG("CompileScript failed");
         }
         
+        struct PathPriorities
+        {
+            ghc::filesystem::path* Path;
+            int Priority;
+        };
+        //Priorities for source files
+        std::vector<PathPriorities> priorities;
+        for(int i = 0; i < objectsFilesPaths.size(); ++i)
+            priorities.push_back({&objectsFilesPaths[i], 0});
+        
         //Add compiled object files
-        for(int i = 0; i < compiledObjectsPaths.size(); ++i)
-            objectsFilesPaths.push_back(compiledObjectsPaths.at(i));
+        for(int i = 0; i < binaryFilesPaths.size(); ++i)
+        {
+            priorities.push_back(   { 
+                                        (ghc::filesystem::path*)&binaryFilesPaths.at(i), 
+                                        binaryFilesPriorities.at(i)
+                                    });
+        }
+
+        qsort(  priorities.data(), 
+                priorities.size(), 
+                sizeof(PathPriorities), 
+                [](const void* a, const void* b) -> int
+                {
+                    //Higher priority comes first
+                    if(((const PathPriorities*)a)->Priority > ((const PathPriorities*)b)->Priority)
+                        return -1;
+                    else if(((const PathPriorities*)a)->Priority < 
+                            ((const PathPriorities*)b)->Priority)
+                    {
+                        return +1;
+                    }
+                    else
+                        return 0;
+                });
+
+        std::vector<ghc::filesystem::path> sortedObjectsFilesPaths;
+        for(int i = 0; i < priorities.size(); ++i)
+            sortedObjectsFilesPaths.push_back(*priorities[i].Path);
 
         //Skip linking if build type doesn't need it
         if(!Data::BuildTypeHelper::NeedsLinking(scriptInfo.CurrentBuildType))
@@ -1023,7 +1057,7 @@ namespace runcpp2
                         scriptInfo,
                         dependenciesLinkFlags,
                         profile,
-                        objectsFilesPaths))
+                        sortedObjectsFilesPaths))
         {
             return DS_ERROR_MSG("LinkScript failed");
         }

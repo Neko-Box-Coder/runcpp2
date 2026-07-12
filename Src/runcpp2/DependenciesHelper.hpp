@@ -445,7 +445,8 @@ namespace runcpp2
                         if(!actions.at(j).valid())
                         {
                             ssLOG_OUTPUT_ALL_CACHE_GROUPED();
-                            return DS_ERROR_MSG("Failed to construct actions for building dependencies");
+                            return DS_ERROR_MSG("Failed to construct actions for building "
+                                                "dependencies");
                         }
                         
                         std::future_status actionStatus = actions.at(j).wait_until(deadline);
@@ -661,7 +662,10 @@ namespace runcpp2
                             std::error_code symlink_ec;
                             resolvedPath = ResolveSymlink(resolvedPath, symlink_ec);
                             if(symlink_ec)
-                                return DS_ERROR_MSG("Failed to resolve symlink: " + symlink_ec.message());
+                            {
+                                return DS_ERROR_MSG("Failed to resolve symlink: " + 
+                                                    symlink_ec.message());
+                            }
                         }
                         
                         const std::string processedPath = runcpp2::ProcessPath(it.path().string());
@@ -674,16 +678,22 @@ namespace runcpp2
                             outBinariesPaths.push_back(processedPath);
                             binariesPathsSet.insert(processedResolvedPath);
                         }
-                    }
-                }
-            }
-        }
+                    } //for(auto it : ghc::filesystem::directory_iterator(currentSearchDirectory, e))
+                
+                }   //for(int searchDirIndex = 0; 
+                    //searchDirIndex < profileLinkProperty->SearchDirectories.size(); 
+                    //++searchDirIndex)
+            
+            }   //for(int searchLibIndex = 0; 
+                //searchLibIndex < profileLinkProperty->SearchLibraryNames.size(); 
+                //++searchLibIndex)
+        
+        } //for(int i = 0; i < availableDependencies.size(); ++i)
         
         //Do a check to see if any dependencies are copied
         if(outBinariesPaths.size() - nonLinkFilesCount < minimumDependenciesCopiesCount)
         {
             ssLOG_WARNING("We could be missing some link files for dependencies");
-            
             for(int i = 0; i < outBinariesPaths.size(); ++i)
                 ssLOG_WARNING("outBinariesPaths[" << i << "]: " << outBinariesPaths.at(i));
         }
@@ -692,7 +702,9 @@ namespace runcpp2
     }
 
     inline DS::Result<void> HandleImport(   Data::DependencyInfo& dependency, 
-                                            const ghc::filesystem::path& basePath)
+                                            const ghc::filesystem::path& basePath,
+                                            const std::unordered_map<   std::string, 
+                                                                        std::string>& inputParameters)
     {
         ssLOG_FUNC_DEBUG();
         
@@ -736,25 +748,27 @@ namespace runcpp2
             
             dependency.Source.ImportedSources.clear();
             currentImportSource->ImportedSources.clear();
-            
             previouslyImportedSources.push_back(currentImportSource);
             
             //Reset the current dependency before we parse the import dependency
             dependency = Data::DependencyInfo();
         }
         
+        //Iterate each document in yaml
         for(int i = 0; i < rootNodes.size(); ++i)
         {
             YAML::ResolveAnchors(rootNodes[i]).DS_TRY();
             
             //Parse the imported dependency
-            if(!dependency.ParseYAML_Node(rootNodes[i]))
+            DS::Result<void> res = dependency.ParseYAML_Node(rootNodes[i], inputParameters);
+            
+            //If failed to parse document, fail only if we reach the last document
+            if(!res.HasValue())
             {
-                //If failed to parse document, fail only if we reach the last one
                 if(i != rootNodes.size() - 1)
                     continue;
                 
-                std::string errMsg = "Failed to parse imported dependency: " + fullPath;
+                std::string errMsg = "\nFailed to parse imported dependency: " + fullPath;
                 
                 //Print the list of imported sources
                 for(int j = 0; j < previouslyImportedSources.size(); ++j)
@@ -763,7 +777,9 @@ namespace runcpp2
                                 previouslyImportedSources.at(j)->ImportPath.string();
                 }
 
-                return DS_ERROR_MSG(errMsg);
+                DS::ErrorTrace et = res.Error();
+                et.Message += errMsg;
+                return DS::Error(DS_APPEND_TRACE(et));
             }
 
             dependency.Source.ImportedSources = previouslyImportedSources;
@@ -775,7 +791,9 @@ namespace runcpp2
 
     inline DS::Result<void> ResolveImports( Data::ScriptInfo& scriptInfo,
                                             const ghc::filesystem::path& scriptDirectory,
-                                            const ghc::filesystem::path& buildDir)
+                                            const ghc::filesystem::path& buildDir,
+                                            const std::unordered_map<   std::string, 
+                                                                        std::string>& inputParameters)
     {
         ssLOG_FUNC_INFO();
         
@@ -800,7 +818,7 @@ namespace runcpp2
             PopulateLocalDependency(dependency, copyPath, sourcePath, buildDir, prePopulated).DS_TRY();
             
             //Parse the import file
-            HandleImport(dependency, copyPath).DS_TRY();
+            HandleImport(dependency, copyPath, inputParameters).DS_TRY();
 
             //Check do we still have import path in the dependency. If so, we need to parse it again
             if(!dependency.Source.ImportPath.empty())

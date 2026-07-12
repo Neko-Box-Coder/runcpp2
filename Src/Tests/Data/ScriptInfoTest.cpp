@@ -426,7 +426,7 @@ DS::Result<void> TestMain()
         DS_ASSERT_EQ(defaultCleanupCommands.at(1), "echo 8");
     }
     
-    //ScriptInfo Should Perform substitutions correctly
+    //ScriptInfo Should Perform Substitutions Correctly
     {
         std::unordered_map<std::string, std::string> parameters =   {
                                                                         {"ChoiceParam", "B"}, 
