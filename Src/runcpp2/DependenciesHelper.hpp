@@ -877,7 +877,7 @@ namespace runcpp2
                 if(!ghc::filesystem::exists(targetPath, ec))
                 {
                     ssLOG_DEBUG("Found invalid symlink, removing: " << targetPath.string());
-                    ghc::filesystem::remove(targetPath, ec);
+                    ghc::filesystem::remove_all(targetPath, ec);
                     needsUpdate = true;
                 }
             }
@@ -897,7 +897,7 @@ namespace runcpp2
                 if(needsUpdate)
                 {
                     ssLOG_DEBUG("Updating: " << targetPath.string());
-                    ghc::filesystem::remove(targetPath, ec);
+                    ghc::filesystem::remove_all(targetPath, ec);
                     
                     switch(local->CopyMode)
                     {
@@ -939,7 +939,7 @@ namespace runcpp2
             {
                 //File no longer exists in source, remove it
                 ssLOG_DEBUG("Removing file that no longer exists in source: " << targetPath.string());
-                ghc::filesystem::remove(targetPath, ec);
+                ghc::filesystem::remove_all(targetPath, ec);
             }
         }
 
