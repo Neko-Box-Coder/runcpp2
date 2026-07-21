@@ -562,7 +562,16 @@ DS::Result<void> HandleWatch(int argc, char* argv[])
                             //Outputs
                             parsedScriptInfo,
                             lastFinalSourceWriteTime,
-                            lastFinalIncludeWriteTime).DS_TRY();
+                            lastFinalIncludeWriteTime)
+                .DS_TRY_ACT
+                (
+                    //Unexpected errors
+                    if( DS_TMP_ERROR.Message.find("CompileScript failed") == std::string::npos &&
+                        DS_TMP_ERROR.Message.find("LinkScript failed") == std::string::npos)
+                    {
+                        return DS::Error(DS_APPEND_TRACE(DS_TMP_ERROR));
+                    }
+                );
             
             lastParsedScriptInfo = &parsedScriptInfo;
             needsRunning = false;

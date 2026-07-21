@@ -833,6 +833,8 @@ namespace runcpp2
                                                 const ghc::filesystem::path& copyPath)
     {
         ssLOG_FUNC_INFO();
+        INTERNAL_RUNCPP2_SAFE_START()
+        
         std::error_code ec;
 
         //Only sync if it's a local dependency
@@ -862,6 +864,10 @@ namespace runcpp2
             sourceFiles.insert(entry.path().filename().string());
         }
 
+        ghc::filesystem::copy_options copyOptions = ghc::filesystem::copy_options::overwrite_existing |
+                                                    ghc::filesystem::copy_options::recursive |
+                                                    ghc::filesystem::copy_options::copy_symlinks;
+        
         //First pass: Check existing files in target
         for(const ghc::filesystem::directory_entry& entry : 
             ghc::filesystem::directory_iterator(copyPath, ec))
@@ -877,70 +883,96 @@ namespace runcpp2
                 if(!ghc::filesystem::exists(targetPath, ec))
                 {
                     ssLOG_DEBUG("Found invalid symlink, removing: " << targetPath.string());
-                    ghc::filesystem::remove(targetPath, ec);
+                    ghc::filesystem::remove_all(targetPath, ec);
                     needsUpdate = true;
                 }
             }
 
-            //If file exists in source, check if it needs update
-            if(ghc::filesystem::exists(srcPath, ec))
-            {
-                if(!needsUpdate)
-                {
-                    ghc::filesystem::file_time_type srcTime = 
-                        ghc::filesystem::last_write_time(srcPath, ec);
-                    ghc::filesystem::file_time_type dstTime = 
-                        ghc::filesystem::last_write_time(targetPath, ec);
-                    needsUpdate = (srcTime > dstTime);
-                }
-
-                if(needsUpdate)
-                {
-                    ssLOG_DEBUG("Updating: " << targetPath.string());
-                    ghc::filesystem::remove(targetPath, ec);
-                    
-                    switch(local->CopyMode)
-                    {
-                        case Data::LocalCopyMode::Auto:
-                            ghc::filesystem::create_symlink(srcPath, targetPath, ec);
-                            if(ec)
-                            {
-                                ssLOG_DEBUG("Symlink failed: " << ec.message());
-                                ec.clear();
-                                ghc::filesystem::create_hard_link(srcPath, targetPath, ec);
-                                if(ec)
-                                {
-                                    ssLOG_DEBUG("Hardlink failed: " << ec.message());
-                                    ec.clear();
-                                    ghc::filesystem::copy(srcPath, targetPath, ec);
-                                }
-                            }
-                            break;
-
-                        case Data::LocalCopyMode::Symlink:
-                            ghc::filesystem::create_symlink(srcPath, targetPath, ec);
-                            break;
-
-                        case Data::LocalCopyMode::Hardlink:
-                            ghc::filesystem::create_hard_link(srcPath, targetPath, ec);
-                            break;
-
-                        case Data::LocalCopyMode::Copy:
-                            ghc::filesystem::copy(srcPath, targetPath, ec);
-                            break;
-                    }
-
-                    if(ec)
-                        return DS_ERROR_MSG("Failed to update target: " + ec.message());
-                }
-                sourceFiles.erase(targetPath.filename().string());
-            }
-            else
+            if(!ghc::filesystem::exists(srcPath, ec))
             {
                 //File no longer exists in source, remove it
                 ssLOG_DEBUG("Removing file that no longer exists in source: " << targetPath.string());
-                ghc::filesystem::remove(targetPath, ec);
+                ghc::filesystem::remove_all(targetPath, ec);
+                continue;
             }
+            
+            //If file/dir exists in source and not symlink, check if it needs update
+            if(!needsUpdate && !ghc::filesystem::is_symlink(targetPath, ec))
+            {
+                ghc::filesystem::file_time_type srcTime = ghc::filesystem::last_write_time( srcPath, 
+                                                                                            ec);
+                ghc::filesystem::file_time_type dstTime = 
+                    ghc::filesystem::last_write_time(targetPath, ec);
+                
+                if(ec)
+                    return DS_ERROR_MSG(ec.message());
+                
+                //NOTE: If it is a directory, we can't trust the last write time as it doesn't 
+                //      reflect the last write time of the files in it, for source. 
+                //      It's probably fine for destination because we are copying/deleting the 
+                //      directory every time.
+                if(ghc::filesystem::is_directory(srcPath, ec))
+                {
+                    using DirIt = ghc::filesystem::recursive_directory_iterator;
+                    for(const ghc::filesystem::directory_entry& checkEntry : DirIt(srcPath))
+                    {
+                        ghc::filesystem::file_time_type checkTime =
+                            ghc::filesystem::last_write_time(checkEntry.path(), ec);
+                        srcTime = checkTime > srcTime ? checkTime : srcTime;
+                        if(ec)
+                            return DS_ERROR_MSG(checkEntry.path().string() + "Failed: " + ec.message());
+                    }
+                }
+                else if(!ghc::filesystem::is_regular_file(srcPath, ec))
+                {
+                    //TODO: What do we do?...
+                }
+                
+                needsUpdate = (srcTime > dstTime);
+            }
+
+            if(needsUpdate)
+            {
+                ssLOG_DEBUG("Updating: " << targetPath.string());
+                ghc::filesystem::remove_all(targetPath, ec);
+                if(ec)
+                    return DS_ERROR_MSG(ec.message());
+                
+                switch(local->CopyMode)
+                {
+                    case Data::LocalCopyMode::Auto:
+                        ghc::filesystem::create_symlink(srcPath, targetPath, ec);
+                        if(ec)
+                        {
+                            ssLOG_DEBUG("Symlink failed: " << ec.message());
+                            ec.clear();
+                            ghc::filesystem::create_hard_link(srcPath, targetPath, ec);
+                            if(ec)
+                            {
+                                ssLOG_DEBUG("Hardlink failed: " << ec.message());
+                                ec.clear();
+                                ghc::filesystem::copy(srcPath, targetPath, copyOptions, ec);
+                            }
+                        }
+                        break;
+
+                    case Data::LocalCopyMode::Symlink:
+                        ghc::filesystem::create_symlink(srcPath, targetPath, ec);
+                        break;
+
+                    case Data::LocalCopyMode::Hardlink:
+                        ghc::filesystem::create_hard_link(srcPath, targetPath, ec);
+                        break;
+
+                    case Data::LocalCopyMode::Copy:
+                        ghc::filesystem::copy(srcPath, targetPath, copyOptions, ec);
+                        break;
+                }
+
+                if(ec)
+                    return DS_ERROR_MSG("Failed to update target: " + ec.message());
+            }
+            sourceFiles.erase(targetPath.filename().string());
         }
 
         //Second pass: Add any new files from source
@@ -964,10 +996,6 @@ namespace runcpp2
                         {
                             ssLOG_DEBUG("Hardlink failed: " << ec.message());
                             ec.clear();
-                            ghc::filesystem::copy_options copyOptions = 
-                                ghc::filesystem::copy_options::overwrite_existing |
-                                ghc::filesystem::copy_options::recursive |
-                                ghc::filesystem::copy_options::copy_symlinks;
                             ghc::filesystem::copy(srcPath, targetPath, copyOptions, ec);
                         }
                     }
@@ -982,7 +1010,7 @@ namespace runcpp2
                     break;
 
                 case Data::LocalCopyMode::Copy:
-                    ghc::filesystem::copy(srcPath, targetPath, ec);
+                    ghc::filesystem::copy(srcPath, targetPath, copyOptions, ec);
                     break;
             }
 
@@ -991,6 +1019,8 @@ namespace runcpp2
         }
 
         return {};
+        
+        INTERNAL_RUNCPP2_SAFE_CATCH_RETURN( DS_ERROR_MSG(DS_STR("Exception caught: ") + ex.what()) )
     }
 
     inline DS::Result<void> 
