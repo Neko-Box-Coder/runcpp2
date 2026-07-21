@@ -864,6 +864,10 @@ namespace runcpp2
             sourceFiles.insert(entry.path().filename().string());
         }
 
+        ghc::filesystem::copy_options copyOptions = ghc::filesystem::copy_options::overwrite_existing |
+                                                    ghc::filesystem::copy_options::recursive |
+                                                    ghc::filesystem::copy_options::copy_symlinks;
+        
         //First pass: Check existing files in target
         for(const ghc::filesystem::directory_entry& entry : 
             ghc::filesystem::directory_iterator(copyPath, ec))
@@ -947,7 +951,7 @@ namespace runcpp2
                             {
                                 ssLOG_DEBUG("Hardlink failed: " << ec.message());
                                 ec.clear();
-                                ghc::filesystem::copy(srcPath, targetPath, ec);
+                                ghc::filesystem::copy(srcPath, targetPath, copyOptions, ec);
                             }
                         }
                         break;
@@ -961,7 +965,7 @@ namespace runcpp2
                         break;
 
                     case Data::LocalCopyMode::Copy:
-                        ghc::filesystem::copy(srcPath, targetPath, ec);
+                        ghc::filesystem::copy(srcPath, targetPath, copyOptions, ec);
                         break;
                 }
 
@@ -992,10 +996,6 @@ namespace runcpp2
                         {
                             ssLOG_DEBUG("Hardlink failed: " << ec.message());
                             ec.clear();
-                            ghc::filesystem::copy_options copyOptions = 
-                                ghc::filesystem::copy_options::overwrite_existing |
-                                ghc::filesystem::copy_options::recursive |
-                                ghc::filesystem::copy_options::copy_symlinks;
                             ghc::filesystem::copy(srcPath, targetPath, copyOptions, ec);
                         }
                     }
@@ -1010,7 +1010,7 @@ namespace runcpp2
                     break;
 
                 case Data::LocalCopyMode::Copy:
-                    ghc::filesystem::copy(srcPath, targetPath, ec);
+                    ghc::filesystem::copy(srcPath, targetPath, copyOptions, ec);
                     break;
             }
 
