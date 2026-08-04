@@ -249,14 +249,14 @@ namespace
             GetPreferredProfile(configNode, outPreferredProfile).DS_TRY();
         } //for(int i = 0; i < parsedNodes.size(); ++i)
         
+        if(outProfiles.empty())
+            return DS_ERROR_MSG("No profiles registered");
+        
         if(outPreferredProfile.empty())
         {
             outPreferredProfile = outProfiles.front().Name;
             ssLOG_WARNING("PreferredProfile is empty. Using the first profile name");
         }
-        
-        if(outProfiles.empty())
-            return DS_ERROR_MSG("No profiles registered");
         
         return {};
     }
