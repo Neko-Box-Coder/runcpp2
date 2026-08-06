@@ -125,7 +125,8 @@ namespace
     bool CompileScript( const ghc::filesystem::path& buildDir,
                         const ghc::filesystem::path& scriptDirectory,
                         const std::vector<ghc::filesystem::path>& sourceFiles,
-                        const std::vector<ghc::filesystem::path>& includePaths,
+                        const std::vector<ghc::filesystem::path>& sourceIncludePaths,
+                        const std::vector<ghc::filesystem::path>& depIncludePaths,
                         const runcpp2::Data::ScriptInfo& scriptInfo,
                         const runcpp2::Data::Profile& profile,
                         std::vector<ghc::filesystem::path>& outObjectsFilesPaths,
@@ -190,10 +191,17 @@ namespace
         
         //Add source and dependency include paths
         substitutionMapTemplate["{Stage.IncludeDirectory.Path}"] = {};
-        for(const ghc::filesystem::path& includePath : includePaths)
+        for(const ghc::filesystem::path& includePath : sourceIncludePaths)
         {
             std::string processedInclude = runcpp2::ProcessPath(includePath.string());
             substitutionMapTemplate["{Stage.IncludeDirectory.Path}"].push_back(processedInclude);
+            substitutionMapTemplate["{Stage.IncludeDirectory.Source.Path}"].push_back(processedInclude);
+        }
+        for(const ghc::filesystem::path& includePath : depIncludePaths)
+        {
+            std::string processedInclude = runcpp2::ProcessPath(includePath.string());
+            substitutionMapTemplate["{Stage.IncludeDirectory.Path}"].push_back(processedInclude);
+            substitutionMapTemplate["{Stage.IncludeDirectory.Dep.Path}"].push_back(processedInclude);
         }
         
         //Add defines
@@ -891,7 +899,8 @@ namespace runcpp2
                         const ghc::filesystem::path& scriptDirectory,
                         const std::vector<ghc::filesystem::path>& sourceFiles,
                         const std::vector<bool>& sourceHasCache,
-                        const std::vector<ghc::filesystem::path>& includePaths,
+                        const std::vector<ghc::filesystem::path>& sourceIncludePaths,
+                        const std::vector<ghc::filesystem::path>& depIncludePaths,
                         const Data::ScriptInfo& scriptInfo,
                         const Data::Profile& profile,
                         const int maxThreads)
@@ -912,7 +921,8 @@ namespace runcpp2
         if(!CompileScript(  buildDir,
                             scriptDirectory,
                             sourceFilesNeededToCompile, 
-                            includePaths,
+                            sourceIncludePaths,
+                            depIncludePaths,
                             scriptInfo, 
                             profile, 
                             objectsFilesPaths,
@@ -937,7 +947,8 @@ namespace runcpp2
                             const std::string& outputName,
                             const std::vector<ghc::filesystem::path>& sourceFiles,
                             const std::vector<bool>& sourceHasCache,
-                            const std::vector<ghc::filesystem::path>& includePaths,
+                            const std::vector<ghc::filesystem::path>& sourceIncludePaths,
+                            const std::vector<ghc::filesystem::path>& depIncludePaths,
                             const Data::ScriptInfo& scriptInfo,
                             const std::vector<Data::DependencyInfo*>& availableDependencies,
                             const Data::Profile& profile,
@@ -963,7 +974,8 @@ namespace runcpp2
         if(!CompileScript(  buildDir,
                             scriptDirectory,
                             sourceFilesNeededToCompile, 
-                            includePaths,
+                            sourceIncludePaths,
+                            depIncludePaths,
                             scriptInfo, 
                             profile, 
                             objectsFilesPaths,

@@ -568,14 +568,6 @@ namespace runcpp2
                             params.profiles.at(profileIndex), 
                             sourceFiles).DS_TRY();
 
-        //Get all include paths
-        std::vector<ghc::filesystem::path> includePaths;
-        GatherIncludePaths( scriptDirectory,
-                            scriptInfo,
-                            params.profiles.at(profileIndex),
-                            availableDependencies,
-                            includePaths).DS_TRY();
-
         //Check if we have already compiled before.
         std::vector<bool> sourceHasCache;
         std::vector<ghc::filesystem::path> cachedObjectsFiles;
@@ -706,12 +698,14 @@ namespace runcpp2
                                 sourceFiles).DS_TRY();
 
             //Get all include paths
-            std::vector<ghc::filesystem::path> includePaths;
+            std::vector<ghc::filesystem::path> sourceIncludePaths;
+            std::vector<ghc::filesystem::path> depIncludePaths;
             GatherIncludePaths( scriptDirectory,
                                 scriptInfo,
                                 runParams.Core.profiles.at(profileIndex),
                                 availableDependencies,
-                                includePaths).DS_TRY();
+                                sourceIncludePaths,
+                                depIncludePaths).DS_TRY();
 
             //Check if we have already compiled before.
             std::vector<bool> sourceHasCache;
@@ -733,17 +727,23 @@ namespace runcpp2
                                     outFinalIncludeWriteTime).DS_TRY();
             }
             
-            runcpp2::SourceIncludeMap sourcesIncludes;
-            runcpp2::GatherFilesIncludes(   sourceFiles, 
-                                            sourceHasCache, 
-                                            includePaths, 
-                                            sourcesIncludes).DS_TRY();
+            runcpp2::SourceIncludeMap sourceIncludeMap;
+            {
+                std::vector<ghc::filesystem::path> allIncludePaths = sourceIncludePaths;
+                allIncludePaths.insert( allIncludePaths.end(), 
+                                        depIncludePaths.begin(), 
+                                        depIncludePaths.end());
+                runcpp2::GatherFilesIncludes(   sourceFiles, 
+                                                sourceHasCache, 
+                                                allIncludePaths, 
+                                                sourceIncludeMap).DS_TRY();
+            }
             for(int i = 0; i < sourceFiles.size(); ++i)
             {
                 if(!sourceHasCache.at(i))
                 {
                     ssLOG_DEBUG("Updating include record for " << sourceFiles.at(i).string());
-                    if(sourcesIncludes.count(sourceFiles.at(i)) == 0)
+                    if(sourceIncludeMap.count(sourceFiles.at(i)) == 0)
                     {
                         ssLOG_WARNING("Includes not gathered for " << sourceFiles.at(i).string());
                         continue;
@@ -752,7 +752,7 @@ namespace runcpp2
                     bool writeResult =  includeManager.WriteIncludeRecord
                                         (
                                             sourceFiles.at(i), 
-                                            sourcesIncludes.at(sourceFiles.at(i))
+                                            sourceIncludeMap.at(sourceFiles.at(i))
                                         );
                     if(!writeResult)
                     {
@@ -828,7 +828,8 @@ namespace runcpp2
                                         scriptDirectory,
                                         sourceFiles,
                                         sourceHasCache,
-                                        includePaths, 
+                                        sourceIncludePaths, 
+                                        depIncludePaths, 
                                         scriptInfo,
                                         runParams.Core.profiles.at(profileIndex),
                                         maxThreads).DS_TRY();
@@ -841,7 +842,8 @@ namespace runcpp2
                                             ghc::filesystem::path(scriptName), 
                                             sourceFiles,
                                             sourceHasCache,
-                                            includePaths,  
+                                            sourceIncludePaths, 
+                                            depIncludePaths, 
                                             scriptInfo,
                                             availableDependencies,
                                             runParams.Core.profiles.at(profileIndex),

@@ -73,11 +73,13 @@ Compiler:
     
     
     # Iterable variables, must be inside "Repeats" run type: --------------------------------------------------------------------------------------
-    # {Stage.DefineNameOnly}:               All the defines without a value specified (equivalent to #define X)
-    # {Stage.DefineName}:                   Name of all the defines that has a value specified
-    # {Stage.DefineValue}:                  Value of all the defines that has a value specified (use together with {Stage.DefineName})
+    # {Stage.DefineNameOnly}:                   All the defines without a value specified (equivalent to #define X)
+    # {Stage.DefineName}:                       Name of all the defines that has a value specified
+    # {Stage.DefineValue}:                      Value of all the defines that has a value specified (use together with {Stage.DefineName})
     
-    # {Stage.IncludeDirectory.Path}:        Path to all the include directories
+    # {Stage.IncludeDirectory.Path}:            Path to all the include directories
+    # +-> {Stage.IncludeDirectory.Source.Path}: Path to source include directories, sub array
+    # L-> {Stage.IncludeDirectory.Dep.Path}:    Path to dependencies include directories, sub array
     CompileTypes:
         Executable:
             DefaultPlatform:
