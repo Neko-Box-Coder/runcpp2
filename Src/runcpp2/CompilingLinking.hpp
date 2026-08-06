@@ -265,15 +265,15 @@ namespace
             std::string sourceExt = currentSource.extension().string();
             //Input File
             {
-                substitutionMap["{Stage.InputFileName}"] = {sourceName};
-                substitutionMap["{Stage.InputFileExtension}"] = {sourceExt};
-                substitutionMap["{Stage.InputFileDirectory}"] = {sourceDirectory};
-                substitutionMap["{Stage.InputFilePath}"] = {currentSource.string()};
+                substitutionMap["{Stage.Input.Name}"] = {sourceName};
+                substitutionMap["{Stage.Input.Extension}"] = {sourceExt};
+                substitutionMap["{Stage.Input.Directory}"] = {sourceDirectory};
+                substitutionMap["{Stage.Input.Path}"] = {currentSource.string()};
             }
             
             //Output File
             {
-                substitutionMap["{Stage.OutputDirectory}"] = 
+                substitutionMap["{Stage.Output.Directory}"] = 
                     {runcpp2::ProcessPath( (buildDir / relativeSourcePath.parent_path()).string() )};
                 
                 if(!runcpp2::HasValueFromPlatformMap(profile.FilesTypes.ObjectLinkFile.Extension))
@@ -583,8 +583,8 @@ namespace
         }
         
         //Output File
-        substitutionMap["{Stage.OutputFileName}"] = {outputName};
-        substitutionMap["{Stage.OutputDirectory}"] = {buildDir.string()};
+        substitutionMap["{Stage.Output.Name}"] = {outputName};
+        substitutionMap["{Stage.Output.Directory}"] = {buildDir.string()};
         
         PopulateFilesTypesMap(profile.FilesTypes, substitutionMap);
         substitutionMap["{/}"] = {runcpp2::ProcessPath("/")};
