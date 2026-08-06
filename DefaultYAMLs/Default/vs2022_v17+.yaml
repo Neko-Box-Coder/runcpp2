@@ -1,25 +1,9 @@
 # DO NOT modify this file. Changes will be overwritten when there's a reset or update
 
-# List of anchors that will be aliased later. `Template` is **NOT** part of a profile
+# List of YAML anchors that will be aliased later. `Template` is **NOT** part of a profile
 Templates:
     vs2022_v17+_CompileFlags: &vs2022_v17+_CompileFlags
-        Flags: "/nologo /W4 /diagnostics:caret /utf-8 /Gm- /MDd /EHar /TP /std:c++17 /GR /RTC1 /Zc:inline /Zi"
-    "vs2022_v17+_CompileRunParts": &vs2022_v17+_CompileRunParts
-    -   Type: Once
-        CommandPart: "{Stage.Executable} /c {Stage.CompileFlags}"
-    -   Type: Repeats
-        CommandPart: " /D{Stage.DefineNameOnly}="
-    -   Type: Repeats
-        CommandPart: " \"/D{Stage.DefineName}={Stage.DefineValue}\""
-    -   Type: Repeats
-        CommandPart: " /I\"{Stage.IncludeDirectory.Path}\""
-    -   Type: Once
-        CommandPart: " /Fo\"{Stage.Output.Directory}{/}{Stage.ObjectLinkFile.Prefix}{Stage.Input.Name}{Stage.ObjectLinkFile.Extension}\" \
-            /Fd\"{Stage.Output.Directory}{/}{Stage.DebugSymbolFile.Prefix}{Stage.Input.Name}{Stage.DebugSymbolFile.Extension}\" \
-            \"{Stage.Input.Path}\""
-    "vs2022_v17+_CompileExpectedOutputFiles": &vs2022_v17+_CompileExpectedOutputFiles
-    -   "{Stage.Output.Directory}{/}{Stage.ObjectLinkFile.Prefix}{Stage.Input.Name}{Stage.ObjectLinkFile.Extension}"
-    -   "{Stage.Output.Directory}{/}{Stage.DebugSymbolFile.Prefix}{Stage.Input.Name}{Stage.DebugSymbolFile.Extension}"
+        Flags: "/nologo /W4 /diagnostics:caret /utf-8 /Gm- /MDd /EHar /TP /std:c++17 /GR /RTC1 /Zc:inline /Zi /external:W0"
     
 # https://learn.microsoft.com/en-us/cpp/overview/compiler-versions?view=msvc-170
 Name: "vs2022_v17+"
@@ -46,8 +30,24 @@ Compiler:
             Windows:
                 <<: *vs2022_v17+_CompileFlags
                 Executable: "CL.exe"
-                RunParts: *vs2022_v17+_CompileRunParts
-                ExpectedOutputFiles: *vs2022_v17+_CompileExpectedOutputFiles
+                RunParts: &vs2022_v17+_CompileRunParts
+                -   Type: Once
+                    CommandPart: "{Stage.Executable} /c {Stage.CompileFlags}"
+                -   Type: Repeats
+                    CommandPart: " /D{Stage.DefineNameOnly}="
+                -   Type: Repeats
+                    CommandPart: " \"/D{Stage.DefineName}={Stage.DefineValue}\""
+                -   Type: Repeats
+                    CommandPart: " /external:I\"{Stage.IncludeDirectory.Dep.Path}\""
+                -   Type: Repeats
+                    CommandPart: " /I\"{Stage.IncludeDirectory.Source.Path}\""
+                -   Type: Once
+                    CommandPart: " /Fo\"{Stage.Output.Directory}{/}{Stage.ObjectLinkFile.Prefix}{Stage.Input.Name}{Stage.ObjectLinkFile.Extension}\" \
+                        /Fd\"{Stage.Output.Directory}{/}{Stage.DebugSymbolFile.Prefix}{Stage.Input.Name}{Stage.DebugSymbolFile.Extension}\" \
+                        \"{Stage.Input.Path}\""
+                ExpectedOutputFiles: &vs2022_v17+_CompileExpectedOutputFiles
+                -   "{Stage.Output.Directory}{/}{Stage.ObjectLinkFile.Prefix}{Stage.Input.Name}{Stage.ObjectLinkFile.Extension}"
+                -   "{Stage.Output.Directory}{/}{Stage.DebugSymbolFile.Prefix}{Stage.Input.Name}{Stage.DebugSymbolFile.Extension}"
         ExecutableShared:
             Windows:
                 <<: *vs2022_v17+_CompileFlags

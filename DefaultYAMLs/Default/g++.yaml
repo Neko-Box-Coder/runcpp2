@@ -100,7 +100,9 @@ Compiler:
                 -   Type: Repeats
                     CommandPart: " \"-D{Stage.DefineName}={Stage.DefineValue}\""
                 -   Type: Repeats
-                    CommandPart: " -I\"{Stage.IncludeDirectory.Path}\""
+                    CommandPart: " -isystem \"{Stage.IncludeDirectory.Dep.Path}\""
+                -   Type: Repeats
+                    CommandPart: " -I\"{Stage.IncludeDirectory.Source.Path}\""
                 -   Type: Once
                     CommandPart: " \"{Stage.Input.Path}\" -o \"{Stage.Output.Directory}{/}{Stage.ObjectLinkFile.Prefix}{Stage.Input.Name}{Stage.ObjectLinkFile.Extension}\""
                 
