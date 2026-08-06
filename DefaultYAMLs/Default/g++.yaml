@@ -1,21 +1,5 @@
 # DO NOT modify this file. Changes will be overwritten when there's a reset or update
 
-# List of anchors that will be aliased later. `Template` is **NOT** part of a profile
-Templates:
-    "g++_CompileRunParts": &g++_CompileRunParts
-    -   Type: Once
-        CommandPart: "{Executable} -c {CompileFlags}"
-    -   Type: Repeats
-        CommandPart: " -D{DefineNameOnly}="
-    -   Type: Repeats
-        CommandPart: " \"-D{DefineName}={DefineValue}\""
-    -   Type: Repeats
-        CommandPart: " -I\"{IncludeDirectoryPath}\""
-    -   Type: Once
-        CommandPart: " \"{InputFilePath}\" -o \"{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}\""
-    "g++_CompileExpectedOutputFiles": &g++_CompileExpectedOutputFiles
-    -   "{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}"
-
 # Name (case sensitive) of the profile that can be queried from a script
 Name: "g++"
 
@@ -47,7 +31,7 @@ Languages: ["c++"]
 #            All the fields in the imported yaml files will be merged together
 Import: "./CommonFileTypes.yaml"
 
-# Specify the compiler settings
+# Compiler settings, run once per input file
 Compiler:
     # (Optional) The command to be prepend for each compile command in **shell** for each platform
     # PreRun: 
@@ -60,47 +44,65 @@ Compiler:
     # Here are a list of substitution strings for RunParts, Setup and Cleanup. 
     # To escape '{' and '}' to avoid substitutioon, simply repeat the '{' or '}' character again.
     # So "${MyBashVariable}" will become "${{MyBashVariable}}"
+
+    # Constants: --------------------------------------------------------------------------------------
+    # {Stage.SharedLibraryFile.Prefix}
+    # {Stage.SharedLinkFile.Prefix}
+    # {Stage.StaticLinkFile.Prefix}
+    # {Stage.ObjectLinkFile.Prefix}
+    # {Stage.DebugSymbolFile.Prefix}
+    # {Stage.SharedLibraryFile.Extension}
+    # {Stage.SharedLinkFile.Extension}
+    # {Stage.StaticLinkFile.Extension}
+    # {Stage.ObjectLinkFile.Extension}
+    # {Stage.DebugSymbolFile.Extension}
+    # {/}:                                  Filesystem separator for the host platform
     
-    # {Executable}:                 Compiler executable
-    # {CompileFlags}:               Compile flags from config and override
-    # {InputFileName}:              Name of the input file (without directory path and extension)
-    # {InputFileExtension}:         Extension of the input file
-    # {InputFileDirectory}:         Directory of the input file
-    # {InputFilePath}:              Full path to the input file
-    # {OutputFileDirectory}:        Directory of all the output files
-    # {/}:                          Filesystem separator for the host platform
     
-    # {SharedLibraryFile.Prefix}
-    # {SharedLinkFile.Prefix}
-    # {StaticLinkFile.Prefix}
-    # {ObjectLinkFile.Prefix}
-    # {DebugSymbolFile.Prefix}
+    # Stage Info: --------------------------------------------------------------------------------------
+    # {Stage.Executable}:                   Compiler executable
+    # {Stage.CompileFlags}:                 Compile flags from config and override
     
-    # {SharedLibraryFile.Extension}
-    # {SharedLinkFile.Extension}
-    # {StaticLinkFile.Extension}
-    # {ObjectLinkFile.Extension}
-    # {DebugSymbolFile.Extension}
     
-    # Below are iterable substitution strings, must be inside "Repeats" run type:
-    # {IncludeDirectoryPath}:       Path to all the include directories
-    # {DefineNameOnly}:             All the defines without a value specified (equivalent to #define X)
-    # {DefineName}:                 Name of all the defines that has a value specified
-    # {DefineValue}:                Value of all the defines that has a value specified (use together with {DefineName})
+    # Input/Output Info: --------------------------------------------------------------------------------------
+    # {Stage.InputFileName}:                Name of the current input source file (without directory path and extension)
+    # {Stage.InputFileExtension}:           Extension of the current input source file
+    # {Stage.InputFileDirectory}:           Directory of the current input source file
+    # {Stage.InputFilePath}:                Full path to the current input source file
+    # {Stage.OutputDirectory}:              Directory of all the output files
+    
+    
+    # Iterable variables, must be inside "Repeats" run type: --------------------------------------------------------------------------------------
+    # {Stage.DefineNameOnly}:               All the defines without a value specified (equivalent to #define X)
+    # {Stage.DefineName}:                   Name of all the defines that has a value specified
+    # {Stage.DefineValue}:                  Value of all the defines that has a value specified (use together with {Stage.DefineName})
+    
+    # {Stage.IncludeDirectoryPath}:         Path to all the include directories
     CompileTypes:
         Executable:
             DefaultPlatform:
-                # Default flags to be substituted as {CompileFlags}
+                # Default flags to be substituted as {Stage.CompileFlags}
                 Flags: "-std=c++17 -Wall -g"
                 
-                # The executable to be substituted as {Executable}
+                # The executable to be substituted as {Stage.Executable}
                 Executable: "g++"
                 
                 # The components for the command to be run
-                RunParts: *g++_CompileRunParts
+                RunParts: &g++_CompileRunParts
+                -   Type: Once
+                    CommandPart: "{Stage.Executable} -c {Stage.CompileFlags}"
+                -   Type: Repeats
+                    CommandPart: " -D{Stage.DefineNameOnly}="
+                -   Type: Repeats
+                    CommandPart: " \"-D{Stage.DefineName}={Stage.DefineValue}\""
+                -   Type: Repeats
+                    CommandPart: " -I\"{Stage.IncludeDirectoryPath}\""
+                -   Type: Once
+                    CommandPart: " \"{Stage.InputFilePath}\" -o \"{Stage.OutputDirectory}{/}{Stage.ObjectLinkFile.Prefix}{Stage.InputFileName}{Stage.ObjectLinkFile.Extension}\""
                 
                 # What files to be expected as output for the command
-                ExpectedOutputFiles: *g++_CompileExpectedOutputFiles
+                ExpectedOutputFiles: &g++_CompileExpectedOutputFiles
+                -   "{Stage.OutputDirectory}{/}{Stage.ObjectLinkFile.Prefix}{Stage.InputFileName}{Stage.ObjectLinkFile.Extension}"
                 
                 # (Optional) The commands to run in **shell** BEFORE compiling
                 #            This is run inside the .runcpp2 directory where the build happens.
@@ -134,50 +136,57 @@ Compiler:
                 # Setup: []
                 # Cleanup: []
 
-# Specify the linker settings
+# Linker settings, run once
 Linker:
     CheckExistence:
         DefaultPlatform: "g++ -v"
     
     # Here are a list of substitution strings for RunParts, Setup and Cleanup
-    # {Executable}:                 Linker executable
-    # {LinkFlags}:                  Link flags from config and override
-    # {OutputFileName}:             Name of all the output files (without directory path and extension)
-    # {OutputFileDirectory}:        Directory of all the output files
-    # {/}:                          Filesystem separator for the host platform
     
-    # {SharedLibraryFile.Prefix}
-    # {SharedLinkFile.Prefix}
-    # {StaticLinkFile.Prefix}
-    # {ObjectLinkFile.Prefix}
-    # {DebugSymbolFile.Prefix}
+    # Constants: --------------------------------------------------------------------------------------
+    # {Stage.SharedLibraryFile.Prefix}
+    # {Stage.SharedLinkFile.Prefix}
+    # {Stage.StaticLinkFile.Prefix}
+    # {Stage.ObjectLinkFile.Prefix}
+    # {Stage.DebugSymbolFile.Prefix}
+    # {Stage.SharedLibraryFile.Extension}
+    # {Stage.SharedLinkFile.Extension}
+    # {Stage.StaticLinkFile.Extension}
+    # {Stage.ObjectLinkFile.Extension}
+    # {Stage.DebugSymbolFile.Extension}
+    # {/}:                                  Filesystem separator for the host platform
     
-    # {SharedLibraryFile.Extension}
-    # {SharedLinkFile.Extension}
-    # {StaticLinkFile.Extension}
-    # {ObjectLinkFile.Extension}
-    # {DebugSymbolFile.Extension}
     
-    # Below are iterable substitution strings, must be inside "Repeats" run type:
-    # {LinkFileName}:               Name of the file to be linked, regardless of the build type
-    # {LinkFileExtension}:          File Extension of the file to be linked, regardless of the build type
-    # {LinkFileDirectory}:          Directory of the file to be linked, regardless of the build type
-    # {LinkFilePath}:               Full path to the file to be linked, regardless of the build type
+    # Stage Info: --------------------------------------------------------------------------------------
+    # {Stage.Executable}:                   Linker executable
+    # {Stage.LinkFlags}:                    Link flags from config and override
     
-    # {LinkObjectFileName}:         Name of the object file to be linked
-    # {LinkObjectFileExtension}:    File Extension of the object file to be linked
-    # {LinkObjectFileDirectory}:    Directory of the object file to be linked
-    # {LinkObjectFilePath}:         Full path to the object file to be linked
     
-    # {LinkSharedFileName}:         Name of the shared file to be linked
-    # {LinkSharedFileExtension}:    File Extension of the shared file to be linked
-    # {LinkSharedFileDirectory}:    Directory of the shared file to be linked
-    # {LinkSharedFilePath}:         Full path to the shared file to be linked
+    # Output Info: --------------------------------------------------------------------------------------
+    # {Stage.OutputFileName}:               Name of all the output files (without directory path and extension)
+    # {Stage.OutputDirectory}:              Directory of all the output files
     
-    # {LinkStaticFileName}:         Name of the static file to be linked
-    # {LinkStaticFileExtension}:    File Extension of the static file to be linked
-    # {LinkStaticFileDirectory}:    Directory of the static file to be linked
-    # {LinkStaticFilePath}:         Full path to the static file to be linked
+    
+    # Iterable variables, must be inside "Repeats" run type: --------------------------------------------------------------------------------------
+    # {Stage.LinkFileName}:                 Name of the file to be linked, regardless of the build type
+    # {Stage.LinkFileExtension}:            File Extension of the file to be linked, regardless of the build type
+    # {Stage.LinkFileDirectory}:            Directory of the file to be linked, regardless of the build type
+    # {Stage.LinkFilePath}:                 Full path to the file to be linked, regardless of the build type
+    
+    # {Stage.LinkObjectFileName}:           Name of the object file to be linked
+    # {Stage.LinkObjectFileExtension}:      File Extension of the object file to be linked
+    # {Stage.LinkObjectFileDirectory}:      Directory of the object file to be linked
+    # {Stage.LinkObjectFilePath}:           Full path to the object file to be linked
+    
+    # {Stage.LinkSharedFileName}:           Name of the shared file to be linked
+    # {Stage.LinkSharedFileExtension}:      File Extension of the shared file to be linked
+    # {Stage.LinkSharedFileDirectory}:      Directory of the shared file to be linked
+    # {Stage.LinkSharedFilePath}:           Full path to the shared file to be linked
+    
+    # {Stage.LinkStaticFileName}:           Name of the static file to be linked
+    # {Stage.LinkStaticFileExtension}:      File Extension of the static file to be linked
+    # {Stage.LinkStaticFileDirectory}:      Directory of the static file to be linked
+    # {Stage.LinkStaticFilePath}:           Full path to the static file to be linked
     LinkTypes:
         Executable:
             Unix:
@@ -185,10 +194,10 @@ Linker:
                 Executable: "g++"
                 RunParts:
                 -   Type: Once
-                    CommandPart: "{Executable} {LinkFlags} -o \"{OutputFileDirectory}{/}{OutputFileName}\""
+                    CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.OutputDirectory}{/}{Stage.OutputFileName}\""
                 -   Type: Repeats
-                    CommandPart: " \"{LinkFilePath}\""
-                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{OutputFileName}"]
+                    CommandPart: " \"{Stage.LinkFilePath}\""
+                ExpectedOutputFiles: ["{Stage.OutputDirectory}{/}{Stage.OutputFileName}"]
                 # Setup: []
                 # Cleanup: []
             Windows:
@@ -196,10 +205,10 @@ Linker:
                 Executable: "g++"
                 RunParts:
                 -   Type: Once
-                    CommandPart: "{Executable} {LinkFlags} -o \"{OutputFileDirectory}{/}{OutputFileName}.exe\""
+                    CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.OutputDirectory}{/}{Stage.OutputFileName}.exe\""
                 -   Type: Repeats
-                    CommandPart: " \"{LinkFilePath}\""
-                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{OutputFileName}.exe"]
+                    CommandPart: " \"{Stage.LinkFilePath}\""
+                ExpectedOutputFiles: ["{Stage.OutputDirectory}{/}{Stage.OutputFileName}.exe"]
                 # Setup: []
                 # Cleanup: []
         ExecutableShared:
@@ -208,10 +217,10 @@ Linker:
                 Executable: "g++"
                 RunParts:
                 -   Type: Once
-                    CommandPart: "{Executable} {LinkFlags} -o \"{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}\""
+                    CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.OutputDirectory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.OutputFileName}{Stage.SharedLibraryFile.Extension}\""
                 -   Type: Repeats
-                    CommandPart: " \"{LinkFilePath}\""
-                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}"]
+                    CommandPart: " \"{Stage.LinkFilePath}\""
+                ExpectedOutputFiles: ["{Stage.OutputDirectory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.OutputFileName}{Stage.SharedLibraryFile.Extension}"]
                 # Setup: []
                 # Cleanup: []
         Static:
@@ -220,10 +229,10 @@ Linker:
                 Executable: "g++"
                 RunParts:
                 -   Type: Once
-                    CommandPart: "{Executable} {LinkFlags} -o \"{OutputFileDirectory}{/}{StaticLinkFile.Prefix}{OutputFileName}{StaticLinkFile.Extension}\""
+                    CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.OutputDirectory}{/}{Stage.StaticLinkFile.Prefix}{Stage.OutputFileName}{Stage.StaticLinkFile.Extension}\""
                 -   Type: Repeats
-                    CommandPart: " \"{LinkFilePath}\""
-                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{StaticLinkFile.Prefix}{OutputFileName}{StaticLinkFile.Extension}"]
+                    CommandPart: " \"{Stage.LinkFilePath}\""
+                ExpectedOutputFiles: ["{Stage.OutputDirectory}{/}{Stage.StaticLinkFile.Prefix}{Stage.OutputFileName}{Stage.StaticLinkFile.Extension}"]
                 # Setup: []
                 # Cleanup: []
         Shared:
@@ -232,9 +241,9 @@ Linker:
                 Executable: "g++"
                 RunParts:
                 -   Type: Once
-                    CommandPart: "{Executable} {LinkFlags} -o \"{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}\""
+                    CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.OutputDirectory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.OutputFileName}{Stage.SharedLibraryFile.Extension}\""
                 -   Type: Repeats
-                    CommandPart: " \"{LinkFilePath}\""
-                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}"]
+                    CommandPart: " \"{Stage.LinkFilePath}\""
+                ExpectedOutputFiles: ["{Stage.OutputDirectory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.OutputFileName}{Stage.SharedLibraryFile.Extension}"]
                 # Setup: []
                 # Cleanup: []

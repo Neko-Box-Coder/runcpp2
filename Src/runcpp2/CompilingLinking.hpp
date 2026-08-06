@@ -93,35 +93,33 @@ namespace
         runcpp2::TrimRight(inOutFlags);
     }
     
-    bool PopulateFilesTypesMap( const runcpp2::Data::FilesTypesInfo& fileTypesInfo,
+    void PopulateFilesTypesMap( const runcpp2::Data::FilesTypesInfo& fileTypesInfo,
                                 std::unordered_map< std::string, 
                                                     std::vector<std::string>>& outSubstitutionMap)
     {
         ssLOG_FUNC_DEBUG();
         
-        #define INTERNAL_STR(a) #a
-        #define INTERNAL_COMPOSE(a, b) a b
-        #define INTERNAL_ADD_TO_MAP(target) \
-            outSubstitutionMap[ "{" INTERNAL_COMPOSE(INTERNAL_STR, (target)) "}" ] = \
-                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. target) }
-
-        INTERNAL_ADD_TO_MAP(SharedLibraryFile.Prefix);
-        INTERNAL_ADD_TO_MAP(SharedLinkFile.Prefix);
-        INTERNAL_ADD_TO_MAP(StaticLinkFile.Prefix);
-        INTERNAL_ADD_TO_MAP(ObjectLinkFile.Prefix);
-        INTERNAL_ADD_TO_MAP(DebugSymbolFile.Prefix);
+        outSubstitutionMap[ "{Stage.SharedLibraryFile.Prefix}" ] = 
+                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. SharedLibraryFile.Prefix) };
+        outSubstitutionMap[ "{Stage.SharedLinkFile.Prefix}" ] = 
+                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. SharedLinkFile.Prefix) };
+        outSubstitutionMap[ "{Stage.StaticLinkFile.Prefix}" ] = 
+                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. StaticLinkFile.Prefix) };
+        outSubstitutionMap[ "{Stage.ObjectLinkFile.Prefix}" ] = 
+                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. ObjectLinkFile.Prefix) };
+        outSubstitutionMap[ "{Stage.DebugSymbolFile.Prefix}" ] = 
+                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. DebugSymbolFile.Prefix) };
         
-        INTERNAL_ADD_TO_MAP(SharedLibraryFile.Extension);
-        INTERNAL_ADD_TO_MAP(SharedLinkFile.Extension);
-        INTERNAL_ADD_TO_MAP(StaticLinkFile.Extension);
-        INTERNAL_ADD_TO_MAP(ObjectLinkFile.Extension);
-        INTERNAL_ADD_TO_MAP(DebugSymbolFile.Extension);
-        
-        #undef INTERNAL_STR
-        #undef INTERNAL_COMPOSE
-        #undef INTERNAL_ADD_TO_MAP
-        
-        return true;
+        outSubstitutionMap[ "{Stage.SharedLibraryFile.Extension}" ] = 
+                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. SharedLibraryFile.Extension) };
+        outSubstitutionMap[ "{Stage.SharedLinkFile.Extension}" ] = 
+                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. SharedLinkFile.Extension) };
+        outSubstitutionMap[ "{Stage.StaticLinkFile.Extension}" ] = 
+                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. StaticLinkFile.Extension) };
+        outSubstitutionMap[ "{Stage.ObjectLinkFile.Extension}" ] = 
+                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. ObjectLinkFile.Extension) };
+        outSubstitutionMap[ "{Stage.DebugSymbolFile.Extension}" ] = 
+                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. DebugSymbolFile.Extension) };
     }
     
     bool CompileScript( const ghc::filesystem::path& buildDir,
@@ -181,27 +179,27 @@ namespace
         }
         std::unordered_map<std::string, std::vector<std::string>> substitutionMapTemplate;
         
-        substitutionMapTemplate["{Executable}"] = {(*currentOutputTypeInfo).Executable};
+        substitutionMapTemplate["{Stage.Executable}"] = {(*currentOutputTypeInfo).Executable};
         
         //Compile flags
         {
             std::string compileFlags = (*currentOutputTypeInfo).Flags;
             AppendAndRemoveFlags(profile, scriptInfo.OverrideCompileFlags, compileFlags);
-            substitutionMapTemplate["{CompileFlags}"] = {compileFlags};
+            substitutionMapTemplate["{Stage.CompileFlags}"] = {compileFlags};
         }
         
-        //Add script and dependency include paths
-        substitutionMapTemplate["{IncludeDirectoryPath}"] = {};
+        //Add source and dependency include paths
+        substitutionMapTemplate["{Stage.IncludeDirectoryPath}"] = {};
         for(const ghc::filesystem::path& includePath : includePaths)
         {
             std::string processedInclude = runcpp2::ProcessPath(includePath.string());
-            substitutionMapTemplate["{IncludeDirectoryPath}"].push_back(processedInclude);
+            substitutionMapTemplate["{Stage.IncludeDirectoryPath}"].push_back(processedInclude);
         }
         
         //Add defines
-        substitutionMapTemplate["{DefineName}"] = {};
-        substitutionMapTemplate["{DefineValue}"] = {};
-        substitutionMapTemplate["{DefineNameOnly}"] = {};
+        substitutionMapTemplate["{Stage.DefineName}"] = {};
+        substitutionMapTemplate["{Stage.DefineValue}"] = {};
+        substitutionMapTemplate["{Stage.DefineNameOnly}"] = {};
         if(runcpp2::HasValueFromPlatformMap(scriptInfo.Defines))
         {
             const runcpp2::Data::ProfilesDefines& platformDefines = 
@@ -217,18 +215,16 @@ namespace
                     const runcpp2::Data::Define& define = profileDefines->at(i);
                     if(define.HasValue)
                     {
-                        substitutionMapTemplate["{DefineName}"].push_back(define.Name);
-                        substitutionMapTemplate["{DefineValue}"].push_back(define.Value);
+                        substitutionMapTemplate["{Stage.DefineName}"].push_back(define.Name);
+                        substitutionMapTemplate["{Stage.DefineValue}"].push_back(define.Value);
                     }
                     else
-                        substitutionMapTemplate["{DefineNameOnly}"].push_back(define.Name);
+                        substitutionMapTemplate["{Stage.DefineNameOnly}"].push_back(define.Name);
                 }
             }
         }
         
-        if(!PopulateFilesTypesMap(profile.FilesTypes, substitutionMapTemplate))
-            return false;
-        
+        PopulateFilesTypesMap(profile.FilesTypes, substitutionMapTemplate);
         substitutionMapTemplate["{/}"] = {runcpp2::ProcessPath("/")};
         
         std::unordered_map<std::string, std::vector<std::string>> substitutionMap;
@@ -269,15 +265,15 @@ namespace
             std::string sourceExt = currentSource.extension().string();
             //Input File
             {
-                substitutionMap["{InputFileName}"] = {sourceName};
-                substitutionMap["{InputFileExtension}"] = {sourceExt};
-                substitutionMap["{InputFileDirectory}"] = {sourceDirectory};
-                substitutionMap["{InputFilePath}"] = {currentSource.string()};
+                substitutionMap["{Stage.InputFileName}"] = {sourceName};
+                substitutionMap["{Stage.InputFileExtension}"] = {sourceExt};
+                substitutionMap["{Stage.InputFileDirectory}"] = {sourceDirectory};
+                substitutionMap["{Stage.InputFilePath}"] = {currentSource.string()};
             }
             
             //Output File
             {
-                substitutionMap["{OutputFileDirectory}"] = 
+                substitutionMap["{Stage.OutputDirectory}"] = 
                     {runcpp2::ProcessPath( (buildDir / relativeSourcePath.parent_path()).string() )};
                 
                 if(!runcpp2::HasValueFromPlatformMap(profile.FilesTypes.ObjectLinkFile.Extension))
@@ -568,7 +564,7 @@ namespace
             return false;
         }
         std::unordered_map<std::string, std::vector<std::string>> substitutionMap;
-        substitutionMap["{Executable}"] = {(*currentOutputTypeInfo).Executable};
+        substitutionMap["{Stage.Executable}"] = {(*currentOutputTypeInfo).Executable};
         
         //Link Flags
         {
@@ -583,16 +579,14 @@ namespace
                     linkFlags += std::string(" ") + additionalLinkFlags;
             }
             
-            substitutionMap["{LinkFlags}"] = {linkFlags};
+            substitutionMap["{Stage.LinkFlags}"] = {linkFlags};
         }
         
         //Output File
-        substitutionMap["{OutputFileName}"] = {outputName};
-        substitutionMap["{OutputFileDirectory}"] = {buildDir.string()};
+        substitutionMap["{Stage.OutputFileName}"] = {outputName};
+        substitutionMap["{Stage.OutputDirectory}"] = {buildDir.string()};
         
-        if(!PopulateFilesTypesMap(profile.FilesTypes, substitutionMap))
-            return false;
-        
+        PopulateFilesTypesMap(profile.FilesTypes, substitutionMap);
         substitutionMap["{/}"] = {runcpp2::ProcessPath("/")};
         
         //Link Files
@@ -670,52 +664,52 @@ namespace
                 std::string depLinkName = depLinkParsedPath.stem().string();
                 std::string depLinkExt = depLinkParsedPath.extension().string();
                 
-                substitutionMap["{LinkFileName}"].push_back(depLinkName);
-                substitutionMap["{LinkFileExt}"].push_back(depLinkExt);
-                substitutionMap["{LinkFileDirectory}"].push_back(depLinkDirectory);
+                substitutionMap["{Stage.LinkFileName}"].push_back(depLinkName);
+                substitutionMap["{Stage.LinkFileExt}"].push_back(depLinkExt);
+                substitutionMap["{Stage.LinkFileDirectory}"].push_back(depLinkDirectory);
                 const std::string processedLinkFilePath = 
                     runcpp2::ProcessPath(objectsFilesPaths.at(i));
-                substitutionMap["{LinkFilePath}"].push_back(processedLinkFilePath);
+                substitutionMap["{Stage.LinkFilePath}"].push_back(processedLinkFilePath);
                 
                 static_assert(  static_cast<int>(Data::DependencyLibraryType::COUNT) == 4, 
                                 "Add new type to be processed");
                 
-                substitutionMap["{LinkStaticFileName}"] = {};
-                substitutionMap["{LinkStaticFileExt}"] = {};
-                substitutionMap["{LinkStaticFileDirectory}"] = {};
-                substitutionMap["{LinkStaticFilePath}"] = {};
-                substitutionMap["{LinkSharedFileName}"] = {};
-                substitutionMap["{LinkSharedFileExt}"] = {};
-                substitutionMap["{LinkSharedFileDirectory}"] = {};
-                substitutionMap["{LinkSharedFilePath}"] = {};
-                substitutionMap["{LinkObjectFileName}"] = {};
-                substitutionMap["{LinkObjectFileExt}"] = {};
-                substitutionMap["{LinkObjectFileDirectory}"] = {};
-                substitutionMap["{LinkObjectFilePath}"] = {};
+                substitutionMap["{Stage.LinkStaticFileName}"] = {};
+                substitutionMap["{Stage.LinkStaticFileExt}"] = {};
+                substitutionMap["{Stage.LinkStaticFileDirectory}"] = {};
+                substitutionMap["{Stage.LinkStaticFilePath}"] = {};
+                substitutionMap["{Stage.LinkSharedFileName}"] = {};
+                substitutionMap["{Stage.LinkSharedFileExt}"] = {};
+                substitutionMap["{Stage.LinkSharedFileDirectory}"] = {};
+                substitutionMap["{Stage.LinkSharedFilePath}"] = {};
+                substitutionMap["{Stage.LinkObjectFileName}"] = {};
+                substitutionMap["{Stage.LinkObjectFileExt}"] = {};
+                substitutionMap["{Stage.LinkObjectFileDirectory}"] = {};
+                substitutionMap["{Stage.LinkObjectFilePath}"] = {};
                 switch(currentLinkType)
                 {
                     case Data::DependencyLibraryType::STATIC:
                     {
-                        substitutionMap["{LinkStaticFileName}"].push_back(depLinkName);
-                        substitutionMap["{LinkStaticFileExt}"].push_back(depLinkExt);
-                        substitutionMap["{LinkStaticFileDirectory}"].push_back(depLinkDirectory);
-                        substitutionMap["{LinkStaticFilePath}"].push_back(processedLinkFilePath);
+                        substitutionMap["{Stage.LinkStaticFileName}"].push_back(depLinkName);
+                        substitutionMap["{Stage.LinkStaticFileExt}"].push_back(depLinkExt);
+                        substitutionMap["{Stage.LinkStaticFileDirectory}"].push_back(depLinkDirectory);
+                        substitutionMap["{Stage.LinkStaticFilePath}"].push_back(processedLinkFilePath);
                         break;
                     }
                     case Data::DependencyLibraryType::SHARED:
                     {
-                        substitutionMap["{LinkSharedFileName}"].push_back(depLinkName);
-                        substitutionMap["{LinkSharedFileExt}"].push_back(depLinkExt);
-                        substitutionMap["{LinkSharedFileDirectory}"].push_back(depLinkDirectory);
-                        substitutionMap["{LinkSharedFilePath}"].push_back(processedLinkFilePath);
+                        substitutionMap["{Stage.LinkSharedFileName}"].push_back(depLinkName);
+                        substitutionMap["{Stage.LinkSharedFileExt}"].push_back(depLinkExt);
+                        substitutionMap["{Stage.LinkSharedFileDirectory}"].push_back(depLinkDirectory);
+                        substitutionMap["{Stage.LinkSharedFilePath}"].push_back(processedLinkFilePath);
                         break;
                     }
                     case Data::DependencyLibraryType::OBJECT:
                     {
-                        substitutionMap["{LinkObjectFileName}"].push_back(depLinkName);
-                        substitutionMap["{LinkObjectFileExt}"].push_back(depLinkExt);
-                        substitutionMap["{LinkObjectFileDirectory}"].push_back(depLinkDirectory);
-                        substitutionMap["{LinkObjectFilePath}"].push_back(processedLinkFilePath);
+                        substitutionMap["{Stage.LinkObjectFileName}"].push_back(depLinkName);
+                        substitutionMap["{Stage.LinkObjectFileExt}"].push_back(depLinkExt);
+                        substitutionMap["{Stage.LinkObjectFileDirectory}"].push_back(depLinkDirectory);
+                        substitutionMap["{Stage.LinkObjectFilePath}"].push_back(processedLinkFilePath);
                         break;
                     }
                     case Data::DependencyLibraryType::HEADER:

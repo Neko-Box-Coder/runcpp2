@@ -6,20 +6,20 @@ Templates:
         Flags: "/nologo /W4 /diagnostics:caret /utf-8 /Gm- /MDd /EHar /TP /std:c++17 /GR /RTC1 /Zc:inline /Zi"
     "vs2022_v17+_CompileRunParts": &vs2022_v17+_CompileRunParts
     -   Type: Once
-        CommandPart: "{Executable} /c {CompileFlags}"
+        CommandPart: "{Stage.Executable} /c {Stage.CompileFlags}"
     -   Type: Repeats
-        CommandPart: " /D{DefineNameOnly}="
+        CommandPart: " /D{Stage.DefineNameOnly}="
     -   Type: Repeats
-        CommandPart: " \"/D{DefineName}={DefineValue}\""
+        CommandPart: " \"/D{Stage.DefineName}={Stage.DefineValue}\""
     -   Type: Repeats
-        CommandPart: " /I\"{IncludeDirectoryPath}\""
+        CommandPart: " /I\"{Stage.IncludeDirectoryPath}\""
     -   Type: Once
-        CommandPart: " /Fo\"{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}\" \
-            /Fd\"{OutputFileDirectory}{/}{DebugSymbolFile.Prefix}{InputFileName}{DebugSymbolFile.Extension}\" \
-            \"{InputFilePath}\""
+        CommandPart: " /Fo\"{Stage.OutputDirectory}{/}{Stage.ObjectLinkFile.Prefix}{Stage.InputFileName}{Stage.ObjectLinkFile.Extension}\" \
+            /Fd\"{Stage.OutputDirectory}{/}{Stage.DebugSymbolFile.Prefix}{Stage.InputFileName}{Stage.DebugSymbolFile.Extension}\" \
+            \"{Stage.InputFilePath}\""
     "vs2022_v17+_CompileExpectedOutputFiles": &vs2022_v17+_CompileExpectedOutputFiles
-    -   "{OutputFileDirectory}{/}{ObjectLinkFile.Prefix}{InputFileName}{ObjectLinkFile.Extension}"
-    -   "{OutputFileDirectory}{/}{DebugSymbolFile.Prefix}{InputFileName}{DebugSymbolFile.Extension}"
+    -   "{Stage.OutputDirectory}{/}{Stage.ObjectLinkFile.Prefix}{Stage.InputFileName}{Stage.ObjectLinkFile.Extension}"
+    -   "{Stage.OutputDirectory}{/}{Stage.DebugSymbolFile.Prefix}{Stage.InputFileName}{Stage.DebugSymbolFile.Extension}"
     
 # https://learn.microsoft.com/en-us/cpp/overview/compiler-versions?view=msvc-170
 Name: "vs2022_v17+"
@@ -82,11 +82,11 @@ Linker:
                 RunParts:
                 -   Type: Once
                     CommandPart: >-
-                        {Executable} {LinkFlags}
-                        /OUT:"{OutputFileDirectory}{/}{OutputFileName}.exe"
+                        {Stage.Executable} {Stage.LinkFlags}
+                        /OUT:"{Stage.OutputDirectory}{/}{Stage.OutputFileName}.exe"
                 -   Type: Repeats
-                    CommandPart: " \"{LinkFilePath}\""
-                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{OutputFileName}.exe"]
+                    CommandPart: " \"{Stage.LinkFilePath}\""
+                ExpectedOutputFiles: ["{Stage.OutputDirectory}{/}{Stage.OutputFileName}.exe"]
         ExecutableShared:
             Windows:
                 Flags: >-
@@ -97,13 +97,13 @@ Linker:
                 RunParts:
                 -   Type: Once
                     CommandPart: >-
-                        {Executable} {LinkFlags}
-                        /OUT:"{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}"
-                        /IMPLIB:"{OutputFileDirectory}{/}{SharedLinkFile.Prefix}{OutputFileName}{SharedLinkFile.Extension}"
+                        {Stage.Executable} {Stage.LinkFlags}
+                        /OUT:"{Stage.OutputDirectory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.OutputFileName}{Stage.SharedLibraryFile.Extension}"
+                        /IMPLIB:"{Stage.OutputDirectory}{/}{Stage.SharedLinkFile.Prefix}{Stage.OutputFileName}{Stage.SharedLinkFile.Extension}"
                         /DEF:".\temp.def"
                 -   Type: Repeats
-                    CommandPart: " \"{LinkFilePath}\""
-                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}"]
+                    CommandPart: " \"{Stage.LinkFilePath}\""
+                ExpectedOutputFiles: ["{Stage.OutputDirectory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.OutputFileName}{Stage.SharedLibraryFile.Extension}"]
                 Setup: [ "echo EXPORTS > .\\temp.def", "echo.   main @1 >> .\\temp.def" ]
                 Cleanup: [ "del .\\temp.def" ]
         Static:
@@ -113,12 +113,12 @@ Linker:
                 RunParts:
                 -   Type: Once
                     CommandPart: >-
-                        {Executable} {LinkFlags}
-                        /OUT:"{OutputFileDirectory}{/}{StaticLinkFile.Prefix}{OutputFileName}{StaticLinkFile.Extension}"
-                        /IMPLIB:"{OutputFileDirectory}{/}{SharedLinkFile.Prefix}{OutputFileName}{SharedLinkFile.Extension}"
+                        {Stage.Executable} {Stage.LinkFlags}
+                        /OUT:"{Stage.OutputDirectory}{/}{Stage.StaticLinkFile.Prefix}{Stage.OutputFileName}{Stage.StaticLinkFile.Extension}"
+                        /IMPLIB:"{Stage.OutputDirectory}{/}{Stage.SharedLinkFile.Prefix}{Stage.OutputFileName}{Stage.SharedLinkFile.Extension}"
                 -   Type: Repeats
-                    CommandPart: " \"{LinkFilePath}\""
-                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{StaticLinkFile.Prefix}{OutputFileName}{StaticLinkFile.Extension}"]
+                    CommandPart: " \"{Stage.LinkFilePath}\""
+                ExpectedOutputFiles: ["{Stage.OutputDirectory}{/}{Stage.StaticLinkFile.Prefix}{Stage.OutputFileName}{Stage.StaticLinkFile.Extension}"]
         Shared:
             Windows:
                 Flags: >-
@@ -129,9 +129,9 @@ Linker:
                 RunParts:
                 -   Type: Once
                     CommandPart: >-
-                        {Executable} {LinkFlags}
-                        /OUT:"{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}"
-                        /IMPLIB:"{OutputFileDirectory}{/}{SharedLinkFile.Prefix}{OutputFileName}{SharedLinkFile.Extension}"
+                        {Stage.Executable} {Stage.LinkFlags}
+                        /OUT:"{Stage.OutputDirectory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.OutputFileName}{Stage.SharedLibraryFile.Extension}"
+                        /IMPLIB:"{Stage.OutputDirectory}{/}{Stage.SharedLinkFile.Prefix}{Stage.OutputFileName}{Stage.SharedLinkFile.Extension}"
                 -   Type: Repeats
-                    CommandPart: " \"{LinkFilePath}\""
-                ExpectedOutputFiles: ["{OutputFileDirectory}{/}{SharedLibraryFile.Prefix}{OutputFileName}{SharedLibraryFile.Extension}"]
+                    CommandPart: " \"{Stage.LinkFilePath}\""
+                ExpectedOutputFiles: ["{Stage.OutputDirectory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.OutputFileName}{Stage.SharedLibraryFile.Extension}"]
