@@ -664,52 +664,52 @@ namespace
                 std::string depLinkName = depLinkParsedPath.stem().string();
                 std::string depLinkExt = depLinkParsedPath.extension().string();
                 
-                substitutionMap["{Stage.LinkFileName}"].push_back(depLinkName);
-                substitutionMap["{Stage.LinkFileExt}"].push_back(depLinkExt);
-                substitutionMap["{Stage.LinkFileDirectory}"].push_back(depLinkDirectory);
+                substitutionMap["{Stage.Input.Name}"].push_back(depLinkName);
+                substitutionMap["{Stage.Input.Extension}"].push_back(depLinkExt);
+                substitutionMap["{Stage.Input.Directory}"].push_back(depLinkDirectory);
                 const std::string processedLinkFilePath = 
                     runcpp2::ProcessPath(objectsFilesPaths.at(i));
-                substitutionMap["{Stage.LinkFilePath}"].push_back(processedLinkFilePath);
+                substitutionMap["{Stage.Input.Path}"].push_back(processedLinkFilePath);
                 
                 static_assert(  static_cast<int>(Data::DependencyLibraryType::COUNT) == 4, 
                                 "Add new type to be processed");
                 
-                substitutionMap["{Stage.LinkStaticFileName}"] = {};
-                substitutionMap["{Stage.LinkStaticFileExt}"] = {};
-                substitutionMap["{Stage.LinkStaticFileDirectory}"] = {};
-                substitutionMap["{Stage.LinkStaticFilePath}"] = {};
-                substitutionMap["{Stage.LinkSharedFileName}"] = {};
-                substitutionMap["{Stage.LinkSharedFileExt}"] = {};
-                substitutionMap["{Stage.LinkSharedFileDirectory}"] = {};
-                substitutionMap["{Stage.LinkSharedFilePath}"] = {};
-                substitutionMap["{Stage.LinkObjectFileName}"] = {};
-                substitutionMap["{Stage.LinkObjectFileExt}"] = {};
-                substitutionMap["{Stage.LinkObjectFileDirectory}"] = {};
-                substitutionMap["{Stage.LinkObjectFilePath}"] = {};
+                substitutionMap["{Stage.Input.Static.Name}"] = {};
+                substitutionMap["{Stage.Input.Static.Extension}"] = {};
+                substitutionMap["{Stage.Input.Static.Directory}"] = {};
+                substitutionMap["{Stage.Input.Static.Path}"] = {};
+                substitutionMap["{Stage.Input.Shared.Name}"] = {};
+                substitutionMap["{Stage.Input.Shared.Extension}"] = {};
+                substitutionMap["{Stage.Input.Shared.Directory}"] = {};
+                substitutionMap["{Stage.Input.Shared.Path}"] = {};
+                substitutionMap["{Stage.Input.Object.Name}"] = {};
+                substitutionMap["{Stage.Input.Object.Extension}"] = {};
+                substitutionMap["{Stage.Input.Object.Directory}"] = {};
+                substitutionMap["{Stage.Input.Object.Path}"] = {};
                 switch(currentLinkType)
                 {
                     case Data::DependencyLibraryType::STATIC:
                     {
-                        substitutionMap["{Stage.LinkStaticFileName}"].push_back(depLinkName);
-                        substitutionMap["{Stage.LinkStaticFileExt}"].push_back(depLinkExt);
-                        substitutionMap["{Stage.LinkStaticFileDirectory}"].push_back(depLinkDirectory);
-                        substitutionMap["{Stage.LinkStaticFilePath}"].push_back(processedLinkFilePath);
+                        substitutionMap["{Stage.Input.Static.Name}"].push_back(depLinkName);
+                        substitutionMap["{Stage.Input.Static.Extension}"].push_back(depLinkExt);
+                        substitutionMap["{Stage.Input.Static.Directory}"].push_back(depLinkDirectory);
+                        substitutionMap["{Stage.Input.Static.Path}"].push_back(processedLinkFilePath);
                         break;
                     }
                     case Data::DependencyLibraryType::SHARED:
                     {
-                        substitutionMap["{Stage.LinkSharedFileName}"].push_back(depLinkName);
-                        substitutionMap["{Stage.LinkSharedFileExt}"].push_back(depLinkExt);
-                        substitutionMap["{Stage.LinkSharedFileDirectory}"].push_back(depLinkDirectory);
-                        substitutionMap["{Stage.LinkSharedFilePath}"].push_back(processedLinkFilePath);
+                        substitutionMap["{Stage.Input.Shared.Name}"].push_back(depLinkName);
+                        substitutionMap["{Stage.Input.Shared.Extension}"].push_back(depLinkExt);
+                        substitutionMap["{Stage.Input.Shared.Directory}"].push_back(depLinkDirectory);
+                        substitutionMap["{Stage.Input.Shared.Path}"].push_back(processedLinkFilePath);
                         break;
                     }
                     case Data::DependencyLibraryType::OBJECT:
                     {
-                        substitutionMap["{Stage.LinkObjectFileName}"].push_back(depLinkName);
-                        substitutionMap["{Stage.LinkObjectFileExt}"].push_back(depLinkExt);
-                        substitutionMap["{Stage.LinkObjectFileDirectory}"].push_back(depLinkDirectory);
-                        substitutionMap["{Stage.LinkObjectFilePath}"].push_back(processedLinkFilePath);
+                        substitutionMap["{Stage.Input.Object.Name}"].push_back(depLinkName);
+                        substitutionMap["{Stage.Input.Object.Extension}"].push_back(depLinkExt);
+                        substitutionMap["{Stage.Input.Object.Directory}"].push_back(depLinkDirectory);
+                        substitutionMap["{Stage.Input.Object.Path}"].push_back(processedLinkFilePath);
                         break;
                     }
                     case Data::DependencyLibraryType::HEADER:

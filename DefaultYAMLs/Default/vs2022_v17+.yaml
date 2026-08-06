@@ -85,7 +85,7 @@ Linker:
                         {Stage.Executable} {Stage.LinkFlags}
                         /OUT:"{Stage.Output.Directory}{/}{Stage.Output.Name}.exe"
                 -   Type: Repeats
-                    CommandPart: " \"{Stage.LinkFilePath}\""
+                    CommandPart: " \"{Stage.Input.Path}\""
                 ExpectedOutputFiles: ["{Stage.Output.Directory}{/}{Stage.Output.Name}.exe"]
         ExecutableShared:
             Windows:
@@ -102,7 +102,7 @@ Linker:
                         /IMPLIB:"{Stage.Output.Directory}{/}{Stage.SharedLinkFile.Prefix}{Stage.Output.Name}{Stage.SharedLinkFile.Extension}"
                         /DEF:".\temp.def"
                 -   Type: Repeats
-                    CommandPart: " \"{Stage.LinkFilePath}\""
+                    CommandPart: " \"{Stage.Input.Path}\""
                 ExpectedOutputFiles: ["{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.Output.Name}{Stage.SharedLibraryFile.Extension}"]
                 Setup: [ "echo EXPORTS > .\\temp.def", "echo.   main @1 >> .\\temp.def" ]
                 Cleanup: [ "del .\\temp.def" ]
@@ -117,7 +117,7 @@ Linker:
                         /OUT:"{Stage.Output.Directory}{/}{Stage.StaticLinkFile.Prefix}{Stage.Output.Name}{Stage.StaticLinkFile.Extension}"
                         /IMPLIB:"{Stage.Output.Directory}{/}{Stage.SharedLinkFile.Prefix}{Stage.Output.Name}{Stage.SharedLinkFile.Extension}"
                 -   Type: Repeats
-                    CommandPart: " \"{Stage.LinkFilePath}\""
+                    CommandPart: " \"{Stage.Input.Path}\""
                 ExpectedOutputFiles: ["{Stage.Output.Directory}{/}{Stage.StaticLinkFile.Prefix}{Stage.Output.Name}{Stage.StaticLinkFile.Extension}"]
         Shared:
             Windows:
@@ -133,5 +133,5 @@ Linker:
                         /OUT:"{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.Output.Name}{Stage.SharedLibraryFile.Extension}"
                         /IMPLIB:"{Stage.Output.Directory}{/}{Stage.SharedLinkFile.Prefix}{Stage.Output.Name}{Stage.SharedLinkFile.Extension}"
                 -   Type: Repeats
-                    CommandPart: " \"{Stage.LinkFilePath}\""
+                    CommandPart: " \"{Stage.Input.Path}\""
                 ExpectedOutputFiles: ["{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.Output.Name}{Stage.SharedLibraryFile.Extension}"]

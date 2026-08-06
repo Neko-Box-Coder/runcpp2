@@ -168,25 +168,25 @@ Linker:
     
     
     # Iterable variables, must be inside "Repeats" run type: --------------------------------------------------------------------------------------
-    # {Stage.LinkFileName}:                 Name of the file to be linked, regardless of the build type
-    # {Stage.LinkFileExtension}:            File Extension of the file to be linked, regardless of the build type
-    # {Stage.LinkFileDirectory}:            Directory of the file to be linked, regardless of the build type
-    # {Stage.LinkFilePath}:                 Full path to the file to be linked, regardless of the build type
+    # {Stage.Input.Name}:                   Name of the file to be linked, regardless of the build type
+    # {Stage.Input.Extension}:              File Extension of the file to be linked, regardless of the build type
+    # {Stage.Input.Directory}:              Directory of the file to be linked, regardless of the build type
+    # {Stage.Input.Path}:                   Full path to the file to be linked, regardless of the build type
     
-    # {Stage.LinkObjectFileName}:           Name of the object file to be linked
-    # {Stage.LinkObjectFileExtension}:      File Extension of the object file to be linked
-    # {Stage.LinkObjectFileDirectory}:      Directory of the object file to be linked
-    # {Stage.LinkObjectFilePath}:           Full path to the object file to be linked
+    # {Stage.Input.Object.Name}:           Name of the object file to be linked
+    # {Stage.Input.Object.Extension}:      File Extension of the object file to be linked
+    # {Stage.Input.Object.Directory}:      Directory of the object file to be linked
+    # {Stage.Input.Object.Path}:           Full path to the object file to be linked
     
-    # {Stage.LinkSharedFileName}:           Name of the shared file to be linked
-    # {Stage.LinkSharedFileExtension}:      File Extension of the shared file to be linked
-    # {Stage.LinkSharedFileDirectory}:      Directory of the shared file to be linked
-    # {Stage.LinkSharedFilePath}:           Full path to the shared file to be linked
+    # {Stage.Input.Shared.Name}:           Name of the shared file to be linked
+    # {Stage.Input.Shared.Extension}:      File Extension of the shared file to be linked
+    # {Stage.Input.Shared.Directory}:      Directory of the shared file to be linked
+    # {Stage.Input.Shared.Path}:           Full path to the shared file to be linked
     
-    # {Stage.LinkStaticFileName}:           Name of the static file to be linked
-    # {Stage.LinkStaticFileExtension}:      File Extension of the static file to be linked
-    # {Stage.LinkStaticFileDirectory}:      Directory of the static file to be linked
-    # {Stage.LinkStaticFilePath}:           Full path to the static file to be linked
+    # {Stage.Input.Static.Name}:           Name of the static file to be linked
+    # {Stage.Input.Static.Extension}:      File Extension of the static file to be linked
+    # {Stage.Input.Static.Directory}:      Directory of the static file to be linked
+    # {Stage.Input.Static.Path}:           Full path to the static file to be linked
     LinkTypes:
         Executable:
             Unix:
@@ -196,7 +196,7 @@ Linker:
                 -   Type: Once
                     CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.Output.Directory}{/}{Stage.Output.Name}\""
                 -   Type: Repeats
-                    CommandPart: " \"{Stage.LinkFilePath}\""
+                    CommandPart: " \"{Stage.Input.Path}\""
                 ExpectedOutputFiles: ["{Stage.Output.Directory}{/}{Stage.Output.Name}"]
                 # Setup: []
                 # Cleanup: []
@@ -207,7 +207,7 @@ Linker:
                 -   Type: Once
                     CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.Output.Directory}{/}{Stage.Output.Name}.exe\""
                 -   Type: Repeats
-                    CommandPart: " \"{Stage.LinkFilePath}\""
+                    CommandPart: " \"{Stage.Input.Path}\""
                 ExpectedOutputFiles: ["{Stage.Output.Directory}{/}{Stage.Output.Name}.exe"]
                 # Setup: []
                 # Cleanup: []
@@ -219,7 +219,7 @@ Linker:
                 -   Type: Once
                     CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.Output.Name}{Stage.SharedLibraryFile.Extension}\""
                 -   Type: Repeats
-                    CommandPart: " \"{Stage.LinkFilePath}\""
+                    CommandPart: " \"{Stage.Input.Path}\""
                 ExpectedOutputFiles: ["{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.Output.Name}{Stage.SharedLibraryFile.Extension}"]
                 # Setup: []
                 # Cleanup: []
@@ -231,7 +231,7 @@ Linker:
                 -   Type: Once
                     CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.Output.Directory}{/}{Stage.StaticLinkFile.Prefix}{Stage.Output.Name}{Stage.StaticLinkFile.Extension}\""
                 -   Type: Repeats
-                    CommandPart: " \"{Stage.LinkFilePath}\""
+                    CommandPart: " \"{Stage.Input.Path}\""
                 ExpectedOutputFiles: ["{Stage.Output.Directory}{/}{Stage.StaticLinkFile.Prefix}{Stage.Output.Name}{Stage.StaticLinkFile.Extension}"]
                 # Setup: []
                 # Cleanup: []
@@ -243,7 +243,7 @@ Linker:
                 -   Type: Once
                     CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.Output.Name}{Stage.SharedLibraryFile.Extension}\""
                 -   Type: Repeats
-                    CommandPart: " \"{Stage.LinkFilePath}\""
+                    CommandPart: " \"{Stage.Input.Path}\""
                 ExpectedOutputFiles: ["{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.Output.Name}{Stage.SharedLibraryFile.Extension}"]
                 # Setup: []
                 # Cleanup: []
