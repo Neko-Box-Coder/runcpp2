@@ -189,11 +189,11 @@ namespace
         }
         
         //Add source and dependency include paths
-        substitutionMapTemplate["{Stage.IncludeDirectoryPath}"] = {};
+        substitutionMapTemplate["{Stage.IncludeDirectory.Path}"] = {};
         for(const ghc::filesystem::path& includePath : includePaths)
         {
             std::string processedInclude = runcpp2::ProcessPath(includePath.string());
-            substitutionMapTemplate["{Stage.IncludeDirectoryPath}"].push_back(processedInclude);
+            substitutionMapTemplate["{Stage.IncludeDirectory.Path}"].push_back(processedInclude);
         }
         
         //Add defines

@@ -12,7 +12,7 @@ Templates:
     -   Type: Repeats
         CommandPart: " \"/D{Stage.DefineName}={Stage.DefineValue}\""
     -   Type: Repeats
-        CommandPart: " /I\"{Stage.IncludeDirectoryPath}\""
+        CommandPart: " /I\"{Stage.IncludeDirectory.Path}\""
     -   Type: Once
         CommandPart: " /Fo\"{Stage.Output.Directory}{/}{Stage.ObjectLinkFile.Prefix}{Stage.Input.Name}{Stage.ObjectLinkFile.Extension}\" \
             /Fd\"{Stage.Output.Directory}{/}{Stage.DebugSymbolFile.Prefix}{Stage.Input.Name}{Stage.DebugSymbolFile.Extension}\" \

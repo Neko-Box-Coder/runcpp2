@@ -77,7 +77,7 @@ Compiler:
     # {Stage.DefineName}:                   Name of all the defines that has a value specified
     # {Stage.DefineValue}:                  Value of all the defines that has a value specified (use together with {Stage.DefineName})
     
-    # {Stage.IncludeDirectoryPath}:         Path to all the include directories
+    # {Stage.IncludeDirectory.Path}:         Path to all the include directories
     CompileTypes:
         Executable:
             DefaultPlatform:
@@ -96,7 +96,7 @@ Compiler:
                 -   Type: Repeats
                     CommandPart: " \"-D{Stage.DefineName}={Stage.DefineValue}\""
                 -   Type: Repeats
-                    CommandPart: " -I\"{Stage.IncludeDirectoryPath}\""
+                    CommandPart: " -I\"{Stage.IncludeDirectory.Path}\""
                 -   Type: Once
                     CommandPart: " \"{Stage.Input.Path}\" -o \"{Stage.Output.Directory}{/}{Stage.ObjectLinkFile.Prefix}{Stage.Input.Name}{Stage.ObjectLinkFile.Extension}\""
                 
