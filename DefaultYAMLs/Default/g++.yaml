@@ -170,25 +170,42 @@ Linker:
     
     
     # Iterable variables, must be inside "Repeats" run type: --------------------------------------------------------------------------------------
-    # {Stage.Input.Name}:                   Name of the file to be linked, regardless of the build type
-    # {Stage.Input.Extension}:              File Extension of the file to be linked, regardless of the build type
-    # {Stage.Input.Directory}:              Directory of the file to be linked, regardless of the build type
-    # {Stage.Input.Path}:                   Full path to the file to be linked, regardless of the build type
+    # {Stage.Input.Name}:                               Name of the files to be linked, regardless of the build type
+    # +-> {Stage.Input.Dep.Name}:                       Name of the dependencies files to be linked, regardless of the build type, sub array
+    # +-> {Stage.Input.Source.Name}:                    Name of the source files to be linked, regardless of the build type, sub array
+    # +-> {Stage.Input.Object.Name}:                    Name of the object files to be linked, sub array
+    # |   +-> {Stage.Input.Dep.Object.Name}:            Name of the dependencies object files to be linked, Sub array
+    # |   L-> {Stage.Input.Source.Object.Name}:         Name of the source object files to be linked, Sub array
+    # +-> {Stage.Input.Shared.Name}:                    Name of the shared dependencies files to be linked, sub array
+    # L-> {Stage.Input.Static.Name}:                    Name of the static dependencies files to be linked, sub array
     
-    # {Stage.Input.Object.Name}:            Name of the object file to be linked, Sub array of {Stage.Input.Name}
-    # {Stage.Input.Object.Extension}:       File Extension of the object file to be linked, Sub array of {Stage.Input.Extension}
-    # {Stage.Input.Object.Directory}:       Directory of the object file to be linked, Sub array of {Stage.Input.Directory}
-    # {Stage.Input.Object.Path}:            Full path to the object file to be linked, Sub array of {Stage.Input.Path}
+    # {Stage.Input.Extension}:                          File Extensions of the files to be linked, regardless of the build type
+    # +-> {Stage.Input.Dep.Extension}:                  File Extensions of the dependencies files to be linked, regardless of the build type
+    # +-> {Stage.Input.Source.Extension}:               File Extensions of the source files to be linked, regardless of the build type
+    # +-> {Stage.Input.Object.Extension}:               File Extensions of the object files to be linked, sub array
+    # |   +-> {Stage.Input.Dep.Object.Extension}:       File Extensions of the dependencies object files to be linked, sub array
+    # |   L-> {Stage.Input.Source.Object.Extension}:    File Extensions of the source object files to be linked, sub array
+    # +-> {Stage.Input.Shared.Extension}:               File Extensions of the shared dependencies files to be linked, sub array
+    # L-> {Stage.Input.Static.Extension}:               File Extensions of the static dependencies files to be linked, sub array
     
-    # {Stage.Input.Shared.Name}:            Name of the shared file to be linked, Sub array of {Stage.Input.Name}
-    # {Stage.Input.Shared.Extension}:       File Extension of the shared file to be linked, Sub array of {Stage.Input.Extension}
-    # {Stage.Input.Shared.Directory}:       Directory of the shared file to be linked, Sub array of {Stage.Input.Directory}
-    # {Stage.Input.Shared.Path}:            Full path to the shared file to be linked, Sub array of {Stage.Input.Path}
+    # {Stage.Input.Directory}:                          Directories of the files to be linked, regardless of the build type
+    # +-> {Stage.Input.Dep.Directory}:                  Directories of the dependencies files to be linked, regardless of the build type
+    # +-> {Stage.Input.Source.Directory}:               Directories of the source files to be linked, regardless of the build type
+    # +-> {Stage.Input.Object.Directory}:               Directories of the object files to be linked, sub array
+    # |   +-> {Stage.Input.Dep.Object.Directory}:       Directories of the dependencies object files to be linked, sub array
+    # |   L-> {Stage.Input.Source.Object.Directory}:    Directories of the source object files to be linked, sub array
+    # +-> {Stage.Input.Shared.Directory}:               Directories of the shared dependencies files to be linked, sub array
+    # L-> {Stage.Input.Static.Directory}:               Directories of the static dependencies files to be linked, sub array
     
-    # {Stage.Input.Static.Name}:            Name of the static file to be linked, Sub array of {Stage.Input.Name}
-    # {Stage.Input.Static.Extension}:       File Extension of the static file to be linked, Sub array of {Stage.Input.Extension}
-    # {Stage.Input.Static.Directory}:       Directory of the static file to be linked, Sub array of {Stage.Input.Directory}
-    # {Stage.Input.Static.Path}:            Full path to the static file to be linked, Sub array of {Stage.Input.Path}
+    # {Stage.Input.Path}:                               Full paths to the files to be linked, regardless of the build type
+    # +-> {Stage.Input.Dep.Path}:                       Full paths to the dependencies files to be linked, regardless of the build type
+    # +-> {Stage.Input.Source.Path}:                    Full paths to the source files to be linked, regardless of the build type
+    # +-> {Stage.Input.Object.Path}:                    Full paths to the object files to be linked, sub array
+    # |   +-> {Stage.Input.Dep.Object.Path}:            Full paths to the dependencies object files to be linked, sub array
+    # |   L-> {Stage.Input.Source.Object.Path}:         Full paths to the source object files to be linked, sub array
+    # +-> {Stage.Input.Shared.Path}:                    Full paths to the shared dependencies files to be linked, sub array
+    # L-> {Stage.Input.Static.Path}:                    Full paths to the static dependencies files to be linked, sub array
+
     LinkTypes:
         Executable:
             Unix:

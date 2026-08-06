@@ -767,30 +767,31 @@ namespace runcpp2
                 }
             }
             
-            std::vector<ghc::filesystem::path> linkFilesPaths;
+            std::vector<ghc::filesystem::path> depLinkFilesPaths;
             SeparateDependencyFiles(runParams.Core.profiles.at(profileIndex).FilesTypes, 
                                     gatheredBinariesPaths, 
-                                    linkFilesPaths, 
+                                    depLinkFilesPaths, 
                                     filesToCopyPaths);
             
+            //TODO: Allow user to pass the priorities outside
             //Set dependencies files to be lower priority
-            std::vector<int> binaryFilesPriorities;
-            for(int i = 0; i < linkFilesPaths.size(); ++i)
-                binaryFilesPriorities.push_back(-100);
+            std::vector<int> depBinaryFilesPriorities;
+            for(int i = 0; i < depLinkFilesPaths.size(); ++i)
+                depBinaryFilesPriorities.push_back(-100);
             
             //Get finalBinaryWriteTime by combining final object and dependencies write times
             std::error_code e;
             ghc::filesystem::file_time_type finalBinaryWriteTime = finalObjectWriteTime;
-            for(int i = 0; i < linkFilesPaths.size(); ++i)
+            for(int i = 0; i < depLinkFilesPaths.size(); ++i)
             {
-                if(!ghc::filesystem::exists(linkFilesPaths.at(i), e))
+                if(!ghc::filesystem::exists(depLinkFilesPaths.at(i), e))
                 {
-                    return DS_ERROR_MSG(linkFilesPaths.at(i).string() + 
+                    return DS_ERROR_MSG(depLinkFilesPaths.at(i).string() + 
                                         " reported as cached but doesn't exist");
                 }
                 
                 ghc::filesystem::file_time_type lastWriteTime = 
-                    ghc::filesystem::last_write_time(linkFilesPaths.at(i), e);
+                    ghc::filesystem::last_write_time(depLinkFilesPaths.at(i), e);
 
                 if(lastWriteTime > finalBinaryWriteTime)
                     finalBinaryWriteTime = lastWriteTime;
@@ -815,10 +816,12 @@ namespace runcpp2
             
             if(!outputCache || relinkNeeded)
             {
+                std::vector<ghc::filesystem::path> sourceLinkFilesPaths;
+                std::vector<int> sourceBinaryFilesPriorities;
                 for(int i = 0; i < cachedObjectsFiles.size(); ++i)
                 {
-                    linkFilesPaths.push_back(cachedObjectsFiles.at(i));
-                    binaryFilesPriorities.push_back(0);
+                    sourceLinkFilesPaths.push_back(cachedObjectsFiles.at(i));
+                    sourceBinaryFilesPriorities.push_back(0);
                 }
                 
                 //TODO: Compile and link for watch as well. Load library as well
@@ -847,8 +850,10 @@ namespace runcpp2
                                             scriptInfo,
                                             availableDependencies,
                                             runParams.Core.profiles.at(profileIndex),
-                                            linkFilesPaths,
-                                            binaryFilesPriorities,
+                                            depLinkFilesPaths,
+                                            depBinaryFilesPriorities,
+                                            sourceLinkFilesPaths,
+                                            sourceBinaryFilesPriorities,
                                             maxThreads)
                         .DS_TRY_ACT(DS_TMP_ERROR.Message += "\nFailed to compile or link script.";
                                     DS_APPEND_TRACE(DS_TMP_ERROR);
