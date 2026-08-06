@@ -54,6 +54,7 @@ namespace Data
         
         RunType Type;
         std::string CommandPart;
+        std::string Separator;
     };
     
     struct OutputTypeInfo
@@ -150,7 +151,14 @@ namespace Data
                                     return false);
                     
                     for(int j = 0; j < substitutedParts.size(); ++j)
+                    {
                         outCommand += substitutedParts[j];
+                        if( !currentRunParts.at(i).Separator.empty() && 
+                            j != substitutedParts.size() - 1)
+                        {
+                            outCommand += currentRunParts.at(i).Separator;
+                        }
+                    }
                 }
             }
             
@@ -366,7 +374,8 @@ namespace Data
                         for(size_t i = 0; i < info.RunParts.size(); ++i)
                         {
                             if( info.RunParts[i].Type != otherInfo.RunParts[i].Type ||
-                                info.RunParts[i].CommandPart != otherInfo.RunParts[i].CommandPart)
+                                info.RunParts[i].CommandPart != otherInfo.RunParts[i].CommandPart ||
+                                info.RunParts[i].Separator != otherInfo.RunParts[i].Separator)
                             {
                                 return false;
                             }
@@ -438,7 +447,8 @@ namespace
                 std::vector<NodeRequirement> currentRunPartRequirements =
                 {
                     NodeRequirement("Type", YAML::NodeType::Scalar, true, false),
-                    NodeRequirement("CommandPart", YAML::NodeType::Scalar, true, false)
+                    NodeRequirement("CommandPart", YAML::NodeType::Scalar, true, false),
+                    NodeRequirement("Separator", YAML::NodeType::Scalar, false, false)
                 };
                 
                 if(!CheckNodeRequirements(currentPartNode, currentRunPartRequirements))
@@ -468,6 +478,13 @@ namespace
                 outInfos[platformName].RunParts.back().CommandPart = 
                     currentPartNode ->GetMapValueScalar<std::string>("CommandPart")
                                     .DS_TRY_ACT(return false);
+                
+                if(ExistAndHasChild(currentPartNode, "Separator"))
+                {
+                     outInfos[platformName].RunParts.back().Separator = 
+                        currentPartNode ->GetMapValueScalar<std::string>("Separator")
+                                        .DS_TRY_ACT(return false);
+                }
             }
             
             //Setup
@@ -504,7 +521,7 @@ namespace
                                             .DS_TRY_ACT(return false);
                 outInfos[platformName].ExpectedOutputFiles.push_back(outputFileVal);
             }
-        }
+        } //for(int i = 0; i < outputTypesSubNode->GetChildrenCount(); ++i)
         
         return true;
     }
@@ -539,6 +556,12 @@ namespace
                 
                 outString +=    indentation + "            CommandPart: " + 
                                 GetEscapedYAMLString(it->second.RunParts.at(i).CommandPart) + "\n";
+                
+                if(!it->second.RunParts.at(i).Separator.empty())
+                {
+                    outString +=    indentation + "            Separator: " + 
+                                    GetEscapedYAMLString(it->second.RunParts.at(i).Separator) + "\n";
+                }
             }
             
             outString += indentation + "        ExpectedOutputFiles: \n";

@@ -95,6 +95,8 @@ Compiler:
                     CommandPart: "{Stage.Executable} -c {Stage.CompileFlags}"
                 -   Type: Repeats
                     CommandPart: " -D{Stage.DefineNameOnly}="
+                    # (Optional) A separator (such as ",") which will be inserted between each repeating parts
+                    # Separator: ""
                 -   Type: Repeats
                     CommandPart: " \"-D{Stage.DefineName}={Stage.DefineValue}\""
                 -   Type: Repeats
