@@ -69,7 +69,7 @@ Compiler:
     # {Stage.Input.Extension}:              Extension of the current input source file
     # {Stage.Input.Directory}:              Directory of the current input source file
     # {Stage.Input.Path}:                   Full path to the current input source file
-    # {Stage.Output.Directory}:              Directory of all the output files
+    # {Stage.Output.Directory}:             Directory of all the output files
     
     
     # Iterable variables, must be inside "Repeats" run type: --------------------------------------------------------------------------------------
@@ -77,7 +77,7 @@ Compiler:
     # {Stage.DefineName}:                   Name of all the defines that has a value specified
     # {Stage.DefineValue}:                  Value of all the defines that has a value specified (use together with {Stage.DefineName})
     
-    # {Stage.IncludeDirectory.Path}:         Path to all the include directories
+    # {Stage.IncludeDirectory.Path}:        Path to all the include directories
     CompileTypes:
         Executable:
             DefaultPlatform:
@@ -163,7 +163,7 @@ Linker:
     
     
     # Output Info: --------------------------------------------------------------------------------------
-    # {Stage.Output.Name}:                  Name of all the output files (without directory path and extension)
+    # {Stage.Output.Name}:                  Name of the output file (without directory path and extension)
     # {Stage.Output.Directory}:             Directory of all the output files
     
     
@@ -173,20 +173,20 @@ Linker:
     # {Stage.Input.Directory}:              Directory of the file to be linked, regardless of the build type
     # {Stage.Input.Path}:                   Full path to the file to be linked, regardless of the build type
     
-    # {Stage.Input.Object.Name}:           Name of the object file to be linked
-    # {Stage.Input.Object.Extension}:      File Extension of the object file to be linked
-    # {Stage.Input.Object.Directory}:      Directory of the object file to be linked
-    # {Stage.Input.Object.Path}:           Full path to the object file to be linked
+    # {Stage.Input.Object.Name}:            Name of the object file to be linked, Sub array of {Stage.Input.Name}
+    # {Stage.Input.Object.Extension}:       File Extension of the object file to be linked, Sub array of {Stage.Input.Extension}
+    # {Stage.Input.Object.Directory}:       Directory of the object file to be linked, Sub array of {Stage.Input.Directory}
+    # {Stage.Input.Object.Path}:            Full path to the object file to be linked, Sub array of {Stage.Input.Path}
     
-    # {Stage.Input.Shared.Name}:           Name of the shared file to be linked
-    # {Stage.Input.Shared.Extension}:      File Extension of the shared file to be linked
-    # {Stage.Input.Shared.Directory}:      Directory of the shared file to be linked
-    # {Stage.Input.Shared.Path}:           Full path to the shared file to be linked
+    # {Stage.Input.Shared.Name}:            Name of the shared file to be linked, Sub array of {Stage.Input.Name}
+    # {Stage.Input.Shared.Extension}:       File Extension of the shared file to be linked, Sub array of {Stage.Input.Extension}
+    # {Stage.Input.Shared.Directory}:       Directory of the shared file to be linked, Sub array of {Stage.Input.Directory}
+    # {Stage.Input.Shared.Path}:            Full path to the shared file to be linked, Sub array of {Stage.Input.Path}
     
-    # {Stage.Input.Static.Name}:           Name of the static file to be linked
-    # {Stage.Input.Static.Extension}:      File Extension of the static file to be linked
-    # {Stage.Input.Static.Directory}:      Directory of the static file to be linked
-    # {Stage.Input.Static.Path}:           Full path to the static file to be linked
+    # {Stage.Input.Static.Name}:            Name of the static file to be linked, Sub array of {Stage.Input.Name}
+    # {Stage.Input.Static.Extension}:       File Extension of the static file to be linked, Sub array of {Stage.Input.Extension}
+    # {Stage.Input.Static.Directory}:       Directory of the static file to be linked, Sub array of {Stage.Input.Directory}
+    # {Stage.Input.Static.Path}:            Full path to the static file to be linked, Sub array of {Stage.Input.Path}
     LinkTypes:
         Executable:
             Unix:
