@@ -10,6 +10,10 @@
 - Migrate to DSResult and remove ssTest
 - Parameters for build config/script
 - Ability to compile runcpp2 as single cpp
+- Parameters for dependencies
+- System include
+- Dot access groups for built-in profile variables
+- Separator for repeat RunPart
 
 ### v0.3.1
 - Check last run is shared lib or executable. Reset cache when necessary if different type
@@ -34,14 +38,13 @@
 
 ### v0.4.0
 - Allow runcpp2 to be library for scriptable pipeline
-- Parameters for dependencies
 - Parameters for profiles
 - Add more default profiles
 - Ditch cmake
 - Move to variant-lite instead of mpark-variant
 
 ## High Priority
-
+- External Source (curl download) for dependency
 - Expose/rename "InternalExecutableShared" and change BuildType to be platform map
     - This ties to the warning in `CompilingLinking.cpp:619`
 - Update `FileProperties.hpp` to use list of string for prefix and extension
@@ -94,8 +97,7 @@ endfunction()
 
 print_target_properties(matplot)
 -->
-- Add the ability to specify link order for source files and dependencies
-- Auto link order for source files, heuristically from include maps 
+- Add the ability to specify link order for dependencies
 - Add the ability to specify different profiles(?)/defines for different source files
 - Use `<csignal>` to handle potential segfaults
 - Use System2 subprocess if no prepend commands to be safer

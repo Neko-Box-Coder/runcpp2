@@ -70,6 +70,7 @@ DS::Result<void> TestMain()
                             CommandPart: "{Executable} -c {CompileFlags}"
                         -   Type: Repeats
                             CommandPart: " -I\"{IncludeDirectoryPath}\""
+                            Separator: " "
                         -   Type: Once
                             CommandPart: " \"{InputFilePath}\" -o \"{OutputFilePath}\""
                         ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
@@ -199,6 +200,7 @@ DS::Result<void> TestMain()
     DS_ASSERT_EQ(executableCompile.Flags, "-std=c++17 -Wall -g");
     DS_ASSERT_EQ(executableCompile.Executable, "g++");
     DS_ASSERT_EQ(executableCompile.RunParts.size(), 3);
+    DS_ASSERT_EQ(executableCompile.RunParts[1].Separator, " ");
     DS_ASSERT_EQ(executableCompile.ExpectedOutputFiles.size(), 2);
     
     //Verify Compiler ExecutableShared

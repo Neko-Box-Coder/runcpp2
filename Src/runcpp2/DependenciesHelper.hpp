@@ -412,7 +412,8 @@ namespace runcpp2
                                                     availableDependencies.at(i)->Build, 
                                                     dependenciesLocalCopiesPaths.at(i),
                                                     true,
-                                                    false);
+                                                    true);  //TODO: Make this (and others) 
+                                                            //      configurable later
                         if(!depResult.HasValue())
                         {
                             depResult.Error().Message +=    "\nFailed to build dependency " + 
@@ -1179,7 +1180,7 @@ namespace
                 int returnCode = 0;
                 std::string output;
                 if(!runcpp2::RunCommand(gitCloneCommand, 
-                                        false,
+                                        false,   //TODO: Make this configurable later
                                         buildDir.string(),
                                         output, 
                                         returnCode))

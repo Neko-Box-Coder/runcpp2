@@ -1032,11 +1032,13 @@ namespace runcpp2
                         const Data::ScriptInfo& scriptInfo,
                         const Data::Profile& currentProfile,
                         const std::vector<Data::DependencyInfo*>& dependencies,
-                        std::vector<ghc::filesystem::path>& outIncludePaths)
+                        std::vector<ghc::filesystem::path>& outSourceIncludePaths,
+                        std::vector<ghc::filesystem::path>& outDepIncludePaths)
     {
         ssLOG_FUNC_INFO();
         
-        outIncludePaths.clear();
+        outSourceIncludePaths.clear();
+        outDepIncludePaths.clear();
         
         if(!scriptDirectory.is_absolute())
             return DS_ERROR_MSG("Script directory is not absolute: " + DS_STR(scriptDirectory));
@@ -1045,7 +1047,7 @@ namespace runcpp2
         const Data::ProfilesProcessPaths* includePaths = 
             GetValueFromPlatformMap(scriptInfo.IncludePaths);
         
-        outIncludePaths.push_back(scriptDirectory);
+        outSourceIncludePaths.push_back(scriptDirectory);
         
         if(includePaths != nullptr)
         {
@@ -1086,7 +1088,7 @@ namespace runcpp2
                         return DS_ERROR_MSG(errMsg);
                     }
                     
-                    outIncludePaths.push_back(resolvedPath);
+                    outSourceIncludePaths.push_back(resolvedPath);
                 }
             }
         }
@@ -1095,9 +1097,8 @@ namespace runcpp2
         for(const Data::DependencyInfo* dependency : dependencies)
         {
             for(const std::string& includePath : dependency->AbsoluteIncludePaths)
-                outIncludePaths.push_back(ghc::filesystem::path(includePath));
+                outDepIncludePaths.push_back(ghc::filesystem::path(includePath));
         }
-        
         return {};
     }
 
@@ -1106,14 +1107,14 @@ namespace runcpp2
     GatherFilesIncludes(const std::vector<ghc::filesystem::path>& sourceFiles,
                         const std::vector<bool>& sourceHasCache,
                         const std::vector<ghc::filesystem::path>& includePaths,
-                        SourceIncludeMap& outSourceIncludes)
+                        SourceIncludeMap& outSourceIncludeMap)
     {
         ssLOG_FUNC_INFO();
         
         if(sourceFiles.size() != sourceHasCache.size())
             return DS_ERROR_MSG("Size of sourceFiles and sourceHasCache not matching");
         
-        outSourceIncludes.clear();
+        outSourceIncludeMap.clear();
         
         for(int i = 0; i < sourceFiles.size(); ++i)
         {
@@ -1125,7 +1126,7 @@ namespace runcpp2
             std::unordered_set<std::string> visitedFiles;
             ssLOG_INFO("Gathering includes for " << source.string());
             
-            std::vector<ghc::filesystem::path>& currentIncludes = outSourceIncludes[source.string()];
+            std::vector<ghc::filesystem::path>& currentIncludes = outSourceIncludeMap[source.string()];
             std::queue<ghc::filesystem::path> filesToProcess;
             filesToProcess.push(source);
             
