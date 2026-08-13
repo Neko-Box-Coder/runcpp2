@@ -206,7 +206,7 @@ DS::Result<void> TestMain()
         std::string preferredProfile;
         commonDefaultOverrideSetup();
         
-        runcpp2::ReadUserConfig(profiles, preferredProfile, configPath).DS_TRY();
+        runcpp2::ReadUserConfig(profiles, preferredProfile, "", configPath).DS_TRY();
         DS_ASSERT_EQ(profiles.size(), 1);
         DS_ASSERT_EQ(preferredProfile, "g++");
         DS_ASSERT_EQ(CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
@@ -257,7 +257,7 @@ DS::Result<void> TestMain()
         std::string preferredProfile;
         commonDefaultOverrideSetup();
         
-        runcpp2::ReadUserConfig(profiles, preferredProfile, configPath).DS_TRY();
+        runcpp2::ReadUserConfig(profiles, preferredProfile, "", configPath).DS_TRY();
         DS_ASSERT_EQ(profiles.size(), 1);
         DS_ASSERT_EQ(preferredProfile, "g++");
         DS_ASSERT_EQ(CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
@@ -329,7 +329,7 @@ DS::Result<void> TestMain()
         std::string preferredProfile;
         commonDefaultOverrideSetup();
         
-        runcpp2::ReadUserConfig(profiles, preferredProfile, configPath).DS_TRY();
+        runcpp2::ReadUserConfig(profiles, preferredProfile, "", configPath).DS_TRY();
         DS_ASSERT_EQ(CO_GET_FAILED_FUNCTIONS(OverrideInstance).size(), 0);
     
         cleanup();
@@ -568,7 +568,7 @@ DS::Result<void> TestMain()
         std::vector<runcpp2::Data::Profile> profiles;
         std::string preferredProfile;
         
-        runcpp2::ReadUserConfig(profiles, preferredProfile, configPath).DS_TRY();
+        runcpp2::ReadUserConfig(profiles, preferredProfile, "", configPath).DS_TRY();
         DS_ASSERT_EQ(profiles.size(), 2);
         if(!profiles.empty())
         {

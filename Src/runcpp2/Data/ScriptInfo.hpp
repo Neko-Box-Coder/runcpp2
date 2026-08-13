@@ -72,7 +72,22 @@ namespace Data
             YAML::NodePtr clonedNode = node->Clone(false, resourceHandle).DS_TRY();
             DEFER { YAML::FreeYAMLResource(resourceHandle); };
             
-            ApplyParametersAndVariables(*this, clonedNode, resourceHandle, inputParameters).DS_TRY();
+            std::vector<YAML::ConstNodePtr> exclusions;
+            if(ExistAndHasChild(clonedNode, "Dependencies"))
+            {
+                YAML::ConstNodePtr keyNode = clonedNode->GetMapKeyNode("Dependencies");
+                YAML::ConstNodePtr valueNode = clonedNode->GetMapValueNode("Dependencies");
+                DS_ASSERT_TRUE(keyNode != nullptr);
+                DS_ASSERT_TRUE(valueNode != nullptr);
+                exclusions.push_back(keyNode);
+                exclusions.push_back(valueNode);
+            }
+            
+            ApplyParametersAndVariables(*this, 
+                                        clonedNode, 
+                                        resourceHandle, 
+                                        inputParameters,
+                                        exclusions).DS_TRY();
             
             std::vector<NodeRequirement> requirements =
             {
@@ -194,6 +209,8 @@ namespace Data
                     Dependencies.push_back(info);
                 }
             }
+            
+            //TODO: We should check if there's any unsubstituted 
             
             DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesDefines>(clonedNode, 
                                                                     "Defines", 

@@ -6,6 +6,8 @@
 #include "runcpp2/Data/StageInfo.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/LibYAML_Wrapper.hpp"
+#include "runcpp2/Data/ParameterValue.hpp"
+#include "runcpp2/ParameterUtil.hpp"
 
 #include "DSResult/DSResult.hpp"
 
@@ -28,6 +30,8 @@ namespace Data
         std::unordered_set<std::string> NameAliases;
         std::unordered_set<std::string> FileExtensions;
         std::unordered_set<std::string> Languages;
+        std::unordered_map<std::string, ParameterValue> Parameters;
+        std::unordered_map<std::string, std::string> Variables;
         std::unordered_map<PlatformName, std::vector<std::string>> Setup;
         std::unordered_map<PlatformName, std::vector<std::string>> Cleanup;
         FilesTypesInfo FilesTypes;
@@ -46,9 +50,24 @@ namespace Data
             outNames.push_back("DefaultProfile");
         }
 
-        inline bool ParseYAML_Node(YAML::ConstNodePtr profileNode)
+        inline DS::Result<void> 
+        ParseYAML_Node( YAML::ConstNodePtr profileNode,
+                        const std::unordered_map<std::string, std::string>& inputParameters)
         {
             ssLOG_FUNC_DEBUG();
+            
+            ParseParametersAndVariables(*this, profileNode).DS_TRY();
+            
+            //Clone and modify the yaml node
+            YAML::ResourceHandle resourceHandle;
+            YAML::NodePtr clonedNode = profileNode->Clone(false, resourceHandle).DS_TRY();
+            DEFER { YAML::FreeYAMLResource(resourceHandle); };
+            
+            ApplyParametersAndVariables(*this, 
+                                        clonedNode, 
+                                        resourceHandle, 
+                                        inputParameters, 
+                                        {}).DS_TRY();
             
             std::vector<NodeRequirement> requirements =
             {
@@ -63,63 +82,57 @@ namespace Data
                 NodeRequirement("Linker", YAML::NodeType::Map, true, false)
             };
             
-            if(!CheckNodeRequirements(profileNode, requirements))
-            {
-                ssLOG_ERROR("Compiler profile: Failed to meet requirements");
-                return false;
-            }
+            if(!CheckNodeRequirements(clonedNode, requirements))
+                return DS_ERROR_MSG("Compiler profile: Failed to meet requirements");
             
-            Name = profileNode->GetMapValueScalar<std::string>("Name").DS_TRY_ACT(return false);
+            Name = clonedNode->GetMapValueScalar<std::string>("Name").DS_TRY();
             
-            if(ExistAndHasChild(profileNode, "NameAliases"))
+            if(ExistAndHasChild(clonedNode, "NameAliases"))
             {
-                YAML::ConstNodePtr nameAliasesNode = profileNode->GetMapValueNode("NameAliases");
+                YAML::ConstNodePtr nameAliasesNode = clonedNode->GetMapValueNode("NameAliases");
                 for(int i = 0; i < nameAliasesNode->GetChildrenCount(); ++i)
                 {
                     std::string nameAlias = nameAliasesNode ->GetSequenceChildScalar<std::string>(i)
-                                                            .DS_TRY_ACT(return false);
+                                                            .DS_TRY();
                     NameAliases.insert(nameAlias);
                 }
             }
 
             {
-                YAML::ConstNodePtr fileExtensionsNode = profileNode->GetMapValueNode("FileExtensions");
+                YAML::ConstNodePtr fileExtensionsNode = clonedNode->GetMapValueNode("FileExtensions");
                 for(int i = 0; i < fileExtensionsNode->GetChildrenCount(); ++i)
                 {
                     std::string extension = 
-                        fileExtensionsNode  ->GetSequenceChildScalar<std::string>(i)
-                                            .DS_TRY_ACT(return false);
+                        fileExtensionsNode->GetSequenceChildScalar<std::string>(i).DS_TRY();
                     FileExtensions.insert(extension);
                 }
             }
             
-            if(ExistAndHasChild(profileNode, "Languages"))
+            if(ExistAndHasChild(clonedNode, "Languages"))
             {
-                YAML::ConstNodePtr languagesNode = profileNode->GetMapValueNode("Languages");
+                YAML::ConstNodePtr languagesNode = clonedNode->GetMapValueNode("Languages");
                 for(int i = 0; i < languagesNode->GetChildrenCount(); ++i)
                 {
                     std::string language = languagesNode->GetSequenceChildScalar<std::string>(i)
-                                                        .DS_TRY_ACT(return false);
+                                                        .DS_TRY();
                     Languages.insert(language);
                 }
             }
             
-            if(ExistAndHasChild(profileNode, "Setup"))
+            if(ExistAndHasChild(clonedNode, "Setup"))
             {
-                YAML::ConstNodePtr setupNode = profileNode->GetMapValueNode("Setup");
+                YAML::ConstNodePtr setupNode = clonedNode->GetMapValueNode("Setup");
                 for(int i = 0; i < setupNode->GetChildrenCount(); ++i)
                 {
                     YAML::ConstNodePtr currentPlatformNode = setupNode->GetMapValueNodeAt(i);
                     
-                    std::string key = setupNode ->GetMapKeyScalarAt<std::string>(i)
-                                                .DS_TRY_ACT(return false);
+                    std::string key = setupNode->GetMapKeyScalarAt<std::string>(i).DS_TRY();
                     std::vector<std::string> setupSteps;
                     
                     for(int j = 0; j < currentPlatformNode->GetChildrenCount(); ++j)
                     {
                         std::string step = 
-                            currentPlatformNode ->GetSequenceChildScalar<std::string>(j)
-                                                .DS_TRY_ACT(return false);
+                            currentPlatformNode->GetSequenceChildScalar<std::string>(j).DS_TRY();
                         setupSteps.push_back(step);
                     }
                     
@@ -127,22 +140,20 @@ namespace Data
                 }
             }
             
-            if(ExistAndHasChild(profileNode, "Cleanup"))
+            if(ExistAndHasChild(clonedNode, "Cleanup"))
             {
-                YAML::ConstNodePtr cleanupNode = profileNode->GetMapValueNode("Cleanup");
+                YAML::ConstNodePtr cleanupNode = clonedNode->GetMapValueNode("Cleanup");
                 for(int i = 0; i < cleanupNode->GetChildrenCount(); ++i)
                 {
                     YAML::ConstNodePtr currentPlatformNode = cleanupNode->GetMapValueNodeAt(i);
                     
-                    std::string key = cleanupNode   ->GetMapKeyScalarAt<std::string>(i)
-                                                    .DS_TRY_ACT(return false);
+                    std::string key = cleanupNode->GetMapKeyScalarAt<std::string>(i).DS_TRY();
                     std::vector<std::string> cleanupSteps;
                     
                     for(int j = 0; j < currentPlatformNode->GetChildrenCount(); ++j)
                     {
                         std::string step = 
-                            currentPlatformNode ->GetSequenceChildScalar<std::string>(j)
-                                                .DS_TRY_ACT(return false);
+                            currentPlatformNode->GetSequenceChildScalar<std::string>(j).DS_TRY();
                         cleanupSteps.push_back(step);
                     }
                     
@@ -150,27 +161,18 @@ namespace Data
                 }
             }
             
-            if(!FilesTypes.ParseYAML_Node(profileNode->GetMapValueNode("FilesTypes")))
-            {
-                ssLOG_ERROR("Profile: FilesTypes is invalid");
-                return false;
-            }
+            if(!FilesTypes.ParseYAML_Node(clonedNode->GetMapValueNode("FilesTypes")))
+                return DS_ERROR_MSG("Profile: FilesTypes is invalid");
             
             ssLOG_DEBUG("Parsing Compiler");
-            if(!Compiler.ParseYAML_Node(profileNode->GetMapValueNode("Compiler"), "CompileTypes"))
-            {
-                ssLOG_ERROR("Profile: Compiler is invalid");
-                return false;
-            }
+            if(!Compiler.ParseYAML_Node(clonedNode->GetMapValueNode("Compiler"), "CompileTypes"))
+                return DS_ERROR_MSG("Profile: Compiler is invalid");
             
             ssLOG_DEBUG("Parsing Linker");
-            if(!Linker.ParseYAML_Node(profileNode->GetMapValueNode("Linker"), "LinkTypes"))
-            {
-                ssLOG_ERROR("Profile: Linker is invalid");
-                return false;
-            }
+            if(!Linker.ParseYAML_Node(clonedNode->GetMapValueNode("Linker"), "LinkTypes"))
+                return DS_ERROR_MSG("Profile: Linker is invalid");
             
-            return true;
+            return {};
         }
 
         inline std::string ToString(std::string indentation) const

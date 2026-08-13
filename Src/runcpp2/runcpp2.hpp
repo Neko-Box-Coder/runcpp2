@@ -269,21 +269,6 @@ namespace runcpp2
             ssLOG_ERROR("Invalid log level: " << logLevel);
     }
 
-    inline void CreateParameterValues(  const std::string rawParams,
-                                        std::unordered_map<std::string, std::string>& outParameters)
-    {
-        std::vector<std::string> paramNameVals;
-        SplitString(rawParams, ":", paramNameVals);
-        if(paramNameVals.size() % 2 != 0)
-        {
-            ssLOG_ERROR("Failed to parse parameters. Defaults to no parameters");
-            return;
-        }
-        
-        for(int i = 0; i < paramNameVals.size(); i += 2)
-            outParameters[paramNameVals[i]] = paramNameVals[i + 1];
-    }
-
     inline DS::Result<void> GetScriptInfoData(  const ghc::filesystem::path& scriptPath, 
                                                 const std::string& rawParameters,
                                                 bool executable,

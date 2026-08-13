@@ -326,8 +326,9 @@ pipeline
                 }
             }
             
-            //NOTE: We use Debug builds for now even for release.
+            //TODO: We use Debug builds for now even for release, but move to release at some point
         }
+        
         stage('Test') 
         {
             parallel 
@@ -347,88 +348,17 @@ pipeline
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
-                //TODO: Move this to shell or cpp
+                
                 stage('Linux Integration Test') 
                 {
                     agent { label 'linux' }
                     steps 
                     {
                         cleanWs()
-                        bash "ls -lah"
                         unstash 'linux_build'
-                        bash "ls -lah"
-                        bash "ls -lah ./Build/Src/Tests"
-                        bash    "cd ./Build && ./runcpp2 run -l " + 
-                                "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
-                                "--log-level info ../Tests/Test.cpp"
-                        bash    "cd ./Build && ./runcpp2 build -l -o . " + 
-                                "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
-                                "--log-level info ../Tests/Test.cpp"
-                        bash "ls -lah ./Build"
-                        
-                        
-                        cleanWs()
-                        bash "ls -lah"
-                        unstash 'linux_build'
-                        bash "ls -lah"
-                        bash "ls -lah ./Build/Src/Tests"
-                        bash    "cd ./Build && ./runcpp2 build -l -o . " + 
-                                "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
-                                "--log-level info ../Tests/TestStatic.cpp"
-                        bash "ls -lah ./Build"
-                        
-                        
-                        cleanWs()
-                        bash "ls -lah"
-                        unstash 'linux_build'
-                        bash "ls -lah"
-                        bash "ls -lah ./Build/Src/Tests"
-                        bash    "cd ./Build && ./runcpp2 run -l " + 
-                                "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
-                                "--log-level info ../Tests/TestLocalDependency.cpp"
-                        
-                        cleanWs()
-                        bash "ls -lah"
-                        unstash 'linux_build'
-                        bash "ls -lah"
-                        bash "ls -lah ./Build/Src/Tests"
-                        bash    "cd ./Build && ./runcpp2 run -l " + 
-                                "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
-                                "--log-level info ../Tests/TestSeparateYaml.cpp"
-                        
-                        cleanWs()
-                        bash "ls -lah"
-                        unstash 'linux_build'
-                        bash "ls -lah"
-                        bash "ls -lah ./Build/Src/Tests"
-                        script
-                        {
-                            def retResult = 
-                                sh( script: "cd ./Build && ./runcpp2 run -l " + 
-                                            "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
-                                            "--log-level info ../Tests/TestMissingSource.yaml", 
-                                    returnStatus: true)
-                            echo("Return result: ${retResult}")
-                        }
-                        
-                        cleanWs()
-                        bash "ls -lah"
-                        unstash 'linux_build'
-                        bash "ls -lah"
-                        bash "ls -lah ./Build/Src/Tests"
-                        bash    "cd ./Build && ./runcpp2 run -l " + 
-                                "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
-                                "--log-level info ../Tests/YamlOnlyTest.yaml"
-                        
-                        cleanWs()
-                        bash "ls -lah"
-                        unstash 'linux_build'
-                        bash "ls -lah"
-                        bash "ls -lah ./Build/Src/Tests"
-                        bash    "cd ./Build && ./runcpp2 run -l " + 
-                                "-c ../DefaultYAMLs/DefaultUserConfig.yaml " + 
-                                "../Examples/InteractiveTutorial.cpp --test " + 
-                                "./runcpp2 ../DefaultYAMLs/DefaultUserConfig.yaml"
+                        bash    "./Build/runcpp2 run -l -c " +
+                                "./DefaultYAMLs/DefaultUserConfig.yaml " +
+                                "./Tests/RunTests.cpp"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
@@ -448,81 +378,17 @@ pipeline
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
-                //TODO: Move this to shell or cpp
+                
                 stage('Windows Integration Test') 
                 {
                     agent { label 'windows' }
                     steps 
                     {
                         cleanWs()
-                        bat 'dir'
                         unstash 'windows_build'
-                        bat 'dir'
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe run -l " + 
-                            "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
-                            "--log-level info ..\\..\\Tests\\Test.cpp"
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe build -l -o . " + 
-                            "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
-                            "--log-level info ..\\..\\Tests\\Test.cpp"
-                        bat "dir .\\Build\\Debug"
-                        
-                        
-                        cleanWs()
-                        bat 'dir'
-                        unstash 'windows_build'
-                        bat 'dir'
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe build -l -o . " + 
-                            "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
-                            "--log-level info ..\\..\\Tests\\TestStatic.cpp"
-                        bat "dir .\\Build\\Debug"
-                        
-                        
-                        cleanWs()
-                        bat 'dir'
-                        unstash 'windows_build'
-                        bat 'dir'
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe run -l " + 
-                            "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
-                            "--log-level info ..\\..\\Tests\\TestLocalDependency.cpp"
-                    
-                        cleanWs()
-                        bat 'dir'
-                        unstash 'windows_build'
-                        bat 'dir'
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe run -l " + 
-                            "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
-                            "--log-level info ..\\..\\Tests\\TestSeparateYaml.cpp"
-                        
-                        cleanWs()
-                        bat 'dir'
-                        unstash 'windows_build'
-                        bat 'dir'
-                        script
-                        {
-                            def retResult = 
-                                bat(script: "cd .\\Build\\Debug && .\\runcpp2.exe run -l " + 
-                                            "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
-                                            "--log-level info ..\\..\\Tests\\TestMissingSource.yaml",
-                                    returnStatus: true)
-                            echo("Return result: ${retResult}")
-                        }
-                        
-                        cleanWs()
-                        bat 'dir'
-                        unstash 'windows_build'
-                        bat 'dir'
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe run -l " + 
-                            "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
-                            "--log-level info ..\\..\\Tests\\YamlOnlyTest.yaml"
-                    
-                        cleanWs()
-                        bat 'dir'
-                        unstash 'windows_build'
-                        bat 'dir'
-                        bat "cd .\\Build\\Debug && .\\runcpp2.exe run -l " + 
-                            "-c ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml " + 
-                            "..\\..\\Examples\\InteractiveTutorial.cpp --test " + 
-                            ".\\runcpp2.exe ..\\..\\DefaultYAMLs\\DefaultUserConfig.yaml"
+                        bat ".\\Build\\Debug\\runcpp2.exe run -l -c " +
+                            ".\\DefaultYAMLs\\DefaultUserConfig.yaml " +
+                            ".\\Tests\\RunTests.cpp"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }

@@ -66,7 +66,8 @@ namespace runcpp2
     ApplyParametersAndVariables(T& data, 
                                 YAML::NodePtr& node,
                                 YAML::ResourceHandle& resourceHandle,
-                                const std::unordered_map<std::string, std::string>& inputParameters)
+                                const std::unordered_map<std::string, std::string>& inputParameters,
+                                const std::vector<YAML::ConstNodePtr>& excludedNodes)
     {
         //Remove parameters and variables in the cloned node.
         if(node->HasMapKey("Parameters"))
@@ -149,6 +150,9 @@ namespace runcpp2
         }
         substitutionMap.insert(variablesMap.begin(), variablesMap.end());
         
+        if(substitutionMap.empty())
+            return {};
+        
         //Perform substitution recursively over the whole YAML object
         std::deque<YAML::NodePtr> nodesToVisit;
         nodesToVisit.push_back(node);
@@ -156,6 +160,19 @@ namespace runcpp2
         {
             YAML::NodePtr currentNode = nodesToVisit.front();
             nodesToVisit.pop_front();
+            
+            bool skipThis = false;
+            for(int i = 0; i < excludedNodes.size(); ++i)
+            {
+                if(excludedNodes.at(i).get() == currentNode.get())
+                {
+                    skipThis = true;
+                    break;
+                }
+            }
+            if(skipThis)
+                continue;
+            
             static_assert((int)YAML::NodeType::Count == 4, "");
             switch(currentNode->GetType())
             {
@@ -223,7 +240,21 @@ namespace runcpp2
     
         return {};
     }
-
+    
+    inline void CreateParameterValues(  const std::string rawParams,
+                                        std::unordered_map<std::string, std::string>& outParameters)
+    {
+        std::vector<std::string> paramNameVals;
+        SplitString(rawParams, ":", paramNameVals);
+        if(paramNameVals.size() % 2 != 0)
+        {
+            ssLOG_ERROR("Failed to parse parameters. Defaults to no parameters");
+            return;
+        }
+        
+        for(int i = 0; i < paramNameVals.size(); i += 2)
+            outParameters[paramNameVals[i]] = paramNameVals[i + 1];
+    }
 }
 
 

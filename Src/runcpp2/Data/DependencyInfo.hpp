@@ -41,6 +41,7 @@ namespace Data
         std::unordered_map<PlatformName, ProfilesCommands> Build;
         std::unordered_map<PlatformName, FilesToCopyInfo> FilesToCopy;
         
+        //NOTE: This function is called from the caller until there's no import anymore
         inline DS::Result<void> 
         ParseYAML_Node( YAML::ConstNodePtr node,
                         const std::unordered_map<std::string, std::string>& inputParameters)
@@ -52,12 +53,15 @@ namespace Data
             YAML::NodePtr clonedNode = node->Clone(false, resourceHandle).DS_TRY();
             DEFER { YAML::FreeYAMLResource(resourceHandle); };
             
-            ApplyParametersAndVariables(*this, clonedNode, resourceHandle, inputParameters).DS_TRY();
+            ApplyParametersAndVariables(*this, 
+                                        clonedNode, 
+                                        resourceHandle, 
+                                        inputParameters, 
+                                        {}).DS_TRY();
             
             //If import is needed, we only need to parse the Source section
             do
             {
-                
                 if(!ExistAndHasChild(clonedNode, "Source"))
                     return DS_ERROR_MSG("DependencyInfo: Missing Source");
 

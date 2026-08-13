@@ -6,12 +6,27 @@
 
 DS::Result<void> TestMain()
 {
+    std::unordered_map<std::string, std::string> tempParameters;
+    
     //NOTE: This is just a test YAML for validating parsing, don't use it for actual config
     const char* yamlStr = R"(
         Name: "g++"
         NameAliases: ["mingw"]
         FileExtensions: [.cpp, .cc, .cxx]
         Languages: ["c++"]
+        Parameters:
+            Param1:
+                Optional: true
+                Default: "All"
+                Array: false
+                Constraint: ["A", "B", "C", "All:A,B,C"]
+            Param2:
+                Optional: true
+                Default: "123"
+                Array: false
+                Constraint: "Int"
+        Variables:
+            VarName1: "Some string {Param1} substitution"
         Setup:
             DefaultPlatform: ["setup command 1", "setup command 2"]
         Cleanup:
@@ -157,7 +172,7 @@ DS::Result<void> TestMain()
     runcpp2::YAML::NodePtr root = roots.front();
     runcpp2::Data::Profile profile;
     
-    DS_ASSERT_TRUE(profile.ParseYAML_Node(root));
+    profile.ParseYAML_Node(root, tempParameters).DS_TRY();
     
     //Verify basic fields
     DS_ASSERT_EQ(profile.Name, "g++");
@@ -173,6 +188,37 @@ DS::Result<void> TestMain()
     //Verify Languages
     DS_ASSERT_EQ(profile.Languages.size(), 1);
     DS_ASSERT_EQ(profile.Languages.count("c++"), 1);
+    
+    //Verify Parameters
+    DS_ASSERT_EQ(profile.Parameters.count("Param1"), 1);
+    {
+        ParameterValue& paramVal = profile.Parameters["Param1"];
+        DS_ASSERT_TRUE(paramVal.Optional);
+        DS_ASSERT_EQ(paramVal.Default, "All");
+        DS_ASSERT_FALSE(paramVal.Array);
+        DS_ASSERT_TRUE( paramVal.CurrentConstraintType == 
+                        runcpp2::Data::ParameterValue::ConstraintType::Choices);
+        DS_ASSERT_TRUE(mpark::is<std::vector<std::string>>(paramVal.ConstraintValue));
+        std::vector<std::string>& constraintVals = 
+            mpark::get<std::vector<std::string>>(paramVal.ConstraintValue);
+        DS_ASSERT_EQ(constraintVals.size(), 4);
+        DS_ASSERT_EQ(constraintVals[2], "C");
+    }
+    
+    DS_ASSERT_EQ(profile.Parameters.count("Param2"), 1);
+    {
+        ParameterValue& paramVal = profile.Parameters["Param2"];
+        DS_ASSERT_TRUE(paramVal.Optional);
+        DS_ASSERT_EQ(paramVal.Default, "123");
+        DS_ASSERT_FALSE(paramVal.Array);
+        DS_ASSERT_TRUE( paramVal.CurrentConstraintType == 
+                        runcpp2::Data::ParameterValue::ConstraintType::Int);
+        //DS_ASSERT_TRUE(mpark::is<std::string>(paramVal.ConstraintValue));
+    }
+    
+    //Verify Variables
+    DS_ASSERT_EQ(profile.Variables.count("VarName1"), 1);
+    DS_ASSERT_EQ(profile.Variables["VarName1"], "Some string {Param1} substitution");
     
     //Verify Setup
     DS_ASSERT_EQ(profile.Setup.count("DefaultPlatform"), 1);
@@ -232,7 +278,7 @@ DS::Result<void> TestMain()
     DS_ASSERT_EQ(roots.size(), 1);
     
     runcpp2::Data::Profile parsedOutput;
-    parsedOutput.ParseYAML_Node(roots.front());
+    parsedOutput.ParseYAML_Node(roots.front(), tempParameters).DS_TRY();
     DS_ASSERT_TRUE(profile.Equals(parsedOutput));
     
     return {};

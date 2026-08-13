@@ -309,31 +309,33 @@ namespace runcpp2
         return {};
     }
     
-    inline bool MergeYAML_NodeChildren( YAML::NodePtr nodeToMergeFrom, 
-                                        YAML::NodePtr nodeToMergeTo,
-                                        YAML::ResourceHandle& yamlResouce)
+    inline DS::Result<void> MergeYAML_NodeChildren( YAML::NodePtr nodeToMergeFrom, 
+                                                    YAML::NodePtr nodeToMergeTo,
+                                                    YAML::ResourceHandle& yamlResouce,
+                                                    bool overwrite)
     {
         ssLOG_FUNC_DEBUG();
         
         if(!nodeToMergeFrom->IsMap() || !nodeToMergeTo->IsMap())
-        {
-            ssLOG_ERROR("Merge node is not map");
-            return false;
-        }
+            return DS_ERROR_MSG("Merge node is not map");
         
         for(int i = 0; i < nodeToMergeFrom->GetChildrenCount(); ++i)
         {
-            std::string key = nodeToMergeFrom   ->GetMapKeyScalarAt<std::string>(i)
-                                                .DS_TRY_ACT(return false);
-            
+            std::string key = nodeToMergeFrom->GetMapKeyScalarAt<std::string>(i).DS_TRY();
             if(!ExistAndHasChild(nodeToMergeTo, key, true))
             {
                 YAML::NodePtr fromNode = nodeToMergeFrom->GetMapValueNodeAt(i);
-                fromNode->CloneToMapChild(key, nodeToMergeTo, yamlResouce).DS_TRY_ACT(return false);
+                fromNode->CloneToMapChild(key, nodeToMergeTo, yamlResouce).DS_TRY();
+            }
+            else if(overwrite)
+            {
+                nodeToMergeTo->RemoveMapChild(key).DS_TRY();
+                YAML::NodePtr fromNode = nodeToMergeFrom->GetMapValueNodeAt(i);
+                fromNode->CloneToMapChild(key, nodeToMergeTo, yamlResouce).DS_TRY();
             }
         }
         
-        return true;
+        return {};
     }
     
     //TODO: Replace with string escape in libyaml wrapper

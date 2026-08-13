@@ -214,6 +214,8 @@ namespace runcpp2
             inline DS::Result<T> GetSequenceChildScalar(uint32_t index) const;
             
             inline bool HasMapKey(StringView key) const;
+            inline NodePtr GetMapKeyNode(StringView key);
+            inline ConstNodePtr GetMapKeyNode(StringView key) const;
             inline NodePtr GetMapValueNode(StringView key);
             inline ConstNodePtr GetMapValueNode(StringView key) const;
             
@@ -716,6 +718,36 @@ namespace runcpp2
             if(!IsMap())
                 return false;
             return mpark::get_if<OrderedMap>(&Value)->StringMap.count(key) > 0;
+        }
+        
+        inline NodePtr Node::GetMapKeyNode(StringView key)
+        {
+            if(!IsMap() || mpark::get_if<OrderedMap>(&Value)->StringMap.count(key) == 0)
+                return nullptr;
+            
+            const std::vector<NodePtr>& keys = mpark::get_if<OrderedMap>(&Value)->InsertedKeys;
+            for(int i = 0; i < keys.size(); ++i)
+            {
+                StringView curKey = keys.at(i)->GetScalar<StringView>().DS_TRY_ACT(return nullptr);
+                if(curKey == key)
+                    return keys.at(i);
+            }
+            return nullptr;
+        }
+        
+        inline ConstNodePtr Node::GetMapKeyNode(StringView key) const
+        {
+            if(!IsMap() || mpark::get_if<OrderedMap>(&Value)->StringMap.count(key) == 0)
+                return nullptr;
+            
+            const std::vector<NodePtr>& keys = mpark::get_if<OrderedMap>(&Value)->InsertedKeys;
+            for(int i = 0; i < keys.size(); ++i)
+            {
+                StringView curKey = keys.at(i)->GetScalar<StringView>().DS_TRY_ACT(return nullptr);
+                if(curKey == key)
+                    return keys.at(i);
+            }
+            return nullptr;
         }
         
         inline NodePtr Node::GetMapValueNode(StringView key)

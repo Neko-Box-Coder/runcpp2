@@ -712,7 +712,8 @@ namespace runcpp2
         if(dependency.Source.ImportPath.empty())
             return {};
 
-        const std::string fullPath = (basePath / dependency.Source.ImportPath).string();
+        const std::string fullPath = (basePath / dependency.Source.ImportPath)  .lexically_normal()
+                                                                                .string();
         std::error_code ec;
         if(!ghc::filesystem::exists(fullPath, ec))
             return DS_ERROR_MSG("Import file not found: " + fullPath);
