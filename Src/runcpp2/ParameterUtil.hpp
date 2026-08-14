@@ -157,8 +157,8 @@ namespace runcpp2
         }
         substitutionMap.insert(variablesMap.begin(), variablesMap.end());
         
-        if(substitutionMap.empty())
-            return {};
+        //NOTE: We still need to iterate through the whole thing even if we have nothing to 
+        //      substitute because we need to get the escaped strings
         
         //Perform substitution recursively over the whole YAML object
         std::deque<YAML::NodePtr> nodesToVisit;
