@@ -453,8 +453,8 @@ DS::Result<void> TestMain()
         )";
     
         runcpp2::YAML::ResourceHandle resource;
-        std::vector<runcpp2::YAML::NodePtr> roots = runcpp2::YAML::ParseYAML(yamlStr, resource)
-                                                        .DS_TRY();
+        std::vector<runcpp2::YAML::NodePtr> roots = runcpp2::YAML::ParseYAML(   yamlStr, 
+                                                                                resource).DS_TRY();
         DEFER { FreeYAMLResource(resource); };
         
         DS_ASSERT_EQ(roots.size(), 1);
@@ -468,6 +468,51 @@ DS::Result<void> TestMain()
         DS_ASSERT_EQ(defaultDefines.size(), 2);
         DS_ASSERT_EQ(defaultDefines[0].Value, std::string("\"The choice is B\""));
         DS_ASSERT_EQ(defaultDefines[1].Value, std::string("5+7"));
+    }
+    
+    //ScriptInfo Should Apply Parameters Substitutions Once, Everywhere
+    {
+        std::unordered_map<std::string, std::string> parameters;
+
+        const char* yamlStr = R"(
+            Language: C++
+            Parameters:
+                IntParam:
+                    Optional: true
+                    Array: false
+                    Constraint: "Int"
+            Defines:
+            -   "TEST_DEFINE_1={{{{Test}}}}"
+            Dependencies:
+            -   Name: "{{{{MyLib}}}}"
+                Platforms: [GCC]
+                Source:
+                    Git:
+                        URL: https://github.com/user/mylib.git
+                LibraryType: Header
+                IncludePaths:
+                -   include
+        )";
+    
+        runcpp2::YAML::ResourceHandle resource;
+        std::vector<runcpp2::YAML::NodePtr> roots = runcpp2::YAML::ParseYAML(   yamlStr, 
+                                                                                resource).DS_TRY();
+        DEFER { FreeYAMLResource(resource); };
+        
+        DS_ASSERT_EQ(roots.size(), 1);
+        runcpp2::YAML::NodePtr root = roots.front();
+        runcpp2::Data::ScriptInfo scriptInfo;
+        
+        scriptInfo.ParseYAML_Node(root, parameters).DS_TRY();
+        const std::vector<runcpp2::Data::Define>& defaultDefines = 
+            scriptInfo.Defines.at("DefaultPlatform").Defines.at("DefaultProfile");
+        
+        DS_ASSERT_EQ(defaultDefines.size(), 1);
+        DS_ASSERT_EQ(defaultDefines[0].Name, std::string("TEST_DEFINE_1"));
+        DS_ASSERT_EQ(defaultDefines[0].Value, std::string("{{Test}}"));
+        
+        DS_ASSERT_EQ(scriptInfo.Dependencies.size(), 1);
+        DS_ASSERT_EQ(scriptInfo.Dependencies[0].Name, std::string("{{MyLib}}"));
     }
     
     return {};
