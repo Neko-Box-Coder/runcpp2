@@ -96,35 +96,42 @@ namespace runcpp2
             
             //Parse the value
             std::string subKey = "{" + it->first + "}";
+            
+            //Check if it is optional, if so check if it can be empty
+            if(it->second.Optional && valueToParse.empty())
             {
-                if(it->second.Array)
+                static_assert((int)Data::ParameterValue::ConstraintType::Count == 5, "");
+                if(it->second.CurrentConstraintType != Data::ParameterValue::ConstraintType::None)
+                    continue;
+            }
+            
+            if(it->second.Array)
+            {
+                std::vector<std::string> inputValues;
+                SplitString(valueToParse, ",", inputValues);
+                for(int i = 0; i < inputValues.size(); ++i)
                 {
-                    std::vector<std::string> inputValues;
-                    SplitString(valueToParse, ",", inputValues);
-                    for(int i = 0; i < inputValues.size(); ++i)
-                    {
-                        bool inConstraint = it->second.IsInputInConstraint(inputValues[i]).DS_TRY();
-                        if(!inConstraint)
-                        {
-                            return DS_ERROR_MSG("Input parameter[" + DS_STR(i) + "]: " + 
-                                                inputValues[i] +
-                                                (isDefault ? "(Default)" : "") + 
-                                                " is not in constraint");
-                        }
-                    }
-                    substitutionMap[subKey] = inputValues;
-                }
-                else
-                {
-                    bool inConstraint = it->second.IsInputInConstraint(valueToParse).DS_TRY();
+                    bool inConstraint = it->second.IsInputInConstraint(inputValues[i]).DS_TRY();
                     if(!inConstraint)
                     {
-                        return DS_ERROR_MSG("Input parameter: " + it->first +
+                        return DS_ERROR_MSG("Input parameter[" + DS_STR(i) + "]: " + 
+                                            inputValues[i] +
                                             (isDefault ? "(Default)" : "") + 
                                             " is not in constraint");
                     }
-                    substitutionMap[subKey] = {valueToParse};
                 }
+                substitutionMap[subKey] = inputValues;
+            }
+            else
+            {
+                bool inConstraint = it->second.IsInputInConstraint(valueToParse).DS_TRY();
+                if(!inConstraint)
+                {
+                    return DS_ERROR_MSG("Input parameter: " + it->first +
+                                        (isDefault ? "(Default)" : "") + 
+                                        " is not in constraint");
+                }
+                substitutionMap[subKey] = {valueToParse};
             }
         } //for(auto it = Parameters.begin(); it != Parameters.end(); ++it)
         
