@@ -683,7 +683,7 @@ namespace runcpp2
         //No substitutions in the input, just pass it back out
         if(foundSize == -1)
         {
-            outStrings.emplace_back(inString);
+            outStrings.emplace_back(escapedString);
             return {};
         }
         
