@@ -66,6 +66,8 @@ namespace runcpp2
     ApplyParametersAndVariables(T& data, 
                                 YAML::NodePtr& node,
                                 YAML::ResourceHandle& resourceHandle,
+                                std::unordered_map< std::string, 
+                                                    std::vector<std::string>>& substitutionMap,
                                 const std::unordered_map<std::string, std::string>& inputParameters,
                                 const std::vector<YAML::ConstNodePtr>& excludedNodes)
     {
@@ -78,8 +80,6 @@ namespace runcpp2
         {
             node->RemoveMapChild("Variables").DS_TRY();
         }
-        
-        std::unordered_map<std::string, std::vector<std::string>> substitutionMap;
         
         //Populate parameters values first
         for(auto it = data.Parameters.begin(); it != data.Parameters.end(); ++it)

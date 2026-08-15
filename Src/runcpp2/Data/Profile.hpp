@@ -50,24 +50,118 @@ namespace Data
             outNames.push_back("DefaultProfile");
         }
 
+        inline static void 
+        PopulateCompilingLinkingParams( std::unordered_map
+                                        <
+                                            std::string, 
+                                            std::vector<std::string>
+                                        >& outSubstitutionMap)
+        {
+            #define INTERN_ADD_MAP(x) outSubstitutionMap[x] = {x};
+            
+            INTERN_ADD_MAP("{Stage.SharedLibraryFile.Prefix}");
+            INTERN_ADD_MAP("{Stage.SharedLinkFile.Prefix}");
+            INTERN_ADD_MAP("{Stage.StaticLinkFile.Prefix}");
+            INTERN_ADD_MAP("{Stage.ObjectLinkFile.Prefix}");
+            INTERN_ADD_MAP("{Stage.DebugSymbolFile.Prefix}");
+            INTERN_ADD_MAP("{Stage.SharedLibraryFile.Extension}");
+            INTERN_ADD_MAP("{Stage.SharedLinkFile.Extension}");
+            INTERN_ADD_MAP("{Stage.StaticLinkFile.Extension}");
+            INTERN_ADD_MAP("{Stage.ObjectLinkFile.Extension}");
+            INTERN_ADD_MAP("{Stage.DebugSymbolFile.Extension}");
+            INTERN_ADD_MAP("{Stage.Executable}");
+            INTERN_ADD_MAP("{Stage.CompileFlags}");
+            INTERN_ADD_MAP("{Stage.Input.Name}");
+            INTERN_ADD_MAP("{Stage.Input.Extension}");
+            INTERN_ADD_MAP("{Stage.Input.Directory}");
+            INTERN_ADD_MAP("{Stage.Input.Path}");
+            INTERN_ADD_MAP("{Stage.Output.Directory}");
+            INTERN_ADD_MAP("{Stage.DefineNameOnly}");
+            INTERN_ADD_MAP("{Stage.DefineName}");
+            INTERN_ADD_MAP("{Stage.DefineValue}");
+            INTERN_ADD_MAP("{Stage.IncludeDirectory.Path}");
+            INTERN_ADD_MAP("{Stage.IncludeDirectory.Source.Path}");
+            INTERN_ADD_MAP("{Stage.IncludeDirectory.Dep.Path}");
+            INTERN_ADD_MAP("{Stage.SharedLibraryFile.Prefix}");
+            INTERN_ADD_MAP("{Stage.SharedLinkFile.Prefix}");
+            INTERN_ADD_MAP("{Stage.StaticLinkFile.Prefix}");
+            INTERN_ADD_MAP("{Stage.ObjectLinkFile.Prefix}");
+            INTERN_ADD_MAP("{Stage.DebugSymbolFile.Prefix}");
+            INTERN_ADD_MAP("{Stage.SharedLibraryFile.Extension}");
+            INTERN_ADD_MAP("{Stage.SharedLinkFile.Extension}");
+            INTERN_ADD_MAP("{Stage.StaticLinkFile.Extension}");
+            INTERN_ADD_MAP("{Stage.ObjectLinkFile.Extension}");
+            INTERN_ADD_MAP("{Stage.DebugSymbolFile.Extension}");
+            INTERN_ADD_MAP("{Stage.Executable}");
+            INTERN_ADD_MAP("{Stage.LinkFlags}");
+            INTERN_ADD_MAP("{Stage.Output.Name}");
+            INTERN_ADD_MAP("{Stage.Output.Directory}");
+            INTERN_ADD_MAP("{Stage.Input.Name}");
+            INTERN_ADD_MAP("{Stage.Input.Dep.Name}");
+            INTERN_ADD_MAP("{Stage.Input.Source.Name}");
+            INTERN_ADD_MAP("{Stage.Input.Object.Name}");
+            INTERN_ADD_MAP("{Stage.Input.Dep.Object.Name}");
+            INTERN_ADD_MAP("{Stage.Input.Source.Object.Name}");
+            INTERN_ADD_MAP("{Stage.Input.Shared.Name}");
+            INTERN_ADD_MAP("{Stage.Input.Static.Name}");
+            INTERN_ADD_MAP("{Stage.Input.Extension}");
+            INTERN_ADD_MAP("{Stage.Input.Dep.Extension}");
+            INTERN_ADD_MAP("{Stage.Input.Source.Extension}");
+            INTERN_ADD_MAP("{Stage.Input.Object.Extension}");
+            INTERN_ADD_MAP("{Stage.Input.Dep.Object.Extension}");
+            INTERN_ADD_MAP("{Stage.Input.Source.Object.Extension}");
+            INTERN_ADD_MAP("{Stage.Input.Shared.Extension}");
+            INTERN_ADD_MAP("{Stage.Input.Static.Extension}");
+            INTERN_ADD_MAP("{Stage.Input.Directory}");
+            INTERN_ADD_MAP("{Stage.Input.Dep.Directory}");
+            INTERN_ADD_MAP("{Stage.Input.Source.Directory}");
+            INTERN_ADD_MAP("{Stage.Input.Object.Directory}");
+            INTERN_ADD_MAP("{Stage.Input.Dep.Object.Directory}");
+            INTERN_ADD_MAP("{Stage.Input.Source.Object.Directory}");
+            INTERN_ADD_MAP("{Stage.Input.Shared.Directory}");
+            INTERN_ADD_MAP("{Stage.Input.Static.Directory}");
+            INTERN_ADD_MAP("{Stage.Input.Path}");
+            INTERN_ADD_MAP("{Stage.Input.Dep.Path}");
+            INTERN_ADD_MAP("{Stage.Input.Source.Path}");
+            INTERN_ADD_MAP("{Stage.Input.Object.Path}");
+            INTERN_ADD_MAP("{Stage.Input.Dep.Object.Path}");
+            INTERN_ADD_MAP("{Stage.Input.Source.Object.Path}");
+            INTERN_ADD_MAP("{Stage.Input.Shared.Path}");
+            INTERN_ADD_MAP("{Stage.Input.Static.Path}");
+            INTERN_ADD_MAP("{/}");
+            
+            #undef INTERN_ADD_MAP
+        }
+
         inline DS::Result<void> 
         ParseYAML_Node( YAML::ConstNodePtr profileNode,
+                        bool parseParameters,
                         const std::unordered_map<std::string, std::string>& inputParameters)
         {
             ssLOG_FUNC_DEBUG();
             
-            ParseParametersAndVariables(*this, profileNode).DS_TRY();
+            //NOTE: Parameters are already handled in ResolveProfileImport
+            if(parseParameters)
+            {
+                ParseParametersAndVariables(*this, profileNode).DS_TRY();
+            }
             
             //Clone and modify the yaml node
             YAML::ResourceHandle resourceHandle;
             YAML::NodePtr clonedNode = profileNode->Clone(false, resourceHandle).DS_TRY();
             DEFER { YAML::FreeYAMLResource(resourceHandle); };
             
-            ApplyParametersAndVariables(*this, 
-                                        clonedNode, 
-                                        resourceHandle, 
-                                        inputParameters, 
-                                        {}).DS_TRY();
+            if(parseParameters)
+            {
+                std::unordered_map<std::string, std::vector<std::string>> substitutionMap;
+                PopulateCompilingLinkingParams(substitutionMap);
+                ApplyParametersAndVariables(*this, 
+                                            clonedNode, 
+                                            resourceHandle, 
+                                            substitutionMap, 
+                                            inputParameters, 
+                                            {}).DS_TRY();
+            }
             
             std::vector<NodeRequirement> requirements =
             {

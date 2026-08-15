@@ -64,6 +64,18 @@ namespace
         std::stack<ghc::filesystem::path> pathsToImport;
         runcpp2::Data::Profile p = {};
         
+        std::unordered_map<std::string, std::vector<std::string>> substitutionMap;
+        runcpp2::Data::Profile::PopulateCompilingLinkingParams(substitutionMap);
+        
+        //Resovle parameters and variables first, before importing
+        ParseParametersAndVariables(p, currentProfileNode).DS_TRY();
+        ApplyParametersAndVariables(p, 
+                                    currentProfileNode, 
+                                    currentYamlResources, 
+                                    substitutionMap,
+                                    inputParameters,
+                                    {}).DS_TRY();
+        
         while(runcpp2::ExistAndHasChild(currentProfileNode, "Import") || !pathsToImport.empty())
         {
             //If we import field, we should deal with it instead
@@ -137,6 +149,7 @@ namespace
                 ApplyParametersAndVariables(p, 
                                             importProfileNode, 
                                             currentYamlResources, 
+                                            substitutionMap,
                                             inputParameters,
                                             {}).DS_TRY();
                 
@@ -251,7 +264,7 @@ namespace
                                                                 configPath, 
                                                                 parseResource,
                                                                 inputParameters).DS_TRY();
-                p.ParseYAML_Node(currentProfileNode, inputParameters)
+                p.ParseYAML_Node(currentProfileNode, false, inputParameters)
                     .DS_TRY_ACT(DS_TMP_ERROR.Message += "\nFailed to parse compiler profile at index " + 
                                                         DS_STR(j);
                                 DS_APPEND_TRACE(DS_TMP_ERROR);
@@ -496,14 +509,18 @@ namespace runcpp2
         std::unordered_map<std::string, std::string> parameterValues;
         CreateParameterValues(rawParameters, parameterValues);
         
-        ParseUserConfig(userConfigContent, configPath, parameterValues, outProfiles, outPreferredProfile).DS_TRY();
+        ParseUserConfig(userConfigContent, 
+                        configPath, 
+                        parameterValues, 
+                        outProfiles, 
+                        outPreferredProfile).DS_TRY();
         return {};
     }
     
-    inline DS::Result<void> ParseScriptInfo(const std::string& scriptInfo, 
-                                            const std::unordered_map<   std::string, 
-                                                                        std::string> inputParameters,
-                                            Data::ScriptInfo& outScriptInfo)
+    inline DS::Result<void> 
+    ParseScriptInfo(const std::string& scriptInfo, 
+                    const std::unordered_map<std::string, std::string> inputParameters,
+                    Data::ScriptInfo& outScriptInfo)
     {
         if(scriptInfo.empty())
             return {};

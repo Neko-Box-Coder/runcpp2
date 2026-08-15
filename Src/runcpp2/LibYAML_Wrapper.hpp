@@ -1219,6 +1219,8 @@ namespace runcpp2
         
         inline DS::Result<NodePtr> Node::Clone(bool shallow, ResourceHandle& yamlResource) const
         {
+            ssLOG_FUNC_DEBUG();
+            
             std::stack<std::pair<NodePtr, const Node*>> nodesToCloneStack;    //Dst, src
             
             {

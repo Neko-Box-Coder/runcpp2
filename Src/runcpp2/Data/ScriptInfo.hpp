@@ -58,6 +58,7 @@ namespace Data
         //Internal tracking
         bool Populated = false;
         ghc::filesystem::file_time_type LastWriteTime = ghc::filesystem::file_time_type::min();
+        std::unordered_map<std::string, std::vector<std::string>> SubstitutionMap;
         
         inline DS::Result<void> 
         ParseYAML_Node( YAML::ConstNodePtr node, 
@@ -83,9 +84,11 @@ namespace Data
                 exclusions.push_back(valueNode);
             }
             
+            SubstitutionMap = {};
             ApplyParametersAndVariables(*this, 
                                         clonedNode, 
                                         resourceHandle, 
+                                        SubstitutionMap, 
                                         inputParameters,
                                         exclusions).DS_TRY();
             
@@ -199,7 +202,7 @@ namespace Data
                 {
                     DependencyInfo info;
                     YAML::ConstNodePtr dependencyNode = dependenciesNode->GetSequenceChildNode(i);
-                    info.ParseYAML_Node(dependencyNode, inputParameters).DS_TRY_ACT
+                    info.ParseYAML_Node(dependencyNode, SubstitutionMap, inputParameters).DS_TRY_ACT
                     (
                         DS_TMP_ERROR.Message += "\nScriptInfo: Failed to parse DependencyInfo at "
                                                 "index " + DS_STR(i);
@@ -209,8 +212,6 @@ namespace Data
                     Dependencies.push_back(info);
                 }
             }
-            
-            //TODO: We should check if there's any unsubstituted 
             
             DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesDefines>(clonedNode, 
                                                                     "Defines", 

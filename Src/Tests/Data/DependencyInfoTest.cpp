@@ -79,7 +79,8 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         
         runcpp2::Data::DependencyInfo dependencyInfo;
-        dependencyInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
+        std::unordered_map<std::string, std::vector<std::string>> substitutionMap;
+        dependencyInfo.ParseYAML_Node(root, substitutionMap, tempParameters).DS_TRY();
         
         //Verify basic fields
         DS_ASSERT_EQ(dependencyInfo.Name, "MyLibrary");
@@ -122,7 +123,7 @@ DS::Result<void> TestMain()
         DS_ASSERT_EQ(roots.size(), 1);
         
         runcpp2::Data::DependencyInfo parsedOutput;
-        parsedOutput.ParseYAML_Node(roots.front(), tempParameters).DS_TRY();
+        parsedOutput.ParseYAML_Node(roots.front(), substitutionMap, tempParameters).DS_TRY();
         DS_ASSERT_TRUE(dependencyInfo.Equals(parsedOutput));
     }
     
@@ -166,7 +167,8 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         
         runcpp2::Data::DependencyInfo dependencyInfo;
-        dependencyInfo.ParseYAML_Node(root, parameters).DS_TRY();
+        std::unordered_map<std::string, std::vector<std::string>> substitutionMap;
+        dependencyInfo.ParseYAML_Node(root, substitutionMap, parameters).DS_TRY();
         
         DS_ASSERT_EQ(dependencyInfo.Platforms.size(), 2);
         DS_ASSERT_TRUE(dependencyInfo.Platforms.count("Windows") > 0);

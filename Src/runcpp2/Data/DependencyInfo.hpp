@@ -44,6 +44,8 @@ namespace Data
         //NOTE: This function is called from the caller until there's no import anymore
         inline DS::Result<void> 
         ParseYAML_Node( YAML::ConstNodePtr node,
+                        std::unordered_map< std::string, 
+                                            std::vector<std::string>> substitutionMap, 
                         const std::unordered_map<std::string, std::string>& inputParameters)
         {
             ParseParametersAndVariables(*this, node).DS_TRY();
@@ -56,6 +58,7 @@ namespace Data
             ApplyParametersAndVariables(*this, 
                                         clonedNode, 
                                         resourceHandle, 
+                                        substitutionMap, 
                                         inputParameters, 
                                         {}).DS_TRY();
             
