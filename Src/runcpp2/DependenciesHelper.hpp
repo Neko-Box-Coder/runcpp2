@@ -790,11 +790,11 @@ namespace runcpp2
         return DS_ERROR_MSG("This should never be reached");
     }
 
-    inline DS::Result<void> ResolveImports( Data::ScriptInfo& scriptInfo,
-                                            const ghc::filesystem::path& scriptDirectory,
-                                            const ghc::filesystem::path& buildDir,
-                                            const std::unordered_map<   std::string, 
-                                                                        std::string>& inputParameters)
+    inline DS::Result<void> 
+    ResolveDependenciesImports( Data::ScriptInfo& scriptInfo,
+                                const ghc::filesystem::path& scriptDirectory,
+                                const ghc::filesystem::path& buildDir,
+                                const std::unordered_map<std::string, std::string>& inputParameters)
     {
         ssLOG_FUNC_INFO();
         
