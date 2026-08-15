@@ -197,6 +197,8 @@ namespace
             substitutionMapTemplate["{Stage.IncludeDirectory.Path}"].push_back(processedInclude);
             substitutionMapTemplate["{Stage.IncludeDirectory.Source.Path}"].push_back(processedInclude);
         }
+        
+        substitutionMapTemplate["{Stage.IncludeDirectory.Dep.Path}"] = {};
         for(const ghc::filesystem::path& includePath : depIncludePaths)
         {
             std::string processedInclude = runcpp2::ProcessPath(includePath.string());
@@ -607,6 +609,16 @@ namespace
         
         //Link Files
         {
+            substitutionMap["{Stage.Input.Dep.Name}"] = {};
+            substitutionMap["{Stage.Input.Dep.Extension}"] = {};
+            substitutionMap["{Stage.Input.Dep.Directory}"] = {};
+            substitutionMap["{Stage.Input.Dep.Path}"] = {};
+            
+            substitutionMap["{Stage.Input.Dep.Object.Name}"] = {};
+            substitutionMap["{Stage.Input.Dep.Object.Extension}"] = {};
+            substitutionMap["{Stage.Input.Dep.Object.Directory}"] = {};
+            substitutionMap["{Stage.Input.Dep.Object.Path}"] = {};
+            
             for(int i = 0; i < priorities.size(); ++i)
             {
                 const LinkPriorities& currentLinkTarget = priorities.at(i);
@@ -746,16 +758,20 @@ namespace
                         if(currentLinkTarget.IsSource)
                         {
                             substitutionMap["{Stage.Input.Source.Object.Name}"].push_back(linkName);
-                            substitutionMap["{Stage.Input.Source.Object.Extension}"].push_back(linkExt);
-                            substitutionMap["{Stage.Input.Source.Object.Directory}"].push_back(linkDir);
-                            substitutionMap["{Stage.Input.Source.Object.Path}"].push_back(processedLinkFilePath);
+                            substitutionMap["{Stage.Input.Source.Object.Extension}"]
+                                .push_back(linkExt);
+                            substitutionMap["{Stage.Input.Source.Object.Directory}"]
+                                .push_back(linkDir);
+                            substitutionMap["{Stage.Input.Source.Object.Path}"]
+                                .push_back(processedLinkFilePath);
                         }
                         else
                         {
                             substitutionMap["{Stage.Input.Dep.Object.Name}"].push_back(linkName);
                             substitutionMap["{Stage.Input.Dep.Object.Extension}"].push_back(linkExt);
                             substitutionMap["{Stage.Input.Dep.Object.Directory}"].push_back(linkDir);
-                            substitutionMap["{Stage.Input.Dep.Object.Path}"].push_back(processedLinkFilePath);
+                            substitutionMap["{Stage.Input.Dep.Object.Path}"]
+                                .push_back(processedLinkFilePath);
                         }
                         break;
                     }

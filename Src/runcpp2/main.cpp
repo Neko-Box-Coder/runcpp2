@@ -322,7 +322,7 @@ DS::Result<int> HandleRun(int argc, char* argv[])
     
     std::vector<runcpp2::Data::Profile> profiles;
     std::string preferredProfile;
-    runcpp2::ReadUserConfig(profiles, preferredProfile, configPath).DS_TRY();
+    runcpp2::ReadUserConfig(profiles, preferredProfile, params, configPath).DS_TRY();
     
     ssLOG_DEBUG("\nprofiles:");
     for(int i = 0; i < profiles.size(); ++i)
@@ -331,25 +331,24 @@ DS::Result<int> HandleRun(int argc, char* argv[])
     runcpp2::Data::ScriptInfo parsedScriptInfo;
     ghc::filesystem::file_time_type finalSourceWriteTime;
     ghc::filesystem::file_time_type finalIncludeWriteTime;
-    runcpp2::RunParams runParams 
-    { 
-        { 
-            script, 
-            profiles, 
-            params, 
-            executable, 
-            local, 
-            preferredProfile 
-        },
-        false, 
-        false, 
-        sourceOnly, 
-        false, 
-        scriptArgs, 
-        jobs, 
-        nullptr,
-        ""
-    };
+    runcpp2::RunParams runParams =  { 
+                                        { 
+                                            script, 
+                                            profiles, 
+                                            params, 
+                                            executable, 
+                                            local, 
+                                            preferredProfile 
+                                        },
+                                        false, 
+                                        false, 
+                                        sourceOnly, 
+                                        false, 
+                                        scriptArgs, 
+                                        jobs, 
+                                        nullptr,
+                                        ""
+                                    };
     int result = runcpp2::Run(  runParams,
                                 //Outputs
                                 parsedScriptInfo,
@@ -368,7 +367,7 @@ DS::Result<void> HandleBuild(int argc, char* argv[])
         PrintRunBuildWatchCommonOptions(true);
         ssLOG_BASE( PadSpaceRight("  -rb, --[r]e[b]uild", CMD_COLS_BEFORE_DESC) + 
                     "Deletes compiled source files cache and rebuild");
-        ssLOG_BASE( PadSpaceRight("  -o, --[o]utput-dir", CMD_COLS_BEFORE_DESC) + 
+        ssLOG_BASE( PadSpaceRight("  -o,  --[o]utput-dir <output dir>", CMD_COLS_BEFORE_DESC) + 
                     "Specify a directory to output to.");
         PrintGeneralOptions();
         return {};
@@ -420,7 +419,7 @@ DS::Result<void> HandleBuild(int argc, char* argv[])
     
     std::vector<runcpp2::Data::Profile> profiles;
     std::string preferredProfile;
-    runcpp2::ReadUserConfig(profiles, preferredProfile, configPath).DS_TRY();
+    runcpp2::ReadUserConfig(profiles, preferredProfile, params, configPath).DS_TRY();
     
     ssLOG_DEBUG("\nprofiles:");
     for(int i = 0; i < profiles.size(); ++i)
@@ -429,25 +428,24 @@ DS::Result<void> HandleBuild(int argc, char* argv[])
     runcpp2::Data::ScriptInfo parsedScriptInfo;
     ghc::filesystem::file_time_type finalSourceWriteTime;
     ghc::filesystem::file_time_type finalIncludeWriteTime;
-    runcpp2::RunParams runParams 
-    { 
-        { 
-            script, 
-            profiles, 
-            params, 
-            executable, 
-            local, 
-            preferredProfile 
-        },
-        rebuild, 
-        false, 
-        sourceOnly, 
-        true, 
-        {}, 
-        jobs, 
-        nullptr,
-        outputDir
-    };
+    runcpp2::RunParams runParams =  { 
+                                        { 
+                                            script, 
+                                            profiles, 
+                                            params, 
+                                            executable, 
+                                            local, 
+                                            preferredProfile 
+                                        },
+                                        rebuild, 
+                                        false, 
+                                        sourceOnly, 
+                                        true, 
+                                        {}, 
+                                        jobs, 
+                                        nullptr,
+                                        outputDir
+                                    };
     runcpp2::Run(   runParams,
                     //Outputs
                     parsedScriptInfo,
@@ -499,7 +497,7 @@ DS::Result<void> HandleWatch(int argc, char* argv[])
     
     std::vector<runcpp2::Data::Profile> profiles;
     std::string preferredProfile;
-    runcpp2::ReadUserConfig(profiles, preferredProfile, configPath).DS_TRY();
+    runcpp2::ReadUserConfig(profiles, preferredProfile, params, configPath).DS_TRY();
     
     ssLOG_DEBUG("\nprofiles:");
     for(int i = 0; i < profiles.size(); ++i)
@@ -514,8 +512,6 @@ DS::Result<void> HandleWatch(int argc, char* argv[])
     runcpp2::CoreParams coreParams = { script, profiles, params, executable, local, preferredProfile };
     while(true)
     {
-        ssLOG_BASE("Watching...");
-        
         //Check if sources need update
         bool needsUpdate = false;
         if(!needsRunning)   //Skip check on first run
@@ -575,6 +571,7 @@ DS::Result<void> HandleWatch(int argc, char* argv[])
             
             lastParsedScriptInfo = &parsedScriptInfo;
             needsRunning = false;
+            ssLOG_BASE("Watching...");
         } //if(needsRunning)
         
         std::this_thread::sleep_for(std::chrono::seconds(5));
@@ -698,7 +695,7 @@ DS::Result<void> HandleReset(int argc, char* argv[])
     
     std::vector<runcpp2::Data::Profile> profiles;
     std::string preferredProfile;
-    runcpp2::ReadUserConfig(profiles, preferredProfile, configPath).DS_TRY();
+    runcpp2::ReadUserConfig(profiles, preferredProfile, params, configPath).DS_TRY();
     
     ssLOG_DEBUG("\nprofiles:");
     for(int i = 0; i < profiles.size(); ++i)

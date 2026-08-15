@@ -58,6 +58,7 @@ namespace Data
         //Internal tracking
         bool Populated = false;
         ghc::filesystem::file_time_type LastWriteTime = ghc::filesystem::file_time_type::min();
+        std::unordered_map<std::string, std::vector<std::string>> SubstitutionMap;
         
         inline DS::Result<void> 
         ParseYAML_Node( YAML::ConstNodePtr node, 
@@ -72,7 +73,24 @@ namespace Data
             YAML::NodePtr clonedNode = node->Clone(false, resourceHandle).DS_TRY();
             DEFER { YAML::FreeYAMLResource(resourceHandle); };
             
-            ApplyParametersAndVariables(*this, clonedNode, resourceHandle, inputParameters).DS_TRY();
+            std::vector<YAML::ConstNodePtr> exclusions;
+            if(ExistAndHasChild(clonedNode, "Dependencies"))
+            {
+                YAML::ConstNodePtr keyNode = clonedNode->GetMapKeyNode("Dependencies");
+                YAML::ConstNodePtr valueNode = clonedNode->GetMapValueNode("Dependencies");
+                DS_ASSERT_TRUE(keyNode != nullptr);
+                DS_ASSERT_TRUE(valueNode != nullptr);
+                exclusions.push_back(keyNode);
+                exclusions.push_back(valueNode);
+            }
+            
+            SubstitutionMap = {};
+            ApplyParametersAndVariables(*this, 
+                                        clonedNode, 
+                                        resourceHandle, 
+                                        SubstitutionMap, 
+                                        inputParameters,
+                                        exclusions).DS_TRY();
             
             std::vector<NodeRequirement> requirements =
             {
@@ -184,7 +202,7 @@ namespace Data
                 {
                     DependencyInfo info;
                     YAML::ConstNodePtr dependencyNode = dependenciesNode->GetSequenceChildNode(i);
-                    info.ParseYAML_Node(dependencyNode, inputParameters).DS_TRY_ACT
+                    info.ParseYAML_Node(dependencyNode, SubstitutionMap, inputParameters).DS_TRY_ACT
                     (
                         DS_TMP_ERROR.Message += "\nScriptInfo: Failed to parse DependencyInfo at "
                                                 "index " + DS_STR(i);

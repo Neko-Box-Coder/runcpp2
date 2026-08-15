@@ -9,14 +9,14 @@ OtherFilesToBeCompiled:
     DefaultPlatform:
         # Target Profile
         "g++":
-        -   "./OtherSources/AnotherSourceFileGcc.cpp"
+        -   "../MultiSourcesAndStatic/OtherSources/AnotherSourceFileGcc.cpp"
         "msvc":
-        -   "./OtherSources/AnotherSourceFileMSVC.cpp"
+        -   "../MultiSourcesAndStatic/OtherSources/AnotherSourceFileMSVC.cpp"
 
 IncludePaths:
     DefaultPlatform:
         DefaultProfile:
-        -   "./OtherSources"
+        -   "../MultiSourcesAndStatic/OtherSources"
 
 Defines:
     DefaultPlatform:
@@ -86,7 +86,7 @@ Dependencies:
 
 -   Name: System2.cpp
     Source:
-        ImportPath: "./TestImport.yaml"
+        ImportPath: "../MultiSourcesAndStatic/TestImport.yaml"
 
 # -   Name: System2.cpp
 #     Platforms: [DefaultPlatform]

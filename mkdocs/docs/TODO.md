@@ -14,6 +14,7 @@
 - System include
 - Dot access groups for built-in profile variables
 - Separator for repeat RunPart
+- Parameters for profiles
 
 ### v0.3.1
 - Check last run is shared lib or executable. Reset cache when necessary if different type
@@ -38,7 +39,6 @@
 
 ### v0.4.0
 - Allow runcpp2 to be library for scriptable pipeline
-- Parameters for profiles
 - Add more default profiles
 - Ditch cmake
 - Move to variant-lite instead of mpark-variant

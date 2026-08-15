@@ -309,31 +309,34 @@ namespace runcpp2
         return {};
     }
     
-    inline bool MergeYAML_NodeChildren( YAML::NodePtr nodeToMergeFrom, 
-                                        YAML::NodePtr nodeToMergeTo,
-                                        YAML::ResourceHandle& yamlResouce)
+    inline DS::Result<void> MergeYAML_NodeChildren( YAML::NodePtr nodeToMergeFrom, 
+                                                    YAML::NodePtr nodeToMergeTo,
+                                                    YAML::ResourceHandle& yamlResouce,
+                                                    bool overwrite)
     {
         ssLOG_FUNC_DEBUG();
+        DS_ASSERT_NOT_EQ(nodeToMergeFrom.get(), nodeToMergeTo.get());
         
         if(!nodeToMergeFrom->IsMap() || !nodeToMergeTo->IsMap())
-        {
-            ssLOG_ERROR("Merge node is not map");
-            return false;
-        }
+            return DS_ERROR_MSG("Merge node is not map");
         
         for(int i = 0; i < nodeToMergeFrom->GetChildrenCount(); ++i)
         {
-            std::string key = nodeToMergeFrom   ->GetMapKeyScalarAt<std::string>(i)
-                                                .DS_TRY_ACT(return false);
-            
+            std::string key = nodeToMergeFrom->GetMapKeyScalarAt<std::string>(i).DS_TRY();
             if(!ExistAndHasChild(nodeToMergeTo, key, true))
             {
                 YAML::NodePtr fromNode = nodeToMergeFrom->GetMapValueNodeAt(i);
-                fromNode->CloneToMapChild(key, nodeToMergeTo, yamlResouce).DS_TRY_ACT(return false);
+                fromNode->CloneToMapChild(key, nodeToMergeTo, yamlResouce).DS_TRY();
+            }
+            else if(overwrite)
+            {
+                nodeToMergeTo->RemoveMapChild(key).DS_TRY();
+                YAML::NodePtr fromNode = nodeToMergeFrom->GetMapValueNodeAt(i);
+                fromNode->CloneToMapChild(key, nodeToMergeTo, yamlResouce).DS_TRY();
             }
         }
         
-        return true;
+        return {};
     }
     
     //TODO: Replace with string escape in libyaml wrapper
@@ -446,9 +449,8 @@ namespace runcpp2
             const std::string& substitution = foundSubstitutions[i];
             if(substitutionMap.count(substitution) == 0)
             {
-                ssLOG_DEBUG("substitution: " << substitution << " not found in substitution map, "
-                            "skipping...");
-                continue;
+                return DS_ERROR_MSG("Parameter " + substitution + " is expected but nothing is "
+                                    "supplied");
             }
             
             //The substitution values can either be 1 
@@ -515,11 +517,12 @@ namespace runcpp2
     
     //NOTE: This extracts substitutions and also allow escapes to happen for substitution characters.
     //      To escape a substitution character, just repeat it. (i.e. {{text}} will be escaped as {text})
-    void GetEscapedStringAndExtractSubstitutions(   const std::string& processString, 
-                                                    std::string& outEscapedString,
-                                                    std::vector<std::string>& outFoundSubstitutions,
-                                                    std::vector<int>& outFoundLocations,
-                                                    std::vector<int>& outFoundLength)
+    DS::Result<void> 
+    GetEscapedStringAndExtractSubstitutions(const std::string& processString, 
+                                            std::string& outEscapedString,
+                                            std::vector<std::string>& outFoundSubstitutions,
+                                            std::vector<int>& outFoundLocations,
+                                            std::vector<int>& outFoundLength)
     {
         ssLOG_FUNC_DEBUG();
         
@@ -554,8 +557,8 @@ namespace runcpp2
                 
                 if(lastOpenBracketIndex != -1)
                 {
-                    ssLOG_WARNING(  "Unescaped { at index " << lastOpenBracketIndex << 
-                                    ": " << processString);
+                    return DS_ERROR_MSG("Unescaped { at index " + DS_STR(lastOpenBracketIndex) +
+                                        ": " + processString);
                 }
                 
                 lastOpenBracketIndex = i;
@@ -576,12 +579,9 @@ namespace runcpp2
                     continue;
                 }
                 
-                //If there's no open bracket, give warning
+                //If there's no open bracket, abort
                 if(lastOpenBracketIndex == -1)
-                {
-                    ssLOG_WARNING("Unescaped } at index " << i << ": " << processString);
-                    continue;
-                }
+                    return DS_ERROR_MSG("Unescaped } at index " + DS_STR(i) + ": " + processString);
                 
                 //Add substitution
                 outEscapedString += '}';
@@ -603,6 +603,7 @@ namespace runcpp2
                     currentSubstitution += processString[i];
             }
         }
+        return {};
     }
     
     inline DS::Result<void> PerformSubstitutions(   const SubstitutionMap& substitutionMap, 
@@ -618,7 +619,8 @@ namespace runcpp2
                                                 escapedString,
                                                 foundSubstitutions,
                                                 substitutionsLocations,
-                                                substitutionsLengths);
+                                                substitutionsLengths)
+            .DS_TRY();
         
         DS_ASSERT_EQ(foundSubstitutions.size(), substitutionsLocations.size());
         DS_ASSERT_EQ(foundSubstitutions.size(), substitutionsLengths.size());
@@ -647,7 +649,8 @@ namespace runcpp2
                                                 escapedString,
                                                 foundSubstitutions,
                                                 substitutionsLocations,
-                                                substitutionsLengths);
+                                                substitutionsLengths)
+            .DS_TRY();
         
         DS_ASSERT_EQ(foundSubstitutions.size(), substitutionsLocations.size());
         DS_ASSERT_EQ(foundSubstitutions.size(), substitutionsLengths.size());
@@ -655,25 +658,28 @@ namespace runcpp2
         int foundSize = -1;
         for(int i = 0; i < foundSubstitutions.size(); ++i)
         {
-            if(substitutionMap.count(foundSubstitutions[i]) > 0)
+            if(!substitutionMap.count(foundSubstitutions[i]))
             {
-                if(foundSize == -1)
-                    foundSize = substitutionMap.at(foundSubstitutions[i]).size();
-                else
+                return DS_ERROR_MSG("Parameter " + foundSubstitutions[i] + " is expected but nothing "
+                                    "is supplied");
+            }
+            
+            if(foundSize == -1)
+                foundSize = substitutionMap.at(foundSubstitutions[i]).size();
+            else
+            {
+                if(substitutionMap.at(foundSubstitutions[i]).size() != 1)
                 {
-                    if(substitutionMap.at(foundSubstitutions[i]).size() != 1)
+                    if(foundSize == 1)
                     {
-                        if(foundSize == 1)
-                        {
-                            foundSize = substitutionMap.at(foundSubstitutions[i]).size();
-                            continue;
-                        }
-                        else if(foundSize ==  substitutionMap.at(foundSubstitutions[i]).size())
-                            continue;
-                        
-                        return DS_ERROR_MSG("Mismatching array size when substituting with " +
-                                            foundSubstitutions[i]);
+                        foundSize = substitutionMap.at(foundSubstitutions[i]).size();
+                        continue;
                     }
+                    else if(foundSize == substitutionMap.at(foundSubstitutions[i]).size())
+                        continue;
+                    
+                    return DS_ERROR_MSG("Mismatching array size when substituting with " +
+                                        foundSubstitutions[i]);
                 }
             }
         }
@@ -681,7 +687,7 @@ namespace runcpp2
         //No substitutions in the input, just pass it back out
         if(foundSize == -1)
         {
-            outStrings.emplace_back(inString);
+            outStrings.emplace_back(escapedString);
             return {};
         }
         

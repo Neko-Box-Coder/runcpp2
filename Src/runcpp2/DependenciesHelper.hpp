@@ -702,17 +702,21 @@ namespace runcpp2
         return {};
     }
 
-    inline DS::Result<void> HandleImport(   Data::DependencyInfo& dependency, 
-                                            const ghc::filesystem::path& basePath,
-                                            const std::unordered_map<   std::string, 
-                                                                        std::string>& inputParameters)
+    inline DS::Result<void> 
+    HandleImport(   Data::DependencyInfo& dependency, 
+                    const std::unordered_map<   std::string, 
+                                                std::vector<std::string>>& substitutionMap, 
+                    const ghc::filesystem::path& basePath,
+                    const std::unordered_map<   std::string, 
+                                                std::string>& inputParameters)
     {
         ssLOG_FUNC_DEBUG();
         
         if(dependency.Source.ImportPath.empty())
             return {};
 
-        const std::string fullPath = (basePath / dependency.Source.ImportPath).string();
+        const std::string fullPath = (basePath / dependency.Source.ImportPath)  .lexically_normal()
+                                                                                .string();
         std::error_code ec;
         if(!ghc::filesystem::exists(fullPath, ec))
             return DS_ERROR_MSG("Import file not found: " + fullPath);
@@ -761,8 +765,9 @@ namespace runcpp2
             YAML::ResolveAnchors(rootNodes[i]).DS_TRY();
             
             //Parse the imported dependency
-            DS::Result<void> res = dependency.ParseYAML_Node(rootNodes[i], inputParameters);
-            
+            DS::Result<void> res = dependency.ParseYAML_Node(   rootNodes[i], 
+                                                                substitutionMap, 
+                                                                inputParameters);
             //If failed to parse document, fail only if we reach the last document
             if(!res.HasValue())
             {
@@ -790,11 +795,11 @@ namespace runcpp2
         return DS_ERROR_MSG("This should never be reached");
     }
 
-    inline DS::Result<void> ResolveImports( Data::ScriptInfo& scriptInfo,
-                                            const ghc::filesystem::path& scriptDirectory,
-                                            const ghc::filesystem::path& buildDir,
-                                            const std::unordered_map<   std::string, 
-                                                                        std::string>& inputParameters)
+    inline DS::Result<void> 
+    ResolveDependenciesImports( Data::ScriptInfo& scriptInfo,
+                                const ghc::filesystem::path& scriptDirectory,
+                                const ghc::filesystem::path& buildDir,
+                                const std::unordered_map<std::string, std::string>& inputParameters)
     {
         ssLOG_FUNC_INFO();
         
@@ -819,7 +824,7 @@ namespace runcpp2
             PopulateLocalDependency(dependency, copyPath, sourcePath, buildDir, prePopulated).DS_TRY();
             
             //Parse the import file
-            HandleImport(dependency, copyPath, inputParameters).DS_TRY();
+            HandleImport(dependency, scriptInfo.SubstitutionMap, copyPath, inputParameters).DS_TRY();
 
             //Check do we still have import path in the dependency. If so, we need to parse it again
             if(!dependency.Source.ImportPath.empty())

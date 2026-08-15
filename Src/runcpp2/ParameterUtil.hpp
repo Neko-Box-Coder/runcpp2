@@ -66,7 +66,10 @@ namespace runcpp2
     ApplyParametersAndVariables(T& data, 
                                 YAML::NodePtr& node,
                                 YAML::ResourceHandle& resourceHandle,
-                                const std::unordered_map<std::string, std::string>& inputParameters)
+                                std::unordered_map< std::string, 
+                                                    std::vector<std::string>>& substitutionMap,
+                                const std::unordered_map<std::string, std::string>& inputParameters,
+                                const std::vector<YAML::ConstNodePtr>& excludedNodes)
     {
         //Remove parameters and variables in the cloned node.
         if(node->HasMapKey("Parameters"))
@@ -77,8 +80,6 @@ namespace runcpp2
         {
             node->RemoveMapChild("Variables").DS_TRY();
         }
-        
-        std::unordered_map<std::string, std::vector<std::string>> substitutionMap;
         
         //Populate parameters values first
         for(auto it = data.Parameters.begin(); it != data.Parameters.end(); ++it)
@@ -95,35 +96,42 @@ namespace runcpp2
             
             //Parse the value
             std::string subKey = "{" + it->first + "}";
+            
+            //Check if it is optional, if so check if it can be empty
+            if(it->second.Optional && valueToParse.empty())
             {
-                if(it->second.Array)
+                static_assert((int)Data::ParameterValue::ConstraintType::Count == 5, "");
+                if(it->second.CurrentConstraintType != Data::ParameterValue::ConstraintType::None)
+                    continue;
+            }
+            
+            if(it->second.Array)
+            {
+                std::vector<std::string> inputValues;
+                SplitString(valueToParse, ",", inputValues);
+                for(int i = 0; i < inputValues.size(); ++i)
                 {
-                    std::vector<std::string> inputValues;
-                    SplitString(valueToParse, ",", inputValues);
-                    for(int i = 0; i < inputValues.size(); ++i)
-                    {
-                        bool inConstraint = it->second.IsInputInConstraint(inputValues[i]).DS_TRY();
-                        if(!inConstraint)
-                        {
-                            return DS_ERROR_MSG("Input parameter[" + DS_STR(i) + "]: " + 
-                                                inputValues[i] +
-                                                (isDefault ? "(Default)" : "") + 
-                                                " is not in constraint");
-                        }
-                    }
-                    substitutionMap[subKey] = inputValues;
-                }
-                else
-                {
-                    bool inConstraint = it->second.IsInputInConstraint(valueToParse).DS_TRY();
+                    bool inConstraint = it->second.IsInputInConstraint(inputValues[i]).DS_TRY();
                     if(!inConstraint)
                     {
-                        return DS_ERROR_MSG("Input parameter: " + it->first +
+                        return DS_ERROR_MSG("Input parameter[" + DS_STR(i) + "]: " + 
+                                            inputValues[i] +
                                             (isDefault ? "(Default)" : "") + 
                                             " is not in constraint");
                     }
-                    substitutionMap[subKey] = {valueToParse};
                 }
+                substitutionMap[subKey] = inputValues;
+            }
+            else
+            {
+                bool inConstraint = it->second.IsInputInConstraint(valueToParse).DS_TRY();
+                if(!inConstraint)
+                {
+                    return DS_ERROR_MSG("Input parameter: " + it->first +
+                                        (isDefault ? "(Default)" : "") + 
+                                        " is not in constraint");
+                }
+                substitutionMap[subKey] = {valueToParse};
             }
         } //for(auto it = Parameters.begin(); it != Parameters.end(); ++it)
         
@@ -149,6 +157,9 @@ namespace runcpp2
         }
         substitutionMap.insert(variablesMap.begin(), variablesMap.end());
         
+        //NOTE: We still need to iterate through the whole thing even if we have nothing to 
+        //      substitute because we need to get the escaped strings
+        
         //Perform substitution recursively over the whole YAML object
         std::deque<YAML::NodePtr> nodesToVisit;
         nodesToVisit.push_back(node);
@@ -156,6 +167,19 @@ namespace runcpp2
         {
             YAML::NodePtr currentNode = nodesToVisit.front();
             nodesToVisit.pop_front();
+            
+            bool skipThis = false;
+            for(int i = 0; i < excludedNodes.size(); ++i)
+            {
+                if(excludedNodes.at(i).get() == currentNode.get())
+                {
+                    skipThis = true;
+                    break;
+                }
+            }
+            if(skipThis)
+                continue;
+            
             static_assert((int)YAML::NodeType::Count == 4, "");
             switch(currentNode->GetType())
             {
@@ -223,7 +247,21 @@ namespace runcpp2
     
         return {};
     }
-
+    
+    inline void CreateParameterValues(  const std::string rawParams,
+                                        std::unordered_map<std::string, std::string>& outParameters)
+    {
+        std::vector<std::string> paramNameVals;
+        SplitString(rawParams, ":", paramNameVals);
+        if(paramNameVals.size() % 2 != 0)
+        {
+            ssLOG_ERROR("Failed to parse parameters. Defaults to no parameters");
+            return;
+        }
+        
+        for(int i = 0; i < paramNameVals.size(); i += 2)
+            outParameters[paramNameVals[i]] = paramNameVals[i + 1];
+    }
 }
 
 
