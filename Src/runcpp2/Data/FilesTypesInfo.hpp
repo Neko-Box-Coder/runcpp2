@@ -21,6 +21,7 @@ namespace Data
         FileProperties SharedLinkFile;
         FileProperties SharedLibraryFile;
         FileProperties StaticLinkFile;
+        FileProperties ExecutableFile;
         FileProperties DebugSymbolFile;
         
         inline bool ParseYAML_Node(YAML::ConstNodePtr node)
@@ -33,6 +34,7 @@ namespace Data
                 NodeRequirement("SharedLinkFile", YAML::NodeType::Map, true, false),
                 NodeRequirement("SharedLibraryFile", YAML::NodeType::Map, true, false),
                 NodeRequirement("StaticLinkFile", YAML::NodeType::Map, true, false),
+                NodeRequirement("ExecutableFile", YAML::NodeType::Map, true, false),
                 NodeRequirement("DebugSymbolFile", YAML::NodeType::Map, false, false),
             };
 
@@ -70,6 +72,13 @@ namespace Data
                 return false;
             }
             
+            YAML::ConstNodePtr executionFileNode = node->GetMapValueNode("ExecutableFile");
+            if(!ExecutableFile.ParseYAML_Node(executionFileNode))
+            {
+                ssLOG_ERROR("Compiler profile: ExecutableFile is invalid");
+                return false;
+            }
+            
             if(ExistAndHasChild(node, "DebugSymbolFile"))
             {
                 YAML::ConstNodePtr debugSymbolFileNode = node->GetMapValueNode("DebugSymbolFile");
@@ -101,6 +110,9 @@ namespace Data
             out += indentation + "StaticLinkFile:\n";
             out += StaticLinkFile.ToString(indentation + "    ");
             
+            out += indentation + "ExecutableFile:\n";
+            out += ExecutableFile.ToString(indentation + "    ");
+            
             if(!DebugSymbolFile.Prefix.empty() || !DebugSymbolFile.Extension.empty())
             {
                 out += indentation + "DebugSymbolFile:\n";
@@ -116,6 +128,7 @@ namespace Data
                     SharedLinkFile.Equals(other.SharedLinkFile) &&
                     SharedLibraryFile.Equals(other.SharedLibraryFile) &&
                     StaticLinkFile.Equals(other.StaticLinkFile) &&
+                    ExecutableFile.Equals(other.ExecutableFile) &&
                     DebugSymbolFile.Equals(other.DebugSymbolFile);
         }
     };

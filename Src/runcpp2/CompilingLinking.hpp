@@ -99,27 +99,33 @@ namespace
     {
         ssLOG_FUNC_DEBUG();
         
-        outSubstitutionMap[ "{Stage.SharedLibraryFile.Prefix}" ] = 
-                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. SharedLibraryFile.Prefix) };
-        outSubstitutionMap[ "{Stage.SharedLinkFile.Prefix}" ] = 
-                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. SharedLinkFile.Prefix) };
-        outSubstitutionMap[ "{Stage.StaticLinkFile.Prefix}" ] = 
-                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. StaticLinkFile.Prefix) };
-        outSubstitutionMap[ "{Stage.ObjectLinkFile.Prefix}" ] = 
-                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. ObjectLinkFile.Prefix) };
-        outSubstitutionMap[ "{Stage.DebugSymbolFile.Prefix}" ] = 
-                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. DebugSymbolFile.Prefix) };
+        #define INTERN_POPULATE_SUB_MAP(x) \
+            do \
+            { \
+                if(runcpp2::HasValueFromPlatformMap(fileTypesInfo. x)) \
+                { \
+                    outSubstitutionMap[ "{Stage." #x "}" ] = \
+                    { \
+                        *runcpp2::GetValueFromPlatformMap(fileTypesInfo. x) \
+                    }; \
+                } \
+            } while(0)
         
-        outSubstitutionMap[ "{Stage.SharedLibraryFile.Extension}" ] = 
-                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. SharedLibraryFile.Extension) };
-        outSubstitutionMap[ "{Stage.SharedLinkFile.Extension}" ] = 
-                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. SharedLinkFile.Extension) };
-        outSubstitutionMap[ "{Stage.StaticLinkFile.Extension}" ] = 
-                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. StaticLinkFile.Extension) };
-        outSubstitutionMap[ "{Stage.ObjectLinkFile.Extension}" ] = 
-                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. ObjectLinkFile.Extension) };
-        outSubstitutionMap[ "{Stage.DebugSymbolFile.Extension}" ] = 
-                { *runcpp2::GetValueFromPlatformMap(fileTypesInfo. DebugSymbolFile.Extension) };
+        INTERN_POPULATE_SUB_MAP(SharedLibraryFile.Prefix);
+        INTERN_POPULATE_SUB_MAP(SharedLinkFile.Prefix);
+        INTERN_POPULATE_SUB_MAP(StaticLinkFile.Prefix);
+        INTERN_POPULATE_SUB_MAP(ObjectLinkFile.Prefix);
+        INTERN_POPULATE_SUB_MAP(ExecutableFile.Prefix);
+        INTERN_POPULATE_SUB_MAP(DebugSymbolFile.Prefix);
+        
+        INTERN_POPULATE_SUB_MAP(SharedLibraryFile.Extension);
+        INTERN_POPULATE_SUB_MAP(SharedLinkFile.Extension);
+        INTERN_POPULATE_SUB_MAP(StaticLinkFile.Extension);
+        INTERN_POPULATE_SUB_MAP(ObjectLinkFile.Extension);
+        INTERN_POPULATE_SUB_MAP(ExecutableFile.Extension);
+        INTERN_POPULATE_SUB_MAP(DebugSymbolFile.Extension);
+    
+        #undef INTERN_POPULATE_SUB_MAP
     }
     
     bool CompileScript( const ghc::filesystem::path& buildDir,
