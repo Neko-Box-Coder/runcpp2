@@ -3,7 +3,8 @@
 # List of YAML anchors that will be aliased later. `Template` is **NOT** part of a profile
 Templates:
     vs2022_v17+_CompileFlags: &vs2022_v17+_CompileFlags
-        Flags: "/nologo /W4 /diagnostics:caret /utf-8 /Gm- /MDd /EHar /TP /std:c++17 /GR /RTC1 /Zc:inline /Zi /external:W0"
+        Flags: "/nologo /W4 /diagnostics:caret /utf-8 /Gm- /MDd /EHar /TP /std:c++17 /GR /RTC1 \
+            /Zc:inline /Zi /external:W0"
     
 # https://learn.microsoft.com/en-us/cpp/overview/compiler-versions?view=msvc-170
 Name: "vs2022_v17+"
@@ -42,12 +43,15 @@ Compiler:
                 -   Type: Repeats
                     CommandPart: " /I\"{Stage.IncludeDirectory.Source.Path}\""
                 -   Type: Once
-                    CommandPart: " /Fo\"{Stage.Output.Directory}{/}{Stage.ObjectLinkFile.Prefix}{Stage.Input.Name}{Stage.ObjectLinkFile.Extension}\" \
-                        /Fd\"{Stage.Output.Directory}{/}{Stage.DebugSymbolFile.Prefix}{Stage.Input.Name}{Stage.DebugSymbolFile.Extension}\" \
-                        \"{Stage.Input.Path}\""
+                    CommandPart: " /Fo\"{Stage.Output.Directory}{/}{Stage.ObjectLinkFile.Prefix}\
+                        {Stage.Input.Name}{Stage.ObjectLinkFile.Extension}\" \
+                        /Fd\"{Stage.Output.Directory}{/}{Stage.DebugSymbolFile.Prefix}\
+                        {Stage.Input.Name}{Stage.DebugSymbolFile.Extension}\" \"{Stage.Input.Path}\""
                 ExpectedOutputFiles: &vs2022_v17+_CompileExpectedOutputFiles
-                -   "{Stage.Output.Directory}{/}{Stage.ObjectLinkFile.Prefix}{Stage.Input.Name}{Stage.ObjectLinkFile.Extension}"
-                -   "{Stage.Output.Directory}{/}{Stage.DebugSymbolFile.Prefix}{Stage.Input.Name}{Stage.DebugSymbolFile.Extension}"
+                -   "{Stage.Output.Directory}{/}{Stage.ObjectLinkFile.Prefix}{Stage.Input.Name}\
+                    {Stage.ObjectLinkFile.Extension}"
+                -   "{Stage.Output.Directory}{/}{Stage.DebugSymbolFile.Prefix}{Stage.Input.Name}\
+                    {Stage.DebugSymbolFile.Extension}"
         ExecutableShared:
             Windows:
                 <<: *vs2022_v17+_CompileFlags
@@ -81,12 +85,13 @@ Linker:
                 Executable: "link.exe"
                 RunParts:
                 -   Type: Once
-                    CommandPart: >-
-                        {Stage.Executable} {Stage.LinkFlags}
-                        /OUT:"{Stage.Output.Directory}{/}{Stage.Output.Name}.exe"
+                    CommandPart: "{Stage.Executable} {Stage.LinkFlags} \
+                        /OUT:\"{Stage.Output.Directory}{/}{Stage.Output.Name}\
+                        {Stage.ExecutableFile.Extension}\""
                 -   Type: Repeats
                     CommandPart: " \"{Stage.Input.Path}\""
-                ExpectedOutputFiles: ["{Stage.Output.Directory}{/}{Stage.Output.Name}.exe"]
+                ExpectedOutputFiles: 
+                -   "{Stage.Output.Directory}{/}{Stage.Output.Name}{Stage.ExecutableFile.Extension}"
         ExecutableShared:
             Windows:
                 Flags: >-
@@ -96,14 +101,17 @@ Linker:
                 Executable: "link.exe"
                 RunParts:
                 -   Type: Once
-                    CommandPart: >-
-                        {Stage.Executable} {Stage.LinkFlags}
-                        /OUT:"{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.Output.Name}{Stage.SharedLibraryFile.Extension}"
-                        /IMPLIB:"{Stage.Output.Directory}{/}{Stage.SharedLinkFile.Prefix}{Stage.Output.Name}{Stage.SharedLinkFile.Extension}"
-                        /DEF:".\temp.def"
+                    CommandPart: "{Stage.Executable} {Stage.LinkFlags} \
+                        /OUT:\"{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}\
+                        {Stage.Output.Name}{Stage.SharedLibraryFile.Extension}\" \
+                        /IMPLIB:\"{Stage.Output.Directory}{/}{Stage.SharedLinkFile.Prefix}\
+                        {Stage.Output.Name}{Stage.SharedLinkFile.Extension}\" \
+                        /DEF:\".\\temp.def\""
                 -   Type: Repeats
                     CommandPart: " \"{Stage.Input.Path}\""
-                ExpectedOutputFiles: ["{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.Output.Name}{Stage.SharedLibraryFile.Extension}"]
+                ExpectedOutputFiles: 
+                -   "{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.Output.Name}\
+                    {Stage.SharedLibraryFile.Extension}"
                 Setup: [ "echo EXPORTS > .\\temp.def", "echo.   main @1 >> .\\temp.def" ]
                 Cleanup: [ "del .\\temp.def" ]
         Static:
@@ -112,13 +120,16 @@ Linker:
                 Executable: "lib.exe"
                 RunParts:
                 -   Type: Once
-                    CommandPart: >-
-                        {Stage.Executable} {Stage.LinkFlags}
-                        /OUT:"{Stage.Output.Directory}{/}{Stage.StaticLinkFile.Prefix}{Stage.Output.Name}{Stage.StaticLinkFile.Extension}"
-                        /IMPLIB:"{Stage.Output.Directory}{/}{Stage.SharedLinkFile.Prefix}{Stage.Output.Name}{Stage.SharedLinkFile.Extension}"
+                    CommandPart: "{Stage.Executable} {Stage.LinkFlags} \
+                        /OUT:\"{Stage.Output.Directory}{/}{Stage.StaticLinkFile.Prefix}\
+                        {Stage.Output.Name}{Stage.StaticLinkFile.Extension}\" \
+                        /IMPLIB:\"{Stage.Output.Directory}{/}{Stage.SharedLinkFile.Prefix}\
+                        {Stage.Output.Name}{Stage.SharedLinkFile.Extension}\""
                 -   Type: Repeats
                     CommandPart: " \"{Stage.Input.Path}\""
-                ExpectedOutputFiles: ["{Stage.Output.Directory}{/}{Stage.StaticLinkFile.Prefix}{Stage.Output.Name}{Stage.StaticLinkFile.Extension}"]
+                ExpectedOutputFiles: 
+                -   "{Stage.Output.Directory}{/}{Stage.StaticLinkFile.Prefix}{Stage.Output.Name}\
+                    {Stage.StaticLinkFile.Extension}"
         Shared:
             Windows:
                 Flags: >-
@@ -128,10 +139,13 @@ Linker:
                 Executable: "link.exe"
                 RunParts:
                 -   Type: Once
-                    CommandPart: >-
-                        {Stage.Executable} {Stage.LinkFlags}
-                        /OUT:"{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.Output.Name}{Stage.SharedLibraryFile.Extension}"
-                        /IMPLIB:"{Stage.Output.Directory}{/}{Stage.SharedLinkFile.Prefix}{Stage.Output.Name}{Stage.SharedLinkFile.Extension}"
+                    CommandPart: "{Stage.Executable} {Stage.LinkFlags} \
+                        /OUT:\"{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}\
+                        {Stage.Output.Name}{Stage.SharedLibraryFile.Extension}\" \
+                        /IMPLIB:\"{Stage.Output.Directory}{/}{Stage.SharedLinkFile.Prefix}\
+                        {Stage.Output.Name}{Stage.SharedLinkFile.Extension}\""
                 -   Type: Repeats
                     CommandPart: " \"{Stage.Input.Path}\""
-                ExpectedOutputFiles: ["{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.Output.Name}{Stage.SharedLibraryFile.Extension}"]
+                ExpectedOutputFiles: 
+                -   "{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.Output.Name}\
+                    {Stage.SharedLibraryFile.Extension}"

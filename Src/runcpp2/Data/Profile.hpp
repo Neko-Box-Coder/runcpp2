@@ -63,11 +63,13 @@ namespace Data
             INTERN_ADD_MAP("{Stage.SharedLinkFile.Prefix}");
             INTERN_ADD_MAP("{Stage.StaticLinkFile.Prefix}");
             INTERN_ADD_MAP("{Stage.ObjectLinkFile.Prefix}");
+            INTERN_ADD_MAP("{Stage.ExecutableFile.Prefix}");
             INTERN_ADD_MAP("{Stage.DebugSymbolFile.Prefix}");
             INTERN_ADD_MAP("{Stage.SharedLibraryFile.Extension}");
             INTERN_ADD_MAP("{Stage.SharedLinkFile.Extension}");
             INTERN_ADD_MAP("{Stage.StaticLinkFile.Extension}");
             INTERN_ADD_MAP("{Stage.ObjectLinkFile.Extension}");
+            INTERN_ADD_MAP("{Stage.ExecutableFile.Extension}");
             INTERN_ADD_MAP("{Stage.DebugSymbolFile.Extension}");
             INTERN_ADD_MAP("{Stage.Executable}");
             INTERN_ADD_MAP("{Stage.CompileFlags}");
@@ -82,16 +84,7 @@ namespace Data
             INTERN_ADD_MAP("{Stage.IncludeDirectory.Path}");
             INTERN_ADD_MAP("{Stage.IncludeDirectory.Source.Path}");
             INTERN_ADD_MAP("{Stage.IncludeDirectory.Dep.Path}");
-            INTERN_ADD_MAP("{Stage.SharedLibraryFile.Prefix}");
-            INTERN_ADD_MAP("{Stage.SharedLinkFile.Prefix}");
-            INTERN_ADD_MAP("{Stage.StaticLinkFile.Prefix}");
-            INTERN_ADD_MAP("{Stage.ObjectLinkFile.Prefix}");
-            INTERN_ADD_MAP("{Stage.DebugSymbolFile.Prefix}");
-            INTERN_ADD_MAP("{Stage.SharedLibraryFile.Extension}");
-            INTERN_ADD_MAP("{Stage.SharedLinkFile.Extension}");
-            INTERN_ADD_MAP("{Stage.StaticLinkFile.Extension}");
-            INTERN_ADD_MAP("{Stage.ObjectLinkFile.Extension}");
-            INTERN_ADD_MAP("{Stage.DebugSymbolFile.Extension}");
+            
             INTERN_ADD_MAP("{Stage.Executable}");
             INTERN_ADD_MAP("{Stage.LinkFlags}");
             INTERN_ADD_MAP("{Stage.Output.Name}");

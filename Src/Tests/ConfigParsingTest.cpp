@@ -166,6 +166,7 @@ DS::Result<void> TestMain()
                 SharedLinkFile: *PrefixExtensionTemplate
                 SharedLibraryFile: *PrefixExtensionTemplate
                 StaticLinkFile: *PrefixExtensionTemplate
+                ExecutableFile: *PrefixExtensionTemplate
                 DebugSymbolFile: *PrefixExtensionTemplate
             Compiler:
                 CheckExistence: 
@@ -356,6 +357,7 @@ DS::Result<void> TestMain()
                     SharedLinkFile: *PrefixExtensionTemplate
                     SharedLibraryFile: *PrefixExtensionTemplate
                     StaticLinkFile: *PrefixExtensionTemplate
+                    ExecutableFile: *PrefixExtensionTemplate
                     DebugSymbolFile: *PrefixExtensionTemplate
                 Compiler:
                     CheckExistence: 
@@ -414,6 +416,7 @@ DS::Result<void> TestMain()
                 SharedLinkFile: *PrefixExtensionTemplate
                 SharedLibraryFile: *PrefixExtensionTemplate
                 StaticLinkFile: *PrefixExtensionTemplate
+                ExecutableFile: *PrefixExtensionTemplate
                 DebugSymbolFile: *PrefixExtensionTemplate
         )";
         

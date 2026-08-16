@@ -26,8 +26,7 @@ namespace
         switch(buildType)
         {
             case BuildType::INTERNAL_EXECUTABLE_EXECUTABLE:
-                //NOTE: Currently this is a special case and handled outside
-                //TODO: Handle it as config
+                properties.push_back(&filesTypes.ExecutableFile);
                 break;
             case BuildType::INTERNAL_EXECUTABLE_SHARED:
             case BuildType::SHARED:
@@ -68,17 +67,6 @@ namespace BuildTypeHelper
         outPaths.clear();
         outIsRunnable.clear();
         
-        //For executable build type with executable flag, use platform-specific extension
-        if(buildType == BuildType::INTERNAL_EXECUTABLE_EXECUTABLE)
-        {
-            #ifdef _WIN32
-                outPaths.push_back(buildDir / (scriptName + ".exe"));
-            #else
-                outPaths.push_back(buildDir / scriptName);
-            #endif
-            outIsRunnable.push_back(true);
-        }
-
         //Get all relevant file properties
         std::vector<const FileProperties*> fileProperties = 
             GetOutputFileProperties(profile.FilesTypes, buildType);
@@ -98,13 +86,11 @@ namespace BuildTypeHelper
             if(targetExt == nullptr || targetPrefix == nullptr)
                 continue;
 
-            if(targetExt->empty() && targetPrefix->empty())
-                continue;
-
             outPaths.push_back(buildDir / (*targetPrefix + scriptName + *targetExt));
             
-            //Only SharedLibraryFile is runnable for non-direct executables
-            outIsRunnable.push_back(fileTypeInfo == &profile.FilesTypes.SharedLibraryFile);
+            //Only ExecutableFile or SharedLibraryFile are runnable for non-direct executables
+            outIsRunnable.push_back(fileTypeInfo == &profile.FilesTypes.SharedLibraryFile ||
+                                    fileTypeInfo == &profile.FilesTypes.ExecutableFile);
         }
 
         return !outPaths.empty();

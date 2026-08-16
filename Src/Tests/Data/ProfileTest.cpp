@@ -65,6 +65,13 @@ DS::Result<void> TestMain()
                     Extension:
                         Windows: ".lib"
                         Unix: ".a"
+                ExecutableFile:
+                    Prefix:
+                        Unix: ""
+                        Windows: ""
+                    Extension:
+                        Windows: ".exe"
+                        Unix: ""
                 DebugSymbolFile:
                     Prefix:
                         Windows: ""
@@ -329,6 +336,13 @@ DS::Result<void> TestMain()
                         DefaultPlatform: "lib"
                     Extension: 
                         DefaultPlatform: ".a"
+                ExecutableFile:
+                    Prefix:
+                        Unix: ""
+                        Windows: ""
+                    Extension:
+                        Windows: ".exe"
+                        Unix: ""
             Compiler:
                 CheckExistence: 
                     DefaultPlatform: "g++ -v"
