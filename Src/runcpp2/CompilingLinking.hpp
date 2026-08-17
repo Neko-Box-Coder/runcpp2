@@ -142,7 +142,8 @@ namespace
         
         using OutputTypeInfo = runcpp2::Data::OutputTypeInfo;
         OutputTypeInfo* tempOutputInfo = nullptr;
-        static_assert(  static_cast<int>(runcpp2::Data::BuildType::COUNT) == 6, 
+        //TODO(NOW): Object build type?
+        static_assert(  static_cast<int>(runcpp2::Data::BuildType::COUNT) == 4, 
                         "Add new type to be processed");
         switch(scriptInfo.CurrentBuildType)
         {
@@ -158,19 +159,12 @@ namespace
                     runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.Shared)
                 );
                 break;
-            case runcpp2::Data::BuildType::INTERNAL_EXECUTABLE_EXECUTABLE:
+            case runcpp2::Data::BuildType::EXECUTABLE:
                 tempOutputInfo = const_cast<OutputTypeInfo*>
                 (
                     runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.Executable)
                 );
                 break;
-            case runcpp2::Data::BuildType::INTERNAL_EXECUTABLE_SHARED:
-                tempOutputInfo = const_cast<OutputTypeInfo*>
-                (
-                    runcpp2::GetValueFromPlatformMap(profile.Compiler.OutputTypes.ExecutableShared)
-                );
-                break;
-            case runcpp2::Data::BuildType::EXECUTABLE:
             default:
                 ssLOG_ERROR("Unsupported build type for compiling: " << 
                             runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));
@@ -555,7 +549,8 @@ namespace
         const runcpp2::Data::OutputTypeInfo* currentOutputTypeInfo = nullptr;
         
         //Only use BuildType for non-executable builds
-        static_assert(static_cast<int>(runcpp2::Data::BuildType::COUNT) == 6, 
+        //TODO(NOW): Object build type?
+        static_assert(static_cast<int>(runcpp2::Data::BuildType::COUNT) == 4, 
                       "Add new type to be processed");
         switch(scriptInfo.CurrentBuildType) 
         {
@@ -567,15 +562,10 @@ namespace
                 currentOutputTypeInfo = 
                     runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.Shared);
                 break;
-            case runcpp2::Data::BuildType::INTERNAL_EXECUTABLE_EXECUTABLE:
+            case runcpp2::Data::BuildType::EXECUTABLE:
                 currentOutputTypeInfo = 
                     runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.Executable);
                 break;
-            case runcpp2::Data::BuildType::INTERNAL_EXECUTABLE_SHARED:
-                currentOutputTypeInfo = 
-                    runcpp2::GetValueFromPlatformMap(profile.Linker.OutputTypes.ExecutableShared);
-                break;
-            case runcpp2::Data::BuildType::EXECUTABLE:
             default:
                 ssLOG_ERROR("Unsupported build type for linking: " << 
                             runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));
@@ -673,9 +663,7 @@ namespace
                 {
                     currentLinkType = Data::DependencyLibraryType::STATIC;
                     
-                    if( scriptInfo.CurrentBuildType == 
-                        runcpp2::Data::BuildType::INTERNAL_EXECUTABLE_SHARED ||
-                        scriptInfo.CurrentBuildType == runcpp2::Data::BuildType::SHARED)
+                    if(scriptInfo.CurrentBuildType == runcpp2::Data::BuildType::SHARED)
                     {
                         ssLOG_WARNING(  "Trying to link static dependency when script is being " <<
                                         "built as shared. Linking might not work on some platforms.");

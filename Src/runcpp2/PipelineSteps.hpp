@@ -72,139 +72,20 @@ namespace
         if(result != SYSTEM2_RESULT_SUCCESS)
         {
             ssLOG_ERROR("System2Run failed with result: " << result);
+            System2CleanupCommand(&runCommandInfo);
             return false;
         }
         
-        result = System2GetCommandReturnValueSync(&runCommandInfo, &returnStatus, false);
+        result = System2GetCommandReturnValue(&runCommandInfo, -1, &returnStatus);
         if(result != SYSTEM2_RESULT_SUCCESS)
         {
             ssLOG_ERROR("System2GetCommandReturnValueSync failed with result: " << result);
+            System2CleanupCommand(&runCommandInfo);
             return false;
         }
         
+        System2CleanupCommand(&runCommandInfo);
         return true;
-        INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
-    }
-    
-    bool RunCompiledSharedLib(  const std::string& scriptPath,
-                                const ghc::filesystem::path& compiledSharedLibPath,
-                                const std::vector<std::string>& runArgs,
-                                int& returnStatus)
-    {
-        INTERNAL_RUNCPP2_SAFE_START();
-        ssLOG_FUNC_INFO();
-        
-        std::error_code _;
-        if(!ghc::filesystem::exists(compiledSharedLibPath, _))
-        {
-            ssLOG_ERROR("Failed to find shared library: " << compiledSharedLibPath.string());
-            return false;
-        }
-        
-        //Load it
-        std::unique_ptr<dylib> sharedLib;
-        
-        try
-        {
-             ssLOG_INFO("Trying to run shared library: " << compiledSharedLibPath.string());
-             
-             //TODO: We might want to use unicode instead for the path
-             #if defined(_WIN32)
-                std::string sharedLibDir = compiledSharedLibPath.parent_path().string();
-                if(SetDllDirectoryA(sharedLibDir.c_str()) == FALSE)
-                {
-                    std::string lastError = runcpp2::GetWindowsError();
-                    ssLOG_ERROR("Failed to set DLL directory: " << lastError);
-                    return false;
-                }
-             #endif
-             
-             sharedLib = std::unique_ptr<dylib>(new dylib(  compiledSharedLibPath.string(), 
-                                                            dylib::no_filename_decorations));
-        }
-        catch(std::exception& e)
-        {
-            ssLOG_ERROR("Failed to load shared library " << compiledSharedLibPath.string() << 
-                        " with exception: ");
-            
-            ssLOG_ERROR(e.what());
-            return false;
-        }
-        
-        //Get main as entry point
-        if(sharedLib->has_symbol("main") == false)
-        {
-            ssLOG_ERROR("The shared library does not have a main function");
-            return false;
-        }
-        
-        int (*scriptFullMain)(int, const char**) = nullptr;
-        int (*scriptMain)() = nullptr;
-        
-        try
-        {
-            scriptFullMain = sharedLib->get_function<int(int, const char**)>("main");
-        }
-        catch(const dylib::exception& ex)
-        {
-            ssLOG_DEBUG("Failed to get full main function from shared library: " << ex.what());
-        }
-        catch(...)
-        {
-            ssLOG_ERROR("Failed to get entry point function");
-            return false;
-        }
-        
-        if(scriptFullMain == nullptr)
-        {
-            try
-            {
-                scriptMain = sharedLib->get_function<int()>("_main");
-            }
-            catch(const dylib::exception& ex)
-            {
-                ssLOG_DEBUG("Failed to get main function from shared library: " << ex.what());
-            }
-            catch(...)
-            {
-                ssLOG_ERROR("Failed to get entry point function");
-                return false;
-            }
-        }
-        
-        if(scriptMain == nullptr && scriptFullMain == nullptr)
-        {
-            ssLOG_ERROR("Failed to load function");
-            return false;
-        }
-        
-        //Run the entry point
-        try
-        {
-            if(scriptFullMain != nullptr)
-            {
-                std::vector<const char*> runArgsCStr(runArgs.size());
-                for(size_t i = 0; i < runArgs.size(); ++i)
-                    runArgsCStr.at(i) = &runArgs.at(i).at(0);
-                
-                returnStatus = scriptFullMain(runArgsCStr.size(), runArgsCStr.data());
-            }
-            else if(scriptMain != nullptr)
-                returnStatus = scriptMain();
-        }
-        catch(std::exception& e)
-        {
-            ssLOG_ERROR("Failed to run script main with exception: " << e.what());
-            return true;
-        }
-        catch(...)
-        {
-            ssLOG_ERROR("Unknown exception caught");
-            return true;
-        }
-        
-        return true;
-
         INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
     }
 }
@@ -230,7 +111,7 @@ namespace runcpp2
                                       e);
                 if(e)
                 {
-                    std::string errorMsg =  DS_STR("Failed to copy file from ") + srcPath.string() + 
+                    std::string errorMsg = DS_STR(  "Failed to copy file from ") + srcPath.string() + 
                                                     " to " + destPath.string() + "\nError: " + 
                                                     e.message();
                     return DS_ERROR_MSG(errorMsg);
@@ -287,7 +168,6 @@ namespace runcpp2
     ParseAndValidateScriptInfo( const ghc::filesystem::path& absoluteScriptPath,
                                 const ghc::filesystem::path& scriptDirectory,
                                 const std::string& scriptName,
-                                const bool buildExecutable,
                                 const std::unordered_map<std::string, std::string>& inputParameters,
                                 Data::ScriptInfo& outScriptInfo)
     {
@@ -368,15 +248,6 @@ namespace runcpp2
             ssLOG_DEBUG("\n" << scriptInfoStr);
         }
 
-        //Replace build type with internal executable type to trigger recompiling when switching to 
-        //have or not have "--executable" option
-        if(outScriptInfo.CurrentBuildType == Data::BuildType::EXECUTABLE)
-        {
-            outScriptInfo.CurrentBuildType =    buildExecutable ? 
-                                                Data::BuildType::INTERNAL_EXECUTABLE_EXECUTABLE :
-                                                Data::BuildType::INTERNAL_EXECUTABLE_SHARED;
-        }
-
         return {};
     }
 
@@ -440,9 +311,9 @@ namespace runcpp2
         ssLOG_FUNC_INFO();
         
         //Create build directory
-        ghc::filesystem::path buildDirPath = useLocalBuildDir ?
-                                            ghc::filesystem::current_path() / ".runcpp2" :
-                                            defaultBuildDir;
+        ghc::filesystem::path buildDirPath =    useLocalBuildDir ?
+                                                ghc::filesystem::current_path() / ".runcpp2" :
+                                                defaultBuildDir;
         
         //Create a class that manages build folder
         outBuildsManager = BuildsManager(buildDirPath);
@@ -827,8 +698,7 @@ namespace runcpp2
         ssLOG_FUNC_INFO();
 
         //Skip running if not executable
-        if( scriptInfo.CurrentBuildType != Data::BuildType::INTERNAL_EXECUTABLE_EXECUTABLE &&
-            scriptInfo.CurrentBuildType != Data::BuildType::INTERNAL_EXECUTABLE_SHARED)
+        if(scriptInfo.CurrentBuildType != Data::BuildType::EXECUTABLE)
         {
             ssLOG_INFO("Skipping run - output is not executable");
             return {};
@@ -840,7 +710,6 @@ namespace runcpp2
         
         //Prepare run arguments
         std::vector<std::string> finalRunArgs;
-        finalRunArgs.push_back(target.string());
         if(scriptInfo.PassScriptPath)
             finalRunArgs.push_back(absoluteScriptPath);
         
@@ -848,18 +717,9 @@ namespace runcpp2
         for(size_t i = 0; i < runArgs.size(); ++i)
             finalRunArgs.push_back(runArgs[i]);
         
-        if(scriptInfo.CurrentBuildType == Data::BuildType::INTERNAL_EXECUTABLE_EXECUTABLE)
-        {
-            //Running the script with modified args
-            if(!RunCompiledScript(target, absoluteScriptPath, finalRunArgs, returnStatus))
-                return DS_ERROR_MSG("Failed to run script");
-        }
-        else
-        {
-            //Load the shared library and run it with modified args
-            if(!RunCompiledSharedLib(absoluteScriptPath, target, finalRunArgs, returnStatus))
-                return DS_ERROR_MSG("Failed to run script");
-        }
+        //Running the script with modified args
+        if(!RunCompiledScript(target, absoluteScriptPath, finalRunArgs, returnStatus))
+            return DS_ERROR_MSG("Failed to run script");
         
         return {};
     }
@@ -868,7 +728,6 @@ namespace runcpp2
     GetBuiltTargetPaths(const ghc::filesystem::path& buildDir,
                         const std::string& scriptName,
                         const Data::Profile& profile,
-                        bool buildExecutable,
                         const Data::ScriptInfo& scriptInfo,
                         std::vector<ghc::filesystem::path>& outTargets,
                         ghc::filesystem::path* outRunnableTarget)
@@ -877,19 +736,6 @@ namespace runcpp2
         
         std::error_code _;
         outTargets.clear();
-
-        //Validate executable option against build type
-        if( buildExecutable &&
-            scriptInfo.CurrentBuildType != Data::BuildType::INTERNAL_EXECUTABLE_SHARED &&
-            scriptInfo.CurrentBuildType != Data::BuildType::INTERNAL_EXECUTABLE_EXECUTABLE)
-        {
-            std::string errMsg = 
-                DS_STR("Cannot run as executable - script is configured for ") +
-                Data::BuildTypeToString(scriptInfo.CurrentBuildType) +
-                " output. Please remove --executable flag or change build type to Executable";
-            
-            return DS_ERROR_MSG(errMsg);
-        }
 
         //Get all target paths
         std::vector<bool> isRunnable;

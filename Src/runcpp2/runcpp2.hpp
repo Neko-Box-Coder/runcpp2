@@ -271,7 +271,6 @@ namespace runcpp2
 
     inline DS::Result<void> GetScriptInfoData(  const ghc::filesystem::path& scriptPath, 
                                                 const std::string& rawParameters,
-                                                bool executable,
                                                 
                                                 Data::ScriptInfo& outScriptInfo,
                                                 ghc::filesystem::path& outAbsoluteScriptPath,
@@ -312,7 +311,6 @@ namespace runcpp2
         ParseAndValidateScriptInfo( outAbsoluteScriptPath,
                                     outScriptDirectory,
                                     outScriptName,
-                                    executable,
                                     parameterValues,
                                     outScriptInfo).DS_TRY();
         
@@ -342,7 +340,6 @@ namespace runcpp2
         const ghc::filesystem::path& scriptPath;
         const std::vector<Data::Profile>& profiles;
         const std::string rawParameters;
-        bool runAsExecutable;
         bool buildLocally;
         const std::string& configPreferredProfile;
     };
@@ -356,7 +353,6 @@ namespace runcpp2
         Data::ScriptInfo scriptInfo;
         GetScriptInfoData(  params.scriptPath, 
                             params.rawParameters, 
-                            params.runAsExecutable, 
                             
                             //Output:
                             scriptInfo,
@@ -403,7 +399,7 @@ namespace runcpp2
         Data::ScriptInfo scriptInfo;
         GetScriptInfoData(  params.scriptPath, 
                             params.rawParameters, 
-                            false, //NOTE: Don't care
+                            
                             //Output:
                             scriptInfo,
                             absoluteScriptPath,
@@ -459,7 +455,6 @@ namespace runcpp2
         //TODO: Reduce number of parameters here
         GetScriptInfoData(  params.scriptPath, 
                             params.rawParameters, 
-                            params.runAsExecutable, 
                             
                             //Output:
                             scriptInfo,
@@ -608,7 +603,6 @@ namespace runcpp2
         //TODO: Reduce number of parameters here
         GetScriptInfoData(  runParams.Core.scriptPath, 
                             runParams.Core.rawParameters, 
-                            runParams.Core.runAsExecutable, 
                             
                             //Output:
                             scriptInfo,
@@ -855,7 +849,6 @@ namespace runcpp2
             GetBuiltTargetPaths(buildDir, 
                                 scriptName, 
                                 runParams.Core.profiles.at(profileIndex), 
-                                runParams.Core.runAsExecutable,
                                 scriptInfo,
                                 targets,
                                 &runnableTarget).DS_TRY();

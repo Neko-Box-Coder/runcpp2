@@ -321,14 +321,10 @@ int main(int, char**)
                     "using the `build` option.");
     DELAYED_OUTPUT( "And we can specify the output directory for the binary files with `--output-dir` "
                     "(or `-o`)");
-    DELAYED_OUTPUT( "We also need to pass the `--executable` (or `-e`) option to "
-                    "explicitly get an executable file. \n"
-                    "See https://neko-box-coder.github.io/runcpp2/latest/guides/"
-                    "building_project_sources/ for more details.\n");
     
     DELAYED_OUTPUT("Let's try it");
     if(!RunCommandWithPrompt(   runcpp2ExecutablePath + 
-                                " build --output-dir ./tutorial --executable" + extraOptions + 
+                                " build --output-dir ./tutorial" + extraOptions + 
                                 " tutorial/main.cpp"))
     {
         return false;

@@ -100,20 +100,6 @@ DS::Result<void> TestMain()
                                     {Stage.ObjectLinkFile.Prefix}{Stage.Input.Name}\
                                     {Stage.ObjectLinkFile.Extension}\""
                             ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
-                    ExecutableShared:
-                        DefaultPlatform:
-                            Flags: "-std=c++17 -Wall -g -fpic"
-                            Executable: "g++"
-                            RunParts:
-                            -   Type: Once
-                                CommandPart: "{Stage.Executable} -c {Stage.CompileFlags}"
-                            -   Type: Repeats
-                                CommandPart: " -I\"{Stage.IncludeDirectory.Path}\""
-                            -   Type: Once
-                                CommandPart: " \"{Stage.Input.Path}\" -o \"{Stage.Output.Directory}{/}\
-                                    {Stage.ObjectLinkFile.Prefix}{Stage.Input.Name}\
-                                    {Stage.ObjectLinkFile.Extension}\""
-                            ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
                     Static:
                         DefaultPlatform:
                             Flags: "-std=c++17 -Wall -g"
@@ -172,16 +158,6 @@ DS::Result<void> TestMain()
                                 CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \
                                     \"{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}\
                                     {Stage.Output.Name}{Stage.SharedLibraryFile.Extension}\""
-                            ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
-                    ExecutableShared:
-                        Unix:
-                            Flags: "-shared -Wl,-rpath,\\$ORIGIN"
-                            Executable: "g++"
-                            RunParts:
-                            -   Type: Once
-                                CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \
-                                \"{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}\
-                                {Stage.Output.Name}{Stage.SharedLibraryFile.Extension}\""
                             ExpectedOutputFiles: ["TestOutputFile", "TestOutputFile2"]
         )";
         
@@ -271,14 +247,6 @@ DS::Result<void> TestMain()
         DS_ASSERT_EQ(executableCompile.RunParts[1].Separator, " ");
         DS_ASSERT_EQ(executableCompile.ExpectedOutputFiles.size(), 2);
         
-        //Verify Compiler ExecutableShared
-        const auto& executableSharedCompile = 
-            profile.Compiler.OutputTypes.ExecutableShared.at("DefaultPlatform");
-        DS_ASSERT_EQ(executableSharedCompile.Flags, "-std=c++17 -Wall -g -fpic");
-        DS_ASSERT_EQ(executableSharedCompile.Executable, "g++");
-        DS_ASSERT_EQ(executableSharedCompile.RunParts.size(), 3);
-        DS_ASSERT_EQ(executableSharedCompile.ExpectedOutputFiles.size(), 2);
-        
         //Verify Linker
         DS_ASSERT_EQ(profile.Linker.CheckExistence.at("DefaultPlatform"), "g++ -v");
         const auto& executableLink = profile.Linker.OutputTypes.Executable.at("Unix");
@@ -286,13 +254,6 @@ DS::Result<void> TestMain()
         DS_ASSERT_EQ(executableLink.Executable, "g++");
         DS_ASSERT_EQ(executableLink.RunParts.size(), 1);
         DS_ASSERT_EQ(executableLink.ExpectedOutputFiles.size(), 2);
-        
-        //Verify Linker ExecutableShared
-        const auto& executableSharedLink = profile.Linker.OutputTypes.ExecutableShared.at("Unix");
-        DS_ASSERT_EQ(executableSharedLink.Flags, "-shared -Wl,-rpath,\\$ORIGIN");
-        DS_ASSERT_EQ(executableSharedLink.Executable, "g++");
-        DS_ASSERT_EQ(executableSharedLink.RunParts.size(), 1);
-        DS_ASSERT_EQ(executableSharedLink.ExpectedOutputFiles.size(), 2);
         
         //Test ToString() and Equals()
         std::string yamlOutput = profile.ToString("");
@@ -355,14 +316,6 @@ DS::Result<void> TestMain()
                             -   Type: Once
                                 CommandPart: "{Stage.Executable} -c {Stage.CompileFlags}"
                             ExpectedOutputFiles: []
-                    ExecutableShared:
-                        DefaultPlatform: 
-                            Flags: "-std=c++17 -Wall -g -fpic"
-                            Executable: "g++"
-                            RunParts:
-                            -   Type: Once
-                                CommandPart: "{Stage.Executable} -c {Stage.CompileFlags}"
-                            ExpectedOutputFiles: []
                     Static:
                         DefaultPlatform: 
                             Flags: "-std=c++17 -Wall -g"
@@ -412,16 +365,6 @@ DS::Result<void> TestMain()
                                 CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \
                                     \"{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}\
                                     {Stage.Output.Name}{Stage.SharedLibraryFile.Extension}\""
-                            ExpectedOutputFiles: []
-                    ExecutableShared:
-                        DefaultPlatform: 
-                            Flags: "-shared -Wl,-rpath,\\$ORIGIN"
-                            Executable: "g++"
-                            RunParts:
-                            -   Type: Once
-                                CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \
-                                \"{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}\
-                                {Stage.Output.Name}{Stage.SharedLibraryFile.Extension}\""
                             ExpectedOutputFiles: []
         )";
     

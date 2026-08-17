@@ -76,7 +76,6 @@ namespace Data
         struct 
         {
             std::unordered_map<PlatformName, OutputTypeInfo> Executable;
-            std::unordered_map<PlatformName, OutputTypeInfo> ExecutableShared;
             std::unordered_map<PlatformName, OutputTypeInfo> Static;
             std::unordered_map<PlatformName, OutputTypeInfo> Shared;
         } OutputTypes;
@@ -88,19 +87,13 @@ namespace Data
         {
             ssLOG_FUNC_DEBUG();   
             
-            static_assert(static_cast<int>(BuildType::COUNT) == 6, "Add new type to be processed");
+            static_assert(static_cast<int>(BuildType::COUNT) == 4, "Add new type to be processed");
+            
+            //TODO(NOW): Object output type?
             const std::unordered_map<PlatformName, OutputTypeInfo>& currentOutputTypeMap = 
-                buildType == BuildType::INTERNAL_EXECUTABLE_EXECUTABLE ? 
+                buildType == BuildType::EXECUTABLE ? 
                 OutputTypes.Executable :
-                (
-                    buildType == BuildType::STATIC ? 
-                    OutputTypes.Static : 
-                    (
-                        buildType == BuildType::INTERNAL_EXECUTABLE_SHARED ? 
-                        OutputTypes.ExecutableShared : 
-                        OutputTypes.Shared
-                    )
-                );
+                (buildType == BuildType::STATIC ? OutputTypes.Static : OutputTypes.Shared);
             
             if(!runcpp2::HasValueFromPlatformMap(currentOutputTypeMap))
             {
@@ -217,10 +210,10 @@ namespace Data
                 }
                 
                 YAML::ConstNodePtr outputTypeNode = node->GetMapValueNode(outputTypeKeyName);
+                //TODO(NOW): Object output type?
                 std::vector<NodeRequirement> outputTypeRequirements =
                 {
                     NodeRequirement("Executable", YAML::NodeType::Map, true, false),
-                    NodeRequirement("ExecutableShared", YAML::NodeType::Map, true, false),
                     NodeRequirement("Static", YAML::NodeType::Map, true, false),
                     NodeRequirement("Shared", YAML::NodeType::Map, true, false)
                 };
@@ -246,16 +239,6 @@ namespace Data
                                         executableNode, 
                                         outputTypeInfoRequirements, 
                                         OutputTypes.Executable))
-                {
-                    return false;
-                }
-                
-                YAML::ConstNodePtr executableSharedNode = 
-                    outputTypeNode->GetMapValueNode("ExecutableShared");
-                if(!ParseOutputTypes(   "ExecutableShared",
-                                        executableSharedNode, 
-                                        outputTypeInfoRequirements, 
-                                        OutputTypes.ExecutableShared))
                 {
                     return false;
                 }
@@ -309,9 +292,6 @@ namespace Data
             
             out += indentation + "    Executable: \n";
             OutputTypeInfoMapToString(indentation + "    ", OutputTypes.Executable, out);
-            
-            out += indentation + "    ExecutableShared: \n";
-            OutputTypeInfoMapToString(indentation + "    ", OutputTypes.ExecutableShared, out);
             
             out += indentation + "    Static: \n";
             OutputTypeInfoMapToString(indentation + "    ", OutputTypes.Static, out);
@@ -385,8 +365,6 @@ namespace Data
                 };
 
             if( !compareOutputTypeInfoMaps(OutputTypes.Executable, other.OutputTypes.Executable) ||
-                !compareOutputTypeInfoMaps( OutputTypes.ExecutableShared, 
-                                            other.OutputTypes.ExecutableShared) ||
                 !compareOutputTypeInfoMaps(OutputTypes.Static, other.OutputTypes.Static) ||
                 !compareOutputTypeInfoMaps(OutputTypes.Shared, other.OutputTypes.Shared))
             {

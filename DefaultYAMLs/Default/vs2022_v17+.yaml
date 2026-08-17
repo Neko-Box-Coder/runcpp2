@@ -52,12 +52,6 @@ Compiler:
                     {Stage.ObjectLinkFile.Extension}"
                 -   "{Stage.Output.Directory}{/}{Stage.DebugSymbolFile.Prefix}{Stage.Input.Name}\
                     {Stage.DebugSymbolFile.Extension}"
-        ExecutableShared:
-            Windows:
-                <<: *vs2022_v17+_CompileFlags
-                Executable: "CL.exe"
-                RunParts: *vs2022_v17+_CompileRunParts
-                ExpectedOutputFiles: *vs2022_v17+_CompileExpectedOutputFiles
         Static:
             Windows:
                 <<: *vs2022_v17+_CompileFlags
@@ -92,28 +86,6 @@ Linker:
                     CommandPart: " \"{Stage.Input.Path}\""
                 ExpectedOutputFiles: 
                 -   "{Stage.Output.Directory}{/}{Stage.Output.Name}{Stage.ExecutableFile.Extension}"
-        ExecutableShared:
-            Windows:
-                Flags: >-
-                    /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib
-                    oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /manifest:embed /SUBSYSTEM:CONSOLE
-                    /DEBUG /DLL /MANIFESTUAC:"level='asInvoker'"
-                Executable: "link.exe"
-                RunParts:
-                -   Type: Once
-                    CommandPart: "{Stage.Executable} {Stage.LinkFlags} \
-                        /OUT:\"{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}\
-                        {Stage.Output.Name}{Stage.SharedLibraryFile.Extension}\" \
-                        /IMPLIB:\"{Stage.Output.Directory}{/}{Stage.SharedLinkFile.Prefix}\
-                        {Stage.Output.Name}{Stage.SharedLinkFile.Extension}\" \
-                        /DEF:\".\\temp.def\""
-                -   Type: Repeats
-                    CommandPart: " \"{Stage.Input.Path}\""
-                ExpectedOutputFiles: 
-                -   "{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.Output.Name}\
-                    {Stage.SharedLibraryFile.Extension}"
-                Setup: [ "echo EXPORTS > .\\temp.def", "echo.   main @1 >> .\\temp.def" ]
-                Cleanup: [ "del .\\temp.def" ]
         Static:
             Windows:
                 Flags: "/NOLOGO"

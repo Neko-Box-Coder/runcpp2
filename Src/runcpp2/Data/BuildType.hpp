@@ -13,14 +13,12 @@ namespace runcpp2
             STATIC,
             SHARED,
             OBJECTS,
-            INTERNAL_EXECUTABLE_EXECUTABLE,
-            INTERNAL_EXECUTABLE_SHARED,
             COUNT
         };
 
         inline std::string BuildTypeToString(BuildType buildType)
         {
-            static_assert(static_cast<int>(BuildType::COUNT) == 6, "Add new type to be processed");
+            static_assert(static_cast<int>(BuildType::COUNT) == 4, "Add new type to be processed");
             
             switch(buildType)
             {
@@ -32,10 +30,6 @@ namespace runcpp2
                     return "Shared";
                 case BuildType::OBJECTS:
                     return "Objects";
-                case BuildType::INTERNAL_EXECUTABLE_EXECUTABLE:
-                    return "InternalExecutable";
-                case BuildType::INTERNAL_EXECUTABLE_SHARED:
-                    return "InternalExecutableShared";
                 default:
                     return "";
             }
@@ -51,10 +45,6 @@ namespace runcpp2
                 return BuildType::SHARED;
             else if(buildTypeStr == "Objects")
                 return BuildType::OBJECTS;
-            else if(buildTypeStr == "InternalExecutable")
-                return BuildType::INTERNAL_EXECUTABLE_EXECUTABLE;
-            else if(buildTypeStr == "InternalExecutableShared")
-                return BuildType::INTERNAL_EXECUTABLE_SHARED;
             
             return BuildType::COUNT;
         }

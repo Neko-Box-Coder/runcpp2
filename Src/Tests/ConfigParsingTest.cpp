@@ -178,7 +178,6 @@ DS::Result<void> TestMain()
                             Executable: "g++"
                             RunParts: []
                             ExpectedOutputFiles: []
-                    ExecutableShared: *DefaultTypeInfo
                     Static: *DefaultTypeInfo
                     Shared: *DefaultTypeInfo
             Linker:
@@ -369,7 +368,6 @@ DS::Result<void> TestMain()
                                 Executable: "g++"
                                 RunParts: []
                                 ExpectedOutputFiles: []
-                        ExecutableShared: *DefaultTypeInfo
                         Static: *DefaultTypeInfo
                         Shared: *DefaultTypeInfo
                 Linker:
@@ -397,7 +395,6 @@ DS::Result<void> TestMain()
                             Executable: "imported-gcc"
                             RunParts: []
                             ExpectedOutputFiles: []
-                    ExecutableShared: *DefaultTypeInfo
                     Static: *DefaultTypeInfo
                     Shared: *DefaultTypeInfo
             Linker:
