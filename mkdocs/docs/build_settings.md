@@ -22,7 +22,7 @@
 ??? example
     ```yaml
     PassScriptPath: false
-        ```
+    ```
 ### `Language`
 - Type: `string`
 - Optional: `true`

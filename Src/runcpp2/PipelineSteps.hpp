@@ -710,7 +710,6 @@ namespace runcpp2
         
         //Prepare run arguments
         std::vector<std::string> finalRunArgs;
-        finalRunArgs.push_back(target.string());
         if(scriptInfo.PassScriptPath)
             finalRunArgs.push_back(absoluteScriptPath);
         
