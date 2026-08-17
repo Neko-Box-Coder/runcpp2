@@ -122,14 +122,6 @@ Compiler:
                 # (Optional) The commands to run in **shell** AFTER compiling
                 #            This is run inside the .runcpp2 directory where the build happens.
                 # Cleanup: []
-        ExecutableShared:
-            DefaultPlatform:
-                Flags: "-std=c++17 -Wall -g -fpic"
-                Executable: "g++"
-                RunParts: *g++_CompileRunParts
-                ExpectedOutputFiles: *g++_CompileExpectedOutputFiles
-                # Setup: []
-                # Cleanup: []
         Static:
             DefaultPlatform:
                 Flags: "-std=c++17 -Wall -g"
@@ -242,22 +234,6 @@ Linker:
                     CommandPart: " \"{Stage.Input.Path}\""
                 ExpectedOutputFiles: 
                 -   "{Stage.Output.Directory}{/}{Stage.Output.Name}{Stage.ExecutableFile.Extension}"
-                # Setup: []
-                # Cleanup: []
-        ExecutableShared:
-            DefaultPlatform:
-                Flags: "-shared -Wl,-rpath,\\$ORIGIN"
-                Executable: "g++"
-                RunParts:
-                -   Type: Once
-                    CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.Output.Directory}\
-                        {/}{Stage.SharedLibraryFile.Prefix}{Stage.Output.Name}\
-                        {Stage.SharedLibraryFile.Extension}\""
-                -   Type: Repeats
-                    CommandPart: " \"{Stage.Input.Path}\""
-                ExpectedOutputFiles: 
-                -   "{Stage.Output.Directory}{/}{Stage.SharedLibraryFile.Prefix}{Stage.Output.Name}\
-                    {Stage.SharedLibraryFile.Extension}"
                 # Setup: []
                 # Cleanup: []
         Static:

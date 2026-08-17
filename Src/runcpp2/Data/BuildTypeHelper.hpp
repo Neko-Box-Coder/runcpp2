@@ -22,13 +22,12 @@ namespace
     {
         std::vector<const FileProperties*> properties;
         
-        static_assert(static_cast<int>(BuildType::COUNT) == 6, "Update This");
+        static_assert(static_cast<int>(BuildType::COUNT) == 4, "Update This");
         switch(buildType)
         {
-            case BuildType::INTERNAL_EXECUTABLE_EXECUTABLE:
+            case BuildType::EXECUTABLE:
                 properties.push_back(&filesTypes.ExecutableFile);
                 break;
-            case BuildType::INTERNAL_EXECUTABLE_SHARED:
             case BuildType::SHARED:
                 properties.push_back(&filesTypes.SharedLibraryFile);
                 properties.push_back(&filesTypes.SharedLinkFile);

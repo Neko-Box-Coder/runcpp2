@@ -201,8 +201,6 @@ void PrintRunBuildWatchCommonOptions(bool includeSourceOnly)
     ssLOG_BASE(PadSpaceRight("  -h,  --[h]elp", CMD_COLS_BEFORE_DESC) + "Show this help message");
     ssLOG_BASE( PadSpaceRight("  -l,  --[l]ocal", CMD_COLS_BEFORE_DESC) + 
                 "Build in the current working directory under .runcpp2 directory");
-    ssLOG_BASE( PadSpaceRight("  -e,  --[e]xecutable", CMD_COLS_BEFORE_DESC) + 
-                "Runs as executable instead of shared library");
     if(includeSourceOnly)
     {
         ssLOG_BASE( PadSpaceRight("  -s,  --[s]ource-only", CMD_COLS_BEFORE_DESC) + 
@@ -229,7 +227,6 @@ DS::Result<bool> ExtractRunBuildWatchOptions(   int argc,
                                                 bool includeSourceOnly,
                                                 
                                                 bool& outLocal,
-                                                bool& outExecutable,
                                                 bool& outSourceOnly,
                                                 std::string& outParams,
                                                 std::string& outJobs,
@@ -237,8 +234,6 @@ DS::Result<bool> ExtractRunBuildWatchOptions(   int argc,
 {
     if(strcmp(argv[argIndex], "-l") == 0 || strcmp(argv[argIndex], "--local") == 0)
         outLocal = true;
-    else if(strcmp(argv[argIndex], "-e") == 0 || strcmp(argv[argIndex], "--executable") == 0)
-        outExecutable = true;
     else if(includeSourceOnly && 
             (strcmp(argv[argIndex], "-s") == 0 || strcmp(argv[argIndex], "--source-only") == 0))
     {
@@ -283,7 +278,6 @@ DS::Result<int> HandleRun(int argc, char* argv[])
     }
     
     bool local = false;
-    bool executable = false;
     bool sourceOnly = false;
     std::string params = "";
     int argIndex;
@@ -296,7 +290,6 @@ DS::Result<int> HandleRun(int argc, char* argv[])
                                                     argIndex, 
                                                     true,
                                                     local, 
-                                                    executable, 
                                                     sourceOnly,
                                                     params,
                                                     jobs,
@@ -336,7 +329,6 @@ DS::Result<int> HandleRun(int argc, char* argv[])
                                             script, 
                                             profiles, 
                                             params, 
-                                            executable, 
                                             local, 
                                             preferredProfile 
                                         },
@@ -374,7 +366,6 @@ DS::Result<void> HandleBuild(int argc, char* argv[])
     }
     
     bool local = false;
-    bool executable = false;
     bool sourceOnly = false;
     std::string params = "";
     int argIndex;
@@ -389,7 +380,6 @@ DS::Result<void> HandleBuild(int argc, char* argv[])
                                                     argIndex, 
                                                     true,
                                                     local, 
-                                                    executable, 
                                                     sourceOnly,
                                                     params,
                                                     jobs,
@@ -433,7 +423,6 @@ DS::Result<void> HandleBuild(int argc, char* argv[])
                                             script, 
                                             profiles, 
                                             params, 
-                                            executable, 
                                             local, 
                                             preferredProfile 
                                         },
@@ -468,7 +457,6 @@ DS::Result<void> HandleWatch(int argc, char* argv[])
     }
     
     bool local = false;
-    bool executable = false;
     bool sourceOnly = false;
     std::string params = "";
     int argIndex;
@@ -481,7 +469,6 @@ DS::Result<void> HandleWatch(int argc, char* argv[])
                                                     argIndex, 
                                                     true,
                                                     local, 
-                                                    executable, 
                                                     sourceOnly,
                                                     params,
                                                     jobs,
@@ -509,7 +496,7 @@ DS::Result<void> HandleWatch(int argc, char* argv[])
     ghc::filesystem::file_time_type lastFinalIncludeWriteTime;
     bool needsRunning = true;  //First run always needs running
     
-    runcpp2::CoreParams coreParams = { script, profiles, params, executable, local, preferredProfile };
+    runcpp2::CoreParams coreParams = { script, profiles, params, local, preferredProfile };
     while(true)
     {
         //Check if sources need update
@@ -651,7 +638,6 @@ DS::Result<void> HandleReset(int argc, char* argv[])
     }
     
     bool local = false;
-    bool executable = false;
     bool sourceOnly = false;
     std::string params = "";
     int argIndex;
@@ -666,7 +652,6 @@ DS::Result<void> HandleReset(int argc, char* argv[])
                                                     argIndex, 
                                                     false,
                                                     local, 
-                                                    executable, 
                                                     sourceOnly,
                                                     params,
                                                     jobs,
@@ -701,7 +686,7 @@ DS::Result<void> HandleReset(int argc, char* argv[])
     for(int i = 0; i < profiles.size(); ++i)
         ssLOG_DEBUG("\n" << profiles.at(i).ToString("    "));
 
-    runcpp2::CoreParams coreParams = { script, profiles, params, executable, local, preferredProfile };
+    runcpp2::CoreParams coreParams = { script, profiles, params, local, preferredProfile };
     runcpp2::RunResetDependencies(coreParams, deps).DS_TRY();
     if(!depsOnly)
     {
