@@ -131,7 +131,11 @@ def STORE_BUILD = false
 pipeline 
 {
     agent none
-    options { skipDefaultCheckout() }
+    options 
+    { 
+        skipDefaultCheckout() 
+        timeout(time: 1, unit: 'HOURS')
+    }
 /*
     External Variables for webhook payload:
     
