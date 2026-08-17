@@ -72,16 +72,19 @@ namespace
         if(result != SYSTEM2_RESULT_SUCCESS)
         {
             ssLOG_ERROR("System2Run failed with result: " << result);
+            System2CleanupCommand(&runCommandInfo);
             return false;
         }
         
-        result = System2GetCommandReturnValueSync(&runCommandInfo, &returnStatus, false);
+        result = System2GetCommandReturnValue(&runCommandInfo, -1, &returnStatus);
         if(result != SYSTEM2_RESULT_SUCCESS)
         {
             ssLOG_ERROR("System2GetCommandReturnValueSync failed with result: " << result);
+            System2CleanupCommand(&runCommandInfo);
             return false;
         }
         
+        System2CleanupCommand(&runCommandInfo);
         return true;
         INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
     }

@@ -136,10 +136,11 @@ namespace runcpp2
             while(sys2Result == SYSTEM2_RESULT_READ_NOT_FINISHED);
         }
         
-        sys2Result = System2GetCommandReturnValueSync(&commandInfo, &outReturnCode, false);
+        sys2Result = System2GetCommandReturnValue(&commandInfo, -1, &outReturnCode);
         if(sys2Result != SYSTEM2_RESULT_SUCCESS)
         {
-            ssLOG_ERROR("System2GetCommandReturnValueSync failed with result: " << sys2Result);
+            ssLOG_ERROR("System2GetCommandReturnValue failed with result: " << sys2Result);
+            System2CleanupCommand(&commandInfo);
             return false;
         }
         
@@ -149,9 +150,11 @@ namespace runcpp2
         if(outReturnCode != 0)
         {
             ssLOG_DEBUG("Failed when running command with return code: " << outReturnCode);
+            System2CleanupCommand(&commandInfo);
             return false;
         }
         
+        System2CleanupCommand(&commandInfo);
         return true;
     }
 
