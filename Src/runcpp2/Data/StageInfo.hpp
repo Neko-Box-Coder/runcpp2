@@ -89,7 +89,7 @@ namespace Data
             
             static_assert(static_cast<int>(BuildType::COUNT) == 4, "Add new type to be processed");
             
-            //TODO(NOW): Object output type?
+            //TODO: Object output type?
             const std::unordered_map<PlatformName, OutputTypeInfo>& currentOutputTypeMap = 
                 buildType == BuildType::EXECUTABLE ? 
                 OutputTypes.Executable :
@@ -210,7 +210,7 @@ namespace Data
                 }
                 
                 YAML::ConstNodePtr outputTypeNode = node->GetMapValueNode(outputTypeKeyName);
-                //TODO(NOW): Object output type?
+                //TODO: Object output type?
                 std::vector<NodeRequirement> outputTypeRequirements =
                 {
                     NodeRequirement("Executable", YAML::NodeType::Map, true, false),

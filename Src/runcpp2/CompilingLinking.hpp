@@ -142,7 +142,7 @@ namespace
         
         using OutputTypeInfo = runcpp2::Data::OutputTypeInfo;
         OutputTypeInfo* tempOutputInfo = nullptr;
-        //TODO(NOW): Object build type?
+        //TODO: Object build type?
         static_assert(  static_cast<int>(runcpp2::Data::BuildType::COUNT) == 4, 
                         "Add new type to be processed");
         switch(scriptInfo.CurrentBuildType)
@@ -549,7 +549,7 @@ namespace
         const runcpp2::Data::OutputTypeInfo* currentOutputTypeInfo = nullptr;
         
         //Only use BuildType for non-executable builds
-        //TODO(NOW): Object build type?
+        //TODO: Object build type?
         static_assert(static_cast<int>(runcpp2::Data::BuildType::COUNT) == 4, 
                       "Add new type to be processed");
         switch(scriptInfo.CurrentBuildType) 
