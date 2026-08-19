@@ -750,6 +750,7 @@ namespace runcpp2
                                 runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));
         }
         
+        //TODO: Use ExpectedOutputFiles?
         //Verify all targets exist
         for(const ghc::filesystem::path& target : outTargets)
         {

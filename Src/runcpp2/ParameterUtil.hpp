@@ -47,10 +47,7 @@ namespace runcpp2
                 std::string variableName = variablesNode->GetMapKeyScalarAt<std::string>(i).DS_TRY();
                 std::string variableValue = variablesNode->GetMapValueScalarAt<std::string>(i).DS_TRY();
                 if(data.Variables.count(variableName) != 0)
-                {
-                    return DS_ERROR_MSG("ScriptInfo: Same variable (" + variableName + 
-                                        ") is added more than once");
-                }
+                    return DS_ERROR_MSG("Same variable (" + variableName + ") is added more than once");
                 data.Variables[variableName] = variableValue;
             }
         }
@@ -97,11 +94,13 @@ namespace runcpp2
             //Parse the value
             std::string subKey = "{" + it->first + "}";
             
+            using ConstraintType = Data::ParameterValue::ConstraintType;
+            
             //Check if it is optional, if so check if it can be empty
             if(it->second.Optional && valueToParse.empty())
             {
-                static_assert((int)Data::ParameterValue::ConstraintType::Count == 5, "");
-                if(it->second.CurrentConstraintType != Data::ParameterValue::ConstraintType::None)
+                static_assert((int)ConstraintType::Count == 5, "");
+                if(it->second.CurrentConstraintType != ConstraintType::None)
                     continue;
             }
             
@@ -109,6 +108,8 @@ namespace runcpp2
             {
                 std::vector<std::string> inputValues;
                 SplitString(valueToParse, ",", inputValues);
+                std::unordered_map< std::string, 
+                                    std::string> options = it->second.GetConstraintOptions().DS_TRY();
                 for(int i = 0; i < inputValues.size(); ++i)
                 {
                     bool inConstraint = it->second.IsInputInConstraint(inputValues[i]).DS_TRY();
@@ -119,6 +120,8 @@ namespace runcpp2
                                             (isDefault ? "(Default)" : "") + 
                                             " is not in constraint");
                     }
+                    if(it->second.CurrentConstraintType == ConstraintType::Choices)
+                        inputValues[i] = options[inputValues[i]];
                 }
                 substitutionMap[subKey] = inputValues;
             }
@@ -131,7 +134,16 @@ namespace runcpp2
                                         (isDefault ? "(Default)" : "") + 
                                         " is not in constraint");
                 }
-                substitutionMap[subKey] = {valueToParse};
+                if(it->second.CurrentConstraintType != ConstraintType::Choices)
+                    substitutionMap[subKey] = {valueToParse};
+                else
+                {
+                    std::unordered_map< std::string, 
+                                        std::string> options = it   ->second
+                                                                    .GetConstraintOptions()
+                                                                    .DS_TRY();
+                    substitutionMap[subKey] = {options[valueToParse]};
+                }
             }
         } //for(auto it = Parameters.begin(); it != Parameters.end(); ++it)
         
