@@ -581,6 +581,7 @@ namespace runcpp2
         bool compileOnly;
         bool buildSourceOnly;
         bool buildOnly;
+        bool noWarning;
         const std::vector<std::string>& runArgs;
         const std::string rawMaxThreads;
         const Data::ScriptInfo* lastScriptInfo;
@@ -814,7 +815,8 @@ namespace runcpp2
                                         depIncludePaths, 
                                         scriptInfo,
                                         runParams.Core.profiles.at(profileIndex),
-                                        maxThreads).DS_TRY();
+                                        maxThreads,
+                                        !runParams.noWarning).DS_TRY();
                     return 0;
                 }
                 else
@@ -833,7 +835,8 @@ namespace runcpp2
                                             depBinaryFilesPriorities,
                                             sourceLinkFilesPaths,
                                             sourceBinaryFilesPriorities,
-                                            maxThreads)
+                                            maxThreads,
+                                            !runParams.noWarning)
                         .DS_TRY_ACT(DS_TMP_ERROR.Message += "\nFailed to compile or link script.";
                                     DS_APPEND_TRACE(DS_TMP_ERROR);
                                     return DS::Error(DS_TMP_ERROR));

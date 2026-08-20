@@ -136,7 +136,8 @@ namespace
                         const runcpp2::Data::ScriptInfo& scriptInfo,
                         const runcpp2::Data::Profile& profile,
                         std::vector<ghc::filesystem::path>& outObjectsFilesPaths,
-                        const int maxThreads)
+                        const int maxThreads,
+                        bool showWarning)
     {
         ssLOG_FUNC_INFO();
         
@@ -349,7 +350,8 @@ namespace
                         &buildDir,
                         &scriptInfo,
                         logLevel,
-                        &escapeChars
+                        &escapeChars,
+                        showWarning
                     ]()
                     {
                         ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(logLevel);
@@ -431,9 +433,8 @@ namespace
                             }
                             else
                             {
-                                //TODO: Make this configurable
                                 //Attempt to capture warnings
-                                if(commandOutput.find(" warning") != std::string::npos)
+                                if(showWarning && commandOutput.find(" warning") != std::string::npos)
                                     ssLOG_WARNING("Warning detected:\n" << commandOutput);
                                 else
                                     ssLOG_INFO("Compile output:\n" << commandOutput);
@@ -542,7 +543,8 @@ namespace
                     const runcpp2::Data::ScriptInfo& scriptInfo,
                     const std::string& additionalLinkFlags,
                     const runcpp2::Data::Profile& profile,
-                    const std::vector<LinkPriorities> priorities)
+                    const std::vector<LinkPriorities> priorities,
+                    bool showWarning)
                     //const std::vector<ghc::filesystem::path>& objectsFilesPaths)
     {
         ssLOG_FUNC_INFO();
@@ -667,7 +669,7 @@ namespace
                     {
                         ssLOG_WARNING(  "Trying to link static dependency when script is being " <<
                                         "built as shared. Linking might not work on some platforms.");
-                        ssLOG_WARNING(  "If failing to link, consider using --executable instead");
+                        ssLOG_WARNING(  "If failing to link, consider using changing build type.");
                         //TODO: Maybe revert the default back to executable?
                     }
                     
@@ -869,7 +871,12 @@ namespace
                     return false;
                 }
                 else
-                    ssLOG_INFO("Link output:\n" << linkOutput);
+                {
+                    if(showWarning && linkOutput.find(" warning") != std::string::npos)
+                        ssLOG_WARNING("Warning detected:\n" << linkOutput);
+                    else
+                        ssLOG_INFO("Link output:\n" << linkOutput);
+                }
             }
             
             //Run cleanup if any
@@ -952,7 +959,8 @@ namespace runcpp2
                         const std::vector<ghc::filesystem::path>& depIncludePaths,
                         const Data::ScriptInfo& scriptInfo,
                         const Data::Profile& profile,
-                        const int maxThreads)
+                        const int maxThreads,
+                        bool showWarning)
     {
         if(!RunGlobalSteps(buildDir, profile.Setup))
             return DS_ERROR_MSG("Failed to run profile global setup steps");
@@ -975,7 +983,8 @@ namespace runcpp2
                             scriptInfo, 
                             profile, 
                             objectsFilesPaths,
-                            maxThreads))
+                            maxThreads,
+                            showWarning))
         {
             if(!RunGlobalSteps(buildDir, profile.Cleanup))
                 return DS_ERROR_MSG("CompileScript failed. Failed to run profile global cleanup steps");
@@ -1005,7 +1014,8 @@ namespace runcpp2
                             const std::vector<int>& sourceBinaryFilesPriorities,
                             const std::vector<ghc::filesystem::path>& depBinaryFilesPaths,
                             const std::vector<int>& depBinaryFilesPriorities,
-                            const int maxThreads)
+                            const int maxThreads,
+                            bool showWarning)
     {
         DS_ASSERT_EQ(sourceBinaryFilesPaths.size(), sourceBinaryFilesPriorities.size());
         DS_ASSERT_EQ(depBinaryFilesPaths.size(), depBinaryFilesPriorities.size());
@@ -1031,7 +1041,8 @@ namespace runcpp2
                             scriptInfo, 
                             profile, 
                             compiledObjectsFilesPaths,
-                            maxThreads))
+                            maxThreads,
+                            showWarning))
         {
             if(!RunGlobalSteps(buildDir, profile.Cleanup))
                 return DS_ERROR_MSG("CompileScript failed. Failed to run profile global cleanup steps");
@@ -1112,8 +1123,16 @@ namespace runcpp2
         
         runcpp2::TrimRight(dependenciesLinkFlags);
         
-        if(!LinkScript(buildDir, outputName, scriptInfo, dependenciesLinkFlags, profile, priorities))
+        if(!LinkScript( buildDir, 
+                        outputName, 
+                        scriptInfo, 
+                        dependenciesLinkFlags, 
+                        profile, 
+                        priorities,
+                        showWarning))
+        {
             return DS_ERROR_MSG("LinkScript failed");
+        }
         
         if(!RunGlobalSteps(buildDir, profile.Cleanup))
             return DS_ERROR_MSG("Failed to run profile global cleanup steps");

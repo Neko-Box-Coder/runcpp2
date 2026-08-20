@@ -272,6 +272,10 @@ DS::Result<int> HandleRun(int argc, char* argv[])
         ssLOG_BASE("Options:");
         
         PrintRunBuildWatchCommonOptions(true);
+        ssLOG_BASE( PadSpaceRight("  -nw, --[n]o-[w]arning", CMD_COLS_BEFORE_DESC) + 
+                    "Do not print any build warning");
+        ssLOG_BASE( PadSpaceRight("  -q, --[q]uiet", CMD_COLS_BEFORE_DESC) + 
+                    "Alias for -nw/--no-warning. See --no-warning");
         PrintGeneralOptions();
         
         return 0;
@@ -283,6 +287,7 @@ DS::Result<int> HandleRun(int argc, char* argv[])
     int argIndex;
     std::string jobs = "";
     std::string configPath = "";
+    bool noWarning = false;
     for(argIndex = 2; argIndex < argc; ++argIndex)
     {
         bool parsed = ExtractRunBuildWatchOptions(  argc, 
@@ -296,9 +301,19 @@ DS::Result<int> HandleRun(int argc, char* argv[])
                                                     configPath).DS_TRY();
         if(!parsed)
         {
-            parsed = ProcessGeneralOptions(argc, argv, argIndex).DS_TRY();
-            if(!parsed)
-                break;
+            if( strcmp(argv[argIndex], "-nw") == 0 || 
+                strcmp(argv[argIndex], "--no-warning") == 0 ||
+                strcmp(argv[argIndex], "-q") == 0 ||
+                strcmp(argv[argIndex], "--quiet") == 0)
+            {
+                noWarning = true;
+            }
+            else
+            {
+                parsed = ProcessGeneralOptions(argc, argv, argIndex).DS_TRY();
+                if(!parsed)
+                    break;
+            }
         }
     }
     
@@ -336,6 +351,7 @@ DS::Result<int> HandleRun(int argc, char* argv[])
                                         false, 
                                         sourceOnly, 
                                         false, 
+                                        noWarning,
                                         scriptArgs, 
                                         jobs, 
                                         nullptr,
@@ -430,6 +446,7 @@ DS::Result<void> HandleBuild(int argc, char* argv[])
                                         false, 
                                         sourceOnly, 
                                         true, 
+                                        false, 
                                         {}, 
                                         jobs, 
                                         nullptr,
@@ -536,6 +553,7 @@ DS::Result<void> HandleWatch(int argc, char* argv[])
                 true, 
                 sourceOnly, 
                 true, 
+                false, 
                 {}, 
                 jobs, 
                 lastParsedScriptInfo,
