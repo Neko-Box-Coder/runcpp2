@@ -116,12 +116,6 @@ namespace Data
             for(int i = 0; i < choices.size(); ++i)
             {
                 size_t foundIndex = choices.at(i).find(":");
-                if( foundIndex != std::string::npos && 
-                    choices.at(i).find(":", foundIndex + 1) != std::string::npos)
-                {
-                    return DS_ERROR_MSG("Invalid mapping format for choice: " + choices.at(i));
-                }
-                
                 if(foundIndex == std::string::npos)
                     retMap[choices.at(i)] = choices.at(i);
                 else
