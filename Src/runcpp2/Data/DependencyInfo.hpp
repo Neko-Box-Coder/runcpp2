@@ -215,6 +215,8 @@ namespace Data
                     out += indentation + "-   " + GetEscapedYAMLString(*it) + "\n";
             }
             
+            //TODO(NOW): CompileProperties
+            
             if(!LinkProperties.empty())
             {
                 out += indentation + "LinkProperties:\n";
@@ -270,6 +272,8 @@ namespace Data
 
         inline bool Equals(const DependencyInfo& other) const
         {
+            //TODO(NOW): CompileProperties
+            
             if( Name != other.Name || 
                 Platforms.size() != other.Platforms.size() ||
                 !Source.Equals(other.Source) ||

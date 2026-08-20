@@ -53,4 +53,6 @@ Dependencies:
             Path: "./External/DSResult"
     LibraryType: Header
     IncludePaths: ["Include", "./External/expected/include"]
+    CompileProperties:
+        Defines: ["DS_USE_DEBUG_BREAK=1"]
 

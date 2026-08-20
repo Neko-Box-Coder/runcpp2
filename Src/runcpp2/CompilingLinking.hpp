@@ -137,6 +137,7 @@ namespace
                         const runcpp2::Data::Profile& profile,
                         std::vector<ghc::filesystem::path>& outObjectsFilesPaths,
                         const int maxThreads,
+                        const ProfileCompileProperty& depCompileProperty, //TODO(NOW)
                         bool showWarning)
     {
         ssLOG_FUNC_INFO();
