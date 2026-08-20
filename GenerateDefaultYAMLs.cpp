@@ -70,7 +70,7 @@ DS::Result<void> Main(int argc, char** argv)
         runcpp2Path = argv[1];
     }
     
-    std::string cmd =   runcpp2Path + " run " + embed2CPath.string() +
+    std::string cmd =   runcpp2Path + " run --no-warning " + embed2CPath.string() +
                         " ./DefaultYAMLs/DefaultScriptInfo.yaml DefaultScriptInfo " +
                         " ./DefaultYAMLs/DefaultUserConfig.yaml DefaultUserConfig " +
                         " ./DefaultYAMLs/Default/AnnotatedG++.yaml AnnotatedG_PlusPlus " +
@@ -83,11 +83,8 @@ DS::Result<void> Main(int argc, char** argv)
     System2CommandInfo commandInfo = {};
     commandInfo.RedirectOutput = true;
     
+    printf("Running %s\n", cmd.c_str());
     SYSTEM2_RESULT system2Result = System2Run(cmd.c_str(), &commandInfo);
-    DS_ASSERT_EQ(system2Result, SYSTEM2_RESULT_SUCCESS);
-    
-    int returnCode = -1;
-    system2Result = System2GetCommandReturnValue(&commandInfo, 60, &returnCode);
     DS_ASSERT_EQ(system2Result, SYSTEM2_RESULT_SUCCESS);
     
     std::string output = std::string(" ", 1024);
@@ -99,6 +96,15 @@ DS::Result<void> Main(int argc, char** argv)
                                                 output.data() + outputSize, 
                                                 output.size() - outputSize, 
                                                 &readBytes);
+        
+        #if defined(_WIN32)
+            for(int i = outputSize; i < outputSize + readBytes; ++i)
+            {
+                if(output[i] == '\r')
+                    output[i] = ' ';
+            }
+        #endif
+        
         outputSize += readBytes;
         if(output.size() / 2 < outputSize)
             output.resize(output.size() * 2);
@@ -106,9 +112,11 @@ DS::Result<void> Main(int argc, char** argv)
                         system2Result == SYSTEM2_RESULT_READ_NOT_FINISHED);
     }
     while(system2Result == SYSTEM2_RESULT_READ_NOT_FINISHED);
-    
     output.resize(outputSize);
     
+    int returnCode = -1;
+    system2Result = System2GetCommandReturnValue(&commandInfo, 60, &returnCode);
+    DS_ASSERT_EQ(system2Result, SYSTEM2_RESULT_SUCCESS);
     if(returnCode != 0)
     {
         return DS_ERROR_MSG("Failed to run command " + cmd + " \nWith output: " + output + 
