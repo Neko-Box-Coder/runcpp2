@@ -757,7 +757,7 @@ DS::Result<int> Main(int argc, char* argv[])
     else if(strcmp(argv[1], "show-config-path") == 0)
     {
         ghc::filesystem::path configFilePath = runcpp2::GetConfigFilePath().DS_TRY();
-        ssLOG_BASE(configFilePath);
+        ssLOG_BASE(configFilePath.string());
     }
     else if(strcmp(argv[1], "version") == 0)
         ssLOG_BASE("runcpp2 version " << RUNCPP2_VERSION);
