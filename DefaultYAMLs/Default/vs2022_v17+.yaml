@@ -1,17 +1,31 @@
 # DO NOT modify this file. Changes will be overwritten when there's a reset or update
 
-# List of YAML anchors that will be aliased later. `Template` is **NOT** part of a profile
-Templates:
-    vs2022_v17+_CompileFlags: &vs2022_v17+_CompileFlags
-        Flags: "/nologo /W4 /diagnostics:caret /utf-8 /Gm- /MDd /EHar /TP /std:c++17 /GR /RTC1 \
-            /Zc:inline /Zi /external:W0"
-    
 # https://learn.microsoft.com/en-us/cpp/overview/compiler-versions?view=msvc-170
 Name: "vs2022_v17+"
 NameAliases: ["msvc1930+", "msvc"]
-FileExtensions: [.cpp, .cc, .cxx]
-Languages: ["c++"]
+FileExtensions: [.cpp, .cc, .cxx, .c]
+Languages: ["c", "c++"]
 Import: "./CommonFileTypes.yaml"
+Parameters:
+    Profile.CompileMode:
+        Default: "Debug"
+        Constraint:
+        -   "Debug:/nologo /W4 /diagnostics:caret /utf-8 /MDd /EHar /std:c++17 /RTC1 \
+            /Zc:inline /Zi /permissive- /external:W0 /DEBUG"
+        -   "Release:/nologo /W4 /diagnostics:caret /utf-8 /MD /EHar /std:c++17 /RTCu \
+            /Zc:inline /permissive- /external:W0 /O2"
+    Profile.OutputPreprocess:
+        Default: "false"
+        Constraint:
+        -   "true: /P"
+        -   "1: /P"
+        -   "false:"
+        -   "0:"
+Variables:
+    Profile.Intern_CompileFlags: "{Profile.CompileMode}{Profile.OutputPreprocess}"
+    Profile.Intern_LinkFlags: "/NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib \
+        ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /manifest:embed /SUBSYSTEM:CONSOLE \
+        /MANIFESTUAC:\"level='asInvoker'\""
 Setup: 
     Windows:
     -   >-
@@ -29,7 +43,7 @@ Compiler:
     CompileTypes:
         Executable:
             Windows:
-                <<: *vs2022_v17+_CompileFlags
+                Flags: "{Profile.Intern_CompileFlags}"
                 Executable: "CL.exe"
                 RunParts: &vs2022_v17+_CompileRunParts
                 -   Type: Once
@@ -54,13 +68,13 @@ Compiler:
                     {Stage.DebugSymbolFile.Extension}"
         Static:
             Windows:
-                <<: *vs2022_v17+_CompileFlags
+                Flags: "{Profile.Intern_CompileFlags}"
                 Executable: "CL.exe"
                 RunParts: *vs2022_v17+_CompileRunParts
                 ExpectedOutputFiles: *vs2022_v17+_CompileExpectedOutputFiles
         Shared:
             Windows:
-                <<: *vs2022_v17+_CompileFlags
+                Flags: "{Profile.Intern_CompileFlags}"
                 Executable: "CL.exe"
                 RunParts: *vs2022_v17+_CompileRunParts
                 ExpectedOutputFiles: *vs2022_v17+_CompileExpectedOutputFiles
@@ -72,10 +86,7 @@ Linker:
     LinkTypes:
         Executable:
             Windows:
-                Flags: >-
-                    /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib
-                    oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /manifest:embed /SUBSYSTEM:CONSOLE
-                    /DEBUG /MANIFESTUAC:"level='asInvoker'"
+                Flags: "{Profile.Intern_LinkFlags}"
                 Executable: "link.exe"
                 RunParts:
                 -   Type: Once
@@ -104,10 +115,7 @@ Linker:
                     {Stage.StaticLinkFile.Extension}"
         Shared:
             Windows:
-                Flags: >-
-                    /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib
-                    oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /manifest:embed /SUBSYSTEM:CONSOLE
-                    /DEBUG /DLL /MANIFESTUAC:"level='asInvoker'"
+                Flags: "{Profile.Intern_LinkFlags} /DLL"
                 Executable: "link.exe"
                 RunParts:
                 -   Type: Once

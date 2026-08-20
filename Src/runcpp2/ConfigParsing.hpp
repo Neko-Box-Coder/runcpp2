@@ -45,6 +45,10 @@ extern "C" const uint8_t CommonFileTypes[];
 extern "C" const size_t CommonFileTypes_size;
 extern "C" const uint8_t G_PlusPlus[];
 extern "C" const size_t G_PlusPlus_size;
+extern "C" const uint8_t ClangPlusPlus[];
+extern "C" const size_t ClangPlusPlus_size;
+extern "C" const uint8_t AnnotatedG_PlusPlus[];
+extern "C" const size_t AnnotatedG_PlusPlus_size;
 extern "C" const uint8_t Vs2022_v17Plus[];
 extern "C" const size_t Vs2022_v17Plus_size;
 
@@ -420,6 +424,8 @@ namespace runcpp2
         
         writeDefaultConfig("CommonFileTypes.yaml", CommonFileTypes, CommonFileTypes_size).DS_TRY();
         writeDefaultConfig("g++.yaml", G_PlusPlus, G_PlusPlus_size).DS_TRY();
+        writeDefaultConfig("clang++.yaml", ClangPlusPlus, ClangPlusPlus_size).DS_TRY();
+        writeDefaultConfig("AnnotatedG++.yaml", AnnotatedG_PlusPlus, AnnotatedG_PlusPlus_size).DS_TRY();
         writeDefaultConfig("vs2022_v17+.yaml", Vs2022_v17Plus, Vs2022_v17Plus_size).DS_TRY();
         
         //Writing .version to indicate everything is up-to-date
