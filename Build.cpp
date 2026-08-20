@@ -32,8 +32,35 @@ Dependencies:
 #include <stdio.h>
 #include <stdint.h>
 
+DS::Result<void> RunCommand(const std::string& command)
+{
+    System2CommandInfo commandInfo = {};
+    commandInfo.RedirectOutput = true;
+    
+    printf("Running command %s\n", command.c_str());
+    SYSTEM2_RESULT system2Result = System2Run(command.c_str(), &commandInfo);
+    DS_ASSERT_EQ(system2Result, SYSTEM2_RESULT_SUCCESS);
+    
+    int returnCode = -1;
+    system2Result = System2GetCommandReturnValue(&commandInfo, 60, &returnCode);
+    DS_ASSERT_EQ(system2Result, SYSTEM2_RESULT_SUCCESS);
+    if(returnCode != 0)
+    {
+        return DS_ERROR_MSG("Failed to run command " + command + "with return code " + 
+                            DS_STR(returnCode));
+    }
+    
+    System2CleanupCommand(&commandInfo);
+    return {};
+}
+
+
 DS::Result<void> Main(int argc, char** argv)
 {
+    
+    #if 0
+    
+    
     #if defined(_WIN32)
         ghc::filesystem::path embed2CPath = ".\\External\\Embed2C\\embed.c";
     #else
@@ -144,6 +171,9 @@ DS::Result<void> Main(int argc, char** argv)
     
     DS_ASSERT_EQ(fwrite(output.c_str(), 1, output.size(), defaultYamlFile), output.size());
     printf("Default YAMLs generation successful\n");
+    
+    #endif
+    
     return {};
 }
 

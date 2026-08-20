@@ -6,6 +6,7 @@
 #include "runcpp2/StringUtil.hpp"
 #include "runcpp2/runcpp2.hpp"
 
+#include "ssLogger/ssLogInit.hpp"
 #include "ssLogger/ssLog.hpp"
 #include "ghc/filesystem.hpp"
 #include "DSResult/DSResult.hpp"

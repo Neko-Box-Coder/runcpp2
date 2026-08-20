@@ -1,0 +1,56 @@
+
+
+OverrideCompileFlags:
+    DefaultPlatform:
+        msvc:
+            Remove: "/std:c++17"
+            Append: "/std:c++14"
+        DefaultProfile:
+            Remove: "-std=c++17"
+            Append: "-std=c++11"
+
+
+Dependencies:
+-   Name: ssLogger
+    Platforms: [DefaultPlatform]
+    Source:
+        Local:
+            Path: "./External/ssLogger"
+    LibraryType: Header
+    IncludePaths: ["Include"]
+-   Name: ghc_filesystem
+    Platforms: [DefaultPlatform]
+    Source:
+        Local:
+            Path: "./External/filesystem"
+    LibraryType: Header
+    IncludePaths: ["include"]
+-   Name: System2
+    Platforms: [DefaultPlatform]
+    Source:
+        Local:
+            Path: "./External/System2"
+    LibraryType: Header
+    IncludePaths: ["."]
+-   Name: dylib
+    Platforms: [DefaultPlatform]
+    Source:
+        Local:
+            Path: "./External/dylib"
+    LibraryType: Header
+    IncludePaths: ["include"]
+-   Name: MPark.Variant
+    Platforms: [DefaultPlatform]
+    Source:
+        Local:
+            Path: "./External/variant"
+    LibraryType: Header
+    IncludePaths: ["include"]
+-   Name: DSResult
+    Platforms: [DefaultPlatform]
+    Source:
+        Local:
+            Path: "./External/DSResult"
+    LibraryType: Header
+    IncludePaths: ["Include", "./External/expected/include"]
+
