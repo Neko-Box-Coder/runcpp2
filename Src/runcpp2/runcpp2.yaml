@@ -7,7 +7,12 @@ OverrideCompileFlags:
     DefaultPlatform:
         msvc:
             Remove: "/std:c++17"
-            Append: "/std:c++14 /bigobj {ExtraFlags}"
+            Append: "/std:c++14 /bigobj /wd4267 /wd4018 /wd4996 /wd4244 {ExtraFlags}"
+            # /wd4267: conversion from 'size_t' to 'int', possible loss of data
+            # /wd4018: '<': signed/unsigned mismatch
+            # /wd4996: 'strcat': This function or variable may be unsafe
+            # /wd4244: '=': conversion from 'int' to 'char', possible loss of data
+            
         DefaultProfile:
             Remove: "-std=c++17 -Og"
             Append: "-std=c++11 -Wno-return-local-addr -Wno-sign-compare -Wno-unused-parameter \

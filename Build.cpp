@@ -5,7 +5,7 @@ PassScriptPath: true
 OverrideCompileFlags:
     DefaultPlatform:
         msvc:
-            Append: ""
+            Append: "/wd4267 /wd4018 /wd4996 /wd4244"
         DefaultProfile:
             Append: "-Wno-return-local-addr -Wno-sign-compare -Wno-unused-parameter -Wno-switch"
 
