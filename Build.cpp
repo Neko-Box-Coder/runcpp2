@@ -207,6 +207,8 @@ DS::Result<void> Main(int argc, char** argv)
     std::string configVersion = "5";
     bool warnError = true;
     bool info = false;
+    bool rebuild = false;
+    bool buildTest = true;
     for(int i = 2; i < argc; ++i)
     {
         if(strcmp(argv[i], "--runcpp2-path") == 0)
@@ -223,6 +225,10 @@ DS::Result<void> Main(int argc, char** argv)
             warnError = false;
         else if(strcmp(argv[i], "--info") == 0)
             info = true;
+        else if(strcmp(argv[i], "--rebuild") == 0)
+            rebuild = true;
+        else if(strcmp(argv[i], "--no-test") == 0)
+            buildTest = false;
         else
             break;
     }
@@ -279,21 +285,30 @@ DS::Result<void> Main(int argc, char** argv)
         #endif
     }
     
-    const std::string commonBuildCommand =  runcpp2Path + " build -o " + EscapePath("./TempBuild ") +
-                                            runcpp2Args + (info ? "--log-level info " : "") + 
+    const std::string commonBuildCommand =  runcpp2Path + 
+                                            " build -o " + EscapePath("./TempBuild ") +
+                                            (rebuild ? "--rebuild " : "") +
+                                            (info ? "--log-level info " : "") +
+                                            runcpp2Args + 
                                             "--parameters \'" + params + "\' ";
+    
     RunCommand(commonBuildCommand + EscapePath("./Src/runcpp2/runcpp2.cpp")).DS_TRY();
-    RunCommand(commonBuildCommand + EscapePath("./Src/Tests/BuildsManagerTest.cpp")).DS_TRY();
-    RunCommand(commonBuildCommand + EscapePath("./Src/Tests/IncludeManagerTest.cpp")).DS_TRY();
-    RunCommand(commonBuildCommand + EscapePath("./Src/Tests/ConfigParsingTest.cpp")).DS_TRY();
     
-    RunCommand(commonBuildCommand + EscapePath("./Src/Tests/Data/BuildTypeTest.cpp")).DS_TRY();
-    RunCommand(commonBuildCommand + EscapePath("./Src/Tests/Data/DependencyInfoTest.cpp")).DS_TRY();
-    RunCommand(commonBuildCommand + EscapePath("./Src/Tests/Data/DependencySourceTest.cpp")).DS_TRY();
-    RunCommand(commonBuildCommand + EscapePath("./Src/Tests/Data/ProfileTest.cpp")).DS_TRY();
-    RunCommand(commonBuildCommand + EscapePath("./Src/Tests/Data/ScriptInfoTest.cpp")).DS_TRY();
+    if(buildTest)
+    {
+        RunCommand(commonBuildCommand + EscapePath("./Src/Tests/BuildsManagerTest.cpp")).DS_TRY();
+        RunCommand(commonBuildCommand + EscapePath("./Src/Tests/IncludeManagerTest.cpp")).DS_TRY();
+        RunCommand(commonBuildCommand + EscapePath("./Src/Tests/ConfigParsingTest.cpp")).DS_TRY();
+        
+        RunCommand(commonBuildCommand + EscapePath("./Src/Tests/Data/BuildTypeTest.cpp")).DS_TRY();
+        RunCommand( commonBuildCommand + 
+                    EscapePath("./Src/Tests/Data/DependencyInfoTest.cpp")).DS_TRY();
+        RunCommand( commonBuildCommand + 
+                    EscapePath("./Src/Tests/Data/DependencySourceTest.cpp")).DS_TRY();
+        RunCommand(commonBuildCommand + EscapePath("./Src/Tests/Data/ProfileTest.cpp")).DS_TRY();
+        RunCommand(commonBuildCommand + EscapePath("./Src/Tests/Data/ScriptInfoTest.cpp")).DS_TRY();
+    }
     
-    //TODO: Add tests..
     
     ghc::filesystem::path buildDir =    ghc::filesystem::exists(runcpp2Path) ? 
                                         ghc::filesystem::path(runcpp2Path).parent_path() :
