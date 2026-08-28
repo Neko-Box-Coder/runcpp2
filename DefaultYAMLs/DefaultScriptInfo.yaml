@@ -173,6 +173,10 @@
 #                                             #            Works the same as SearchLibraryNames but will NOT be linked instead
 #         SearchDirectories: ["./build"]      # The path (relative to the dependency folder) to be searched for the dependency binaries
 #         AdditionalLinkOptions: []           # (Optional) Additional link flags for this dependency
+#       
+#     CompileProperties:                  # (Optional) (Platforms/Profiles) Compile properties of the dependency
+#         Defines: []                     # (Optional) Additional defines for this dependency when compiling source
+#         AdditionalCompileOptions: []    # (Optional) Additional compile flags for this dependency when compiling source
 #     
 #     Setup:                  # (Optional) (Platforms/Profiles) Setup commands are run once when the dependency is populated
 #     -   "mkdir build"

@@ -41,6 +41,9 @@ DS::Result<void> TestMain()
                         -   mylib
                         SearchDirectories:
                         -   /usr/local/lib
+            CompileProperties:
+                Defines: ["Define1", "Define2=2"]
+                AdditionalCompileOptions: ["-Wno-ignored-attributes"]
             Setup:
                 Windows:
                     MSVC:
@@ -109,6 +112,19 @@ DS::Result<void> TestMain()
                                     .CommandSteps
                                     .at("DefaultProfile")
                                     .size(), 2);
+        
+        //Verify Compile Properties
+        const runcpp2::Data::ProfileCompileProperty& compileProp = 
+            dependencyInfo  .CompileProperties
+                            .at("DefaultPlatform")
+                            .ProfileProperties
+                            .at("DefaultProfile");
+        DS_ASSERT_EQ(compileProp.Defines.size(), 2);
+        DS_ASSERT_EQ(compileProp.Defines[1].Name, "Define2");
+        DS_ASSERT_EQ(compileProp.Defines[1].Value, "2");
+        DS_ASSERT_TRUE(compileProp.Defines[1].HasValue);
+        DS_ASSERT_EQ(compileProp.AdditionalCompileOptions.size(), 1);
+        DS_ASSERT_EQ(compileProp.AdditionalCompileOptions[0], "-Wno-ignored-attributes");
         
         //Verify Files to Copy
         const std::vector<std::string>& msvcDebugFiles = 

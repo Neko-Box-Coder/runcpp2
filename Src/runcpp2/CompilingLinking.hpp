@@ -234,6 +234,46 @@ namespace
             }
         }
         
+        for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+        {
+            if(!runcpp2::HasValueFromPlatformMap(scriptInfo.Dependencies.at(i).CompileProperties))
+                continue;
+            
+            const runcpp2::Data::DependencyCompileProperty& platformDepCompileProperty = 
+                *runcpp2::GetValueFromPlatformMap(scriptInfo.Dependencies.at(i).CompileProperties);
+            
+            const ProfileCompileProperty* profileCompileProperty = 
+                runcpp2::GetValueFromProfileMap(profile, 
+                                                platformDepCompileProperty.ProfileProperties);
+            
+            if(profileCompileProperty)
+            {
+                for(int j = 0; j < profileCompileProperty->Defines.size(); ++j)
+                {
+                    const runcpp2::Data::Define& define = profileCompileProperty->Defines.at(j);
+                    if(define.HasValue)
+                    {
+                        substitutionMapTemplate["{Stage.DefineName}"].push_back(define.Name);
+                        substitutionMapTemplate["{Stage.DefineValue}"].push_back(define.Value);
+                    }
+                    else
+                        substitutionMapTemplate["{Stage.DefineNameOnly}"].push_back(define.Name);
+                }
+                
+                std::string& flags = substitutionMapTemplate["{Stage.CompileFlags}"][0];
+                for(int j = 0; j < profileCompileProperty->AdditionalCompileOptions.size(); ++j)
+                {
+                    const std::string& option = profileCompileProperty->AdditionalCompileOptions.at(j);
+                    if(flags.empty())
+                        flags = option;
+                    else if(j == profileCompileProperty->AdditionalCompileOptions.size() - 1)
+                        flags += option;
+                    else
+                        flags += option + " ";
+                }
+            }
+        } //for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+        
         PopulateFilesTypesMap(profile.FilesTypes, substitutionMapTemplate);
         substitutionMapTemplate["{/}"] = {runcpp2::ProcessPath("/")};
         

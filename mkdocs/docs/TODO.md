@@ -15,6 +15,7 @@
 - Dot access groups for built-in profile variables
 - Separator for repeat RunPart
 - Parameters for profiles
+- CompileProperties for dependencies
 
 ### v0.3.1
 - Check last run is shared lib or executable. Reset cache when necessary if different type

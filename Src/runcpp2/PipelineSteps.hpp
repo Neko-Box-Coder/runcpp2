@@ -754,6 +754,7 @@ namespace runcpp2
         //Verify all targets exist
         for(const ghc::filesystem::path& target : outTargets)
         {
+            //TODO: Maybe remove the targets that do not exist?
             if(!ghc::filesystem::exists(target, _))
             {
                 ssLOG_WARNING("Failed to find the compiled file: " << target.string());
