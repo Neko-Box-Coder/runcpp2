@@ -194,7 +194,7 @@ DS::Result<void> Main(int argc, char** argv)
 {
     if(argc <= 2 || strcmp(argv[2], "--help") == 0)
     {
-        printf( "runcpp2 run Build.cpp [--runcpp2-path <path>] [--no-warning] [--info] [--rebuild] "
+        printf( "runcpp2 run Build.cpp [--runcpp2-path <path>] [--no-werror] [--info] [--rebuild] "
                 "[--no-test]\n");
         return {};
     }
@@ -273,7 +273,7 @@ DS::Result<void> Main(int argc, char** argv)
     
     ghc::filesystem::path rootDir = ghc::filesystem::path(argv[1]).parent_path();
     
-    std::string params = "RUNCPP2_VERSION=" + versionString + ";RootPath=\"" + rootDir.string() + "\"";
+    std::string params = "RUNCPP2_VERSION=" + versionString + ";RootPath=\\\"" + rootDir.string() + "\\\"";
     if(warnError)
     {
         //TODO: Replace this with platform/profile map in parameter/variable
@@ -291,7 +291,7 @@ DS::Result<void> Main(int argc, char** argv)
                                             (rebuild ? "--rebuild " : "") +
                                             (info ? "--log-level info " : "") +
                                             runcpp2Args + 
-                                            "--parameters \'" + params + "\' ";
+                                            "--parameters \"" + params + "\" ";
     
     RunCommand(commonBuildCommand + EscapePath("./Src/runcpp2/runcpp2.cpp")).DS_TRY();
     
@@ -315,8 +315,14 @@ DS::Result<void> Main(int argc, char** argv)
                                         ghc::filesystem::path(runcpp2Path).parent_path() :
                                         "./Build";
     
-    RunCommand( "sleep 1s && cp -rf ./TempBuild/* " + buildDir.string() + 
-                " && rm -Rf ./TempBuild && printf \"Build Done\\n\"", true);
+    #if defined(_WIN32)
+        RunCommand( "ping 127.0.0.1 -n 2 -w 1000 > NUL && xcopy /h /y /s /e /q .\\TempBuild\\* " + 
+                    EscapePath(buildDir.string()) + "> NUL && rmdir .\\TempBuild /s /q && " + 
+                    "ECHO Build Done\n", true).DS_TRY();
+    #else
+        RunCommand( "sleep 1s && cp -rf ./TempBuild/* " + buildDir.string() + 
+                    " && rm -Rf ./TempBuild && printf \"Build Done\\n\"", true).DS_TRY();
+    #endif
     
     return {};
 }
