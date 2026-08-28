@@ -1010,8 +1010,11 @@ namespace runcpp2
                     {
                         resolvedInclude = currentFile.parent_path() / includePath;
                         std::error_code ec;
-                        if(ghc::filesystem::exists(resolvedInclude, ec))
+                        if( ghc::filesystem::exists(resolvedInclude, ec) && 
+                            !ghc::filesystem::is_directory(resolvedInclude, ec))
+                        {
                             found = true;
+                        }
                     }
                     
                     //Search in include paths if not found
@@ -1021,7 +1024,8 @@ namespace runcpp2
                         {
                             resolvedInclude = searchPath / includePath;
                             std::error_code ec;
-                            if(ghc::filesystem::exists(resolvedInclude, ec))
+                            if( ghc::filesystem::exists(resolvedInclude, ec) &&
+                                !ghc::filesystem::is_directory(resolvedInclude, ec))
                             {
                                 found = true;
                                 break;
@@ -1031,7 +1035,8 @@ namespace runcpp2
                     
                     if(found)
                     {
-                        ssLOG_DEBUG("Found include file: " << resolvedInclude.string());
+                        ssLOG_DEBUG("Found include file: " << resolvedInclude.string() << " from " << 
+                                    "file " << currentFile.string());
                         currentIncludes.push_back(resolvedInclude);
                         filesToProcess.push(resolvedInclude);
                     }

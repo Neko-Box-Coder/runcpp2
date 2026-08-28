@@ -461,6 +461,7 @@ namespace runcpp2
     
     inline bool ParseIncludes(const std::string& line, std::string& outIncludePath)
     {
+        //TODO: More sophisticated parsing plz
         //Skip if not an include line
         if(line.find("#include") == std::string::npos)
             return false;
