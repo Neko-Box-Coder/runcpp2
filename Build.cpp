@@ -316,10 +316,14 @@ DS::Result<void> Main(int argc, char** argv)
                                         "./Build";
     
     #if defined(_WIN32)
+        RunCommand( "copy /y " + EscapePath("./Src/Tests/RunAllTests.bat") + " " +
+                    EscapePath(buildDir.string() + "/RunAllTests.bat")).DS_TRY();
         RunCommand( "ping 127.0.0.1 -n 2 -w 1000 > NUL && xcopy /h /y /s /e /q .\\TempBuild\\* " + 
                     EscapePath(buildDir.string()) + "> NUL && rmdir .\\TempBuild /s /q && " + 
                     "ECHO Build Done\n", true).DS_TRY();
     #else
+        RunCommand( "ln -srf ./Src/Tests/RunAllTests.sh " + 
+                    EscapePath(buildDir.string() + "/RunAllTests.sh")).DS_TRY();
         RunCommand( "sleep 1s && cp -rf ./TempBuild/* " + buildDir.string() + 
                     " && rm -Rf ./TempBuild && printf \"Build Done\\n\"", true).DS_TRY();
     #endif

@@ -1,23 +1,6 @@
-@ECHO OFF
-
 SETLOCAL ENABLEEXTENSIONS
 
-SET MODE=Release\
-IF "%1"=="" (GOTO :DEFAULT) ELSE (GOTO :PAREM)
-
-
-:DEFAULT
 GOTO :FINAL
-
-:PAREM
-IF "%1"=="-r" (
-    SET MODE=Release\
-)
-IF "%1"=="-d" (
-    SET MODE=Debug\
-)
-GOTO :FINAL
-
 
 :RUN_TEST <testFile>
     @REM Setlocal EnableDelayedExpansion
@@ -37,14 +20,14 @@ GOTO :FINAL
 
 
 :FINAL
-CALL :RUN_TEST "%~dp0\%MODE%BuildTypeTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%DependencyInfoTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%DependencySourceTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%ProfileTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%ScriptInfoTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%BuildsManagerTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%ConfigParsingTest.exe"
-CALL :RUN_TEST "%~dp0\%MODE%IncludeManagerTest.exe"
+CALL :RUN_TEST "%~dp0\BuildTypeTest.exe"
+CALL :RUN_TEST "%~dp0\DependencyInfoTest.exe"
+CALL :RUN_TEST "%~dp0\DependencySourceTest.exe"
+CALL :RUN_TEST "%~dp0\ProfileTest.exe"
+CALL :RUN_TEST "%~dp0\ScriptInfoTest.exe"
+CALL :RUN_TEST "%~dp0\BuildsManagerTest.exe"
+CALL :RUN_TEST "%~dp0\ConfigParsingTest.exe"
+CALL :RUN_TEST "%~dp0\IncludeManagerTest.exe"
 
 EXIT 0
 

@@ -232,9 +232,9 @@ pipeline
                     echo "STORE_BUILD: ${STORE_BUILD}"
                 }
             }
-        }
+        } //stage('Setup') 
 
-        stage('Checkout') 
+        stage('Checkout')
         {
             agent { label 'linux' }
             steps 
@@ -260,6 +260,7 @@ pipeline
                     GIT_HASH = bash("echo \$(git rev-parse --verify HEAD)", true).trim()
                     echo "GITHASH: ${GIT_HASH}"
                     
+                    /*
                     if(!STORE_BUILD)
                     {
                         withCredentials([string(credentialsId: 'github-token', 
@@ -275,18 +276,19 @@ pipeline
                                             GIT_HASH)
                         }
                     }
+                    */
                     
                     stash name: 'source', useDefaultExcludes: false
                 }
             }
             post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
-        }
+        } //stage('Checkout')
 
-        stage('Build') 
+        stage('Bootstrap Build') 
         {
             parallel 
             {
-                stage('Linux Build') 
+                stage('Linux Bootstrap Build')
                 {
                     agent { label 'linux' }
                     steps 
@@ -295,13 +297,13 @@ pipeline
                         bash "ls -lah"
                         unstash 'source'
                         bash "ls -lah"
-                        bash('chmod +x ./Build.sh')
-                        bash './Build.sh -DRUNCPP2_BUILD_TESTS=ON'
-                        stash 'linux_build'
+                        bash 'chmod +x ./Bootstrap.sh'
+                        bash './Bootstrap.sh'
+                        stash name: 'linux_bootstrap_build', useDefaultExcludes: false
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
-                stage('Windows Build') 
+                stage('Windows Bootstrap Build')
                 {
                     agent { label 'windows' }
                     steps 
@@ -310,6 +312,7 @@ pipeline
                         bat 'dir'
                         unstash 'source'
                         bat 'dir'
+                        /*
                         script
                         {
                             try 
@@ -322,8 +325,53 @@ pipeline
                                 sleep 5
                                 bat 'Build.bat -DRUNCPP2_BUILD_TESTS=ON'
                             }
+                            bat 'Build.bat -DRUNCPP2_BUILD_TESTS=ON'
                         }
+                        */
+                        bat 'Bootstrap.bat'
                         
+                        stash name: 'windows_bootstrap_build', useDefaultExcludes: false
+                    }
+                    post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
+                }
+            }
+        } //stage('Bootstrap Build')
+        
+        stage('Build') 
+        {
+            parallel 
+            {
+                stage('Linux Build')
+                {
+                    agent { label 'linux' }
+                    steps 
+                    {
+                        cleanWs()
+                        bash "ls -lah"
+                        unstash 'linux_bootstrap_build'
+                        bash "ls -lah"
+                        bash 'mkdir Build'
+                        bash 'cp ./BootstrapBuild/runcpp2 ./Build'
+                        bash    "./Build/runcpp2 run -l -c ./DefaultYAMLs/DefaultUserConfig.yaml " + 
+                                "./Build.cpp --runcpp2-path ./Build/runcpp2"
+                        stash 'linux_build'
+                    }
+                    post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
+                }
+                stage('Windows Build')
+                {
+                    agent { label 'windows' }
+                    steps 
+                    {
+                        cleanWs()
+                        bat 'dir'
+                        unstash 'windows_bootstrap_build'
+                        bat 'dir'
+                        bat 'mkdir Build'
+                        bat "copy .\\BootstrapBuild\\runcpp2.exe .\\Build\\runcpp2.exe"
+                        bat ".\\Build\\runcpp2.exe run -l -c " +
+                            ".\\DefaultYAMLs\\DefaultUserConfig.yaml .\\Build.cpp --runcpp2-path " + 
+                            ".\\Build\\runcpp2.exe"
                         stash 'windows_build'
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
@@ -331,8 +379,9 @@ pipeline
             }
             
             //TODO: We use Debug builds for now even for release, but move to release at some point
-        }
+        } //stage('Bootstrap Build')
         
+        /*
         stage('Test') 
         {
             parallel 
@@ -398,6 +447,7 @@ pipeline
                 }
             }
         }
+        
         stage('Update GitHub Nightly Release')
         {
             agent { label 'linux' }
@@ -459,7 +509,7 @@ pipeline
             }
             post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
         }
-        
+
         stage('Notify')
         {
             agent { label 'linux' }
@@ -502,6 +552,7 @@ pipeline
                                     onlyIfSuccessful: true
             }
         }
+        */
     } //stages
     
     post 
@@ -514,6 +565,7 @@ pipeline
                 {
                     if(!STORE_BUILD)
                     {
+                        /*
                         withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')])
                         {
                             SetGithubStatus('$GITHUB_TOKEN', 
@@ -525,6 +577,7 @@ pipeline
                                             REPO_NAME,
                                             GIT_HASH)
                         }
+                        */
                     }
                 }
             }
