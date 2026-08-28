@@ -53,7 +53,7 @@ DS::Result<void> RunCommand(const std::string& command, bool noWait = false)
     if(!noWait)
     {
         int returnCode = -1;
-        system2Result = System2GetCommandReturnValue(&commandInfo, 60, &returnCode);
+        system2Result = System2GetCommandReturnValue(&commandInfo, 300, &returnCode);
         DS_ASSERT_EQ(system2Result, SYSTEM2_RESULT_SUCCESS);
         if(returnCode != 0)
         {
@@ -195,7 +195,7 @@ DS::Result<void> Main(int argc, char** argv)
     if(argc <= 2 || strcmp(argv[2], "--help") == 0)
     {
         printf( "runcpp2 run Build.cpp [--runcpp2-path <path>] [--no-werror] [--info] [--rebuild] "
-                "[--no-test]\n");
+                "[--no-test] [--release]\n");
         return {};
     }
     
@@ -210,6 +210,7 @@ DS::Result<void> Main(int argc, char** argv)
     bool info = false;
     bool rebuild = false;
     bool buildTest = true;
+    bool release = false;
     for(int i = 2; i < argc; ++i)
     {
         if(strcmp(argv[i], "--runcpp2-path") == 0)
@@ -230,6 +231,8 @@ DS::Result<void> Main(int argc, char** argv)
             rebuild = true;
         else if(strcmp(argv[i], "--no-test") == 0)
             buildTest = false;
+        else if(strcmp(argv[i], "--release") == 0)
+            release = true;
         else
             break;
     }
@@ -285,6 +288,9 @@ DS::Result<void> Main(int argc, char** argv)
             #error "Unsupported platform..."
         #endif
     }
+    
+    if(release)
+        params += ";Profile.CompileMode=Release";
     
     const std::string commonBuildCommand =  runcpp2Path + 
                                             " build -o " + EscapePath("./TempBuild ") +

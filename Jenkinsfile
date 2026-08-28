@@ -260,7 +260,6 @@ pipeline
                     GIT_HASH = bash("echo \$(git rev-parse --verify HEAD)", true).trim()
                     echo "GITHASH: ${GIT_HASH}"
                     
-                    /*
                     if(!STORE_BUILD)
                     {
                         withCredentials([string(credentialsId: 'github-token', 
@@ -276,7 +275,6 @@ pipeline
                                             GIT_HASH)
                         }
                     }
-                    */
                     
                     stash name: 'source', useDefaultExcludes: false
                 }
@@ -312,22 +310,6 @@ pipeline
                         bat 'dir'
                         unstash 'source'
                         bat 'dir'
-                        /*
-                        script
-                        {
-                            try 
-                            {
-                                bat 'Build.bat -DRUNCPP2_BUILD_TESTS=ON'
-                            } 
-                            catch(error) 
-                            {
-                                echo "Build failed. Maybe .pdb is locked? Retrying..."
-                                sleep 5
-                                bat 'Build.bat -DRUNCPP2_BUILD_TESTS=ON'
-                            }
-                            bat 'Build.bat -DRUNCPP2_BUILD_TESTS=ON'
-                        }
-                        */
                         bat 'Bootstrap.bat'
                         
                         stash name: 'windows_bootstrap_build', useDefaultExcludes: false
@@ -341,7 +323,7 @@ pipeline
         {
             parallel 
             {
-                stage('Linux Build')
+                stage('Linux Debug Build')
                 {
                     agent { label 'linux' }
                     steps 
@@ -354,11 +336,11 @@ pipeline
                         bash 'cp ./BootstrapBuild/runcpp2 ./Build'
                         bash    "./Build/runcpp2 run -l -c ./DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "./Build.cpp --runcpp2-path ./Build/runcpp2"
-                        stash 'linux_build'
+                        stash 'linux_debug_build'
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
-                stage('Windows Build')
+                stage('Windows Debug Build')
                 {
                     agent { label 'windows' }
                     steps 
@@ -372,19 +354,51 @@ pipeline
                         bat ".\\Build\\runcpp2.exe run -l -c " +
                             ".\\DefaultYAMLs\\DefaultUserConfig.yaml .\\Build.cpp --runcpp2-path " + 
                             ".\\Build\\runcpp2.exe"
-                        stash 'windows_build'
+                        stash 'windows_debug_build'
+                    }
+                    post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
+                }
+                stage('Linux Release Build')
+                {
+                    agent { label 'linux' }
+                    steps 
+                    {
+                        cleanWs()
+                        bash "ls -lah"
+                        unstash 'linux_bootstrap_build'
+                        bash "ls -lah"
+                        bash 'mkdir Build'
+                        bash 'cp ./BootstrapBuild/runcpp2 ./Build'
+                        bash    "./Build/runcpp2 run -l -c ./DefaultYAMLs/DefaultUserConfig.yaml " + 
+                                "./Build.cpp --runcpp2-path ./Build/runcpp2 --release"
+                        stash 'linux_release_build'
+                    }
+                    post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
+                }
+                stage('Windows Release Build')
+                {
+                    agent { label 'windows' }
+                    steps 
+                    {
+                        cleanWs()
+                        bat 'dir'
+                        unstash 'windows_bootstrap_build'
+                        bat 'dir'
+                        bat 'mkdir Build'
+                        bat "copy .\\BootstrapBuild\\runcpp2.exe .\\Build\\runcpp2.exe"
+                        bat ".\\Build\\runcpp2.exe run -l -c " +
+                            ".\\DefaultYAMLs\\DefaultUserConfig.yaml .\\Build.cpp --runcpp2-path " + 
+                            ".\\Build\\runcpp2.exe --release"
+                        stash 'windows_release_build'
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
             }
-            
-            //TODO: We use Debug builds for now even for release, but move to release at some point
         } //stage('Bootstrap Build')
         
-        /*
-        stage('Test') 
+        stage('Test')
         {
-            parallel 
+            parallel
             {
                 stage('Linux Unit Test') 
                 {
@@ -393,11 +407,11 @@ pipeline
                     {
                         cleanWs()
                         bash "ls -lah"
-                        unstash 'linux_build'
+                        unstash 'linux_debug_build'
                         bash "ls -lah"
-                        bash "ls -lah ./Build/Src/Tests"
-                        bash "chmod +x ./Build/Src/Tests/RunAllTests.sh"
-                        bash "cd ./Build/Src/Tests && ./RunAllTests.sh"
+                        bash "ls -lah ./Build"
+                        bash "chmod +x ./Build/RunAllTests.sh"
+                        bash "cd ./Build && ./RunAllTests.sh"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
@@ -408,7 +422,7 @@ pipeline
                     steps 
                     {
                         cleanWs()
-                        unstash 'linux_build'
+                        unstash 'linux_debug_build'
                         bash    "./Build/runcpp2 run -l -c " +
                                 "./DefaultYAMLs/DefaultUserConfig.yaml " +
                                 "./Tests/RunTests.cpp"
@@ -423,11 +437,10 @@ pipeline
                     {
                         cleanWs()
                         bat 'dir'
-                        unstash 'windows_build'
+                        unstash 'windows_debug_build'
                         bat 'dir'
-                        bat 'dir .\\Build\\Src\\Tests\\Debug'
-                        bat 'cd .\\Build\\Src\\Tests && .\\RunAllTests.bat -d'
-                        
+                        bat 'dir .\\Build'
+                        bat 'cd .\\Build && .\\RunAllTests.bat'
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
@@ -438,20 +451,20 @@ pipeline
                     steps 
                     {
                         cleanWs()
-                        unstash 'windows_build'
-                        bat ".\\Build\\Debug\\runcpp2.exe run -l -c " +
+                        unstash 'windows_debug_build'
+                        bat ".\\Build\\runcpp2.exe run -l -c " +
                             ".\\DefaultYAMLs\\DefaultUserConfig.yaml " +
                             ".\\Tests\\RunTests.cpp"
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
                 }
-            }
-        }
+            } //parallel
+        } //stage('Test') 
         
         stage('Update GitHub Nightly Release')
         {
             agent { label 'linux' }
-            when 
+            when
             {
                 expression { return env.X_GitHub_Event == 'push' && 
                                     env.GITHUB_PUSH_REF == 'refs/heads/master' }
@@ -466,9 +479,9 @@ pipeline
                         UpdateNightlyTag('$GITHUB_TOKEN', REPO_OWNER, REPO_NAME, GIT_HASH)
                         
                         //Upload Linux executable
-                        dir('WindowsBuild') { unstash 'windows_build' }
-                        dir('LinuxBuild') { unstash 'linux_build' }
-                        if (fileExists('LinuxBuild/Build/runcpp2')) 
+                        dir('WindowsBuild') { unstash 'windows_release_build' }
+                        dir('LinuxBuild') { unstash 'linux_release_build' }
+                        if(fileExists('LinuxBuild/Build/runcpp2'))
                         {
                             bash """
                                 cd LinuxBuild/Build
@@ -487,11 +500,11 @@ pipeline
                         }
                         
                         //Upload Windows executable
-                        if (fileExists('WindowsBuild/Build/Debug/runcpp2.exe')) 
+                        if(fileExists('WindowsBuild/Build/runcpp2.exe'))
                         {
                             bash """
-                                cd WindowsBuild/Build/Debug
-                                zip -9 ../../../runcpp2-windows.zip runcpp2.exe
+                                cd WindowsBuild/Build
+                                zip -9 ../../runcpp2-windows.zip runcpp2.exe
                             """
                             UploadArtifactToGithub( '$GITHUB_TOKEN', 
                                                     REPO_OWNER, 
@@ -538,21 +551,20 @@ pipeline
             steps
             {
                 cleanWs()
-                dir('WindowsBuild') { unstash 'windows_build' }
-                dir('LinuxBuild') { unstash 'linux_build' }
+                dir('WindowsBuild') { unstash 'windows_release_build' }
+                dir('LinuxBuild') { unstash 'linux_release_build' }
                 
                 archiveArtifacts    artifacts: 'LinuxBuild/Build/runcpp2', 
                                     defaultExcludes: false,
                                     fingerprint: true,
                                     onlyIfSuccessful: true
                 
-                archiveArtifacts    artifacts: 'WindowsBuild/Build/Debug/runcpp2.exe', 
+                archiveArtifacts    artifacts: 'WindowsBuild/Build/runcpp2.exe', 
                                     defaultExcludes: false,
                                     fingerprint: true,
                                     onlyIfSuccessful: true
             }
         }
-        */
     } //stages
     
     post 
@@ -565,7 +577,6 @@ pipeline
                 {
                     if(!STORE_BUILD)
                     {
-                        /*
                         withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')])
                         {
                             SetGithubStatus('$GITHUB_TOKEN', 
@@ -577,7 +588,6 @@ pipeline
                                             REPO_NAME,
                                             GIT_HASH)
                         }
-                        */
                     }
                 }
             }
