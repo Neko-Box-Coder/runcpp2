@@ -112,14 +112,16 @@ DS::Result<void> GenerateScriptTemplate(const ghc::filesystem::path& outputFileP
                                     "Cannot output script template to a directory");
             }
             
-            //If exists, check if it is a cpp/cc file.
+            //If exists, check if it is a cpp/cc/c file.
             std::ifstream readOutputFile(outputFilePath);
             std::stringstream buffer;
             
             if(!readOutputFile)
                 return DS_ERROR_MSG("Failed to open file: " + outputFilePath.string());
             
-            if(outputFilePath.extension() == ".cpp" || outputFilePath.extension() == ".cc")
+            if( outputFilePath.extension() == ".cpp" || 
+                outputFilePath.extension() == ".cc" ||
+                outputFilePath.extension() == ".c")
             {
                 //If so, prepend the script info template but wrapped in block comment
                 buffer << "/* runcpp2" << std::endl << std::endl;
@@ -127,21 +129,15 @@ DS::Result<void> GenerateScriptTemplate(const ghc::filesystem::path& outputFileP
                 buffer << "*/" << std::endl << std::endl;
                 buffer << readOutputFile.rdbuf();
             }
-            //If not, check if it is yaml/yml. 
-            else if(outputFilePath.extension() == ".yaml" || outputFilePath.extension() == ".yml")
-            {
-                //If so just prepend it normally
-                buffer << defaultScriptInfo << std::endl << std::endl;
-                buffer << readOutputFile.rdbuf();
-            }
-            //If not prepend it still but output a warning
+            //If not, check if it is yaml/yml, otherwise output a warning
             else
             {
-                ssLOG_WARNING("Outputing script info template to non yaml file, is the intended?");
+                if(outputFilePath.extension() != ".yaml" && outputFilePath.extension() != ".yml")
+                    ssLOG_WARNING("Outputing script info template to non yaml file, is this intended?");
+                
                 buffer << defaultScriptInfo << std::endl << std::endl;
                 buffer << readOutputFile.rdbuf();
             }
-            
             readOutputFile.close();
             
             std::ofstream writeOutputFile(outputFilePath);
