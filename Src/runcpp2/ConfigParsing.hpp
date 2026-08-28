@@ -421,6 +421,7 @@ namespace runcpp2
     
     inline DS::Result<void> 
     ParseScriptInfo(const std::string& scriptInfo, 
+                    const ghc::filesystem::path& yamlDir,
                     const std::unordered_map<std::string, std::string> inputParameters,
                     Data::ScriptInfo& outScriptInfo)
     {
@@ -435,7 +436,14 @@ namespace runcpp2
         //NOTE: Use the first one
         YAML::ResolveAnchors(scriptNodes.front()).DS_TRY();
         YAML::NodePtr rootScriptNode = scriptNodes.front();
-        outScriptInfo.ParseYAML_Node(rootScriptNode, inputParameters).DS_TRY();
+        
+        std::unordered_map<std::string, std::vector<std::string>> subMap;
+        outScriptInfo = ResolveImport<Data::ScriptInfo>(rootScriptNode,
+                                                        yamlDir,
+                                                        resourceHandle,
+                                                        subMap,
+                                                        inputParameters).DS_TRY();
+        outScriptInfo.ParseYAML_Node(rootScriptNode, false, inputParameters).DS_TRY();
         outScriptInfo.Populated = true;
         return {};
     }

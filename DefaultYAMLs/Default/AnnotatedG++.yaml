@@ -26,12 +26,14 @@ Languages: ["c", "c++"]
 # See "./CommonFileTypes.yaml" for FilesTypes
 # FilesTypes: ...
 
-# (Optional) We can use the "Import" field to import other yaml files. We are importing "FilesTypes" here.
+# (Optional) We can use the "Import" field to import other yaml files to merge to this file.  We are importing "FilesTypes" here.
 #            Import can either be a single path or a list of paths. 
-#            All the fields in the imported yaml files will be merged together
+#            If there's any parameter/variables in the import file, it will applied to that file 
+#            first before merging
 Import: "./CommonFileTypes.yaml"
 
 # (Optional) Parameters are user supplied input that can be substituted into any keys or values, with the syntax of `{<parameter name>}`
+#            This in only applied to this file.
 Parameters:
     # Name of the parameter
     Profile.CompileMode:
@@ -66,6 +68,7 @@ Parameters:
 
 # TODO: Conditional variable
 # (Optional) Variables can be substituted into any keys or values (excluding "Parameters"), with the syntax of `{<variable name>}`
+#            This in only applied to this file.
 Variables:
     # A variable can be created by substituting a parameter into a string, using syntax of `{<parameter name>}`
     # If this contains an array parameter value, the substition is performed for each parameter array value and 

@@ -236,7 +236,7 @@ namespace runcpp2
         }
         
         //Try to parse the runcpp2 info
-        ParseScriptInfo(parsableInfo, inputParameters, outScriptInfo)
+        ParseScriptInfo(parsableInfo, scriptDirectory, inputParameters, outScriptInfo)
             .DS_TRY_ACT(DS_APPEND_TRACE(DS_TMP_ERROR);
                         DS_TMP_ERROR.Message += "\nContent trying to parse: \n" + parsableInfo;
                         return DS::Error(DS_TMP_ERROR));
@@ -393,6 +393,7 @@ namespace runcpp2
             do
             {
                 if(!ParseScriptInfo(lastScriptInfoBuffer.str(), 
+                                    scriptDirectory,
                                     parameters, 
                                     lastScriptInfoFromDisk).HasValue())
                 {
