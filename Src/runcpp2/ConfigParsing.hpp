@@ -46,18 +46,20 @@
     #include "CppOverride.hpp"
 #endif
 
-extern "C" const uint8_t DefaultUserConfig[];
-extern "C" const size_t DefaultUserConfig_size;
-extern "C" const uint8_t CommonFileTypes[];
-extern "C" const size_t CommonFileTypes_size;
-extern "C" const uint8_t G_PlusPlus[];
-extern "C" const size_t G_PlusPlus_size;
-extern "C" const uint8_t ClangPlusPlus[];
-extern "C" const size_t ClangPlusPlus_size;
-extern "C" const uint8_t AnnotatedG_PlusPlus[];
-extern "C" const size_t AnnotatedG_PlusPlus_size;
-extern "C" const uint8_t Vs2022_v17Plus[];
-extern "C" const size_t Vs2022_v17Plus_size;
+#if !RUNCPP2_BOOTSTRAP
+    extern "C" const uint8_t DefaultUserConfig[];
+    extern "C" const size_t DefaultUserConfig_size;
+    extern "C" const uint8_t CommonFileTypes[];
+    extern "C" const size_t CommonFileTypes_size;
+    extern "C" const uint8_t G_PlusPlus[];
+    extern "C" const size_t G_PlusPlus_size;
+    extern "C" const uint8_t ClangPlusPlus[];
+    extern "C" const size_t ClangPlusPlus_size;
+    extern "C" const uint8_t AnnotatedG_PlusPlus[];
+    extern "C" const size_t AnnotatedG_PlusPlus_size;
+    extern "C" const uint8_t Vs2022_v17Plus[];
+    extern "C" const size_t Vs2022_v17Plus_size;
+#endif
 
 namespace 
 {
@@ -232,110 +234,122 @@ namespace runcpp2
                         DS::Result<void>, 
                         (userConfigPath, writeUserConfig, writeDefaultConfigs));
         
-        //Backup existing user config
-        std::error_code _;
-        if(writeUserConfig && ghc::filesystem::exists(userConfigPath, _))
-        {
-            int backupCount = 0;
-            do
+        #if RUNCPP2_BOOTSTRAP
+            return DS_ERROR_MSG("Cannot write default configs in bootstrap mode");
+        #else
+            //Backup existing user config
+            std::error_code _;
+            if(writeUserConfig && ghc::filesystem::exists(userConfigPath, _))
             {
-                if(backupCount > 10)
+                int backupCount = 0;
+                do
                 {
-                    return DS_ERROR_MSG("Failed to backup existing user config: " + 
-                                        userConfigPath.string());
+                    if(backupCount > 10)
+                    {
+                        return DS_ERROR_MSG("Failed to backup existing user config: " + 
+                                            userConfigPath.string());
+                    }
+                    
+                    std::string backupPath = userConfigPath.string();
+                    
+                    if(backupCount > 0)
+                        backupPath += "." + std::to_string(backupCount);
+                    
+                    backupPath += ".bak";
+                    
+                    if(ghc::filesystem::exists(backupPath, _))
+                    {
+                        ssLOG_WARNING("Backup path exists: " << backupPath);
+                        ++backupCount;
+                        continue;
+                    }
+                    
+                    std::error_code copyErrorCode;
+                    ghc::filesystem::copy(userConfigPath, backupPath, copyErrorCode);
+                    if(copyErrorCode)
+                    {
+                        return DS_ERROR_MSG("Failed to backup existing user config: " + 
+                                            userConfigPath.string() + " with error: " + _.message());
+                    }
+                    
+                    ssLOG_INFO("Backed up existing user config: " << backupPath);
+                    if(!ghc::filesystem::remove(userConfigPath, _))
+                    {
+                        return DS_ERROR_MSG("Failed to delete existing user config: " + 
+                                            userConfigPath.string());
+                    }
+                    
+                    break;
                 }
-                
-                std::string backupPath = userConfigPath.string();
-                
-                if(backupCount > 0)
-                    backupPath += "." + std::to_string(backupCount);
-                
-                backupPath += ".bak";
-                
-                if(ghc::filesystem::exists(backupPath, _))
-                {
-                    ssLOG_WARNING("Backup path exists: " << backupPath);
-                    ++backupCount;
-                    continue;
-                }
-                
-                std::error_code copyErrorCode;
-                ghc::filesystem::copy(userConfigPath, backupPath, copyErrorCode);
-                if(copyErrorCode)
-                {
-                    return DS_ERROR_MSG("Failed to backup existing user config: " + 
-                                        userConfigPath.string() + " with error: " + _.message());
-                }
-                
-                ssLOG_INFO("Backed up existing user config: " << backupPath);
-                if(!ghc::filesystem::remove(userConfigPath, _))
-                {
-                    return DS_ERROR_MSG("Failed to delete existing user config: " + 
-                                        userConfigPath.string());
-                }
-                
-                break;
+                while(true);
             }
-            while(true);
-        }
-        
-        //Create user config
-        if(writeUserConfig)
-        {
-            std::ofstream configFile(userConfigPath, std::ios::binary);
-            if(!configFile)
-                return DS_ERROR_MSG("Failed to create default config file: " + userConfigPath.string());
             
-            configFile.write((const char*)DefaultUserConfig, DefaultUserConfig_size);
-        }
-        
-        if(!writeDefaultConfigs)
-            return {};
-        
-        ghc::filesystem::path userConfigDirectory = userConfigPath;
-        userConfigDirectory = userConfigDirectory.parent_path();
-        ghc::filesystem::path defaultYamlDirectory = userConfigDirectory / "Default";
-        
-        //Default configs
-        if(!ghc::filesystem::exists(defaultYamlDirectory , _))
-            DS_ASSERT_TRUE(ghc::filesystem::create_directories(defaultYamlDirectory, _));
-        
-        //Writing default profiles
-        auto writeDefaultConfig = 
-            [&defaultYamlDirectory](ghc::filesystem::path outputPath, 
-                                    const uint8_t* outputContent, 
-                                    size_t outputSize) -> DS::Result<void>
+            //Create user config
+            if(writeUserConfig)
             {
-                const ghc::filesystem::path currentOutputPath = defaultYamlDirectory / outputPath;
-                std::ofstream defaultFile(  currentOutputPath.string(), 
-                                            std::ios::binary | std::ios_base::trunc);
-                if(!defaultFile)
+                std::ofstream configFile(userConfigPath, std::ios::binary);
+                if(!configFile)
                 {
                     return DS_ERROR_MSG("Failed to create default config file: " + 
-                                        currentOutputPath.string());
+                                        userConfigPath.string());
                 }
-                defaultFile.write((const char*)outputContent, outputSize);
+                
+                configFile.write((const char*)DefaultUserConfig, DefaultUserConfig_size);
+            }
+            
+            if(!writeDefaultConfigs)
                 return {};
-            };
-        
-        writeDefaultConfig("CommonFileTypes.yaml", CommonFileTypes, CommonFileTypes_size).DS_TRY();
-        writeDefaultConfig("g++.yaml", G_PlusPlus, G_PlusPlus_size).DS_TRY();
-        writeDefaultConfig("clang++.yaml", ClangPlusPlus, ClangPlusPlus_size).DS_TRY();
-        writeDefaultConfig("AnnotatedG++.yaml", AnnotatedG_PlusPlus, AnnotatedG_PlusPlus_size).DS_TRY();
-        writeDefaultConfig("vs2022_v17+.yaml", Vs2022_v17Plus, Vs2022_v17Plus_size).DS_TRY();
-        
-        //Writing .version to indicate everything is up-to-date
-        std::ofstream configVersionFile(userConfigDirectory / ".version", 
-                                        std::ios::binary | std::ios_base::trunc);
-        if(!configVersionFile)
-        {
-            return DS_ERROR_MSG("Failed to open version file: " + 
-                                ghc::filesystem::path(userConfigDirectory / ".version").string());
-        }
-        
-        configVersionFile << std::to_string(RUNCPP2_CONFIG_VERSION);
-        
-        return {};
+            
+            ghc::filesystem::path userConfigDirectory = userConfigPath;
+            userConfigDirectory = userConfigDirectory.parent_path();
+            ghc::filesystem::path defaultYamlDirectory = userConfigDirectory / "Default";
+            
+            //Default configs
+            if(!ghc::filesystem::exists(defaultYamlDirectory , _))
+                DS_ASSERT_TRUE(ghc::filesystem::create_directories(defaultYamlDirectory, _));
+            
+            //Writing default profiles
+            auto writeDefaultConfig = 
+                [&defaultYamlDirectory](ghc::filesystem::path outputPath, 
+                                        const uint8_t* outputContent, 
+                                        size_t outputSize) -> DS::Result<void>
+                {
+                    const ghc::filesystem::path currentOutputPath = defaultYamlDirectory / 
+                                                                    outputPath;
+                    std::ofstream defaultFile(  currentOutputPath.string(), 
+                                                std::ios::binary | std::ios_base::trunc);
+                    if(!defaultFile)
+                    {
+                        return DS_ERROR_MSG("Failed to create default config file: " + 
+                                            currentOutputPath.string());
+                    }
+                    defaultFile.write((const char*)outputContent, outputSize);
+                    return {};
+                };
+            
+            writeDefaultConfig( "CommonFileTypes.yaml", 
+                                CommonFileTypes, 
+                                CommonFileTypes_size).DS_TRY();
+            writeDefaultConfig("g++.yaml", G_PlusPlus, G_PlusPlus_size).DS_TRY();
+            writeDefaultConfig("clang++.yaml", ClangPlusPlus, ClangPlusPlus_size).DS_TRY();
+            writeDefaultConfig( "AnnotatedG++.yaml", 
+                                AnnotatedG_PlusPlus, 
+                                AnnotatedG_PlusPlus_size).DS_TRY();
+            writeDefaultConfig("vs2022_v17+.yaml", Vs2022_v17Plus, Vs2022_v17Plus_size).DS_TRY();
+            
+            //Writing .version to indicate everything is up-to-date
+            std::ofstream configVersionFile(userConfigDirectory / ".version", 
+                                            std::ios::binary | std::ios_base::trunc);
+            if(!configVersionFile)
+            {
+                return DS_ERROR_MSG("Failed to open version file: " + 
+                                    ghc::filesystem::path(userConfigDirectory / ".version").string());
+            }
+            
+            configVersionFile << std::to_string(RUNCPP2_CONFIG_VERSION);
+            
+            return {};
+        #endif
     }
     
     inline DS::Result<void> ReadUserConfig( std::vector<Data::Profile>& outProfiles, 
@@ -387,7 +401,11 @@ namespace runcpp2
         }
         //Overwrite default config files if missing version file
         else
-            writeDefaultConfigs = true;
+        {
+            #if !RUNCPP2_BOOTSTRAP
+                writeDefaultConfigs = true;
+            #endif
+        }
         
         if(writeUserConfig || writeDefaultConfigs)
         {

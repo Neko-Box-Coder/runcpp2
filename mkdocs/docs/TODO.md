@@ -45,6 +45,7 @@
 - Move to variant-lite instead of mpark-variant
 
 ## High Priority
+- Use execv* directly when doing `runcpp2 run` to allow debugging instead of forking, not sure about windows
 - Allow running multiple instances of runcpp2
 - External Source (curl download) for dependency
 - Expose/rename "InternalExecutableShared" and change BuildType to be platform map

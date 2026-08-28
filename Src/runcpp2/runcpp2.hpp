@@ -41,8 +41,10 @@
     #include <windows.h>
 #endif
 
-extern const uint8_t DefaultScriptInfo[];
-extern const size_t DefaultScriptInfo_size;
+#if !RUNCPP2_BOOTSTRAP
+    extern const uint8_t DefaultScriptInfo[];
+    extern const size_t DefaultScriptInfo_size;
+#endif
 
 namespace runcpp2 { namespace Data { struct DependencyInfo; } }
 
@@ -250,11 +252,13 @@ namespace
 
 namespace runcpp2
 {
-    inline void GetDefaultScriptInfo(std::string& scriptInfo)
-    {
-        scriptInfo = std::string(   reinterpret_cast<const char*>(DefaultScriptInfo), 
-                                    DefaultScriptInfo_size);
-    }
+    #if !RUNCPP2_BOOTSTRAP
+        inline void GetDefaultScriptInfo(std::string& scriptInfo)
+        {
+            scriptInfo = std::string(   reinterpret_cast<const char*>(DefaultScriptInfo), 
+                                        DefaultScriptInfo_size);
+        }
+    #endif
 
     //NOTE: Mainly used for test to reduce spamminig
     inline void SetLogLevel(const std::string& logLevel)

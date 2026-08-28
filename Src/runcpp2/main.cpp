@@ -96,68 +96,72 @@ DS::Result<void> GenerateScriptTemplate(const ghc::filesystem::path& outputFileP
 {
     DS_ASSERT_FALSE(outputFilePath.empty());
     
-    std::string defaultScriptInfo;
-    runcpp2::GetDefaultScriptInfo(defaultScriptInfo);
-    
-    //Check if output filepath exists, if so check if it is a directory
-    std::error_code e;
-    if(ghc::filesystem::exists(outputFilePath, e))
-    {
-        if(ghc::filesystem::is_directory(outputFilePath, e))
-        {
-            return DS_ERROR_MSG(outputFilePath.string() + " is a directory. " +
-                                "Cannot output script template to a directory");
-        }
+    #if RUNCPP2_BOOTSTRAP
+        return DS_ERROR_MSG("Cannot generate script template in bootstrap mode");
+    #else
+        std::string defaultScriptInfo;
+        runcpp2::GetDefaultScriptInfo(defaultScriptInfo);
         
-        //If exists, check if it is a cpp/cc file.
-        std::ifstream readOutputFile(outputFilePath);
-        std::stringstream buffer;
-        
-        if(!readOutputFile)
-            return DS_ERROR_MSG("Failed to open file: " + outputFilePath.string());
-        
-        if(outputFilePath.extension() == ".cpp" || outputFilePath.extension() == ".cc")
+        //Check if output filepath exists, if so check if it is a directory
+        std::error_code e;
+        if(ghc::filesystem::exists(outputFilePath, e))
         {
-            //If so, prepend the script info template but wrapped in block comment
-            buffer << "/* runcpp2" << std::endl << std::endl;
-            buffer << defaultScriptInfo << std::endl;
-            buffer << "*/" << std::endl << std::endl;
-            buffer << readOutputFile.rdbuf();
+            if(ghc::filesystem::is_directory(outputFilePath, e))
+            {
+                return DS_ERROR_MSG(outputFilePath.string() + " is a directory. " +
+                                    "Cannot output script template to a directory");
+            }
+            
+            //If exists, check if it is a cpp/cc file.
+            std::ifstream readOutputFile(outputFilePath);
+            std::stringstream buffer;
+            
+            if(!readOutputFile)
+                return DS_ERROR_MSG("Failed to open file: " + outputFilePath.string());
+            
+            if(outputFilePath.extension() == ".cpp" || outputFilePath.extension() == ".cc")
+            {
+                //If so, prepend the script info template but wrapped in block comment
+                buffer << "/* runcpp2" << std::endl << std::endl;
+                buffer << defaultScriptInfo << std::endl;
+                buffer << "*/" << std::endl << std::endl;
+                buffer << readOutputFile.rdbuf();
+            }
+            //If not, check if it is yaml/yml. 
+            else if(outputFilePath.extension() == ".yaml" || outputFilePath.extension() == ".yml")
+            {
+                //If so just prepend it normally
+                buffer << defaultScriptInfo << std::endl << std::endl;
+                buffer << readOutputFile.rdbuf();
+            }
+            //If not prepend it still but output a warning
+            else
+            {
+                ssLOG_WARNING("Outputing script info template to non yaml file, is the intended?");
+                buffer << defaultScriptInfo << std::endl << std::endl;
+                buffer << readOutputFile.rdbuf();
+            }
+            
+            readOutputFile.close();
+            
+            std::ofstream writeOutputFile(outputFilePath);
+            if(!writeOutputFile)
+                return DS_ERROR_MSG("Failed to open file: " + outputFilePath.string());
+
+            writeOutputFile << buffer.rdbuf();
         }
-        //If not, check if it is yaml/yml. 
-        else if(outputFilePath.extension() == ".yaml" || outputFilePath.extension() == ".yml")
-        {
-            //If so just prepend it normally
-            buffer << defaultScriptInfo << std::endl << std::endl;
-            buffer << readOutputFile.rdbuf();
-        }
-        //If not prepend it still but output a warning
+        //Otherwise write it to the file
         else
         {
-            ssLOG_WARNING("Outputing script info template to non yaml file, is the intended?");
-            buffer << defaultScriptInfo << std::endl << std::endl;
-            buffer << readOutputFile.rdbuf();
+            std::ofstream writeOutputFile(outputFilePath);
+            if(!writeOutputFile)
+                return DS_ERROR_MSG("Failed to open file: " + outputFilePath.string());
+            
+            writeOutputFile << defaultScriptInfo;
         }
         
-        readOutputFile.close();
-        
-        std::ofstream writeOutputFile(outputFilePath);
-        if(!writeOutputFile)
-            return DS_ERROR_MSG("Failed to open file: " + outputFilePath.string());
-
-        writeOutputFile << buffer.rdbuf();
-    }
-    //Otherwise write it to the file
-    else
-    {
-        std::ofstream writeOutputFile(outputFilePath);
-        if(!writeOutputFile)
-            return DS_ERROR_MSG("Failed to open file: " + outputFilePath.string());
-        
-        writeOutputFile << defaultScriptInfo;
-    }
-    
-    return {};
+        return {};
+    #endif
 }
 
 std::string PadSpaceRight(const std::string& s, int padCol)
@@ -782,4 +786,6 @@ int main(int argc, char* argv[])
     return result;
 }
 
-#include "runcpp2/DefaultYAMLs.c"
+#if !RUNCPP2_BOOTSTRAP
+    #include "runcpp2/DefaultYAMLs.c"
+#endif
