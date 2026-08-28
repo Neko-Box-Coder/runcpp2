@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 option(RUNCPP2_UPDATE_DEFAULT_YAMLS "Update default yaml files" OFF)
 
-set(RUNCPP2_CONFIG_VERSION "4")
+set(RUNCPP2_CONFIG_VERSION "5")
 
 if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     option(RUNCPP2_WARNINGS_AS_ERRORS "Treat warnings as errors" ON)
@@ -161,6 +161,12 @@ if(RUNCPP2_UPDATE_DEFAULT_YAMLS OR EMBEDDED_FILE_SIZE LESS 1024)
                             
                             "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/Default/g++.yaml"
                             "G_PlusPlus"
+                            
+                            "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/Default/clang++.yaml"
+                            "ClangPlusPlus"
+                            
+                            "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/Default/AnnotatedG++.yaml"
+                            "AnnotatedG_PlusPlus"
                             
                             "${CMAKE_CURRENT_LIST_DIR}/DefaultYAMLs/Default/vs2022_v17+.yaml"
                             "Vs2022_v17Plus"

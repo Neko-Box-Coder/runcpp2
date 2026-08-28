@@ -1,7 +1,6 @@
 # DO NOT modify this file. Changes will be overwritten when there's a reset or update
 
-Name: "g++"
-NameAliases: ["mingw"]
+Name: "clang++"
 FileExtensions: [.cpp, .cc, .cxx, .c]
 Languages: ["c", "c++"]
 Import: "./CommonFileTypes.yaml"
@@ -10,7 +9,7 @@ Parameters:
         Default: "Debug"
         Constraint: 
         -   "Debug:-std=c++17 -Wall -g -Og"
-        -   "Release:-std=c++17 -Wall -O2 -DNDEBUG=1"
+        -   "Release:-std=c++17 -Wall -O2"
     Profile.OutputPreprocess:
         Default: "false"
         Constraint:
@@ -22,12 +21,12 @@ Variables:
     Profile.Intern_CompileFlags: "{Profile.CompileMode}{Profile.OutputPreprocess}"
 Compiler:
     CheckExistence: 
-        DefaultPlatform: "g++ -v"
+        DefaultPlatform: "clang++ -v"
     CompileTypes:
         Executable:
             DefaultPlatform:
                 Flags: "{Profile.Intern_CompileFlags}"
-                Executable: "g++"
+                Executable: "clang++"
                 RunParts: &g++_CompileRunParts
                 -   Type: Once
                     CommandPart: "{Stage.Executable} -c {Stage.CompileFlags}"
@@ -49,23 +48,23 @@ Compiler:
         Static:
             DefaultPlatform:
                 Flags: "{Profile.Intern_CompileFlags}"
-                Executable: "g++"
+                Executable: "clang++"
                 RunParts: *g++_CompileRunParts
                 ExpectedOutputFiles: *g++_CompileExpectedOutputFiles
         Shared:
             DefaultPlatform:
                 Flags: "{Profile.Intern_CompileFlags} -fpic"
-                Executable: "g++"
+                Executable: "clang++"
                 RunParts: *g++_CompileRunParts
                 ExpectedOutputFiles: *g++_CompileExpectedOutputFiles
 Linker:
     CheckExistence:
-        DefaultPlatform: "g++ -v"
+        DefaultPlatform: "clang++ -v"
     LinkTypes:
         Executable:
             Unix:
                 Flags: "-Wl,-rpath,\\$ORIGIN"
-                Executable: "g++"
+                Executable: "clang++"
                 RunParts:
                 -   Type: Once
                     CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.Output.Directory}\
@@ -75,7 +74,7 @@ Linker:
                 ExpectedOutputFiles: ["{Stage.Output.Directory}{/}{Stage.Output.Name}"]
             Windows:
                 Flags: "-Wl,-rpath,\\$ORIGIN"
-                Executable: "g++"
+                Executable: "clang++"
                 RunParts:
                 -   Type: Once
                     CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.Output.Directory}\
@@ -87,7 +86,7 @@ Linker:
         Static:
             DefaultPlatform:
                 Flags: ""
-                Executable: "g++"
+                Executable: "clang++"
                 RunParts:
                 -   Type: Once
                     CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.Output.Directory}\
@@ -100,7 +99,7 @@ Linker:
         Shared:
             DefaultPlatform:
                 Flags: "-shared -Wl,-rpath,\\$ORIGIN"
-                Executable: "g++"
+                Executable: "clang++"
                 RunParts:
                 -   Type: Once
                     CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.Output.Directory}\
