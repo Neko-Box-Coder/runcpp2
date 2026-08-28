@@ -431,7 +431,6 @@ namespace
                             }
                             else
                             {
-                                //TODO: Make this configurable
                                 //Attempt to capture warnings
                                 if(commandOutput.find(" warning") != std::string::npos)
                                     ssLOG_WARNING("Warning detected:\n" << commandOutput);
@@ -667,7 +666,7 @@ namespace
                     {
                         ssLOG_WARNING(  "Trying to link static dependency when script is being " <<
                                         "built as shared. Linking might not work on some platforms.");
-                        ssLOG_WARNING(  "If failing to link, consider using --executable instead");
+                        ssLOG_WARNING(  "If failing to link, consider using changing build type.");
                         //TODO: Maybe revert the default back to executable?
                     }
                     
@@ -869,7 +868,12 @@ namespace
                     return false;
                 }
                 else
-                    ssLOG_INFO("Link output:\n" << linkOutput);
+                {
+                    if(linkOutput.find(" warning") != std::string::npos)
+                        ssLOG_WARNING("Warning detected:\n" << linkOutput);
+                    else
+                        ssLOG_INFO("Link output:\n" << linkOutput);
+                }
             }
             
             //Run cleanup if any
@@ -1112,8 +1116,15 @@ namespace runcpp2
         
         runcpp2::TrimRight(dependenciesLinkFlags);
         
-        if(!LinkScript(buildDir, outputName, scriptInfo, dependenciesLinkFlags, profile, priorities))
+        if(!LinkScript( buildDir, 
+                        outputName, 
+                        scriptInfo, 
+                        dependenciesLinkFlags, 
+                        profile, 
+                        priorities))
+        {
             return DS_ERROR_MSG("LinkScript failed");
+        }
         
         if(!RunGlobalSteps(buildDir, profile.Cleanup))
             return DS_ERROR_MSG("Failed to run profile global cleanup steps");

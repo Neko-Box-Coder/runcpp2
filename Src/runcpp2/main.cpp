@@ -170,7 +170,7 @@ const int CMD_COLS_BEFORE_DESC = 56;
 void PrintGeneralOptions()
 {
     ssLOG_BASE( PadSpaceRight("       --log-level <level>", CMD_COLS_BEFORE_DESC) + 
-                "Sets the log level (Normal, Info, Debug) for runcpp2");
+                "Sets the log level (error, normal, info, debug) for runcpp2");
 }
 
 DS::Result<bool> ProcessGeneralOptions(int argc, char* argv[], int& argIndex)
@@ -187,6 +187,8 @@ DS::Result<bool> ProcessGeneralOptions(int argc, char* argv[], int& argIndex)
             ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_DEBUG);
         else if(level == "normal")
             ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_WARNING);
+        else if(level == "error")
+            ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_ERROR);
         else
             return DS_ERROR_MSG("Invalid level: " + DS_STR(level));
         
@@ -325,21 +327,21 @@ DS::Result<int> HandleRun(int argc, char* argv[])
     ghc::filesystem::file_time_type finalSourceWriteTime;
     ghc::filesystem::file_time_type finalIncludeWriteTime;
     runcpp2::RunParams runParams =  { 
-                                        { 
+                                        { //CoreParams Core;
                                             script, 
                                             profiles, 
                                             params, 
                                             local, 
                                             preferredProfile 
                                         },
-                                        false, 
-                                        false, 
-                                        sourceOnly, 
-                                        false, 
-                                        scriptArgs, 
-                                        jobs, 
-                                        nullptr,
-                                        ""
+                                        false, //bool rebuild;
+                                        false, //bool compileOnly;
+                                        sourceOnly, //bool buildSourceOnly;
+                                        false, //bool buildOnly;
+                                        scriptArgs, //const std::vector<std::string>& runArgs;
+                                        jobs, //const std::string rawMaxThreads;
+                                        nullptr, //const Data::ScriptInfo* lastScriptInfo;
+                                        "" //const ghc::filesystem::path& buildOutputDir;
                                     };
     int result = runcpp2::Run(  runParams,
                                 //Outputs
@@ -419,21 +421,21 @@ DS::Result<void> HandleBuild(int argc, char* argv[])
     ghc::filesystem::file_time_type finalSourceWriteTime;
     ghc::filesystem::file_time_type finalIncludeWriteTime;
     runcpp2::RunParams runParams =  { 
-                                        { 
+                                        { //CoreParams Core;
                                             script, 
                                             profiles, 
                                             params, 
                                             local, 
                                             preferredProfile 
                                         },
-                                        rebuild, 
-                                        false, 
-                                        sourceOnly, 
-                                        true, 
-                                        {}, 
-                                        jobs, 
-                                        nullptr,
-                                        outputDir
+                                        rebuild, //bool rebuild;
+                                        false, //bool compileOnly;
+                                        sourceOnly, //bool buildSourceOnly;
+                                        true, //bool buildOnly;
+                                        {}, //const std::vector<std::string>& runArgs
+                                        jobs, //const std::string rawMaxThreads;
+                                        nullptr, //const Data::ScriptInfo* lastScriptInfo;
+                                        outputDir //const ghc::filesystem::path& buildOutputDir;
                                     };
     runcpp2::Run(   runParams,
                     //Outputs
@@ -531,15 +533,15 @@ DS::Result<void> HandleWatch(int argc, char* argv[])
             ssLOG_LINE("Changes detected, running...");
             runcpp2::RunParams runParams 
             { 
-                coreParams, 
-                false, 
-                true, 
-                sourceOnly, 
-                true, 
-                {}, 
-                jobs, 
-                lastParsedScriptInfo,
-                ""
+                coreParams, //CoreParams Core;
+                false, //bool rebuild;
+                true, //bool compileOnly;
+                sourceOnly, //bool buildSourceOnly;
+                true, //bool buildOnly;
+                {}, //const std::vector<std::string>& runArgs;
+                jobs, //const std::string rawMaxThreads;
+                lastParsedScriptInfo, //const Data::ScriptInfo* lastScriptInfo;
+                "" //const ghc::filesystem::path& buildOutputDir;
             };
             runcpp2::Run(   runParams,
                             //Outputs
