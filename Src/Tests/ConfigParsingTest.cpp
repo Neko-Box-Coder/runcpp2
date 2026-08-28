@@ -1,6 +1,7 @@
 #include "runcpp2/ConfigParsing.hpp"
 #include "DSResult/DSResult.hpp"
 #include "CppOverride.hpp"
+#include "ssLogger/ssLogInit.hpp"
 #include "ssLogger/ssLog.hpp"
 #include "MacroPowerToys.h"
 
@@ -14,7 +15,9 @@ CO_DECLARE_INSTANCE(OverrideInstance);
 
 #include <memory>
 
-#if !INTERNAL_RUNCPP2_UNIT_TESTS || !defined(INTERNAL_RUNCPP2_UNIT_TESTS)
+#if !INTERNAL_RUNCPP2_UNIT_TESTS || !defined(INTERNAL_RUNCPP2_UNIT_TESTS) || \
+    INTERNAL_RUNCPP2_UNIT_TESTS != INTERNAL_RUNCPP2_UNIT_TESTS_CONFIG_PARSING
+    
     static_assert(false, "INTERNAL_RUNCPP2_UNIT_TESTS not defined");
 #endif
 

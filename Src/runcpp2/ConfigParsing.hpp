@@ -12,6 +12,12 @@
 #include "runcpp2/LibYAML_Wrapper.hpp"
 #include "runcpp2/ParameterUtil.hpp"
 
+#if !INTERNAL_RUNCPP2_UNIT_TESTS || \
+    INTERNAL_RUNCPP2_UNIT_TESTS != INTERNAL_RUNCPP2_UNIT_TESTS_CONFIG_PARSING
+
+    #include "runcpp2/ResolveImport.hpp"
+#endif
+
 #include "DSResult/DSResult.hpp"
 
 #include "cfgpath.h"
@@ -34,6 +40,7 @@
     INTERNAL_RUNCPP2_UNIT_TESTS == INTERNAL_RUNCPP2_UNIT_TESTS_CONFIG_PARSING
     
     #include "Tests/ConfigParsing/MockComponents.hpp"
+    #include "runcpp2/ResolveImport.hpp"
 #else
     #define CO_NO_OVERRIDE 1
     #include "CppOverride.hpp"
@@ -54,127 +61,8 @@ extern "C" const size_t Vs2022_v17Plus_size;
 
 namespace 
 {
-    DS::Result<runcpp2::Data::Profile> 
-    ResolveProfileImport(   runcpp2::YAML::NodePtr currentProfileNode, 
-                            const ghc::filesystem::path& configPath,
-                            runcpp2::YAML::ResourceHandle& currentYamlResources,
-                            const std::unordered_map<std::string, std::string>& inputParameters)
-    {
-        using namespace runcpp2;
-        
-        ssLOG_FUNC_INFO();
-        
-        ghc::filesystem::path currentImportFilePath = configPath;
-        std::stack<ghc::filesystem::path> pathsToImport;
-        runcpp2::Data::Profile p = {};
-        
-        std::unordered_map<std::string, std::vector<std::string>> substitutionMap;
-        runcpp2::Data::Profile::PopulateCompilingLinkingParams(substitutionMap);
-        
-        //Resovle parameters and variables first, before importing
-        ParseParametersAndVariables(p, currentProfileNode).DS_TRY();
-        ApplyParametersAndVariables(p, 
-                                    currentProfileNode, 
-                                    currentYamlResources, 
-                                    substitutionMap,
-                                    inputParameters,
-                                    {}).DS_TRY();
-        
-        while(runcpp2::ExistAndHasChild(currentProfileNode, "Import") || !pathsToImport.empty())
-        {
-            //If we import field, we should deal with it instead
-            if(runcpp2::ExistAndHasChild(currentProfileNode, "Import"))
-            {
-                const YAML::ConstNodePtr importNode = currentProfileNode->GetMapValueNode("Import");
-                if( importNode->GetType() != YAML::NodeType::Scalar && 
-                    importNode->GetType() != YAML::NodeType::Sequence)
-                {
-                    return DS_ERROR_MSG("Import must be a path or sequence of paths of YAML file(s)");
-                }
-                
-                ghc::filesystem::path currentImportDir = currentImportFilePath;
-                currentImportDir = currentImportDir.parent_path();
-                if(importNode->GetType() == YAML::NodeType::Scalar)
-                {
-                    std::string importPath = importNode->GetScalar<std::string>().DS_TRY();
-                    pathsToImport.push(currentImportDir / importPath);
-                }
-                else
-                {
-                    if(importNode->GetChildrenCount() == 0)
-                        return DS_ERROR_MSG("An import sequence cannot be an empty");
-                    
-                    for(int i = 0; i < importNode->GetChildrenCount(); ++i)
-                    {
-                        if(importNode->GetSequenceChildNode(i)->GetType() != YAML::NodeType::Scalar)
-                            return DS_ERROR_MSG("It must be a sequence of paths");
-                        
-                        std::string importPath = importNode ->GetSequenceChildScalar<std::string>(i)
-                                                            .DS_TRY();
-                        pathsToImport.push(currentImportDir / importPath);
-                    }
-                }
-            }
-            
-            currentImportFilePath = pathsToImport.top();
-            pathsToImport.pop();
-            
-            std::error_code ec;
-            if(!ghc::filesystem::exists(currentImportFilePath, ec))
-                return DS_ERROR_MSG("Import path doesn't exist: " + currentImportFilePath.string());
-            
-            //Read compiler profiles
-            std::stringstream buffer;
-            {
-                std::ifstream importProfileFile(currentImportFilePath);
-                if(!importProfileFile)
-                {
-                    return DS_ERROR_MSG("Failed to open profile import file: " + 
-                                        DS_STR(currentImportFilePath));
-                }
-                buffer << importProfileFile.rdbuf();
-            }
-            
-            YAML::ResourceHandle yamlResources;
-            DEFER { YAML::FreeYAMLResource(yamlResources); };
-            
-            std::vector<YAML::NodePtr> yamlRootNodes = YAML::ParseYAML( buffer.str(), 
-                                                                        yamlResources).DS_TRY();
-            DS_ASSERT_FALSE(yamlRootNodes.empty());
-            for(int i = 0; i < yamlRootNodes.size(); ++i)
-            {
-                YAML::ResolveAnchors(yamlRootNodes[i]).DS_TRY();
-                YAML::NodePtr importProfileNode = yamlRootNodes[i];
-                
-                //Perform parameter & variable parsing if the imported stuff has parameters/variables
-                ParseParametersAndVariables(p, importProfileNode).DS_TRY();
-                
-                //Modify the import yaml node
-                ApplyParametersAndVariables(p, 
-                                            importProfileNode, 
-                                            currentYamlResources, 
-                                            substitutionMap,
-                                            inputParameters,
-                                            {}).DS_TRY();
-                
-                MergeYAML_NodeChildren( importProfileNode, 
-                                        currentProfileNode, 
-                                        currentYamlResources, 
-                                        true).DS_TRY();
-                
-                //If the import doesn't have import, remove the current import
-                if(!ExistAndHasChild(importProfileNode, "Import"))
-                {
-                    currentProfileNode->RemoveMapChild("Import").DS_TRY();
-                }
-            }
-        } //while(runcpp2::ExistAndHasChild(currentProfileNode, "Import") || !pathsToImport.empty())
-        
-        return p;
-    }
-
-    DS::Result<void> GetPreferredProfile(   runcpp2::YAML::NodePtr configNode, 
-                                            std::string& outPreferredProfile)
+    inline DS::Result<void> GetPreferredProfile(runcpp2::YAML::NodePtr configNode, 
+                                                std::string& outPreferredProfile)
     {
         using namespace runcpp2;
         
@@ -222,12 +110,12 @@ namespace
         return {};
     }
     
-    DS::Result<void> ParseUserConfig(   const std::string& userConfigString, 
-                                        const ghc::filesystem::path& configPath,
-                                        const std::unordered_map<   std::string, 
-                                                                    std::string>& inputParameters,
-                                        std::vector<runcpp2::Data::Profile>& outProfiles,
-                                        std::string& outPreferredProfile)
+    inline DS::Result<void> ParseUserConfig(const std::string& userConfigString, 
+                                            const ghc::filesystem::path& configPath,
+                                            const std::unordered_map<   std::string, 
+                                                                        std::string>& inputParameters,
+                                            std::vector<runcpp2::Data::Profile>& outProfiles,
+                                            std::string& outPreferredProfile)
     {
         ssLOG_FUNC_INFO();
         using namespace runcpp2;
@@ -264,17 +152,25 @@ namespace
                 if(!currentProfileNode->IsMap())
                     return DS_ERROR_MSG("Profile entry must be a map");
                 
-                runcpp2::Data::Profile p = ResolveProfileImport(currentProfileNode, 
-                                                                configPath, 
-                                                                parseResource,
-                                                                inputParameters).DS_TRY();
-                p.ParseYAML_Node(currentProfileNode, false, inputParameters)
-                    .DS_TRY_ACT(DS_TMP_ERROR.Message += "\nFailed to parse compiler profile at index " + 
-                                                        DS_STR(j);
-                                DS_APPEND_TRACE(DS_TMP_ERROR);
-                                return DS::Error(DS_TMP_ERROR));
+                std::unordered_map<std::string, std::vector<std::string>> subMap;
+                runcpp2::Data::Profile::PopulateCompilingLinkingParams(subMap);
                 
-                outProfiles.push_back(std::move(p));
+                runcpp2::Data::Profile profile = 
+                    ResolveImport<runcpp2::Data::Profile>(  currentProfileNode,
+                                                            configPath.parent_path(),
+                                                            parseResource,
+                                                            subMap,
+                                                            inputParameters).DS_TRY();
+                profile .ParseYAML_Node(currentProfileNode, false, inputParameters)
+                        .DS_TRY_ACT
+                        (
+                            DS_TMP_ERROR.Message += "\nFailed to parse compiler profile at index " + 
+                                                    DS_STR(j);
+                            DS_APPEND_TRACE(DS_TMP_ERROR);
+                            return DS::Error(DS_TMP_ERROR)
+                        );
+                
+                outProfiles.push_back(std::move(profile));
             } //for(int j = 0; j < profilesNode->GetChildrenCount(); ++j)
             
             GetPreferredProfile(configNode, outPreferredProfile).DS_TRY();

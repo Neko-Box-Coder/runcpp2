@@ -55,7 +55,6 @@ namespace runcpp2
         return {};
     }
 
-
     //Expecting `std::unordered_map<std::string, ParameterValue> Parameters;` and
     //`std::unordered_map<std::string, std::string> Variables;` from T
     template<typename T>
