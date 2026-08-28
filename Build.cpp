@@ -192,9 +192,10 @@ DS::Result<void> GenerateDefaultYAMLs(const std::string runcpp2Path, const std::
 
 DS::Result<void> Main(int argc, char** argv)
 {
-    if(argc <= 2 || strcmp(argv[1], "--help") == 0)
+    if(argc <= 2 || strcmp(argv[2], "--help") == 0)
     {
-        printf("runcpp2 run Build.cpp [--runcpp2-path <path>]\n");
+        printf( "runcpp2 run Build.cpp [--runcpp2-path <path>] [--no-warning] [--info] [--rebuild] "
+                "[--no-test]\n");
         return {};
     }
     
