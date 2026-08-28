@@ -1,0 +1,16 @@
+Parameters:
+    ExtraFlags:
+        Optional: true
+
+OverrideCompileFlags:
+    DefaultPlatform:
+        msvc:
+            Remove: "/std:c++17"
+            Append: "/std:c++14 /bigobj {ExtraFlags}"
+        DefaultProfile:
+            Remove: "-std=c++17 -Og"
+            Append: "-std=c++11 -Wno-return-local-addr -Wno-sign-compare -Wno-unused-parameter \
+                -Wno-switch -Wextra -Wpedantic {ExtraFlags}"
+            #-Wno-unused-variable
+            #-Wno-unused-but-set-variable
+            #-Wno-gnu-zero-variadic-macro-arguments

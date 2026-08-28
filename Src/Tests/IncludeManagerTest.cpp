@@ -2,6 +2,7 @@
 
 #include "DSResult/DSResult.hpp"
 #include "CppOverride.hpp"
+#include "ssLogger/ssLogInit.hpp"
 #include "ssLogger/ssLog.hpp"
 
 CO_DECLARE_INSTANCE(OverrideInstance);

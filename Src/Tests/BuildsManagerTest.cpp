@@ -2,6 +2,7 @@
 
 #include "DSResult/DSResult.hpp"
 #include "CppOverride.hpp"
+#include "ssLogger/ssLogInit.hpp"
 #include "ssLogger/ssLog.hpp"
 
 #define INTERNAL_RUNCPP2_UNDEF_MOCKS 1

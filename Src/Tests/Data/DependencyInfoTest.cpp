@@ -1,7 +1,12 @@
+/* runcpp2
+Import: ["../TestCommon.yaml", "../../runcpp2/runcpp2Dep.yaml"]
+*/
+
 #include "runcpp2/Data/DependencyInfo.hpp"
 #include "runcpp2/LibYAML_Wrapper.hpp"
 #include "runcpp2/runcpp2.hpp"
 #include "runcpp2/DeferUtil.hpp"
+#include "ssLogger/ssLogInit.hpp"
 #include "ssLogger/ssLog.hpp"
 
 DS::Result<void> TestMain()

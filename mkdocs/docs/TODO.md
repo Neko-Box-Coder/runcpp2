@@ -45,6 +45,7 @@
 - Move to variant-lite instead of mpark-variant
 
 ## High Priority
+- Allow running multiple instances of runcpp2
 - External Source (curl download) for dependency
 - Expose/rename "InternalExecutableShared" and change BuildType to be platform map
     - This ties to the warning in `CompilingLinking.cpp:619`
