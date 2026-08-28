@@ -66,7 +66,7 @@ namespace Data
                 DS_ASSERT_LT(minF, maxF);
                 return std::make_pair(minF, maxF);
             }
-            catch(const std::exception& ex)
+            catch(const std::exception&)
             {
                 return DS_ERROR_MSG("Invalid constraint value for float: " + constraintValue);
             }
@@ -97,7 +97,7 @@ namespace Data
                 DS_ASSERT_LT_EQ(minI, maxI);
                 return std::make_pair(minI, maxI);
             }
-            catch(const std::exception& ex)
+            catch(const std::exception&)
             {
                 return DS_ERROR_MSG("Invalid constraint value for int: " + constraintValue);
             }
@@ -142,7 +142,7 @@ namespace Data
                     {
                         parsedFloat = std::stof(input);
                     }
-                    catch(const std::exception& ex)
+                    catch(const std::exception&)
                     {
                         return DS_ERROR_MSG("Failed to parse input as float: " + input);
                     }
@@ -156,7 +156,7 @@ namespace Data
                     {
                         parsedInt = std::stoi(input);
                     }
-                    catch(const std::exception& ex)
+                    catch(const std::exception&)
                     {
                         return DS_ERROR_MSG("Failed to parse input as int: " + input);
                     }

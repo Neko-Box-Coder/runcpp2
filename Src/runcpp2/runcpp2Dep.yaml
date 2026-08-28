@@ -26,7 +26,7 @@ Dependencies:
         -   "ssLOG_CALL_STACK=1"
         -   "ssLOG_CALL_STACK_ONLY=0"
         -   "ssLOG_IMMEDIATE_FLUSH=0"
-        -   "ssLOG_LEVEL=4"
+        -   "ssLOG_LEVEL=5"
         -   "ssLOG_LOG_TO_FILE=0"
         -   "ssLOG_SHOW_DATE=0"
         -   "ssLOG_SHOW_FILE_NAME=1"
@@ -82,7 +82,7 @@ Dependencies:
         Local:
             Path: "{RootPath}/External/libyaml"
     LibraryType: Header
-    IncludePaths: ["include"]
+    IncludePaths: ["include", ".."]
     CompileProperties:
         Defines: ["YAML_DECLARE_STATIC=1"]
 -   Name: string-view-lite

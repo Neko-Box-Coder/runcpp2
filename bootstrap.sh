@@ -22,8 +22,9 @@ g++ -c -w -g -std=c++11 \
     -isystem "./External/dylib/include" \
     -isystem "./External/variant/include" \
     -isystem "./External/DSResult/Include" \
-    -isystem "./External/DSResult/./External/expected/include" \
+    -isystem "./External/DSResult/External/expected/include" \
     -isystem "./External/libyaml/include" \
+    -isystem "./External" \
     -isystem "./External/string-view-lite/include" \
     -isystem "./External/CppOverride/Include_SingleHeader" \
     -isystem "./External/MacroPowerToys/." \

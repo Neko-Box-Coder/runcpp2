@@ -48,7 +48,6 @@
 namespace
 {
     bool RunCompiledScript( const ghc::filesystem::path& executable,
-                            const std::string& scriptPath,
                             const std::vector<std::string>& runArgs,
                             int& returnStatus)
     {
@@ -719,7 +718,7 @@ namespace runcpp2
             finalRunArgs.push_back(runArgs[i]);
         
         //Running the script with modified args
-        if(!RunCompiledScript(target, absoluteScriptPath, finalRunArgs, returnStatus))
+        if(!RunCompiledScript(target, finalRunArgs, returnStatus))
             return DS_ERROR_MSG("Failed to run script");
         
         return {};
