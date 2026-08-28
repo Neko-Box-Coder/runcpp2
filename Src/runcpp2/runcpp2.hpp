@@ -309,7 +309,7 @@ namespace runcpp2
 
         //Create parameters
         std::unordered_map<std::string, std::string> parameterValues;
-        CreateParameterValues(rawParameters, parameterValues);
+        CreateParameterValues(rawParameters, parameterValues).DS_TRY();
 
         //Parse script info
         ParseAndValidateScriptInfo( outAbsoluteScriptPath,

@@ -427,7 +427,7 @@ namespace runcpp2
         }
         
         std::unordered_map<std::string, std::string> parameterValues;
-        CreateParameterValues(rawParameters, parameterValues);
+        CreateParameterValues(rawParameters, parameterValues).DS_TRY();
         
         ParseUserConfig(userConfigContent, 
                         configPath, 

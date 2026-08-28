@@ -262,19 +262,121 @@ namespace runcpp2
         return {};
     }
     
-    inline void CreateParameterValues(  const std::string rawParams,
-                                        std::unordered_map<std::string, std::string>& outParameters)
+    inline DS::Result<void> CreateParameterValues(  const std::string rawParams,
+                                                    std::unordered_map< std::string, 
+                                                                        std::string>& outParameters)
     {
         std::vector<std::string> paramNameVals;
-        SplitString(rawParams, ":", paramNameVals);
-        if(paramNameVals.size() % 2 != 0)
+        
+        std::string tempStr;
+        bool key = true;
+        bool prevEscape = false;
+        bool inQuotes = false;
+        for(int i = 0; i < rawParams.size(); ++i)
         {
-            ssLOG_ERROR("Failed to parse parameters. Defaults to no parameters");
-            return;
-        }
+            bool startEscape = prevEscape;
+            switch(rawParams[i])
+            {
+                case '=':
+                {
+                    if(!prevEscape && !inQuotes)
+                    {
+                        if(!key)
+                        {
+                            return DS_ERROR_MSG("Failed to parse \"" + rawParams + "\", extra \"=\" "
+                                                "found");
+                        }
+                        key = false;
+                        paramNameVals.push_back(tempStr);
+                        tempStr.clear();
+                    }
+                    else
+                        tempStr.push_back('=');
+                    break;
+                }
+                case ';':
+                {
+                    if(!prevEscape && !inQuotes)
+                    {
+                        if(key)
+                        {
+                            return DS_ERROR_MSG("Failed to parse \"" + rawParams + "\", extra \";\" "
+                                                "found");
+                        }
+                        key = true;
+                        paramNameVals.push_back(tempStr);
+                        tempStr.clear();
+                    }
+                    else
+                        tempStr.push_back(';');
+                    break;
+                }
+                case '\\':
+                {
+                    if(inQuotes) //Quote mode
+                    {
+                        if(i == rawParams.size() - 1)
+                            return DS_ERROR_MSG("Missing terminating \"");
+                        if(rawParams[i + 1] == '"')
+                            prevEscape = true;
+                        else
+                            tempStr.push_back('\\');
+                    }
+                    else
+                    {
+                        if(prevEscape)
+                            tempStr.push_back('\\');
+                        else
+                            prevEscape = true;
+                    }
+                    break;
+                }
+                case '"':
+                {
+                    if(prevEscape)
+                    {
+                        tempStr.push_back('"');
+                        break;
+                    }
+                    
+                    inQuotes = !inQuotes;
+                    break;
+                }
+                //TODO: Allow comma to be escaped
+                //case ',':
+                //{
+                //    if(prevEscape)
+                //        tempStr.push_back(',');
+                //    else
+                //        prevEscape = true;
+                //}
+                default:
+                {
+                    if(prevEscape && !inQuotes)
+                    {
+                        return DS_ERROR_MSG("Unrecognized escape \"\\" + std::string(1, rawParams[i]) + 
+                                            "\"");
+                    }
+                    tempStr.push_back(rawParams[i]);
+                }
+            } //switch(rawParams[i])
+            
+            if(i == rawParams.size() - 1)
+            {
+                if(key && !tempStr.empty())
+                    return DS_ERROR_MSG("Missing value for key: " + tempStr);
+                paramNameVals.push_back(tempStr);
+            }
+            
+            prevEscape = startEscape == prevEscape ? false : prevEscape;
+        } //for(int i = 0; i < rawParams.size(); ++i)
+        
+        DS_ASSERT_EQ(paramNameVals.size() % 2, 0);
         
         for(int i = 0; i < paramNameVals.size(); i += 2)
             outParameters[paramNameVals[i]] = paramNameVals[i + 1];
+        
+        return {};
     }
 }
 

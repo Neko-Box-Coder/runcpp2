@@ -217,10 +217,9 @@ void PrintRunBuildWatchCommonOptions(bool includeSourceOnly)
                     PadSpaceRight("", CMD_COLS_BEFORE_DESC) + 
                     "Requires dependencies to be built already.");
     }
-    ssLOG_BASE( PadSpaceRight(   "  -p,  --[p]arameters <name1:val1:name2:val2:...>", 
+    ssLOG_BASE( PadSpaceRight(   "  -p,  --[p]arameters <name1=val1;name2=val2;...>", 
                                 CMD_COLS_BEFORE_DESC) +
-                "Colon separated parameter name value pairs that perform text replacement on the "
-                "build config");
+                "Parameter name value pairs that perform text replacement on the build config");
     
     ssLOG_BASE( PadSpaceRight("  -j,  --[j]obs <number>", CMD_COLS_BEFORE_DESC) +
                 "Maximum number of threads running. Defaults to 8");

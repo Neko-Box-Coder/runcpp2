@@ -272,14 +272,14 @@ DS::Result<void> Main(int argc, char** argv)
     
     ghc::filesystem::path rootDir = ghc::filesystem::path(argv[1]).parent_path();
     
-    std::string params = "RUNCPP2_VERSION:" + versionString + ":RootPath:" + rootDir.string();
+    std::string params = "RUNCPP2_VERSION=" + versionString + ";RootPath=\"" + rootDir.string() + "\"";
     if(warnError)
     {
         //TODO: Replace this with platform/profile map in parameter/variable
         #if defined(_WIN32)
-            params += ":ExtraFlags:/WX";
+            params += ";ExtraFlags=/WX";
         #elif defined (__unix__) || (defined (__APPLE__) && defined (__MACH__))
-            params += ":ExtraFlags:-Werror";
+            params += ";ExtraFlags=-Werror";
         #else
             #error "Unsupported platform..."
         #endif
