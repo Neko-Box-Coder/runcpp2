@@ -308,14 +308,13 @@ namespace runcpp2
         }
 
         //Create parameters
-        std::unordered_map<std::string, std::string> parameterValues;
-        CreateParameterValues(rawParameters, parameterValues).DS_TRY();
+        CreateParameterValues(rawParameters, outParameterValues).DS_TRY();
 
         //Parse script info
         ParseAndValidateScriptInfo( outAbsoluteScriptPath,
                                     outScriptDirectory,
                                     outScriptName,
-                                    parameterValues,
+                                    outParameterValues,
                                     outScriptInfo).DS_TRY();
         
         return {};
@@ -367,6 +366,8 @@ namespace runcpp2
         
         if(params.profiles.empty())
             return DS_ERROR_MSG("No compiler profiles found");
+        
+        //TODO: Run dependencies cleanup?
         
         int profileIndex =  GetPreferredProfileIndex(   absoluteScriptPath, 
                                                         scriptInfo, 

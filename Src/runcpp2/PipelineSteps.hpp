@@ -400,10 +400,13 @@ namespace runcpp2
                 }
                 
                 //Resolve imports for last script info
-                ResolveDependenciesImports( lastScriptInfoFromDisk, 
-                                            scriptDirectory, 
-                                            buildDir, 
-                                            parameters).DS_TRY();
+                if(!ResolveDependenciesImports( lastScriptInfoFromDisk, 
+                                                scriptDirectory, 
+                                                buildDir, 
+                                                parameters).HasValue())
+                {
+                    break;
+                }
                 lastInfo = &lastScriptInfoFromDisk;
             }
             while(false);
