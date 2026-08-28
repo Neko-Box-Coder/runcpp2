@@ -16,6 +16,7 @@
 - Separator for repeat RunPart
 - Parameters for profiles
 - CompileProperties for dependencies
+- Ditch cmake
 
 ### v0.3.1
 - Check last run is shared lib or executable. Reset cache when necessary if different type
@@ -39,9 +40,9 @@
 ## Planned
 
 ### v0.4.0
+- Add support to object output type
 - Allow runcpp2 to be library for scriptable pipeline
-- Add more default profiles
-- Ditch cmake
+- Add more default profiles (gcc, clang, emscripten?)
 - Move to variant-lite instead of mpark-variant
 
 ## High Priority
