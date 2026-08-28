@@ -1,5 +1,5 @@
 /* runcpp2
-Import: ["../TestCommon.yaml", "../../runcpp2/runcpp2Dep.yaml"]
+Import: "../../runcpp2/runcpp2Dep.yaml"
 */
 
 #include "runcpp2/Data/ScriptInfo.hpp"
@@ -612,7 +612,7 @@ DS::Result<void> TestMain()
     return {};
 }
 
-int main(int argc, char** argv)
+int main(int, char**)
 {
     try
     {
@@ -624,5 +624,4 @@ int main(int argc, char** argv)
         ssLOG_LINE(ex.what());
         return 1;
     }
-    return 1;
 }
