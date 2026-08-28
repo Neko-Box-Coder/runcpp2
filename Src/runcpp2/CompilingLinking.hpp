@@ -451,9 +451,6 @@ namespace
                             else
                                 compileCommand = runPartSubstitutedCommand;
                             
-                            ssLOG_INFO( "running compile command: " << compileCommand <<
-                                         " in " << buildDir.string());
-                            
                             std::string commandOutput;
                             int resultCode = 0;
                             
@@ -471,6 +468,9 @@ namespace
                             }
                             else
                             {
+                                ssLOG_INFO( "Ran compile command: " << compileCommand <<
+                                            " in " << buildDir.string());
+                                
                                 //Attempt to capture warnings
                                 if(commandOutput.find(" warning") != std::string::npos)
                                     ssLOG_WARNING("Warning detected:\n" << commandOutput);
@@ -891,7 +891,6 @@ namespace
                 else
                     linkCommand = runPartSubstitutedCommand;
                 
-                ssLOG_INFO("running link command: " << linkCommand << " in " << buildDir.string());
                 std::string linkOutput;
                 int resultCode = 0;
                 
@@ -909,6 +908,7 @@ namespace
                 }
                 else
                 {
+                    ssLOG_INFO("Ran link command: " << linkCommand << " in " << buildDir.string());
                     if(linkOutput.find(" warning") != std::string::npos)
                         ssLOG_WARNING("Warning detected:\n" << linkOutput);
                     else
