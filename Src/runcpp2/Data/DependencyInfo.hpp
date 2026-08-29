@@ -4,6 +4,7 @@
 #include "runcpp2/Data/DependencyLibraryType.hpp"
 #include "runcpp2/Data/DependencySource.hpp"
 #include "runcpp2/Data/DependencyLinkProperty.hpp"
+#include "runcpp2/Data/DependencyCompileProperty.hpp"
 #include "runcpp2/Data/ProfilesCommands.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/Data/ParameterValue.hpp"
@@ -36,6 +37,7 @@ namespace Data
         std::vector<std::string> IncludePaths;
         std::vector<std::string> AbsoluteIncludePaths;
         std::unordered_map<PlatformName, DependencyLinkProperty> LinkProperties;
+        std::unordered_map<PlatformName, DependencyCompileProperty> CompileProperties;
         std::unordered_map<PlatformName, ProfilesCommands> Setup;
         std::unordered_map<PlatformName, ProfilesCommands> Cleanup;
         std::unordered_map<PlatformName, ProfilesCommands> Build;
@@ -91,6 +93,9 @@ namespace Data
                 
                 //Expecting either platform profile map or ProfileLinkProperty map
                 NodeRequirement("LinkProperties", YAML::NodeType::Map, false, false),
+                
+                //Expecting either platform profile map or ProfileCompileProperty map
+                NodeRequirement("CompileProperties", YAML::NodeType::Map, false, false),
                 
                 //Setup can be platform profile map or sequence of commands, handle later
                 //Cleanup can be platform profile map or sequence of commands, handle later
@@ -148,6 +153,17 @@ namespace Data
             {
                 return DS_ERROR_MSG("DependencyInfo: Missing LinkProperties with library type " + 
                                     Data::DependencyLibraryTypeToString(LibraryType));
+            }
+
+            if(ExistAndHasChild(clonedNode, "CompileProperties"))
+            {
+                DS_ASSERT_TRUE( ParsePlatformProfileMap<DependencyCompileProperty>
+                                (
+                                    clonedNode, 
+                                    "CompileProperties", 
+                                    CompileProperties, 
+                                    "CompileProperties"
+                                ));
             }
 
             DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesCommands>(   clonedNode, 
@@ -209,6 +225,16 @@ namespace Data
                 }
             }
             
+            if(!CompileProperties.empty())
+            {
+                out += indentation + "CompileProperties:\n";
+                for(auto it = CompileProperties.begin(); it != CompileProperties.end(); ++it)
+                {
+                    out += indentation + "    " + it->first + ":\n";
+                    out += it->second.ToString(indentation + "        ");
+                }
+            }
+            
             if(!Setup.empty())
             {
                 out += indentation + "Setup:\n";
@@ -261,6 +287,7 @@ namespace Data
                 IncludePaths != other.IncludePaths ||
                 AbsoluteIncludePaths != other.AbsoluteIncludePaths ||
                 LinkProperties.size() != other.LinkProperties.size() ||
+                CompileProperties.size() != other.CompileProperties.size() ||
                 Setup.size() != other.Setup.size() ||
                 Cleanup.size() != other.Cleanup.size() ||
                 Build.size() != other.Build.size() ||
@@ -279,6 +306,15 @@ namespace Data
             {
                 if( other.LinkProperties.count(it.first) == 0 || 
                     !other.LinkProperties.at(it.first).Equals(it.second))
+                {
+                    return false;
+                }
+            }
+
+            for(const auto& it : CompileProperties)
+            {
+                if( other.CompileProperties.count(it.first) == 0 || 
+                    !other.CompileProperties.at(it.first).Equals(it.second))
                 {
                     return false;
                 }

@@ -1,7 +1,12 @@
+/* runcpp2
+Import: "../../runcpp2/runcpp2Dep.yaml"
+*/
+
 #include "runcpp2/Data/ScriptInfo.hpp"
 #include "runcpp2/LibYAML_Wrapper.hpp"
 #include "runcpp2/runcpp2.hpp"
 #include "runcpp2/DeferUtil.hpp"
+#include "ssLogger/ssLogInit.hpp"
 #include "ssLogger/ssLog.hpp"
 
 DS::Result<void> TestMain()
@@ -129,7 +134,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        scriptInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
+        scriptInfo.ParseYAML_Node(root, true, tempParameters).DS_TRY();
         
         //Verify basic fields
         DS_ASSERT_EQ(scriptInfo.Language, "C++");
@@ -275,7 +280,7 @@ DS::Result<void> TestMain()
         DS_ASSERT_EQ(roots.size(), 1);
         
         runcpp2::Data::ScriptInfo parsedOutput;
-        parsedOutput.ParseYAML_Node(roots.front(), tempParameters).DS_TRY();
+        parsedOutput.ParseYAML_Node(roots.front(), true, tempParameters).DS_TRY();
         DS_ASSERT_TRUE(scriptInfo.Equals(parsedOutput));
     }
     
@@ -299,7 +304,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        scriptInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
+        scriptInfo.ParseYAML_Node(root, true, tempParameters).DS_TRY();
         
         //Verify SourceFiles
         const std::vector<ghc::filesystem::path>& msvcCompileFiles = 
@@ -352,7 +357,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        scriptInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
+        scriptInfo.ParseYAML_Node(root, true, tempParameters).DS_TRY();
         
         //Verify basic fields
         DS_ASSERT_EQ(scriptInfo.Language, "C++");
@@ -461,7 +466,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        scriptInfo.ParseYAML_Node(root, parameters).DS_TRY();
+        scriptInfo.ParseYAML_Node(root, true, parameters).DS_TRY();
         const std::vector<runcpp2::Data::Define>& defaultDefines = 
             scriptInfo.Defines.at("DefaultPlatform").Defines.at("DefaultProfile");
         
@@ -503,7 +508,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        scriptInfo.ParseYAML_Node(root, parameters).DS_TRY();
+        scriptInfo.ParseYAML_Node(root, true, parameters).DS_TRY();
         {
             const std::vector<runcpp2::Data::Define>& defaultDefines = 
                 scriptInfo.Defines.at("DefaultPlatform").Defines.at("DefaultProfile");
@@ -550,7 +555,7 @@ DS::Result<void> TestMain()
         root = roots.front();
         
         scriptInfo = {};
-        scriptInfo.ParseYAML_Node(root, parameters).DS_TRY();
+        scriptInfo.ParseYAML_Node(root, true, parameters).DS_TRY();
         
         {
             const std::vector<runcpp2::Data::Define>& defaultDefines = 
@@ -598,7 +603,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        DS::Result<void> res = scriptInfo.ParseYAML_Node(root, parameters);
+        DS::Result<void> res = scriptInfo.ParseYAML_Node(root, true, parameters);
         DS_ASSERT_FALSE(res.HasValue());
         DS_ASSERT_EQ(   res.Error().Message, 
                         "Parameter {UnexpectedParameter} is expected but nothing is supplied");
@@ -607,7 +612,7 @@ DS::Result<void> TestMain()
     return {};
 }
 
-int main(int argc, char** argv)
+int main(int, char**)
 {
     try
     {
@@ -619,5 +624,4 @@ int main(int argc, char** argv)
         ssLOG_LINE(ex.what());
         return 1;
     }
-    return 1;
 }

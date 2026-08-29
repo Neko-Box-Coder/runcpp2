@@ -1,7 +1,12 @@
+/* runcpp2
+Import: "../../runcpp2/runcpp2Dep.yaml"
+*/
+
 #include "runcpp2/Data/DependencyInfo.hpp"
 #include "runcpp2/LibYAML_Wrapper.hpp"
 #include "runcpp2/runcpp2.hpp"
 #include "runcpp2/DeferUtil.hpp"
+#include "ssLogger/ssLogInit.hpp"
 #include "ssLogger/ssLog.hpp"
 
 DS::Result<void> TestMain()
@@ -41,6 +46,9 @@ DS::Result<void> TestMain()
                         -   mylib
                         SearchDirectories:
                         -   /usr/local/lib
+            CompileProperties:
+                Defines: ["Define1", "Define2=2"]
+                AdditionalCompileOptions: ["-Wno-ignored-attributes"]
             Setup:
                 Windows:
                     MSVC:
@@ -109,6 +117,19 @@ DS::Result<void> TestMain()
                                     .CommandSteps
                                     .at("DefaultProfile")
                                     .size(), 2);
+        
+        //Verify Compile Properties
+        const runcpp2::Data::ProfileCompileProperty& compileProp = 
+            dependencyInfo  .CompileProperties
+                            .at("DefaultPlatform")
+                            .ProfileProperties
+                            .at("DefaultProfile");
+        DS_ASSERT_EQ(compileProp.Defines.size(), 2);
+        DS_ASSERT_EQ(compileProp.Defines[1].Name, "Define2");
+        DS_ASSERT_EQ(compileProp.Defines[1].Value, "2");
+        DS_ASSERT_TRUE(compileProp.Defines[1].HasValue);
+        DS_ASSERT_EQ(compileProp.AdditionalCompileOptions.size(), 1);
+        DS_ASSERT_EQ(compileProp.AdditionalCompileOptions[0], "-Wno-ignored-attributes");
         
         //Verify Files to Copy
         const std::vector<std::string>& msvcDebugFiles = 
@@ -187,7 +208,7 @@ DS::Result<void> TestMain()
     return {};
 }
 
-int main(int argc, char** argv)
+int main(int, char**)
 {
     try
     {
@@ -199,5 +220,4 @@ int main(int argc, char** argv)
         ssLOG_LINE(ex.what());
         return 1;
     }
-    return 1;
 }

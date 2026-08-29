@@ -19,7 +19,7 @@
     INTERNAL_RUNCPP2_UNIT_TESTS == INTERNAL_RUNCPP2_UNIT_TESTS_BUILDS_MANAGER
     
     #include "Tests/BuildsManager/MockComponents.hpp"
-    class BuildsManagerAccessor;
+    struct BuildsManagerAccessor;
 #else
     #define CO_NO_OVERRIDE 1
     #include "CppOverride.hpp"
@@ -32,7 +32,7 @@ namespace runcpp2
         #if defined(INTERNAL_RUNCPP2_UNIT_TESTS) && \
             INTERNAL_RUNCPP2_UNIT_TESTS == INTERNAL_RUNCPP2_UNIT_TESTS_BUILDS_MANAGER
             
-            friend class ::BuildsManagerAccessor;
+            friend struct ::BuildsManagerAccessor;
         #endif
         
         private:

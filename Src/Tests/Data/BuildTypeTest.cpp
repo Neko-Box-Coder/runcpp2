@@ -1,6 +1,11 @@
+/* runcpp2
+Import: "../../runcpp2/runcpp2Dep.yaml"
+*/
+
 #include "runcpp2/Data/BuildType.hpp"
 #include "runcpp2/Data/BuildTypeHelper.hpp"
 #include "runcpp2/runcpp2.hpp"
+#include "ssLogger/ssLogInit.hpp"
 #include "ssLogger/ssLog.hpp"
 
 DS::Result<void> TestMain()
@@ -44,7 +49,7 @@ DS::Result<void> TestMain()
     return {};
 }
 
-int main(int argc, char** argv)
+int main(int, char**)
 {
     try
     {
@@ -56,5 +61,4 @@ int main(int argc, char** argv)
         ssLOG_LINE(ex.what());
         return 1;
     }
-    return 1;
 }

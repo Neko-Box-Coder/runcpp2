@@ -15,6 +15,8 @@
 - Dot access groups for built-in profile variables
 - Separator for repeat RunPart
 - Parameters for profiles
+- CompileProperties for dependencies
+- Ditch cmake
 
 ### v0.3.1
 - Check last run is shared lib or executable. Reset cache when necessary if different type
@@ -38,12 +40,14 @@
 ## Planned
 
 ### v0.4.0
+- Add support to object output type
 - Allow runcpp2 to be library for scriptable pipeline
-- Add more default profiles
-- Ditch cmake
+- Add more default profiles (gcc, clang, emscripten?)
 - Move to variant-lite instead of mpark-variant
 
 ## High Priority
+- Use execv* directly when doing `runcpp2 run` to allow debugging instead of forking, not sure about windows
+- Allow running multiple instances of runcpp2
 - External Source (curl download) for dependency
 - Expose/rename "InternalExecutableShared" and change BuildType to be platform map
     - This ties to the warning in `CompilingLinking.cpp:619`

@@ -62,7 +62,7 @@ bool ListDir(const std::string& dirLoc = ".")
 
 
 #if defined(_WIN32)
-    #define RUNCPP2_EXE "Debug/runcpp2.exe"
+    #define RUNCPP2_EXE "runcpp2.exe"
 #else
     #define RUNCPP2_EXE "runcpp2"
 #endif

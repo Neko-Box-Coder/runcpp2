@@ -6,6 +6,7 @@
 #include "runcpp2/StringUtil.hpp"
 #include "runcpp2/runcpp2.hpp"
 
+#include "ssLogger/ssLogInit.hpp"
 #include "ssLogger/ssLog.hpp"
 #include "ghc/filesystem.hpp"
 #include "DSResult/DSResult.hpp"
@@ -95,68 +96,68 @@ DS::Result<void> GenerateScriptTemplate(const ghc::filesystem::path& outputFileP
 {
     DS_ASSERT_FALSE(outputFilePath.empty());
     
-    std::string defaultScriptInfo;
-    runcpp2::GetDefaultScriptInfo(defaultScriptInfo);
-    
-    //Check if output filepath exists, if so check if it is a directory
-    std::error_code e;
-    if(ghc::filesystem::exists(outputFilePath, e))
-    {
-        if(ghc::filesystem::is_directory(outputFilePath, e))
-        {
-            return DS_ERROR_MSG(outputFilePath.string() + " is a directory. " +
-                                "Cannot output script template to a directory");
-        }
+    #if RUNCPP2_BOOTSTRAP
+        return DS_ERROR_MSG("Cannot generate script template in bootstrap mode");
+    #else
+        std::string defaultScriptInfo;
+        runcpp2::GetDefaultScriptInfo(defaultScriptInfo);
         
-        //If exists, check if it is a cpp/cc file.
-        std::ifstream readOutputFile(outputFilePath);
-        std::stringstream buffer;
-        
-        if(!readOutputFile)
-            return DS_ERROR_MSG("Failed to open file: " + outputFilePath.string());
-        
-        if(outputFilePath.extension() == ".cpp" || outputFilePath.extension() == ".cc")
+        //Check if output filepath exists, if so check if it is a directory
+        std::error_code e;
+        if(ghc::filesystem::exists(outputFilePath, e))
         {
-            //If so, prepend the script info template but wrapped in block comment
-            buffer << "/* runcpp2" << std::endl << std::endl;
-            buffer << defaultScriptInfo << std::endl;
-            buffer << "*/" << std::endl << std::endl;
-            buffer << readOutputFile.rdbuf();
+            if(ghc::filesystem::is_directory(outputFilePath, e))
+            {
+                return DS_ERROR_MSG(outputFilePath.string() + " is a directory. " +
+                                    "Cannot output script template to a directory");
+            }
+            
+            //If exists, check if it is a cpp/cc/c file.
+            std::ifstream readOutputFile(outputFilePath);
+            std::stringstream buffer;
+            
+            if(!readOutputFile)
+                return DS_ERROR_MSG("Failed to open file: " + outputFilePath.string());
+            
+            if( outputFilePath.extension() == ".cpp" || 
+                outputFilePath.extension() == ".cc" ||
+                outputFilePath.extension() == ".c")
+            {
+                //If so, prepend the script info template but wrapped in block comment
+                buffer << "/* runcpp2" << std::endl << std::endl;
+                buffer << defaultScriptInfo << std::endl;
+                buffer << "*/" << std::endl << std::endl;
+                buffer << readOutputFile.rdbuf();
+            }
+            //If not, check if it is yaml/yml, otherwise output a warning
+            else
+            {
+                if(outputFilePath.extension() != ".yaml" && outputFilePath.extension() != ".yml")
+                    ssLOG_WARNING("Outputing script info template to non yaml file, is this intended?");
+                
+                buffer << defaultScriptInfo << std::endl << std::endl;
+                buffer << readOutputFile.rdbuf();
+            }
+            readOutputFile.close();
+            
+            std::ofstream writeOutputFile(outputFilePath);
+            if(!writeOutputFile)
+                return DS_ERROR_MSG("Failed to open file: " + outputFilePath.string());
+
+            writeOutputFile << buffer.rdbuf();
         }
-        //If not, check if it is yaml/yml. 
-        else if(outputFilePath.extension() == ".yaml" || outputFilePath.extension() == ".yml")
-        {
-            //If so just prepend it normally
-            buffer << defaultScriptInfo << std::endl << std::endl;
-            buffer << readOutputFile.rdbuf();
-        }
-        //If not prepend it still but output a warning
+        //Otherwise write it to the file
         else
         {
-            ssLOG_WARNING("Outputing script info template to non yaml file, is the intended?");
-            buffer << defaultScriptInfo << std::endl << std::endl;
-            buffer << readOutputFile.rdbuf();
+            std::ofstream writeOutputFile(outputFilePath);
+            if(!writeOutputFile)
+                return DS_ERROR_MSG("Failed to open file: " + outputFilePath.string());
+            
+            writeOutputFile << defaultScriptInfo;
         }
         
-        readOutputFile.close();
-        
-        std::ofstream writeOutputFile(outputFilePath);
-        if(!writeOutputFile)
-            return DS_ERROR_MSG("Failed to open file: " + outputFilePath.string());
-
-        writeOutputFile << buffer.rdbuf();
-    }
-    //Otherwise write it to the file
-    else
-    {
-        std::ofstream writeOutputFile(outputFilePath);
-        if(!writeOutputFile)
-            return DS_ERROR_MSG("Failed to open file: " + outputFilePath.string());
-        
-        writeOutputFile << defaultScriptInfo;
-    }
-    
-    return {};
+        return {};
+    #endif
 }
 
 std::string PadSpaceRight(const std::string& s, int padCol)
@@ -170,7 +171,7 @@ const int CMD_COLS_BEFORE_DESC = 56;
 void PrintGeneralOptions()
 {
     ssLOG_BASE( PadSpaceRight("       --log-level <level>", CMD_COLS_BEFORE_DESC) + 
-                "Sets the log level (Normal, Info, Debug) for runcpp2");
+                "Sets the log level (error, normal, info, debug) for runcpp2");
 }
 
 DS::Result<bool> ProcessGeneralOptions(int argc, char* argv[], int& argIndex)
@@ -187,6 +188,8 @@ DS::Result<bool> ProcessGeneralOptions(int argc, char* argv[], int& argIndex)
             ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_DEBUG);
         else if(level == "normal")
             ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_WARNING);
+        else if(level == "error")
+            ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_ERROR);
         else
             return DS_ERROR_MSG("Invalid level: " + DS_STR(level));
         
@@ -210,10 +213,9 @@ void PrintRunBuildWatchCommonOptions(bool includeSourceOnly)
                     PadSpaceRight("", CMD_COLS_BEFORE_DESC) + 
                     "Requires dependencies to be built already.");
     }
-    ssLOG_BASE( PadSpaceRight(   "  -p,  --[p]arameters <name1:val1:name2:val2:...>", 
+    ssLOG_BASE( PadSpaceRight(   "  -p,  --[p]arameters <name1=val1;name2=val2;...>", 
                                 CMD_COLS_BEFORE_DESC) +
-                "Colon separated parameter name value pairs that perform text replacement on the "
-                "build config");
+                "Parameter name value pairs that perform text replacement on the build config");
     
     ssLOG_BASE( PadSpaceRight("  -j,  --[j]obs <number>", CMD_COLS_BEFORE_DESC) +
                 "Maximum number of threads running. Defaults to 8");
@@ -325,21 +327,21 @@ DS::Result<int> HandleRun(int argc, char* argv[])
     ghc::filesystem::file_time_type finalSourceWriteTime;
     ghc::filesystem::file_time_type finalIncludeWriteTime;
     runcpp2::RunParams runParams =  { 
-                                        { 
+                                        { //CoreParams Core;
                                             script, 
                                             profiles, 
                                             params, 
                                             local, 
                                             preferredProfile 
                                         },
-                                        false, 
-                                        false, 
-                                        sourceOnly, 
-                                        false, 
-                                        scriptArgs, 
-                                        jobs, 
-                                        nullptr,
-                                        ""
+                                        false, //bool rebuild;
+                                        false, //bool compileOnly;
+                                        sourceOnly, //bool buildSourceOnly;
+                                        false, //bool buildOnly;
+                                        scriptArgs, //const std::vector<std::string>& runArgs;
+                                        jobs, //const std::string rawMaxThreads;
+                                        nullptr, //const Data::ScriptInfo* lastScriptInfo;
+                                        "" //const ghc::filesystem::path& buildOutputDir;
                                     };
     int result = runcpp2::Run(  runParams,
                                 //Outputs
@@ -419,21 +421,21 @@ DS::Result<void> HandleBuild(int argc, char* argv[])
     ghc::filesystem::file_time_type finalSourceWriteTime;
     ghc::filesystem::file_time_type finalIncludeWriteTime;
     runcpp2::RunParams runParams =  { 
-                                        { 
+                                        { //CoreParams Core;
                                             script, 
                                             profiles, 
                                             params, 
                                             local, 
                                             preferredProfile 
                                         },
-                                        rebuild, 
-                                        false, 
-                                        sourceOnly, 
-                                        true, 
-                                        {}, 
-                                        jobs, 
-                                        nullptr,
-                                        outputDir
+                                        rebuild, //bool rebuild;
+                                        false, //bool compileOnly;
+                                        sourceOnly, //bool buildSourceOnly;
+                                        true, //bool buildOnly;
+                                        {}, //const std::vector<std::string>& runArgs
+                                        jobs, //const std::string rawMaxThreads;
+                                        nullptr, //const Data::ScriptInfo* lastScriptInfo;
+                                        outputDir //const ghc::filesystem::path& buildOutputDir;
                                     };
     runcpp2::Run(   runParams,
                     //Outputs
@@ -531,15 +533,15 @@ DS::Result<void> HandleWatch(int argc, char* argv[])
             ssLOG_LINE("Changes detected, running...");
             runcpp2::RunParams runParams 
             { 
-                coreParams, 
-                false, 
-                true, 
-                sourceOnly, 
-                true, 
-                {}, 
-                jobs, 
-                lastParsedScriptInfo,
-                ""
+                coreParams, //CoreParams Core;
+                false, //bool rebuild;
+                true, //bool compileOnly;
+                sourceOnly, //bool buildSourceOnly;
+                true, //bool buildOnly;
+                {}, //const std::vector<std::string>& runArgs;
+                jobs, //const std::string rawMaxThreads;
+                lastParsedScriptInfo, //const Data::ScriptInfo* lastScriptInfo;
+                "" //const ghc::filesystem::path& buildOutputDir;
             };
             runcpp2::Run(   runParams,
                             //Outputs
@@ -757,7 +759,7 @@ DS::Result<int> Main(int argc, char* argv[])
     else if(strcmp(argv[1], "show-config-path") == 0)
     {
         ghc::filesystem::path configFilePath = runcpp2::GetConfigFilePath().DS_TRY();
-        ssLOG_BASE(configFilePath);
+        ssLOG_BASE(configFilePath.string());
     }
     else if(strcmp(argv[1], "version") == 0)
         ssLOG_BASE("runcpp2 version " << RUNCPP2_VERSION);
@@ -779,4 +781,6 @@ int main(int argc, char* argv[])
     return result;
 }
 
-#include "runcpp2/DefaultYAMLs.c"
+#if !RUNCPP2_BOOTSTRAP
+    #include "runcpp2/DefaultYAMLs.c"
+#endif

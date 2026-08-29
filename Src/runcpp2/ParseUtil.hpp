@@ -8,6 +8,7 @@
 
 #include "ssLogger/ssLog.hpp"
 #include "DSResult/DSResult.hpp"
+#include "ghc/filesystem.hpp"
 
 #include <vector>
 #include <unordered_map>
@@ -309,10 +310,10 @@ namespace runcpp2
         return {};
     }
     
-    inline DS::Result<void> MergeYAML_NodeChildren( YAML::NodePtr nodeToMergeFrom, 
-                                                    YAML::NodePtr nodeToMergeTo,
-                                                    YAML::ResourceHandle& yamlResouce,
-                                                    bool overwrite)
+    inline DS::Result<void> MergeYAML_Maps( YAML::ConstNodePtr nodeToMergeFrom, 
+                                            YAML::NodePtr nodeToMergeTo,
+                                            YAML::ResourceHandle& yamlResouce,
+                                            bool overwrite)
     {
         ssLOG_FUNC_DEBUG();
         DS_ASSERT_NOT_EQ(nodeToMergeFrom.get(), nodeToMergeTo.get());
@@ -325,14 +326,111 @@ namespace runcpp2
             std::string key = nodeToMergeFrom->GetMapKeyScalarAt<std::string>(i).DS_TRY();
             if(!ExistAndHasChild(nodeToMergeTo, key, true))
             {
-                YAML::NodePtr fromNode = nodeToMergeFrom->GetMapValueNodeAt(i);
+                YAML::ConstNodePtr fromNode = nodeToMergeFrom->GetMapValueNodeAt(i);
                 fromNode->CloneToMapChild(key, nodeToMergeTo, yamlResouce).DS_TRY();
             }
             else if(overwrite)
             {
                 nodeToMergeTo->RemoveMapChild(key).DS_TRY();
-                YAML::NodePtr fromNode = nodeToMergeFrom->GetMapValueNodeAt(i);
+                YAML::ConstNodePtr fromNode = nodeToMergeFrom->GetMapValueNodeAt(i);
                 fromNode->CloneToMapChild(key, nodeToMergeTo, yamlResouce).DS_TRY();
+            }
+            else
+                return DS_ERROR_MSG("Cannot merge 2 maps with the same key: " + key);
+        }
+        
+        return {};
+    }
+    
+    inline DS::Result<void> MergeYAML_Sequences(YAML::ConstNodePtr nodeToMergeFrom, 
+                                                YAML::NodePtr nodeToMergeTo,
+                                                YAML::ResourceHandle& yamlResouce)
+    {
+        ssLOG_FUNC_DEBUG();
+        DS_ASSERT_NOT_EQ(nodeToMergeFrom.get(), nodeToMergeTo.get());
+        
+        if(!nodeToMergeFrom->IsSequence() || !nodeToMergeTo->IsSequence())
+            return DS_ERROR_MSG("Merge node is not sequence");
+        
+        for(int i = 0; i < nodeToMergeFrom->GetChildrenCount(); ++i)
+        {
+            YAML::ConstNodePtr fromNode = nodeToMergeFrom->GetSequenceChildNode(i);
+            
+            if(fromNode->IsScalar()) //Check if the same scalar exists for toNode
+            {
+                bool exists = false;
+                StringView fromVal = fromNode->GetScalar<StringView>().DS_TRY();
+                for(int j = 0; j < nodeToMergeTo->GetChildrenCount(); ++j)
+                {
+                    if(nodeToMergeTo->GetSequenceChildNode(j)->IsScalar())
+                    {
+                        StringView toVal = nodeToMergeTo->GetSequenceChildNode(j)
+                                                        ->GetScalar<StringView>().DS_TRY();
+                        if(fromVal == toVal)
+                        {
+                            exists = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if(exists)
+                    continue;
+            }
+            
+            fromNode->CloneToSequenceChild(nodeToMergeTo, yamlResouce).DS_TRY();
+        }
+        
+        return {};
+    }
+    
+    inline DS::Result<void> MergeYamlNode(  YAML::ConstNodePtr fromNode, 
+                                            YAML::NodePtr toNode,
+                                            YAML::ResourceHandle& yamlResouce)
+    {
+        ssLOG_FUNC_DEBUG();
+        DS_ASSERT_NOT_EQ(fromNode.get(), toNode.get());
+        
+        if(!fromNode->IsMap() || !toNode->IsMap())
+            return DS_ERROR_MSG("Merge node is not map");
+        
+        for(int i = 0; i < fromNode->GetChildrenCount(); ++i)
+        {
+            std::string key = fromNode->GetMapKeyScalarAt<std::string>(i).DS_TRY();
+            if(!ExistAndHasChild(toNode, key, true))
+            {
+                YAML::ConstNodePtr fromChild = fromNode->GetMapValueNodeAt(i);
+                fromChild->CloneToMapChild(key, toNode, yamlResouce).DS_TRY();
+            }
+            else
+            {
+                if( fromNode->GetMapValueNode(key)->GetType() != 
+                    toNode->GetMapValueNode(key)->GetType())
+                {
+                    return DS_ERROR_MSG("Cannot merge node " + key + " due to different types");
+                }
+                
+                if(key == "Import") //Always replace import node
+                {
+                    toNode->RemoveMapChild(key).DS_TRY();
+                    YAML::ConstNodePtr fromChild = fromNode->GetMapValueNodeAt(i);
+                    fromChild->CloneToMapChild(key, toNode, yamlResouce).DS_TRY();
+                }
+                else if(fromNode->GetMapValueNode(key)->GetType() == YAML::NodeType::Sequence)
+                {
+                    MergeYAML_Sequences(fromNode->GetMapValueNode(key), 
+                                        toNode->GetMapValueNode(key),
+                                        yamlResouce).DS_TRY();
+                }
+                else if(fromNode->GetMapValueNode(key)->GetType() == YAML::NodeType::Map)
+                {
+                    MergeYAML_Maps( fromNode->GetMapValueNode(key),
+                                    toNode->GetMapValueNode(key),
+                                    yamlResouce,
+                                    false).DS_TRY();
+                }
+                else
+                    return DS_ERROR_MSG("Cannot merge the same scale node: " + key);
             }
         }
         
@@ -363,6 +461,7 @@ namespace runcpp2
     
     inline bool ParseIncludes(const std::string& line, std::string& outIncludePath)
     {
+        //TODO: More sophisticated parsing plz
         //Skip if not an include line
         if(line.find("#include") == std::string::npos)
             return false;

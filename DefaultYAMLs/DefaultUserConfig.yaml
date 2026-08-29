@@ -11,4 +11,5 @@ PreferredProfile:
 # See "./Default/g++.yaml" for the documentation of each field in a profile entry
 Profiles:
 -   Import: "./Default/g++.yaml"
+-   Import: "./Default/clang++.yaml"
 -   Import: "./Default/vs2022_v17+.yaml"

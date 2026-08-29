@@ -1,0 +1,128 @@
+Parameters:
+    RUNCPP2_VERSION:
+        Optional: false
+    CONFIG_VERSION:
+        Default: "6"
+    RootPath:
+        Optional: false
+    ExtraFlags:
+        Optional: true
+
+Defines:
+-   "RUNCPP2_VERSION=\\\"{RUNCPP2_VERSION}\\\""
+-   "RUNCPP2_CONFIG_VERSION={CONFIG_VERSION}"
+
+OverrideCompileFlags:
+    DefaultPlatform:
+        msvc:
+            Remove: "/std:c++17"
+            Append: "/std:c++14 /bigobj /wd4267 /wd4018 /wd4996 /wd4244 {ExtraFlags}"
+            # /wd4267: conversion from 'size_t' to 'int', possible loss of data
+            # /wd4018: '<': signed/unsigned mismatch
+            # /wd4996: 'strcat': This function or variable may be unsafe
+            # /wd4244: '=': conversion from 'int' to 'char', possible loss of data
+            
+        DefaultProfile:
+            Remove: "-std=c++17 -Og"
+            Append: "-std=c++11 -Wno-return-local-addr -Wno-sign-compare -Wno-unused-parameter \
+                -Wno-switch -Wextra -Wpedantic {ExtraFlags}"
+            #-Wno-unused-variable
+            #-Wno-unused-but-set-variable
+            #-Wno-gnu-zero-variadic-macro-arguments
+
+IncludePaths: ["{RootPath}/Src"]
+
+Dependencies:
+-   Name: ssLogger
+    Platforms: [DefaultPlatform]
+    Source:
+        Local:
+            Path: "{RootPath}/External/ssLogger"
+    LibraryType: Header
+    IncludePaths: ["Include"]
+    CompileProperties:
+        Defines:
+        -   "ssLOG_ASCII=0"
+        -   "ssLOG_CALL_STACK=1"
+        -   "ssLOG_CALL_STACK_ONLY=0"
+        -   "ssLOG_IMMEDIATE_FLUSH=0"
+        -   "ssLOG_LEVEL=5"
+        -   "ssLOG_LOG_TO_FILE=0"
+        -   "ssLOG_SHOW_DATE=0"
+        -   "ssLOG_SHOW_FILE_NAME=1"
+        -   "ssLOG_SHOW_FUNC_NAME=1"
+        -   "ssLOG_SHOW_LINE_NUM=1"
+        -   "ssLOG_SHOW_TIME=1"
+        -   "ssLOG_THREAD_SAFE_OUTPUT=1"
+        -   "ssLOG_THREAD_VSPACE=4"
+        -   "ssLOG_USE_ESCAPE_SEQUENCES=0"
+        -   "ssLOG_USE_WINDOWS_COLOR=0"
+-   Name: ghc_filesystem
+    Platforms: [DefaultPlatform]
+    Source:
+        Local:
+            Path: "{RootPath}/External/filesystem"
+    LibraryType: Header
+    IncludePaths: ["include"]
+    CompileProperties:
+        Defines: ["GHC_WIN_DISABLE_WSTRING_STORAGE_TYPE=1"]
+-   Name: System2
+    Platforms: [DefaultPlatform]
+    Source:
+        Local:
+            Path: "{RootPath}/External/System2"
+    LibraryType: Header
+    IncludePaths: ["."]
+-   Name: dylib
+    Platforms: [DefaultPlatform]
+    Source:
+        Local:
+            Path: "{RootPath}/External/dylib"
+    LibraryType: Header
+    IncludePaths: ["include"]
+-   Name: MPark.Variant
+    Platforms: [DefaultPlatform]
+    Source:
+        Local:
+            Path: "{RootPath}/External/variant"
+    LibraryType: Header
+    IncludePaths: ["include"]
+-   Name: DSResult
+    Platforms: [DefaultPlatform]
+    Source:
+        Local:
+            Path: "{RootPath}/External/DSResult"
+    LibraryType: Header
+    IncludePaths: ["Include", "./External/expected/include"]
+    CompileProperties:
+        Defines: ["DS_USE_DEBUG_BREAK=1"]
+-   Name: libyaml
+    Platforms: [DefaultPlatform]
+    Source:
+        Local:
+            Path: "{RootPath}/External/libyaml"
+    LibraryType: Header
+    IncludePaths: ["include", ".."]
+    CompileProperties:
+        Defines: ["YAML_DECLARE_STATIC=1"]
+-   Name: string-view-lite
+    Platforms: [DefaultPlatform]
+    Source:
+        Local:
+            Path: "{RootPath}/External/string-view-lite"
+    LibraryType: Header
+    IncludePaths: ["include"]
+-   Name: CppOverride
+    Platforms: [DefaultPlatform]
+    Source:
+        Local:
+            Path: "{RootPath}/External/CppOverride"
+    LibraryType: Header
+    IncludePaths: ["Include_SingleHeader"]
+-   Name: MacroPowerToys
+    Platforms: [DefaultPlatform]
+    Source:
+        Local:
+            Path: "{RootPath}/External/MacroPowerToys"
+    LibraryType: Header
+    IncludePaths: ["."]

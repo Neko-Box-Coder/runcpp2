@@ -62,11 +62,15 @@ namespace Data
         
         inline DS::Result<void> 
         ParseYAML_Node( YAML::ConstNodePtr node, 
+                        bool parseParameters,
                         const std::unordered_map<std::string, std::string>& inputParameters)
         {
             ssLOG_FUNC_DEBUG();
             
-            ParseParametersAndVariables(*this, node).DS_TRY();
+            if(parseParameters)
+            {
+                ParseParametersAndVariables(*this, node).DS_TRY();
+            }
             
             //Clone and modify the yaml node
             YAML::ResourceHandle resourceHandle;
@@ -84,13 +88,16 @@ namespace Data
                 exclusions.push_back(valueNode);
             }
             
-            SubstitutionMap = {};
-            ApplyParametersAndVariables(*this, 
-                                        clonedNode, 
-                                        resourceHandle, 
-                                        SubstitutionMap, 
-                                        inputParameters,
-                                        exclusions).DS_TRY();
+            if(parseParameters)
+            {
+                SubstitutionMap = {};
+                ApplyParametersAndVariables(*this, 
+                                            clonedNode, 
+                                            resourceHandle, 
+                                            SubstitutionMap, 
+                                            inputParameters,
+                                            exclusions).DS_TRY();
+            }
             
             std::vector<NodeRequirement> requirements =
             {

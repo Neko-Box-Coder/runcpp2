@@ -60,7 +60,14 @@
 #     Linux: ["g++"]
 #     MacOS: ["g++"]
 
+# (Optional) We can use the "Import" field to import other yaml files to merge to this file
+#            Import can either be a single path or a list of paths. 
+#            If there's any parameter/variables in the import file, it will applied to that file 
+#            first before merging
+# Import: "./OtherDefines.yaml"
+
 # Parameters:                         # (Optional) Parameters are user supplied input that can be substituted into any keys or values, with the syntax of `{<parameter name>}`
+#                                     #            This in only applied to this file.
 #     Param1:                         # Name of the parameter
 #         Optional: true              # (Optional) If this parameter is mandatory. Defaults to `true`
 #         Default: ""                 # (Optional) Default value of the parameter. Defaults to empty
@@ -76,6 +83,7 @@
 
 # TODO: Conditional variables
 # Variables:                                          # (Optional) Variables can be substituted into any keys or values (excluding "Parameters"), with the syntax of `{<variable name>}`
+#                                                     #            This in only applied to this file.
 #     VarName1: "Some string {Param1} substitution"   # A variable can be created by substituting a parameter into a string, using syntax of `{<parameter name>}`
 #                                                     # If this contains an array parameter value, the substition is performed for each parameter array value and 
 #                                                     # this variable will become an array variable, meaning this can only be used in config values that expect an array.
@@ -118,6 +126,13 @@
 # Cleanup:                    # (Optional) (Platforms/Profiles) 
 #                             # Cleanup commands are run when using the --cleanup option. These commands are run at the script's location before the build directory is removed.
 # -   "echo Cleaning up script..."
+
+# (Optional) We can use the "Import" field to import other yaml files. 
+#            Import can either be a single path or a list of paths. 
+#            All the fields in the imported yaml files will be merged together
+#            If there's any parameter/variables in the import file, it will applied to that file 
+#            first before merging
+# Import: ""
 
 # Dependencies:                                   # (Optional) The list of dependencies needed by the script
 # -   Name: MyLibrary                             # Dependency name
@@ -173,6 +188,10 @@
 #                                             #            Works the same as SearchLibraryNames but will NOT be linked instead
 #         SearchDirectories: ["./build"]      # The path (relative to the dependency folder) to be searched for the dependency binaries
 #         AdditionalLinkOptions: []           # (Optional) Additional link flags for this dependency
+#       
+#     CompileProperties:                  # (Optional) (Platforms/Profiles) Compile properties of the dependency
+#         Defines: []                     # (Optional) Additional defines for this dependency when compiling source
+#         AdditionalCompileOptions: []    # (Optional) Additional compile flags for this dependency when compiling source
 #     
 #     Setup:                  # (Optional) (Platforms/Profiles) Setup commands are run once when the dependency is populated
 #     -   "mkdir build"

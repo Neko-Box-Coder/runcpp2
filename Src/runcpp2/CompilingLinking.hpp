@@ -234,6 +234,46 @@ namespace
             }
         }
         
+        for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+        {
+            if(!runcpp2::HasValueFromPlatformMap(scriptInfo.Dependencies.at(i).CompileProperties))
+                continue;
+            
+            const runcpp2::Data::DependencyCompileProperty& platformDepCompileProperty = 
+                *runcpp2::GetValueFromPlatformMap(scriptInfo.Dependencies.at(i).CompileProperties);
+            
+            const ProfileCompileProperty* profileCompileProperty = 
+                runcpp2::GetValueFromProfileMap(profile, 
+                                                platformDepCompileProperty.ProfileProperties);
+            
+            if(profileCompileProperty)
+            {
+                for(int j = 0; j < profileCompileProperty->Defines.size(); ++j)
+                {
+                    const runcpp2::Data::Define& define = profileCompileProperty->Defines.at(j);
+                    if(define.HasValue)
+                    {
+                        substitutionMapTemplate["{Stage.DefineName}"].push_back(define.Name);
+                        substitutionMapTemplate["{Stage.DefineValue}"].push_back(define.Value);
+                    }
+                    else
+                        substitutionMapTemplate["{Stage.DefineNameOnly}"].push_back(define.Name);
+                }
+                
+                std::string& flags = substitutionMapTemplate["{Stage.CompileFlags}"][0];
+                for(int j = 0; j < profileCompileProperty->AdditionalCompileOptions.size(); ++j)
+                {
+                    const std::string& option = profileCompileProperty->AdditionalCompileOptions.at(j);
+                    if(flags.empty())
+                        flags = option;
+                    else if(j == profileCompileProperty->AdditionalCompileOptions.size() - 1)
+                        flags += option;
+                    else
+                        flags += option + " ";
+                }
+            }
+        } //for(int i = 0; i < scriptInfo.Dependencies.size(); ++i)
+        
         PopulateFilesTypesMap(profile.FilesTypes, substitutionMapTemplate);
         substitutionMapTemplate["{/}"] = {runcpp2::ProcessPath("/")};
         
@@ -411,9 +451,6 @@ namespace
                             else
                                 compileCommand = runPartSubstitutedCommand;
                             
-                            ssLOG_INFO( "running compile command: " << compileCommand <<
-                                         " in " << buildDir.string());
-                            
                             std::string commandOutput;
                             int resultCode = 0;
                             
@@ -431,7 +468,9 @@ namespace
                             }
                             else
                             {
-                                //TODO: Make this configurable
+                                ssLOG_INFO( "Ran compile command: " << compileCommand <<
+                                            " in " << buildDir.string());
+                                
                                 //Attempt to capture warnings
                                 if(commandOutput.find(" warning") != std::string::npos)
                                     ssLOG_WARNING("Warning detected:\n" << commandOutput);
@@ -667,7 +706,7 @@ namespace
                     {
                         ssLOG_WARNING(  "Trying to link static dependency when script is being " <<
                                         "built as shared. Linking might not work on some platforms.");
-                        ssLOG_WARNING(  "If failing to link, consider using --executable instead");
+                        ssLOG_WARNING(  "If failing to link, consider using changing build type.");
                         //TODO: Maybe revert the default back to executable?
                     }
                     
@@ -852,7 +891,6 @@ namespace
                 else
                     linkCommand = runPartSubstitutedCommand;
                 
-                ssLOG_INFO("running link command: " << linkCommand << " in " << buildDir.string());
                 std::string linkOutput;
                 int resultCode = 0;
                 
@@ -869,7 +907,13 @@ namespace
                     return false;
                 }
                 else
-                    ssLOG_INFO("Link output:\n" << linkOutput);
+                {
+                    ssLOG_INFO("Ran link command: " << linkCommand << " in " << buildDir.string());
+                    if(linkOutput.find(" warning") != std::string::npos)
+                        ssLOG_WARNING("Warning detected:\n" << linkOutput);
+                    else
+                        ssLOG_INFO("Link output:\n" << linkOutput);
+                }
             }
             
             //Run cleanup if any
@@ -1112,8 +1156,15 @@ namespace runcpp2
         
         runcpp2::TrimRight(dependenciesLinkFlags);
         
-        if(!LinkScript(buildDir, outputName, scriptInfo, dependenciesLinkFlags, profile, priorities))
+        if(!LinkScript( buildDir, 
+                        outputName, 
+                        scriptInfo, 
+                        dependenciesLinkFlags, 
+                        profile, 
+                        priorities))
+        {
             return DS_ERROR_MSG("LinkScript failed");
+        }
         
         if(!RunGlobalSteps(buildDir, profile.Cleanup))
             return DS_ERROR_MSG("Failed to run profile global cleanup steps");

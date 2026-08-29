@@ -2,6 +2,7 @@
 
 #include "DSResult/DSResult.hpp"
 #include "CppOverride.hpp"
+#include "ssLogger/ssLogInit.hpp"
 #include "ssLogger/ssLog.hpp"
 
 #define INTERNAL_RUNCPP2_UNDEF_MOCKS 1
@@ -575,7 +576,7 @@ DS::Result<void> TestMain()
 }
 
 
-int main(int argc, char** argv)
+int main(int, char**)
 {
     try
     {
@@ -589,5 +590,4 @@ int main(int argc, char** argv)
         ssLOG_LINE(ex.what());
         return 1;
     }
-    return 1;
 }

@@ -48,7 +48,6 @@
 namespace
 {
     bool RunCompiledScript( const ghc::filesystem::path& executable,
-                            const std::string& scriptPath,
                             const std::vector<std::string>& runArgs,
                             int& returnStatus)
     {
@@ -236,7 +235,7 @@ namespace runcpp2
         }
         
         //Try to parse the runcpp2 info
-        ParseScriptInfo(parsableInfo, inputParameters, outScriptInfo)
+        ParseScriptInfo(parsableInfo, scriptDirectory, inputParameters, outScriptInfo)
             .DS_TRY_ACT(DS_APPEND_TRACE(DS_TMP_ERROR);
                         DS_TMP_ERROR.Message += "\nContent trying to parse: \n" + parsableInfo;
                         return DS::Error(DS_TMP_ERROR));
@@ -393,6 +392,7 @@ namespace runcpp2
             do
             {
                 if(!ParseScriptInfo(lastScriptInfoBuffer.str(), 
+                                    scriptDirectory,
                                     parameters, 
                                     lastScriptInfoFromDisk).HasValue())
                 {
@@ -400,10 +400,13 @@ namespace runcpp2
                 }
                 
                 //Resolve imports for last script info
-                ResolveDependenciesImports( lastScriptInfoFromDisk, 
-                                            scriptDirectory, 
-                                            buildDir, 
-                                            parameters).DS_TRY();
+                if(!ResolveDependenciesImports( lastScriptInfoFromDisk, 
+                                                scriptDirectory, 
+                                                buildDir, 
+                                                parameters).HasValue())
+                {
+                    break;
+                }
                 lastInfo = &lastScriptInfoFromDisk;
             }
             while(false);
@@ -718,7 +721,7 @@ namespace runcpp2
             finalRunArgs.push_back(runArgs[i]);
         
         //Running the script with modified args
-        if(!RunCompiledScript(target, absoluteScriptPath, finalRunArgs, returnStatus))
+        if(!RunCompiledScript(target, finalRunArgs, returnStatus))
             return DS_ERROR_MSG("Failed to run script");
         
         return {};
@@ -750,9 +753,11 @@ namespace runcpp2
                                 runcpp2::Data::BuildTypeToString(scriptInfo.CurrentBuildType));
         }
         
+        //TODO: Use ExpectedOutputFiles?
         //Verify all targets exist
         for(const ghc::filesystem::path& target : outTargets)
         {
+            //TODO: Maybe remove the targets that do not exist?
             if(!ghc::filesystem::exists(target, _))
             {
                 ssLOG_WARNING("Failed to find the compiled file: " << target.string());
@@ -1008,8 +1013,11 @@ namespace runcpp2
                     {
                         resolvedInclude = currentFile.parent_path() / includePath;
                         std::error_code ec;
-                        if(ghc::filesystem::exists(resolvedInclude, ec))
+                        if( ghc::filesystem::exists(resolvedInclude, ec) && 
+                            !ghc::filesystem::is_directory(resolvedInclude, ec))
+                        {
                             found = true;
+                        }
                     }
                     
                     //Search in include paths if not found
@@ -1019,7 +1027,8 @@ namespace runcpp2
                         {
                             resolvedInclude = searchPath / includePath;
                             std::error_code ec;
-                            if(ghc::filesystem::exists(resolvedInclude, ec))
+                            if( ghc::filesystem::exists(resolvedInclude, ec) &&
+                                !ghc::filesystem::is_directory(resolvedInclude, ec))
                             {
                                 found = true;
                                 break;
@@ -1029,7 +1038,8 @@ namespace runcpp2
                     
                     if(found)
                     {
-                        ssLOG_DEBUG("Found include file: " << resolvedInclude.string());
+                        ssLOG_DEBUG("Found include file: " << resolvedInclude.string() << " from " << 
+                                    "file " << currentFile.string());
                         currentIncludes.push_back(resolvedInclude);
                         filesToProcess.push(resolvedInclude);
                     }

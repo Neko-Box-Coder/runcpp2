@@ -235,6 +235,7 @@ namespace runcpp2
                                 const int maxThreads)
     {
         ssLOG_FUNC_INFO();
+        (void)maxThreads;
 
         //If the script info is not populated (i.e. empty script info), don't do anything
         if(!scriptInfo.Populated)
@@ -372,6 +373,7 @@ namespace runcpp2
                         const int maxThreads)
     {
         ssLOG_FUNC_INFO();
+        (void)maxThreads;
 
         //If the script info is not populated (i.e. empty script info), don't do anything
         if(!scriptInfo.Populated)

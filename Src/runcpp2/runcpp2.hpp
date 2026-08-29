@@ -41,8 +41,10 @@
     #include <windows.h>
 #endif
 
-extern const uint8_t DefaultScriptInfo[];
-extern const size_t DefaultScriptInfo_size;
+#if !RUNCPP2_BOOTSTRAP
+    extern const uint8_t DefaultScriptInfo[];
+    extern const size_t DefaultScriptInfo_size;
+#endif
 
 namespace runcpp2 { namespace Data { struct DependencyInfo; } }
 
@@ -250,11 +252,13 @@ namespace
 
 namespace runcpp2
 {
-    inline void GetDefaultScriptInfo(std::string& scriptInfo)
-    {
-        scriptInfo = std::string(   reinterpret_cast<const char*>(DefaultScriptInfo), 
-                                    DefaultScriptInfo_size);
-    }
+    #if !RUNCPP2_BOOTSTRAP
+        inline void GetDefaultScriptInfo(std::string& scriptInfo)
+        {
+            scriptInfo = std::string(   reinterpret_cast<const char*>(DefaultScriptInfo), 
+                                        DefaultScriptInfo_size);
+        }
+    #endif
 
     //NOTE: Mainly used for test to reduce spamminig
     inline void SetLogLevel(const std::string& logLevel)
@@ -304,14 +308,13 @@ namespace runcpp2
         }
 
         //Create parameters
-        std::unordered_map<std::string, std::string> parameterValues;
-        CreateParameterValues(rawParameters, parameterValues);
+        CreateParameterValues(rawParameters, outParameterValues).DS_TRY();
 
         //Parse script info
         ParseAndValidateScriptInfo( outAbsoluteScriptPath,
                                     outScriptDirectory,
                                     outScriptName,
-                                    parameterValues,
+                                    outParameterValues,
                                     outScriptInfo).DS_TRY();
         
         return {};
@@ -363,6 +366,8 @@ namespace runcpp2
         
         if(params.profiles.empty())
             return DS_ERROR_MSG("No compiler profiles found");
+        
+        //TODO: Run dependencies cleanup?
         
         int profileIndex =  GetPreferredProfileIndex(   absoluteScriptPath, 
                                                         scriptInfo, 

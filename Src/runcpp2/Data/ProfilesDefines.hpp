@@ -23,6 +23,23 @@ namespace Data
         std::string Name;
         std::string Value;
         bool HasValue;
+        
+        inline void Init(const std::string& str)
+        {
+            size_t equalPos = str.find('=');
+            if(equalPos != std::string::npos)
+            {
+                Name = str.substr(0, equalPos);
+                Value = str.substr(equalPos + 1);
+                HasValue = true;
+            }
+            else
+            {
+                Name = str;
+                Value = "";
+                HasValue = false;
+            }
+        }
     };
 
     struct ProfilesDefines
@@ -62,24 +79,11 @@ namespace Data
             
             for(int i = 0; i < node->GetChildrenCount(); ++i)
             {
-                DS_UNWRAP_DECL_ACT( std::string defineStr, 
-                                    node->GetSequenceChildScalar<std::string>(i), 
-                                    ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
-                Define define;
-                size_t equalPos = defineStr.find('=');
-                if(equalPos != std::string::npos)
-                {
-                    define.Name = defineStr.substr(0, equalPos);
-                    define.Value = defineStr.substr(equalPos + 1);
-                    define.HasValue = true;
-                }
-                else
-                {
-                    define.Name = defineStr;
-                    define.Value = "";
-                    define.HasValue = false;
-                }
-                
+                std::string defineStr = node->GetSequenceChildScalar<std::string>(i)
+                                            .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
+                                                        return false);
+                Define define = {};
+                define.Init(defineStr);
                 Defines[profile].push_back(define);
             }
             

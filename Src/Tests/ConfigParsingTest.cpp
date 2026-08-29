@@ -1,6 +1,7 @@
 #include "runcpp2/ConfigParsing.hpp"
 #include "DSResult/DSResult.hpp"
 #include "CppOverride.hpp"
+#include "ssLogger/ssLogInit.hpp"
 #include "ssLogger/ssLog.hpp"
 #include "MacroPowerToys.h"
 
@@ -14,7 +15,9 @@ CO_DECLARE_INSTANCE(OverrideInstance);
 
 #include <memory>
 
-#if !INTERNAL_RUNCPP2_UNIT_TESTS || !defined(INTERNAL_RUNCPP2_UNIT_TESTS)
+#if !INTERNAL_RUNCPP2_UNIT_TESTS || !defined(INTERNAL_RUNCPP2_UNIT_TESTS) || \
+    INTERNAL_RUNCPP2_UNIT_TESTS != INTERNAL_RUNCPP2_UNIT_TESTS_CONFIG_PARSING
+    
     static_assert(false, "INTERNAL_RUNCPP2_UNIT_TESTS not defined");
 #endif
 
@@ -592,7 +595,7 @@ DS::Result<void> TestMain()
     return {};
 }
 
-int main(int argc, char** argv)
+int main(int, char**)
 {
     try
     {
@@ -606,7 +609,6 @@ int main(int argc, char** argv)
         ssLOG_LINE(ex.what());
         return 1;
     }
-    return 1;
 }
 
 #include "runcpp2/DefaultYAMLs.c"

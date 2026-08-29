@@ -47,17 +47,13 @@ namespace runcpp2
                 std::string variableName = variablesNode->GetMapKeyScalarAt<std::string>(i).DS_TRY();
                 std::string variableValue = variablesNode->GetMapValueScalarAt<std::string>(i).DS_TRY();
                 if(data.Variables.count(variableName) != 0)
-                {
-                    return DS_ERROR_MSG("ScriptInfo: Same variable (" + variableName + 
-                                        ") is added more than once");
-                }
+                    return DS_ERROR_MSG("Same variable (" + variableName + ") is added more than once");
                 data.Variables[variableName] = variableValue;
             }
         }
         
         return {};
     }
-
 
     //Expecting `std::unordered_map<std::string, ParameterValue> Parameters;` and
     //`std::unordered_map<std::string, std::string> Variables;` from T
@@ -97,11 +93,13 @@ namespace runcpp2
             //Parse the value
             std::string subKey = "{" + it->first + "}";
             
+            using ConstraintType = Data::ParameterValue::ConstraintType;
+            
             //Check if it is optional, if so check if it can be empty
             if(it->second.Optional && valueToParse.empty())
             {
-                static_assert((int)Data::ParameterValue::ConstraintType::Count == 5, "");
-                if(it->second.CurrentConstraintType != Data::ParameterValue::ConstraintType::None)
+                static_assert((int)ConstraintType::Count == 5, "");
+                if(it->second.CurrentConstraintType != ConstraintType::None)
                     continue;
             }
             
@@ -109,6 +107,11 @@ namespace runcpp2
             {
                 std::vector<std::string> inputValues;
                 SplitString(valueToParse, ",", inputValues);
+                std::unordered_map<std::string, std::string> options; 
+                if(it->second.CurrentConstraintType == ConstraintType::Choices)
+                {
+                    options = it->second.GetConstraintOptions().DS_TRY();
+                }
                 for(int i = 0; i < inputValues.size(); ++i)
                 {
                     bool inConstraint = it->second.IsInputInConstraint(inputValues[i]).DS_TRY();
@@ -119,6 +122,8 @@ namespace runcpp2
                                             (isDefault ? "(Default)" : "") + 
                                             " is not in constraint");
                     }
+                    if(it->second.CurrentConstraintType == ConstraintType::Choices)
+                        inputValues[i] = options[inputValues[i]];
                 }
                 substitutionMap[subKey] = inputValues;
             }
@@ -131,7 +136,16 @@ namespace runcpp2
                                         (isDefault ? "(Default)" : "") + 
                                         " is not in constraint");
                 }
-                substitutionMap[subKey] = {valueToParse};
+                if(it->second.CurrentConstraintType != ConstraintType::Choices)
+                    substitutionMap[subKey] = {valueToParse};
+                else
+                {
+                    std::unordered_map< std::string, 
+                                        std::string> options = it   ->second
+                                                                    .GetConstraintOptions()
+                                                                    .DS_TRY();
+                    substitutionMap[subKey] = {options[valueToParse]};
+                }
             }
         } //for(auto it = Parameters.begin(); it != Parameters.end(); ++it)
         
@@ -248,19 +262,121 @@ namespace runcpp2
         return {};
     }
     
-    inline void CreateParameterValues(  const std::string rawParams,
-                                        std::unordered_map<std::string, std::string>& outParameters)
+    inline DS::Result<void> CreateParameterValues(  const std::string rawParams,
+                                                    std::unordered_map< std::string, 
+                                                                        std::string>& outParameters)
     {
         std::vector<std::string> paramNameVals;
-        SplitString(rawParams, ":", paramNameVals);
-        if(paramNameVals.size() % 2 != 0)
+        
+        std::string tempStr;
+        bool key = true;
+        bool prevEscape = false;
+        bool inQuotes = false;
+        for(int i = 0; i < rawParams.size(); ++i)
         {
-            ssLOG_ERROR("Failed to parse parameters. Defaults to no parameters");
-            return;
-        }
+            bool startEscape = prevEscape;
+            switch(rawParams[i])
+            {
+                case '=':
+                {
+                    if(!prevEscape && !inQuotes)
+                    {
+                        if(!key)
+                        {
+                            return DS_ERROR_MSG("Failed to parse \"" + rawParams + "\", extra \"=\" "
+                                                "found");
+                        }
+                        key = false;
+                        paramNameVals.push_back(tempStr);
+                        tempStr.clear();
+                    }
+                    else
+                        tempStr.push_back('=');
+                    break;
+                }
+                case ';':
+                {
+                    if(!prevEscape && !inQuotes)
+                    {
+                        if(key)
+                        {
+                            return DS_ERROR_MSG("Failed to parse \"" + rawParams + "\", extra \";\" "
+                                                "found");
+                        }
+                        key = true;
+                        paramNameVals.push_back(tempStr);
+                        tempStr.clear();
+                    }
+                    else
+                        tempStr.push_back(';');
+                    break;
+                }
+                case '\\':
+                {
+                    if(inQuotes) //Quote mode
+                    {
+                        if(i == rawParams.size() - 1)
+                            return DS_ERROR_MSG("Missing terminating \"");
+                        if(rawParams[i + 1] == '"')
+                            prevEscape = true;
+                        else
+                            tempStr.push_back('\\');
+                    }
+                    else
+                    {
+                        if(prevEscape)
+                            tempStr.push_back('\\');
+                        else
+                            prevEscape = true;
+                    }
+                    break;
+                }
+                case '"':
+                {
+                    if(prevEscape)
+                    {
+                        tempStr.push_back('"');
+                        break;
+                    }
+                    
+                    inQuotes = !inQuotes;
+                    break;
+                }
+                //TODO: Allow comma to be escaped
+                //case ',':
+                //{
+                //    if(prevEscape)
+                //        tempStr.push_back(',');
+                //    else
+                //        prevEscape = true;
+                //}
+                default:
+                {
+                    if(prevEscape && !inQuotes)
+                    {
+                        return DS_ERROR_MSG("Unrecognized escape \"\\" + std::string(1, rawParams[i]) + 
+                                            "\"");
+                    }
+                    tempStr.push_back(rawParams[i]);
+                }
+            } //switch(rawParams[i])
+            
+            if(i == rawParams.size() - 1)
+            {
+                if(key && !tempStr.empty())
+                    return DS_ERROR_MSG("Missing value for key: " + tempStr);
+                paramNameVals.push_back(tempStr);
+            }
+            
+            prevEscape = startEscape == prevEscape ? false : prevEscape;
+        } //for(int i = 0; i < rawParams.size(); ++i)
+        
+        DS_ASSERT_EQ(paramNameVals.size() % 2, 0);
         
         for(int i = 0; i < paramNameVals.size(); i += 2)
             outParameters[paramNameVals[i]] = paramNameVals[i + 1];
+        
+        return {};
     }
 }
 
