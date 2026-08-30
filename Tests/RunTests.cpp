@@ -69,29 +69,31 @@ bool ListDir(const std::string& dirLoc = ".")
 
 #define COMMON_RUNCPP2_ARGS "-l -c ../DefaultYAMLs/DefaultUserConfig.yaml --log-level info"
 
+#define RUN_TEST(testName) SH( "cd ./Build && ./" RUNCPP2_EXE " run " COMMON_RUNCPP2_ARGS " " testName);
+#define BUILD_TEST(testName, outputLoc) \
+    SH( "cd ./Build && ./" RUNCPP2_EXE " build -o " outputLoc " " COMMON_RUNCPP2_ARGS " " testName);
+
 int main(int, char**)
 {
     CH(ListDir());
-    SH( "cd ./Build && ./" RUNCPP2_EXE " run " COMMON_RUNCPP2_ARGS 
-        " ../Tests/MultiSourcesAndStatic/Test.cpp");
-    SH( "cd ./Build && ./" RUNCPP2_EXE " build -o ./TestStaticOutput " COMMON_RUNCPP2_ARGS 
-        " ../Tests/MultiSourcesAndStatic/TestStatic.cpp");
+    RUN_TEST("../Tests/MultiSourcesAndStatic/Test.cpp");
+    
+    BUILD_TEST("../Tests/MultiSourcesAndStatic/TestStatic.cpp", "TestStaticOutput");
     CH(ListDir("./Build/TestStaticOutput"));
-    SH( "cd ./Build && ./" RUNCPP2_EXE " run " COMMON_RUNCPP2_ARGS 
-        " ../Tests/LocalDependency/TestLocalDependency.cpp");
-    SH( "cd ./Build && ./" RUNCPP2_EXE " run " COMMON_RUNCPP2_ARGS 
-        " ../Tests/SeparateYaml/TestSeparateYaml.cpp");
+    
+    RUN_TEST("../Tests/LocalDependency/TestLocalDependency.cpp");
+    RUN_TEST("../Tests/SeparateYaml/TestSeparateYaml.cpp");
     if(RunCommand(  "cd ./Build && ./" RUNCPP2_EXE " run " COMMON_RUNCPP2_ARGS 
                     " ../Tests/MissingSource/TestMissingSource.yaml"))
     {
         printf("We expect this to failed, somehow passed?...\n");
         return 1;
     }
-    SH( "cd ./Build && ./" RUNCPP2_EXE " run " COMMON_RUNCPP2_ARGS 
-        " ../Tests/YamlOnly/YamlOnlyTest.yaml");
-    SH( "cd ./Build && ./" RUNCPP2_EXE " run " COMMON_RUNCPP2_ARGS 
-        " ../Examples/InteractiveTutorial.cpp --test ./" RUNCPP2_EXE 
-        " ../DefaultYAMLs/DefaultUserConfig.yaml");
+    RUN_TEST("../Tests/YamlOnly/YamlOnlyTest.yaml");
+    RUN_TEST("../Tests/C_ProfileTest/System2Test.c");
+    RUN_TEST(   "../Examples/InteractiveTutorial.cpp --test ./" RUNCPP2_EXE 
+                " ../DefaultYAMLs/DefaultUserConfig.yaml");
+    
     
     printf("Done\n");
     return 0;
