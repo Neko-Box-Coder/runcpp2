@@ -175,6 +175,8 @@ DS::Result<void> GenerateDefaultYAMLs(const std::string runcpp2Path, const std::
                         " ./DefaultYAMLs/DefaultUserConfig.yaml DefaultUserConfig " +
                         " ./DefaultYAMLs/Default/AnnotatedG++.yaml AnnotatedG_PlusPlus " +
                         " ./DefaultYAMLs/Default/CommonFileTypes.yaml CommonFileTypes " +
+                        " ./DefaultYAMLs/Default/gcc.yaml Gcc " +
+                        " ./DefaultYAMLs/Default/clang.yaml Clang " +
                         " ./DefaultYAMLs/Default/clang++.yaml ClangPlusPlus " +
                         " ./DefaultYAMLs/Default/g++.yaml G_PlusPlus " +
                         " ./DefaultYAMLs/Default/vs2022_v17+.yaml Vs2022_v17Plus ";

@@ -51,6 +51,10 @@
     extern "C" const size_t DefaultUserConfig_size;
     extern "C" const uint8_t CommonFileTypes[];
     extern "C" const size_t CommonFileTypes_size;
+    extern "C" const uint8_t Gcc[];
+    extern "C" const size_t Gcc_size;
+    extern "C" const uint8_t Clang[];
+    extern "C" const size_t Clang_size;
     extern "C" const uint8_t G_PlusPlus[];
     extern "C" const size_t G_PlusPlus_size;
     extern "C" const uint8_t ClangPlusPlus[];
@@ -330,6 +334,8 @@ namespace runcpp2
             writeDefaultConfig( "CommonFileTypes.yaml", 
                                 CommonFileTypes, 
                                 CommonFileTypes_size).DS_TRY();
+            writeDefaultConfig("gcc.yaml", Gcc, Gcc_size).DS_TRY();
+            writeDefaultConfig("clang.yaml", Clang, Clang_size).DS_TRY();
             writeDefaultConfig("g++.yaml", G_PlusPlus, G_PlusPlus_size).DS_TRY();
             writeDefaultConfig("clang++.yaml", ClangPlusPlus, ClangPlusPlus_size).DS_TRY();
             writeDefaultConfig( "AnnotatedG++.yaml", 

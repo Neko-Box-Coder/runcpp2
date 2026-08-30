@@ -1,15 +1,15 @@
 # DO NOT modify this file. Changes will be overwritten when there's a reset or update
 
-Name: "clang++"
-FileExtensions: [.cpp, .cc, .cxx, .c]
-Languages: ["c", "c++"]
+Name: "gcc"
+FileExtensions: [.c]
+Languages: ["c"]
 Import: "./CommonFileTypes.yaml"
 Parameters:
     Profile.CompileMode:
         Default: "Debug"
         Constraint: 
-        -   "Debug:-std=c++17 -Wall -g -Og"
-        -   "Release:-std=c++17 -Wall -O2"
+        -   "Debug:-std=c99 -Wall -g -Og"
+        -   "Release:-std=c++17 -Wall -O2 -DNDEBUG=1"
     Profile.OutputPreprocess:
         Default: "false"
         Constraint:
@@ -21,13 +21,13 @@ Variables:
     Profile.Intern_CompileFlags: "{Profile.CompileMode}{Profile.OutputPreprocess}"
 Compiler:
     CheckExistence: 
-        DefaultPlatform: "clang++ -v"
+        DefaultPlatform: "gcc -v"
     CompileTypes:
         Executable:
             DefaultPlatform:
                 Flags: "{Profile.Intern_CompileFlags}"
-                Executable: "clang++"
-                RunParts: &clang++_CompileRunParts
+                Executable: "gcc"
+                RunParts: &gcc_CompileRunParts
                 -   Type: Once
                     CommandPart: "{Stage.Executable} -c {Stage.CompileFlags}"
                 -   Type: Repeats
@@ -42,29 +42,29 @@ Compiler:
                     CommandPart: " \"{Stage.Input.Path}\" -o \"{Stage.Output.Directory}{/}\
                         {Stage.ObjectLinkFile.Prefix}{Stage.Input.Name}\
                         {Stage.ObjectLinkFile.Extension}\""
-                ExpectedOutputFiles: &g++_CompileExpectedOutputFiles
+                ExpectedOutputFiles: &gcc_CompileExpectedOutputFiles
                 -   "{Stage.Output.Directory}{/}{Stage.ObjectLinkFile.Prefix}{Stage.Input.Name}\
                     {Stage.ObjectLinkFile.Extension}"
         Static:
             DefaultPlatform:
                 Flags: "{Profile.Intern_CompileFlags}"
-                Executable: "clang++"
-                RunParts: *clang++_CompileRunParts
-                ExpectedOutputFiles: *g++_CompileExpectedOutputFiles
+                Executable: "gcc"
+                RunParts: *gcc_CompileRunParts
+                ExpectedOutputFiles: *gcc_CompileExpectedOutputFiles
         Shared:
             DefaultPlatform:
                 Flags: "{Profile.Intern_CompileFlags} -fpic"
-                Executable: "clang++"
-                RunParts: *clang++_CompileRunParts
-                ExpectedOutputFiles: *g++_CompileExpectedOutputFiles
+                Executable: "gcc"
+                RunParts: *gcc_CompileRunParts
+                ExpectedOutputFiles: *gcc_CompileExpectedOutputFiles
 Linker:
     CheckExistence:
-        DefaultPlatform: "clang++ -v"
+        DefaultPlatform: "gcc -v"
     LinkTypes:
         Executable:
             Unix:
                 Flags: "-Wl,-rpath,\\$ORIGIN"
-                Executable: "clang++"
+                Executable: "gcc"
                 RunParts:
                 -   Type: Once
                     CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.Output.Directory}\
@@ -74,7 +74,7 @@ Linker:
                 ExpectedOutputFiles: ["{Stage.Output.Directory}{/}{Stage.Output.Name}"]
             Windows:
                 Flags: "-Wl,-rpath,\\$ORIGIN"
-                Executable: "clang++"
+                Executable: "gcc"
                 RunParts:
                 -   Type: Once
                     CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.Output.Directory}\
@@ -86,7 +86,7 @@ Linker:
         Static:
             DefaultPlatform:
                 Flags: ""
-                Executable: "clang++"
+                Executable: "gcc"
                 RunParts:
                 -   Type: Once
                     CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.Output.Directory}\
@@ -99,7 +99,7 @@ Linker:
         Shared:
             DefaultPlatform:
                 Flags: "-shared -Wl,-rpath,\\$ORIGIN"
-                Executable: "clang++"
+                Executable: "gcc"
                 RunParts:
                 -   Type: Once
                     CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.Output.Directory}\
