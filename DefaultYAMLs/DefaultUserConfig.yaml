@@ -9,9 +9,6 @@ PreferredProfile:
 
 # List of compiler/linker profiles that instruct how to compile/link
 # See "./Default/AnnotatedG++.yaml" for the documentation of each field in a profile entry
-Profiles:
--   Import: "./Default/gcc.yaml"
--   Import: "./Default/clang.yaml"
--   Import: "./Default/g++.yaml"
--   Import: "./Default/clang++.yaml"
--   Import: "./Default/vs2022_v17+.yaml"
+# Profiles: []
+
+Import: "./Default/DefaultProfiles.yaml"

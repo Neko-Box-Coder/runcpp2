@@ -1,0 +1,8 @@
+# DO NOT modify this file. Changes will be overwritten when there's a reset or update
+# NOTE: These imports are relative to the user config path, not relative to this file
+Profiles:
+-   Import: "./Default/gcc.yaml"
+-   Import: "./Default/clang.yaml"
+-   Import: "./Default/g++.yaml"
+-   Import: "./Default/clang++.yaml"
+-   Import: "./Default/vs2022_v17+.yaml"

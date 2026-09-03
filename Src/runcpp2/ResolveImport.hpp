@@ -13,7 +13,8 @@ namespace runcpp2
                     const ghc::filesystem::path& yamlDir,
                     runcpp2::YAML::ResourceHandle& currentYamlResources,
                     std::unordered_map<std::string, std::vector<std::string>> subMap,
-                    const std::unordered_map<std::string, std::string>& inputParameters)
+                    const std::unordered_map<std::string, std::string>& inputParameters,
+                    const std::vector<YAML::ConstNodePtr>& excludedNodes)
     {
         using namespace runcpp2;
         
@@ -29,7 +30,7 @@ namespace runcpp2
                                     currentYamlResources, 
                                     subMap,
                                     inputParameters,
-                                    {}).DS_TRY();
+                                    excludedNodes).DS_TRY();
         
         ghc::filesystem::path currentImportFilePath = yamlDir / "Stub";
         while(runcpp2::ExistAndHasChild(currentNode, "Import") || !pathsToImport.empty())
