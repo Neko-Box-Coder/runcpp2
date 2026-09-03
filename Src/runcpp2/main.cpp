@@ -611,14 +611,39 @@ DS::Result<void> HandleRegenUserConfig(int argc, char* argv[])
     }
     
     int argIndex;
+    ghc::filesystem::path configFilePath = {};
     for(argIndex = 2; argIndex < argc; ++argIndex)
     {
         bool parsed = ProcessGeneralOptions(argc, argv, argIndex).DS_TRY();
+        
         if(!parsed)
+        {
+            if(strcmp(argv[argIndex], "-c") == 0 || strcmp(argv[argIndex], "--config-directory") == 0)
+            {
+                if(argIndex == argc - 1)
+                    return DS_ERROR_MSG("Expecting value after -c or --config-directory");
+                configFilePath = argv[++argIndex];
+            }
+        }
+        else
             break;
     }
     
-    ghc::filesystem::path configFilePath = runcpp2::GetConfigFilePath().DS_TRY();
+    std::error_code ec;
+    if(configFilePath.empty())
+    {
+        configFilePath = runcpp2::GetConfigFilePath().DS_TRY();
+    }
+    else
+    {
+        if( ghc::filesystem::exists(configFilePath, ec) && 
+            !ghc::filesystem::is_directory(configFilePath, ec))
+        {
+            return DS_ERROR_MSG("Expecting a directory for config directory, not a file");
+        }
+    }
+    
+    configFilePath = configFilePath.append("UserConfig.yaml");
     runcpp2::WriteDefaultConfigs(configFilePath, true, true).DS_TRY();
     ssLOG_BASE("User config regenerated");
     return {};
