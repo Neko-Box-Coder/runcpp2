@@ -51,6 +51,12 @@
     extern "C" const size_t DefaultUserConfig_size;
     extern "C" const uint8_t CommonFileTypes[];
     extern "C" const size_t CommonFileTypes_size;
+    extern "C" const uint8_t DefaultProfiles[];
+    extern "C" const size_t DefaultProfiles_size;
+    extern "C" const uint8_t Gcc[];
+    extern "C" const size_t Gcc_size;
+    extern "C" const uint8_t Clang[];
+    extern "C" const size_t Clang_size;
     extern "C" const uint8_t G_PlusPlus[];
     extern "C" const size_t G_PlusPlus_size;
     extern "C" const uint8_t ClangPlusPlus[];
@@ -129,10 +135,35 @@ namespace
         
         DS_ASSERT_FALSE(parsedNodes.empty());
         
+        struct UserConfig
+        {
+            std::unordered_map<std::string, runcpp2::Data::ParameterValue> Parameters;
+            std::unordered_map<std::string, std::string> Variables;
+        };
+        
         for(int i = 0; i < parsedNodes.size(); ++i)
         {
             YAML::NodePtr configNode = parsedNodes[i];
             YAML::ResolveAnchors(configNode).DS_TRY();
+            
+            YAML::NodePtr profilesNode = nullptr;
+            std::unordered_map<std::string, std::vector<std::string>> subMap;
+            {
+                YAML::NodePtr profilesKey = nullptr;
+                if(ExistAndHasChild(configNode, "Profiles"))
+                {
+                    profilesNode = configNode->GetMapValueNode("Profiles");
+                    profilesKey = configNode->GetMapKeyNode("Profiles");
+                }
+                
+                UserConfig userConfig = 
+                    ResolveImport<UserConfig>(  configNode,
+                                                configPath.parent_path(),
+                                                parseResource,
+                                                subMap,
+                                                inputParameters,
+                                                { profilesKey, profilesNode }).DS_TRY();
+            }
             
             if(!ExistAndHasChild(configNode, "Profiles"))
                 continue;
@@ -140,29 +171,29 @@ namespace
             if(!configNode->GetMapValueNode("Profiles")->IsSequence())
                 return DS_ERROR_MSG("Profiles must be a sequence");
             
-            YAML::NodePtr profilesNode = configNode->GetMapValueNode("Profiles");
+            profilesNode = configNode->GetMapValueNode("Profiles");
             if(profilesNode->GetChildrenCount() == 0)
-                return DS_ERROR_MSG("No compiler profiles found");
+                continue;
             
             ssLOG_INFO(profilesNode->GetChildrenCount() << " profiles found in user config");
             for(int j = 0; j < profilesNode->GetChildrenCount(); ++j)
             {
                 ssLOG_INFO("Parsing profile at index " << j);
-                
                 YAML::NodePtr currentProfileNode = profilesNode->GetSequenceChildNode(j);
                 
                 if(!currentProfileNode->IsMap())
                     return DS_ERROR_MSG("Profile entry must be a map");
                 
-                std::unordered_map<std::string, std::vector<std::string>> subMap;
-                runcpp2::Data::Profile::PopulateCompilingLinkingParams(subMap);
+                std::unordered_map<std::string, std::vector<std::string>> profileSubMap = subMap;
+                runcpp2::Data::Profile::PopulateCompilingLinkingParams(profileSubMap);
                 
                 runcpp2::Data::Profile profile = 
                     ResolveImport<runcpp2::Data::Profile>(  currentProfileNode,
                                                             configPath.parent_path(),
                                                             parseResource,
-                                                            subMap,
-                                                            inputParameters).DS_TRY();
+                                                            profileSubMap,
+                                                            inputParameters,
+                                                            {}).DS_TRY();
                 profile .ParseYAML_Node(currentProfileNode, false, inputParameters)
                         .DS_TRY_ACT
                         (
@@ -176,6 +207,7 @@ namespace
             } //for(int j = 0; j < profilesNode->GetChildrenCount(); ++j)
             
             GetPreferredProfile(configNode, outPreferredProfile).DS_TRY();
+            break;
         } //for(int i = 0; i < parsedNodes.size(); ++i)
         
         if(outProfiles.empty())
@@ -241,6 +273,9 @@ namespace runcpp2
             std::error_code _;
             if(writeUserConfig && ghc::filesystem::exists(userConfigPath, _))
             {
+                if(ghc::filesystem::is_directory(userConfigPath, _))
+                    return DS_ERROR_MSG("User config path must be a file");
+                
                 int backupCount = 0;
                 do
                 {
@@ -330,6 +365,9 @@ namespace runcpp2
             writeDefaultConfig( "CommonFileTypes.yaml", 
                                 CommonFileTypes, 
                                 CommonFileTypes_size).DS_TRY();
+            writeDefaultConfig("DefaultProfiles.yaml", DefaultProfiles, DefaultProfiles_size).DS_TRY();
+            writeDefaultConfig("gcc.yaml", Gcc, Gcc_size).DS_TRY();
+            writeDefaultConfig("clang.yaml", Clang, Clang_size).DS_TRY();
             writeDefaultConfig("g++.yaml", G_PlusPlus, G_PlusPlus_size).DS_TRY();
             writeDefaultConfig("clang++.yaml", ClangPlusPlus, ClangPlusPlus_size).DS_TRY();
             writeDefaultConfig( "AnnotatedG++.yaml", 
@@ -460,7 +498,8 @@ namespace runcpp2
                                                         yamlDir,
                                                         resourceHandle,
                                                         subMap,
-                                                        inputParameters).DS_TRY();
+                                                        inputParameters,
+                                                        {}).DS_TRY();
         outScriptInfo.ParseYAML_Node(rootScriptNode, false, inputParameters).DS_TRY();
         outScriptInfo.Populated = true;
         return {};

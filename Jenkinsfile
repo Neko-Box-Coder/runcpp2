@@ -150,7 +150,7 @@ pipeline
     
     Trigger:
         $GITHUB_PUSH_REF , $GITHUB_PR_REF , $GITHUB_PR_ACTION
-        ^refs/heads/master , , $|^ , .[a-zA-Z0-9/]* , (opened|synchronize)$
+        ^refs/heads/master , , $|^ , .[a-zA-Z0-9/\-_]* , (opened|synchronize)$
 
     Param:
         TARGET_REF
@@ -336,6 +336,7 @@ pipeline
                         bash 'cp ./BootstrapBuild/runcpp2 ./Build'
                         bash    "./Build/runcpp2 run -l -c ./DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "./Build.cpp --runcpp2-path ./Build/runcpp2"
+                        sleep 5
                         stash 'linux_debug_build'
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
@@ -354,6 +355,7 @@ pipeline
                         bat ".\\Build\\runcpp2.exe run -l -c " +
                             ".\\DefaultYAMLs\\DefaultUserConfig.yaml .\\Build.cpp --runcpp2-path " + 
                             ".\\Build\\runcpp2.exe"
+                        sleep 5
                         stash 'windows_debug_build'
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
@@ -371,6 +373,7 @@ pipeline
                         bash 'cp ./BootstrapBuild/runcpp2 ./Build'
                         bash    "./Build/runcpp2 run -l -c ./DefaultYAMLs/DefaultUserConfig.yaml " + 
                                 "./Build.cpp --runcpp2-path ./Build/runcpp2 --release"
+                        sleep 5
                         stash 'linux_release_build'
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }
@@ -389,6 +392,7 @@ pipeline
                         bat ".\\Build\\runcpp2.exe run -l -c " +
                             ".\\DefaultYAMLs\\DefaultUserConfig.yaml .\\Build.cpp --runcpp2-path " + 
                             ".\\Build\\runcpp2.exe --release"
+                        sleep 5
                         stash 'windows_release_build'
                     }
                     post { failure { script { FAILED_STAGE = env.STAGE_NAME } } }

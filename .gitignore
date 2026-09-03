@@ -62,3 +62,5 @@ compile_commands.json
 Src/runcpp2/DefaultYAMLs.c
 Src/cfgpath.h
 .aider*
+/DefaultYAMLs/.version
+/BootstrapBuild

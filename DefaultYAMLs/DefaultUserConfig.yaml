@@ -4,12 +4,11 @@
 
 # A profile to be used if not specified while running the build script
 PreferredProfile: 
-    DefaultPlatform: "g++"
+    DefaultPlatform: "gcc"
     Windows: "msvc"
 
 # List of compiler/linker profiles that instruct how to compile/link
-# See "./Default/g++.yaml" for the documentation of each field in a profile entry
-Profiles:
--   Import: "./Default/g++.yaml"
--   Import: "./Default/clang++.yaml"
--   Import: "./Default/vs2022_v17+.yaml"
+# See "./Default/AnnotatedG++.yaml" for the documentation of each field in a profile entry
+# Profiles: []
+
+Import: "./Default/DefaultProfiles.yaml"

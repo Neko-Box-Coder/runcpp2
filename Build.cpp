@@ -143,6 +143,7 @@ DS::Result<void> GenerateDefaultYAMLs(const std::string runcpp2Path, const std::
     {
         "./DefaultYAMLs/DefaultScriptInfo.yaml",
         "./DefaultYAMLs/DefaultUserConfig.yaml",
+        "./DefaultYAMLs/Default/DefaultProfiles.yaml",
         "./DefaultYAMLs/Default/AnnotatedG++.yaml",
         "./DefaultYAMLs/Default/CommonFileTypes.yaml",
         "./DefaultYAMLs/Default/clang++.yaml",
@@ -173,8 +174,11 @@ DS::Result<void> GenerateDefaultYAMLs(const std::string runcpp2Path, const std::
     std::string cmd =   runcpp2Path + " run --log-level error " + runcpp2Args + embed2CPath.string() +
                         " ./DefaultYAMLs/DefaultScriptInfo.yaml DefaultScriptInfo " +
                         " ./DefaultYAMLs/DefaultUserConfig.yaml DefaultUserConfig " +
+                        " ./DefaultYAMLs/Default/DefaultProfiles.yaml DefaultProfiles " +
                         " ./DefaultYAMLs/Default/AnnotatedG++.yaml AnnotatedG_PlusPlus " +
                         " ./DefaultYAMLs/Default/CommonFileTypes.yaml CommonFileTypes " +
+                        " ./DefaultYAMLs/Default/gcc.yaml Gcc " +
+                        " ./DefaultYAMLs/Default/clang.yaml Clang " +
                         " ./DefaultYAMLs/Default/clang++.yaml ClangPlusPlus " +
                         " ./DefaultYAMLs/Default/g++.yaml G_PlusPlus " +
                         " ./DefaultYAMLs/Default/vs2022_v17+.yaml Vs2022_v17Plus ";
@@ -234,7 +238,7 @@ DS::Result<void> Main(int argc, char** argv)
         else if(strcmp(argv[i], "--release") == 0)
             release = true;
         else
-            break;
+            return DS_ERROR_MSG(DS_STR("Unexpected option: \"") + argv[i] + "\"");
     }
     
     if(!ghc::filesystem::exists("./External/cfgpath/cfgpath.h"))
