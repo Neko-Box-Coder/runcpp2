@@ -32,66 +32,6 @@ struct OptionInfo
 };
 
 //TODO: Merge long and short options into a single structure
-int ParseArgs(  const std::unordered_map<std::string, OptionInfo>& longOptionsMap,
-                const std::unordered_map<std::string, const OptionInfo&>& shortOptionsMap,
-                std::unordered_map<std::string, std::string>& outLongOptions,
-                int argc, 
-                char* argv[])
-{
-    int currentArgIndex = 0;
-    std::string optionForCapturingValue = "";
-    
-    for(int i = 1; i < argc; ++i)
-    {
-        std::string currentArg = std::string(argv[i]);
-        
-        //Storing value for last option
-        if(!optionForCapturingValue.empty())
-        {
-            //If the current argument matches one of the options, error out
-            if(longOptionsMap.count(currentArg) || shortOptionsMap.count(currentArg))
-            {
-                ssLOG_ERROR("Missing value for option: " << optionForCapturingValue);
-                return -1;
-            }
-            
-            outLongOptions[optionForCapturingValue] = currentArg;
-            optionForCapturingValue.clear();
-            currentArgIndex = i;
-            ssLOG_DEBUG("currentArgIndex: " << currentArgIndex);
-            ssLOG_DEBUG("argv: " << argv[i]);
-            continue;
-        }
-        
-        //Matched long or short options
-        if(longOptionsMap.count(currentArg) || shortOptionsMap.count(currentArg))
-        {
-            currentArgIndex = i;
-            ssLOG_DEBUG("currentArgIndex: " << currentArgIndex);
-            ssLOG_DEBUG("argv: " << argv[i]);
-            const OptionInfo& currentInfo = longOptionsMap.count(currentArg) ?
-                                            longOptionsMap.at(currentArg) :
-                                            shortOptionsMap.at(currentArg);
-            if(currentInfo.ValueExists)
-                optionForCapturingValue = currentInfo.LongOption;
-            else
-                outLongOptions[currentInfo.LongOption] = "";
-            
-            continue;
-        }
-        else if(!currentArg.empty() && currentArg[0] == '-')
-        {
-            ssLOG_ERROR("Invalid option: " << currentArg);
-            return -1;
-        }
-        else
-            break;
-    }
-    
-    ssLOG_DEBUG("returning currentArgIndex: " << currentArgIndex);
-    return currentArgIndex;
-}
-
 DS::Result<void> GenerateScriptTemplate(const ghc::filesystem::path& outputFilePath)
 {
     DS_ASSERT_FALSE(outputFilePath.empty());
@@ -158,6 +98,12 @@ DS::Result<void> GenerateScriptTemplate(const ghc::filesystem::path& outputFileP
         
         return {};
     #endif
+}
+
+std::string PrintUnexpectedOption(const std::string& unexpectedOption, const std::string& action)
+{
+    return  DS_STR("Unexpected option \"") + unexpectedOption + "\" found. Did you mean " + action + 
+            " " + unexpectedOption + "?";
 }
 
 std::string PadSpaceRight(const std::string& s, int padCol)
@@ -409,6 +355,9 @@ DS::Result<void> HandleBuild(int argc, char* argv[])
         return DS_ERROR_MSG("Input file expected");
     ghc::filesystem::path script = argv[argIndex++];
     
+    if(argc > argIndex)
+        return DS_ERROR_MSG(PrintUnexpectedOption(argv[argIndex], "build"));
+    
     std::vector<runcpp2::Data::Profile> profiles;
     std::string preferredProfile;
     runcpp2::ReadUserConfig(profiles, preferredProfile, params, configPath).DS_TRY();
@@ -483,6 +432,9 @@ DS::Result<void> HandleWatch(int argc, char* argv[])
     if(argIndex >= argc)
         return DS_ERROR_MSG("Input file expected");
     ghc::filesystem::path script = argv[argIndex++];
+    
+    if(argc > argIndex)
+        return DS_ERROR_MSG(PrintUnexpectedOption(argv[argIndex], "watch"));
     
     std::vector<runcpp2::Data::Profile> profiles;
     std::string preferredProfile;
@@ -591,6 +543,8 @@ DS::Result<void> HandleTemplate(int argc, char* argv[])
     if(argIndex >= argc)
         return DS_ERROR_MSG("Output file expected");
     ghc::filesystem::path templatePath = argv[argIndex++];
+    if(argc > argIndex)
+        return DS_ERROR_MSG(PrintUnexpectedOption(argv[argIndex], "template"));
     
     GenerateScriptTemplate(templatePath).DS_TRY();
     ssLOG_BASE("Script template generated");
@@ -624,9 +578,9 @@ DS::Result<void> HandleRegenUserConfig(int argc, char* argv[])
                     return DS_ERROR_MSG("Expecting value after -c or --config-directory");
                 configFilePath = argv[++argIndex];
             }
+            else
+                return DS_ERROR_MSG(PrintUnexpectedOption(argv[argIndex], "regen-user-config"));
         }
-        else
-            break;
     }
     
     std::error_code ec;
@@ -704,6 +658,8 @@ DS::Result<void> HandleReset(int argc, char* argv[])
     if(argIndex >= argc)
         return DS_ERROR_MSG("Input file expected");
     ghc::filesystem::path script = argv[argIndex++];
+    if(argc > argIndex)
+        return DS_ERROR_MSG(PrintUnexpectedOption(argv[argIndex], "reset"));
     
     std::vector<runcpp2::Data::Profile> profiles;
     std::string preferredProfile;

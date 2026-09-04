@@ -12,8 +12,8 @@ runcpp2 is a simple declarable, scriptable, flexible cross-platform build system
 
 
 ## 🛠️ Prerequisites
-- Any c or c++ compiler. The default user config only has g++ and msvc profiles. But feel free to
-add other compilers.
+Any c or c++ compiler. The default user config supports most of the major compilers, such as gcc, 
+clang and msvc. However, it is easy to add and support to other compilers.
 
 ## 📥️ Installation
 You can either build from source or use the binary release
@@ -23,6 +23,9 @@ Binary Release (Only Linux and Windows for now):
 
 Nightly Release:
 [https://github.com/Neko-Box-Coder/runcpp2/releases/tag/nightly](https://github.com/Neko-Box-Coder/runcpp2/releases/tag/nightly)
+
+Build From Source:
+See docs (WIP)
 
 Finally, you just need to add runcpp2 binary location to the `PATH` environment variable and 
 you can run c++ files anywhere you want.
