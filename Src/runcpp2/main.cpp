@@ -595,9 +595,9 @@ DS::Result<void> HandleRegenUserConfig(int argc, char* argv[])
         {
             return DS_ERROR_MSG("Expecting a directory for config directory, not a file");
         }
+        configFilePath = configFilePath.append("UserConfig.yaml");
     }
     
-    configFilePath = configFilePath.append("UserConfig.yaml");
     runcpp2::WriteDefaultConfigs(configFilePath, true, true).DS_TRY();
     ssLOG_BASE("User config regenerated");
     return {};
