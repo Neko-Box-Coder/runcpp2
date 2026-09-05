@@ -62,7 +62,7 @@ runcpp2 ./script.cpp <any arguments>
 
 ### YAML File As Input
 
-!!! info inline end "This requires `v0.4.0` version"
+!!! info inline end "This requires `nightly` version"
 You can also use a YAML file as input. If this is the case, the name of the output 
 binary will be the name of the YAML file.
 
@@ -85,7 +85,7 @@ can be spcified inlined inside a source file or as a separate yaml file in the f
 
 - To specify build config in a dedicated yaml file:
     - The yaml file in the same directory and share the same as the source file being run will be used
-    !!! info inline end "This requires `v0.4.0` version"
+    !!! info inline end "This requires `nightly` version"
     - The yaml file must specify at least one source if fed as input
 - To specify inline build config inside a source file: 
     - Put them inside a comment with `runcpp2` at the beginning of the build config

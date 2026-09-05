@@ -2,7 +2,7 @@
 
 ![](./Runcpp2Logo.png)
 
-runcpp2 is a simple declarable, scriptable, flexible cross-platform build system build system for c or c++
+runcpp2 is a simple declarable, scriptable, flexible cross-platform build system for c or c++
 
 - 🚀 **Simple**: `runcpp2 run main.cpp`, this is all you need to get started
 - 📝 **Declarable**: *Quick, Concise, Minimal* YAML format

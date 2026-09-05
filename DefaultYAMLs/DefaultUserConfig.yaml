@@ -11,4 +11,13 @@ PreferredProfile:
 # See "./Default/AnnotatedG++.yaml" for the documentation of each field in a profile entry
 # Profiles: []
 
+# (Optional) Same as how parameters in build info. See build info template for more details (`runcpp2 template`)
+# Parameters: ...
+
+
+# (Optional) Same as how variables in build info. See build info template for more details (`runcpp2 template`)
+# Variables: ...
+
+# (Optional) Importing other yaml files. Can either be a single path or a list of paths. 
+#            See build info template for more details (`runcpp2 template`)
 Import: "./Default/DefaultProfiles.yaml"

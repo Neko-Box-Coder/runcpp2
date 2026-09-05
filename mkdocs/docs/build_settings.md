@@ -37,7 +37,6 @@
     - `Executable`
     - `Static`
     - `Shared`
-    - `Objects`
 - Optional: `true`
 - Default: `Executable`
 - Description: The type of output to build.
@@ -184,7 +183,7 @@
 - Type: `Platform Profile Map` with `list` of `string`
 - Optional: `true`
 - Default: None
-- Description: The cleanup commands to be used for each platform and profile. This runs when `--cleanup` command is specified.
+- Description: The commands used for cleaning up for each platform and profile. This runs when `runcpp2 reset ...` is used.
 ??? example
     ```yaml
     Cleanup:
@@ -451,256 +450,212 @@ ExampleSettings:
 ## Template
 
 ```yaml
-# This is the template for specifying build settings.
-# Many of the settings are passed directly to the shell.
-# Be cautious when using user-provided input in your build commands to avoid potential security risks.
-# Output from commands such as Setup or Cleanup won't be shown unless log level is set to info.
-# If the default is not mentioned for a setting, it will be empty.
+# # This is an example script info. Comments have 2 leading `#`, while a valid config has only 1 leading `#`
 
-# Each of the platform dependent settings can be listed under
-# - DefaultPlatform
-# - Windows
-# - Linux
-# - MacOS
-# - Unix
+# # This is the template for specifying build settings.
+# # Many of the settings are passed directly to the shell.
+# # Be cautious when using user-provided input in your build commands to avoid potential security risks.
+# # Output from commands such as Setup or Cleanup won't be shown unless log level is set to info.
+# # If the default is not mentioned for a setting, it will be empty.
 
-# You can find all the profiles in your config folder. 
-# This can be found by running `runcpp2 --show-config-path`. 
-# Specifying "DefaultProfile" in the profile name will allow any profiles 
-#   and use the user's preferred one.
+# # Each of the platform dependent settings can be listed under
+# # - DefaultPlatform
+# # - Windows
+# # - Linux
+# # - MacOS
+# # - Unix
 
-# (Optional) Whether to pass the script path as the second parameter when running. Default is false
-PassScriptPath: false
+# # You can find all the profiles in your config folder. 
+# # This can be found by running `runcpp2 --show-config-path`. 
+# # Specifying "DefaultProfile" in the profile name will allow any profiles and use the user's preferred one.
 
-# (Optional) Language of the script. Default is determined by file extension
-Language: "c++"
+# # Many of the configs can specify values specific to different platforms or profiles, like so
+# # ```yaml
+# # FieldName:
+# #     PlatformA:
+# #         ProfileA:
+# #             <Values...>
+# #     PlatformB:
+# #         ProfileA:
+# #             <Values...>
+# #         ProfileB:
+# #             <Values...>
+# # ```
+# # These kind of configs will be denoted with "(Platforms/Profiles)" below
+# #
+# # If the values apply to all platforms and profiles, then they can be speicified directly, like so
+# # ```yaml
+# # FieldName:
+# #     <Values...>
+# # ```
+# #
+# # Note that the above is the same as:
+# # ```yaml
+# # FieldName:
+# #     DefaultPlatform:
+# #         DefaultProfile:
+# #             <Values...>
+# # ```
 
-# (Optional) The type of output to build. Default is Executable
-# Supported types:
-# - Executable: Build as executable that can be run
-# - Static: Build as static library (.lib/.a)
-# - Shared: Build as shared library (.dll/.so)
-# - Objects: Only compile to object files without linking
-BuildType: Executable
+############################################################################################################################################################
 
-# TODO: Rename this
-# (Optional) Allowed profiles for the script for each platform.
-#            Any profiles will be used if none is specified for the platform. 
-RequiredProfiles: 
-    Windows: ["g++"]
-    Linux: ["g++"]
-    MacOS: ["g++"]
+# PassScriptPath: false       # (Optional) Whether to pass the script path as the second parameter when running. Default is false
 
-# (Optional) Override the default compile flags for each platform.
-OverrideCompileFlags:
-    # Target Platform
-    DefaultPlatform:
-        # Profile with the respective flags to override
-        "g++":
-            # (Optional) Flags to be removed from the default compile flags, separated by space
-            Remove: ""
-            
-            # (Optional) Additional flags to be appended to the default compile flags, separated by space
-            Append: ""
-    
-# (Optional) Override the default link flags for each platform.
-OverrideLinkFlags:
-    # Target Platform
-    DefaultPlatform:
-        # Profile with the respective flags to override
-        "g++":
-            # (Optional) Flags to be removed from the default link flags, separated by space
-            Remove: ""
-            
-            # (Optional) Additional flags to be appended to the default link flags, 
-            #            separated by space
-            Append: ""
+# Language: "c++"             # (Optional) Language of the script. Default is determined by file extension
 
-# (Optional) Other source files (relative to script file path) to be compiled.
-SourceFiles:
-    # Target Platform
-    DefaultPlatform:
-        # Target Profile
-        DefaultProfile:
-        -   "./AnotherSourceFile.cpp"
+# BuildType: Executable       # (Optional) The type of output to build. `Executable`, `Static`, `Shared`. Default is Executable
 
-# (Optional) Include paths (relative to script file path) for each platform and profile
-IncludePaths:
-    # Target Platform
-    DefaultPlatform:
-        # Target Profile
-        DefaultProfile:
-        -   "./include"
-        -   "./src/include"
+# # TODO: Rename this
+# RequiredProfiles:       # (Optional) Allowed profiles for the script for each platform.
+#                         #            Any profiles will be used if none is specified for the platform. Default to none
+#     Windows: ["g++"]
+#     Linux: ["g++"]
+#     MacOS: ["g++"]
 
-# (Optional) Define cross-compiler defines for each platform and profile.
-#            Defines can be specified as just a name or as a name-value pair.
-Defines:
-    # Target Platform
-    DefaultPlatform:
-        # Profile name
-        DefaultProfile:
-        -   "EXAMPLE_DEFINE"              # Define without a value
-        -   "VERSION_MAJOR=1"             # Define with a value
+# (Optional) We can use the "Import" field to import other yaml files to merge to this file
+#            Import can either be a single path or a list of paths. 
+#            If there's any parameter/variables in the import file, it will applied to that file 
+#            first before merging
+# Import: "./OtherDefines.yaml"
 
-# (Optional) Setup commands are run once before the script is first built.
-#            These commands are run at the script's location when no build directory exists.
-Setup:
-    # Target Platform
-    DefaultPlatform:
-        # Profile name
-        DefaultProfile:
-        # List of setup commands
-        -   "echo Setting up script..."
+# Parameters:                         # (Optional) Parameters are user supplied input that can be substituted into any keys or values, with the syntax of `{<parameter name>}`
+#                                     #            This in only applied to this file.
+#     Param1:                         # Name of the parameter
+#         Optional: true              # (Optional) If this parameter is mandatory. Defaults to `true`
+#         Default: ""                 # (Optional) Default value of the parameter. Defaults to empty
+#         Array: false                # (Optional) Parameter for array. If this is true, comma separated values is expected. Defaults to false.
+#                                     #            If this is true, this parameter can only be used in config values that expect an array.
+#         Constraint: "None"          # (Optional) Constraint of this parameter value. An array means a multiple choice constraint.
+#                                     # Can be one of the following
+#                                     #     "None": No constraint
+#                                     #     "Bool": `true`, `false`, `1` or `0`
+#                                     #     "Float[:<Min Float>,<Max Float>]": Floating point number with optional inclusive min and max
+#                                     #     "Int[:<Min Int>,<Max Int>]": Integer number  with optional inclusive min and max
+#                                     #     ["<Choice 1>[:Mapped Value 1]", "<Choice 2>[:Mapped Value 2]", ...]: List of choices with optional corresponding mapped values
 
-# (Optional) PreBuild commands are run before each build.
-#            These commands are run in the build directory before compilation starts.
-PreBuild:
-    # Target Platform
-    DefaultPlatform:
-        # Profile name
-        DefaultProfile:
-        -   "echo Starting build..."
+# TODO: Conditional variables
+# Variables:                                          # (Optional) Variables can be substituted into any keys or values (excluding "Parameters"), with the syntax of `{<variable name>}`
+#                                                     #            This in only applied to this file.
+#     VarName1: "Some string {Param1} substitution"   # A variable can be created by substituting a parameter into a string, using syntax of `{<parameter name>}`
+#                                                     # If this contains an array parameter value, the substition is performed for each parameter array value and 
+#                                                     # this variable will become an array variable, meaning this can only be used in config values that expect an array.
 
-# (Optional) PostBuild commands are run after each successful build.
-#            These commands are run in the output directory where binaries are located.
-PostBuild:
-    # Target Platform
-    DefaultPlatform:
-        # Profile name
-        DefaultProfile:
-        -   "echo Build completed..."
+# # If all the platforms share the same set of config values, the config values can be listed under `DefaultPlatform`.
+# # If all the profiles share the same set of config values, the config values can be listed under `DefaultProfile`.
 
-# (Optional) Cleanup commands are run when using the --cleanup option.
-#            These commands are run at the script's location before the build directory is removed.
-Cleanup:
-    # Target Platform
-    DefaultPlatform:
-        # Profile name
-        DefaultProfile:
-        -   "echo Cleaning up script..."
+# OverrideCompileFlags:       # (Optional) (Platforms/Profiles) Override the default compile flags for each platform.
+#     Remove: ""              # (Optional) Flags to be removed from the default compile flags, separated by space
+#     Append: ""              # (Optional) Additional flags to be appended to the default compile flags, separated by space
 
-# (Optional) The list of dependencies needed by the script
-Dependencies:
-    # Dependency name
--   Name: MyLibrary
-    
-    # Supported platforms of the dependency
-    Platforms: [Windows, Linux, MacOS]
-    
-    # Where to get and copy the dependency (Git, Local)
-    # Either Git or Local can exist, not both
-    Source:
-        # (Optional) Import dependency configuration from a YAML file if this field exists
-        #            All other fields (Name, Platforms, etc...) are not needed if this field exists
-        #            For Git source: Path is relative to the git repository root
-        #            For Local source: Path is relative to the path specified under `Local`
-        #            If neither source exists, local source with root script directory is assumed.
-        ImportPath: "config/dependency.yaml"
-        
-        # Dependency or import YAML file exists in a git server, and needs to be cloned to build directory
-        Git:
-            # Git repository URL
-            URL: "https://github.com/MyUser/MyLibrary.git"
-            
-            # (Optional) Branch name or tag name
-            #            Defaults to default branch on specified git repo if this is not specified
-            # Branch: ""
-            
-            # (Optional) Checkout full git history or just the target commit. Defaults to false
-            # FullHistory: false
-            
-            # (Optional) Initialization type for all the submodules recursively
-            #            - "None": Don't initialize any submodules
-            #            - "Shallow": Only checkout the target commit of all the submodules (default)
-            #            - "Full": Checkout the full git history of all the submodules
-            # SubmoduleInitType: "Shallow"
-        
-        # Dependency or import YAML file exists in local filesystem directory, 
-        #   and needs to be copied to build directory
-        Local:
-            # Path to the library directory
-            Path: "./libs/LocalLibrary"
-            
-            # (Optional) How to handle copying files to build directory
-            # Values:
-            #   - "Auto" (default): Try symlink first, then hardlink, then copy as fallback
-            #   - "Symlink": Create symbolic links only, fail if not possible
-            #   - "Hardlink": Create hard links only, fail if not possible
-            #   - "Copy": Copy files to build directory
-            CopyMode: "Auto"
+# OverrideLinkFlags:          # (Optional) (Platforms/Profiles) Override the default link flags for each platform.
+#     Remove: ""              # (Optional) Flags to be removed from the default link flags, separated by space
+#     Append: ""              # (Optional) Additional flags to be appended to the default link flags, separated by space
 
-    # Library Type (Static, Object, Shared, Header)
-    LibraryType: Static
-    
-    # (Optional) Paths to be added to the include paths, relative to the dependency folder
-    IncludePaths:
-    -   "src/include"
-    
-    # (Optional if LibraryType is Header) Link properties of the dependency
-    LinkProperties:
-        # Properties for searching the library binary for each platform
-        DefaultPlatform:
-            # Profile-specific properties
-            "g++":
-                # The library names to be searched for when linking against the script. 
-                # Binaries with linkable extension that contains one of the names will be linked
-                SearchLibraryNames: ["MyLibrary"]
-                
-                # (Optional) The library names to be excluded from being searched.
-                #            Works the same as SearchLibraryNames but will NOT be linked instead
-                ExcludeLibraryNames: []
-                
-                # The path (relative to the dependency folder) to be searched for the dependency binaries
-                SearchDirectories: ["./build"]
-                
-                # (Optional) Additional link flags for this dependency
-                AdditionalLinkOptions: []
-    
-    # (Optional) Setup commands are run once when the dependency is populated
-    Setup:
-        # Target Platform
-        DefaultPlatform:
-            # Setup shell commands for the specified profile. 
-            # Default commands are run in the dependency folder
-            # You can also use "DefaultProfile" if all the compilers run the same setup commands
-            "g++":
-            -   "mkdir build"
-            
-    
-    # (Optional) Build commands are run every time before the script is being built
-    Build:
-        # Target Platform
-        DefaultPlatform:
-            # Target Profile
-            "g++":
-            -   "cd build && cmake .."
-            -   "cd build && cmake --build ."
-    
-    # (Optional) Cleanup commands are run when the reset option is present. Normally nothing needs
-    #            to be done since the dependency folder will be removed automatically.
-    Cleanup:
-        # Target Platform
-        Linux:
-            # Target Profile
-            "g++":
-            -   "sudo apt purge MyLibrary"
+# SourceFiles:                    # (Optional) (Platforms/Profiles) Other source files (relative to script file path) to be compiled.
+# -   "./AnotherSourceFile.cpp"
 
-    # (Optional) Files to be copied to next to output binary for each platform and profile
-    FilesToCopy:
-        # Target Platform
-        DefaultPlatform:
-            # Profile name
-            DefaultProfile:
-            # List of files to copy (relative to the dependency folder)
-            -  "assets/textures/sprite.png"
-        Windows:
-            "msvc":
-            -  "assets/textures/sprite.png"
-            -  "assets/fonts/windows_specific_font.ttf"
-        Linux:
-            "g++":
-            -  "assets/textures/sprite.png"
-            -  "assets/shaders/linux_optimized_shader.glsl"
+# IncludePaths:                   # (Optional) (Platforms/Profiles) Include paths (relative to script file path) for each platform and profile
+# -   "./include"
+# -   "./src/include"
 
+# Defines:                        # (Optional) (Platforms/Profiles) 
+#                                 # Define cross-compiler defines for each platform and profile. Defines can be specified as just a name or as a name-value pair.
+# -   "EXAMPLE_DEFINE"    # Define without a value
+# -   "VERSION_MAJOR=1"   # Define with a value
+
+# Setup:                                  # (Optional) (Platforms/Profiles)
+#                                         # Setup commands are run once before the script is first built. These commands are run at the script's location when no build directory exists.
+# -   "echo Setting up script..." # List of setup commands
+
+# PreBuild:                   # (Optional) (Platforms/Profiles) 
+#                             # PreBuild commands are run before each build. These commands are run in the build directory before compilation starts.
+# -   "echo Starting build..."
+
+# PostBuild:                  # (Optional) (Platforms/Profiles) 
+#                             # PostBuild commands are run after each successful build. These commands are run in the output directory where binaries are located.
+# -   "echo Build completed..."
+
+# Cleanup:                    # (Optional) (Platforms/Profiles) 
+#                             # Cleanup commands are run when using the --cleanup option. These commands are run at the script's location before the build directory is removed.
+# -   "echo Cleaning up script..."
+
+# (Optional) We can use the "Import" field to import other yaml files. 
+#            Import can either be a single path or a list of paths. 
+#            All the fields in the imported yaml files will be merged together
+#            If there's any parameter/variables in the import file, it will applied to that file 
+#            first before merging
+# Import: ""
+
+# Dependencies:                                   # (Optional) The list of dependencies needed by the script
+# -   Name: MyLibrary                             # Dependency name
+#     Platforms: [Windows, Linux, MacOS]          # Supported platforms of the dependency
+#     Source:                                     # Where to get and copy the dependency (Git, Local). Either Git or Local can exist, not both
+#         ImportPath: "config/dependency.yaml"    # (Optional) Import dependency configuration from a YAML file if this field exists
+#                                                 #            All other fields (Name, Platforms, etc...) are not needed if this field exists
+#                                                 #            For Git source: Path is relative to the git repository root
+#                                                 #            For Local source: Path is relative to the path specified under `Local`
+#                                                 #            If neither source exists, local source with root script directory is assumed.
+#         
+#         Git:                                                # Dependency or import YAML file exists in a git server, and needs to be cloned to build directory
+#             URL: "https://github.com/MyUser/MyLibrary.git"  # Git repository URL
+#             Branch: ""                                      # (Optional) Branch name or tag name. Defaults to default branch on specified git repo if this is not specified
+#             FullHistory: false                              # (Optional) Checkout full git history or just the target commit. Defaults to false
+#             SubmoduleInitType: "Shallow"                    # (Optional) Initialization type for all the submodules recursively
+#                                                             #            - "None": Don't initialize any submodules
+#                                                             #            - "Shallow": Only checkout the target commit of all the submodules (default)
+#                                                             #            - "Full": Checkout the full git history of all the submodules
+#         
+#         Local:                                  # Dependency or import YAML file exists in local filesystem directory, and needs to be copied to build directory
+#             Path: "./libs/LocalLibrary"         # Path to the library directory
+#             CopyMode: "Auto"                    # (Optional) How to handle copying files to build directory
+#                                                 # Values:
+#                                                 #   - "Auto" (default): Try symlink first, then hardlink, then copy as fallback
+#                                                 #   - "Symlink": Create symbolic links only, fail if not possible
+#                                                 #   - "Hardlink": Create hard links only, fail if not possible
+#                                                 #   - "Copy": Copy files to build directory
+# 
+#     Parameters:                         # (Optional) See Parameters above for more details.
+#                                         #            Parameters substitution is applied both before and after importing (if the import has `Parameters`)
+#         Param1:                         # Name of the parameter
+#             Optional: true              # (Optional) If this parameter is mandatory. Defaults to `true`
+#             Default: ""                 # (Optional) Default value of the parameter. Defaults to empty
+#             Array: false                # (Optional) Parameter for array. If this is true, comma separated values is expected. Defaults to false.
+#                                         #            If this is true, this parameter can only be used in config values that expect an array.
+#             Constraint: "None"          # (Optional) Constraint of this parameter value. An array means a multiple choice constraint.
+# 
+#     # TODO: Conditional variables
+#     Variables:                                          # (Optional) See Variables above for more details. 
+#                                                         #            Variables substitution is applied both before and after importing (if the import has `Variables`)
+#         VarName1: "Some string {Param1} substitution"   # A variable can be created by substituting a parameter into a string, using syntax of `{<parameter name>}`
+# 
+#     LibraryType: Static     # Library Type (Static, Object, Shared, Header)
+#     
+#     IncludePaths:           # (Optional) Paths to be added to the include paths, relative to the dependency folder
+#     -   "src/include"
+#     
+#     LinkProperties:         # (Optional if LibraryType is Header) (Platforms/Profiles) Link properties of the dependency
+#         SearchLibraryNames: ["MyLibrary"]   # The library names to be searched for when linking against the script. 
+#                                             # Binaries with linkable extension that contains one of the names will be linked
+#         ExcludeLibraryNames: []             # (Optional) The library names to be excluded from being searched.
+#                                             #            Works the same as SearchLibraryNames but will NOT be linked instead
+#         SearchDirectories: ["./build"]      # The path (relative to the dependency folder) to be searched for the dependency binaries
+#         AdditionalLinkOptions: []           # (Optional) Additional link flags for this dependency
+#       
+#     CompileProperties:                  # (Optional) (Platforms/Profiles) Compile properties of the dependency
+#         Defines: []                     # (Optional) Additional defines for this dependency when compiling source
+#         AdditionalCompileOptions: []    # (Optional) Additional compile flags for this dependency when compiling source
+#     
+#     Setup:                  # (Optional) (Platforms/Profiles) Setup commands are run once when the dependency is populated
+#     -   "mkdir build"
+#     
+#     Build:                  # (Optional) (Platforms/Profiles) Build commands are run every time before the script is being built
+#     -   "cd build && cmake .."
+#     -   "cd build && cmake --build ."
+#     
+#     Cleanup:                # (Optional) (Platforms/Profiles) 
+#                             # Cleanup commands are run when the reset option is present. Normally nothing needs to be done since the dependency folder will be removed automatically.
+#     -   "sudo apt purge MyLibrary"
+#     
+#     FilesToCopy:            # (Optional) (Platforms/Profiles)  Files to be copied to next to output binary for each platform and profile
+#     -  "assets/textures/sprite.png"
 ```

@@ -51,7 +51,7 @@
 
 # Language: "c++"             # (Optional) Language of the script. Default is determined by file extension
 
-# BuildType: Executable       # (Optional) The type of output to build. `Executable`, `Static`, `Shared`, `Objects`. Default is Executable
+# BuildType: Executable       # (Optional) The type of output to build. `Executable`, `Static`, `Shared`. Default is Executable
 
 # # TODO: Rename this
 # RequiredProfiles:       # (Optional) Allowed profiles for the script for each platform.
