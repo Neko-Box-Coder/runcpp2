@@ -1,225 +1,234 @@
-# External Dependencies
+# Build Info Intermediates
 
-## Adding External Dependencies
+## Parameters & Variables
 
-runcpp2 supports external dependencies out of the box. 
+Build info can be changed dynamically using parameters and variables. 
 
-You can specify the dependencies under the `Dependencies` section.
+Parameters and Variables are parsed first before parsing the rest of the fields, and they act like 
+macros in C where it just performs text replacements (in the YAML nodes level) to the user supplied 
+or default values.
 
-Each dependency must have the following fields, other fields are optional:
+The user input values or default values are first applied to parameters, with or without constraints 
+optionally. Then a variable can "aggregate" one or more parameters values into a single variable 
+which can be used for text replacement.
 
-!!! note "Note: Dependencies that are imported (explained later) only need the `Source` field."
-    
+```yaml
+Parameters:
+    Param1:
+        Optional: true
+        Default: ""
+        Array: false
+        Constraint: None
+    Param2:
+        Optional: true
+        Default: "UserDefine1,UserDefine2"
+        Array: true
+        Constraint: None
+
+Variables:
+    VarName1: "Some string {Param1} substitution"
+
+Defines: ["ExampleDefine=\"{VarName1}\"", "{Param2}"]
+```
+
+The value of the parameter can be changed dynamically with the following syntax for different main 
+actions.
+
+`--parameters <name1=val1;name2=val2;...>`
+
+For example
+
+```shell
+runcpp2 run --parameters 'Param1=parameter;Param2=UserDefineA,UserDefineB' ./main.cpp
+```
+
+where the value of `ExampleDefine` would be `"Some string parameter substitution"`, also 
+`UserDefineA` and `UserDefineB` would be defined too in this instance.
+
+See [ParametersInfo](../build_settings.md#parametersinfo){:target="_blank"} and 
+[VariablesInfo](../build_settings.md#variablesinfo) for details on all possible child fields.
+
+---
+
+## Adding Dependencies
+
+runcpp2 supports any dependencies as it is invoking the compiler/linker toolchains directly. So as 
+long as you know/can build the dependencies locally or have the prebuilt binaries, you can link 
+against or include them fairly trivially.
+
+Unless you are importing a standalone dependency YAML (which will be explained later), a dependency 
+must have at least the following fields:
 
 - **Name**: The name of the dependency
-- **Platforms**: The platforms the dependency is supported on
-- **Source**: The source of the dependency
+- **Platforms**: Supported host platforms that can build the dependency
+- **Source**: Where to look for (and copy) the dependency
 - **LibraryType**: The type of the library (`Static`, `Object`, `Shared`, `Header`)
 
----
+So a minimum dependency in a build info could look like this
 
-## Specifying Dependency Source
+```yaml
+Dependencies:
+-   Name: spdlog
+    Platforms: [ DefaultPlatorm ]
+    Source:
+        Git: 
+            URL: https://github.com/gabime/spdlog.git
+            Branch: "v1.17.0"
+    LibraryType: Header
+    IncludePaths: ["./include"]
+```
 
-In order to use a dependency, it must be coming from somewhere.
+There are more fields available for dependency. For more details, see 
+[Dependency](../build_settings.md#dependency).
 
-This is configured under the `Source` section. We currently support 2 sources:
+For `Source`, it can either be a `Git` source or a `Local` source, which has different child fields 
+correspondingly. 
 
-- **Git Repository**: The dependency is cloned from a git repository
-- **Local Directory**: The dependency is copied from a local directory
+It is recommended to use `Git` source for _script like_ files or _small portable_ projects, and 
+`Local` source for anything else where the `Path` just points to the root of the dependency. 
 
-???+ example
-    ```yaml title="Git Dependency"
-    Dependencies:
-    -   Name: MyLibrary
-        Platforms: [Windows, Linux, MacOS]
-        Source:
-            Git:
-                URL: "https://github.com/MyUser/MyLibrary.git"
-        LibraryType: Static
-        IncludePaths:
-        -   "include/MyLibrary"
-    ```
+The reason being `Git` source is designed to work with public git repositories, but not as a 
+dependency management alternative. The goal of this is to provide a way of rapid prototyping or 
+script like eco-system, not dependency/package management; Use `Local` source for that instead.
 
-    ```yaml title="Local Dependency"
-    Dependencies:
-    -   Name: LocalLibrary
-        Platforms: [Windows, Linux, MacOS]
-        Source:
-            Local:
-                Path: "./libs/LocalLibrary"
-                # Optional, defaults to "Auto". Can be one of: Auto, Symlink, Hardlink, Copy
-                CopyMode: "Auto"
-        LibraryType: Static
-        IncludePaths:
-        -   "include/LocalLibrary"
-    ```
+### Linking
 
----
+When using a non-header dependency, you will need to specify the binary files to link against. This 
+can be done by specifying the binary names to search for and the directories to search in.
 
-## Specifying Git Clone Options
+For example
 
-!!! info "This requires `v0.3.0` version"
+```yaml
+Dependencies:
+-   Name: "yaml-cpp (Shared)"
+    Platforms: [ DefaultPlatorm ]
+    Source:
+        Git:
+            URL: https://github.com/jbeder/yaml-cpp.git
+            Branch: "yaml-cpp-0.9.0"
+    LibraryType: Shared
+    IncludePaths: ["./include"]
+    LinkProperties:
+        SearchLibraryNames: ["yaml-cpp"] # Find .lib/.dll/.so that contains the name "yaml-cpp"
+        SearchDirectories: ["./build", "./build/Release"]
+    Setup: # Build once on setup
+        DefaultPlatform:
+            DefaultProfile: 
+            -   "mkdir build"
+            -   "cd build && cmake .. -DYAML_BUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Release"
+            -   "cd build && cmake --build . -j 4"
+        Windows:
+            msvc: 
+            -   "mkdir build"
+            -   "cd build && cmake .. -DYAML_BUILD_SHARED_LIBS=ON" 
+            -   "cmake --build . -j 4 --config Release"
+```
 
-    You can specify the target branch/tag name and to clone whole git history or not with:
-    `Branch` and `FullHistory`. 
+When linking against a shared library, runcpp2 will automatically copy the corresponding runtime 
+library files (i.e. DLL) if they exist. 
 
-    You can also specify if you want to clone all the submodules full history or not with 
-    `SubmoduleInitType`
+### Additional Compile/Link Options
 
-    A normal clone without full history will be performed if none of these are specified.
-
-    ???+ example "Example "Not using default and cloning a specify branch and submodules with full history""
-        ```yaml
-        Dependencies:
+You can specify additional compile/link options when a dependency is used with 
+`LinkProperties.AdditionalLinkOptions` and `CompileProperties` like so
+```yaml
+Dependencies:
+-   Name: "MyDependency"
+    ...
+    LinkProperties:
         ...
-            Source:
-                Git:
-                    URL: "https://github.com/MyUser/MyLibrary.git"
-                    Branch: "SpecialBranch"
-                    FullHistory: true
-                    SubmoduleInitType: "Full"
-        ...
-        ```
+        AdditionalLinkOptions: ["-LinkOption1", "-LinkOption2", ...]
+    CompileProperties:
+        Defines: ["Define1", "Define2"]
+        AdditionalCompileOptions: ["-CompileOption1", "-CompileOption2", ...]
+```
 
----
+For more details, see [LinkProperties](../build_settings.md#linkproperties) and 
+[CompileProperties](../build_settings.md#compileproperties)
 
-## Adding Include Paths And Link Settings
+??? info "Getting CMake Target Properties for Dependency"
+    Many dependencies are using CMake as their build system. 
+    
+    To figure out what values go to each field in the dependency info (such as 
+    `CompileProperties.Defines`), you can use the given cmake snippet at the end of the dependency's 
+    root CMake script on a given target.
+    
+    ```cmake
+    # https://stackoverflow.com/a/56738858
+    if(NOT CMAKE_PROPERTY_LIST)
+        execute_process(COMMAND cmake --help-property-list OUTPUT_VARIABLE CMAKE_PROPERTY_LIST)
+        
+        # Convert command output into a CMake list
+        string(REGEX REPLACE ";" "\\\\;" CMAKE_PROPERTY_LIST "${CMAKE_PROPERTY_LIST}")
+        string(REGEX REPLACE "\n" ";" CMAKE_PROPERTY_LIST "${CMAKE_PROPERTY_LIST}")
+        list(REMOVE_DUPLICATES CMAKE_PROPERTY_LIST)
+    endif()
+        
+    function(print_properties)
+        message("CMAKE_PROPERTY_LIST = ${CMAKE_PROPERTY_LIST}")
+    endfunction()
+        
+    function(print_target_properties target)
+        if(NOT TARGET ${target})
+          message(STATUS "There is no target named '${target}'")
+          return()
+        endif()
 
-### Include Paths
+        foreach(property ${CMAKE_PROPERTY_LIST})
+            string(REPLACE "<CONFIG>" "${CMAKE_BUILD_TYPE}" property ${property})
 
-Include paths can be specified using the `IncludePaths` field. 
-These paths are relative to the dependency's root directory:
+            # Fix https://stackoverflow.com/questions/32197663/how-can-i-remove-the-the-location-property-may-not-be-read-from-target-error-i
+            if(property STREQUAL "LOCATION" OR property MATCHES "^LOCATION_" OR property MATCHES "_LOCATION$")
+                continue()
+            endif()
 
-???+ example
-    ```yaml
-    Dependencies:
-    -   Name: MyLibrary
-        # ... other fields ...
-        IncludePaths:
-        -   "include"              # MyLibrary/include
-        -   "src/include"          # MyLibrary/src/include
-        -   "external/json/single_include"
+            get_property(was_set TARGET ${target} PROPERTY ${property} SET)
+            if(was_set)
+                get_target_property(value ${target} ${property})
+                message("${target} ${property} = ${value}")
+            endif()
+        endforeach()
+    endfunction()
+
+    print_target_properties(<your target>)
     ```
+    
+    The properties you should be looking for would be ones with `INTERFACE_` prefix. 
 
-### Link Settings
+### Copying Files
 
-For non-header libraries, you need to specify how to link against the library using `LinkProperties` 
-which can be configured per platform/profile:
+If you need to copy additional files from dependencies to the build folder, you can specify like so
 
-???+ example
-    ```yaml
-    Dependencies:
-    -   Name: MyLibrary
-        LibraryType: Shared
-        LinkProperties:
-            Windows:
-                "msvc":
-                    SearchLibraryNames: ["MyLibrary"]
-                    SearchDirectories: ["build/Release"]
-                    # Additional linker flags
-                    AdditionalLinkOptions: ["/SUBSYSTEM:WINDOWS"]
-            Linux:
-                "g++":
-                    SearchLibraryNames: ["libMyLibrary"]
-                    SearchDirectories: ["build"]
-                    AdditionalLinkOptions: ["-pthread"]
-        # ... other fields ...
-    ```
+```yaml
+Dependencies:
+-   Name: MyLibraryA
+    FilesToCopy:
+        Windows:
+            DefaultProfile: ["binaries/Windows/ExternalBinaries.dll"]
+        Linux:
+            DefaultProfile: ["binaries/Linux/ExternalBinaries.dll"]
+```
 
-!!! tip "Library Name Patterns"
-    - The library name can be matched without extensions to allow cross-platform compatibility
-        - For Windows: `MyLibrary` will match `MyLibrary.lib` and `MyLibrary.dll`
-        - For Unix: `MyLibrary` will match `libMyLibrary.a` and `libMyLibrary.so`
-    - The whole name can also be matched if needed
-        - For example, `MyLibrary.lib` will match `MyLibrary.lib`
+### Importing
 
+You can separate dependency info into standalone dependency YAML files and import them into your 
+project.
 
-### Excluding Libraries
+The standalone dependency YAML file is the same as a single dependency entry in the `Dependencies` 
+section.
 
-Sometimes a dependency might have multiple library files, 
-but you only want to link against specific ones. 
+To import a standalone dependency YAML, use the `ImportPath` field under the `Source` section. 
+Just like previously, you can import the dependency info from a git repository or a local directory.
 
-Use `ExcludeLibraryNames` to skip certain libraries:
+When using `ImportPath`:
 
-???+ example
-    ```yaml
-    Dependencies:
-    -   Name: MyLibrary
-        LibraryType: Static
-        LinkProperties:
-            DefaultPlatform:
-                "g++":
-                    SearchLibraryNames: ["MyLibrary"]
-                    # Don't link against debug or test libraries
-                    ExcludeLibraryNames: ["MyLibrary-d", "MyLibrary-test"]
-                    SearchDirectories: ["build"]
-        # ... other fields ...
-    ```
+- For Git sources: `ImportPath` is relative to the git repository root
+- For Local sources: `ImportPath` is relative to the `Path` specified under `Local`
+- If neither Git nor Local source is specified, `ImportPath` is relative to the main file directory
 
----
-
-## Adding Setup, Build and Cleanup Commands
-
-runcpp2 supports external dependencies with any build systems by allowing you 
-to specify different command hooks similar to 
-[command hooks in your project](building_project_sources.md#adding-command-hooks)
-
-The only difference is that `PreBuild` and `PostBuild` hooks are replaced with
- `Build` hook which is run together when building your project source files.
-
-??? example
-    ```yaml
-    Dependencies:
-    -   Name: MyLibrary
-        # ... other fields ...
-        Setup:
-        -   "apt install cuda-toolkit"
-        -   "mkdir build"
-        Build:
-        -   "cmake --build build"
-        Cleanup:
-        -   "apt remove cuda-toolkit"
-    ```
-
----
-
-## Copying Files
-
-Sometimes dependencies need additional files (like binaries, shaders, or assets) to be copied next 
-to your executable. You can specify these files using the `FilesToCopy` field.
-
-All paths are relative to the dependency's root directory. 
-The files are copied to the output directory where the executable is located.
-
-This can be configured per platform/profile.
-
-???+ example
-    ```yaml
-    Dependencies:
-    -   Name: MyLibraryA
-        # ... other fields ...
-        FilesToCopy:
-        -   "assets/shaders/default.glsl"    # Copy shader file
-        -   "data/config.json"               # Copy config file
-    -   Name: MyLibraryB
-        # ... other fields ...
-        FilesToCopy:
-            Windows:
-                "msvc":
-                -   "assets/fonts/windows.ttf"        # Windows-specific font
-            Linux:
-                "g++":
-                -   "assets/fonts/linux.ttf"          # Linux-specific font
-    ```
-
----
-
-## Importing Dependency Info
-
-You can separate dependency info into standalone dependency YAML files and 
-import them into your project.
-
-The standalone dependency YAML file is the same as a single dependency entry in the `Dependencies` section.
+!!! note
+    When using `ImportPath`, other fields (except for `Git`, `Local`, `Parameters` and `Variables`) 
+    in the dependency entry are not needed and will be ignored.
 
 ???+ example
     If you have:
@@ -244,18 +253,7 @@ The standalone dependency YAML file is the same as a single dependency entry in 
     LibraryType: Header
     ```
 
-To import a standalone dependency YAML, use the `ImportPath` field under the `Source` section:
 
-Just like previously, you can import the dependency info from a git repository or a local directory.
-
-When using `ImportPath`:
-
-- For Git sources: `ImportPath` is relative to the git repository root
-- For Local sources: `ImportPath` is relative to the `Path` specified under `Local`
-- If neither Git nor Local source is specified, `ImportPath` is relative to the script directory
-
-!!! note
-    When using `ImportPath`, Any fields in the dependency entry are not needed and will be ignored.
 
 ???+ example "Importing from a Git Repository"
     ```text title="Remote Git Repository Structure"
@@ -263,13 +261,13 @@ When using `ImportPath`:
     ├── src/
     │   └── (source files...)
     └── config/
-        └── build_info.yaml
+        └── Dep.yaml
     ```
 
     ```yaml title="Build Settings In Your Project"
     Dependencies:
     -   Source:
-            ImportPath: "config/build_info.yaml"
+            ImportPath: "config/Dep.yaml"
             Git:
                 URL: "https://github.com/MyUser/MyLibrary.git"
     ```
@@ -283,7 +281,7 @@ When using `ImportPath`:
     │   └── LocalLibrary/
     │       ├── (source files...)
     │       └── config/
-    │           └── build_info.yaml
+    │           └── Dep.yaml
     └── src/
         └── (source files...)
     ```
@@ -291,14 +289,13 @@ When using `ImportPath`:
     ```yaml title="main.yaml"
     Dependencies:
     -   Source:
-            ImportPath: "config/build_info.yaml"
+            ImportPath: "config/Dep.yaml"
             Local:
-                # NOTE: This can be an absolute path
-                Path: "./libs/LocalLibrary"
+                Path: "./libs/LocalLibrary" # NOTE: This can be an absolute path
     ```
 
-???+ example "Example of `build_info.yaml` in above cases:"
-    ```yaml title="build_info.yaml"
+???+ example "Example of `Dep.yaml` in above cases:"
+    ```yaml title="Dep.yaml"
     Name: MyLibrary
     Platforms: [Windows, Linux, MacOS]
     LibraryType: Static

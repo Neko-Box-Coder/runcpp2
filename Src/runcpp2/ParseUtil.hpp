@@ -529,6 +529,8 @@ namespace runcpp2
         return true;
     }
     
+    //TODO: Probably need to allow specifying what characters need escaping, not just specifying the 
+    //      escape characters
     using SubstitutionMap = std::unordered_map<std::string, std::vector<std::string>>;
     DS::Result<void> 
     PerformSubstitutionsWithInfo(   const SubstitutionMap& substitutionMap, 
