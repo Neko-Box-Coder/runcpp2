@@ -1,5 +1,330 @@
 # User Config
 
+### `DefaultPlatform`
+- Description: Evaluates to the host platform.
+
+## Config
+
+!!! warning
+    All command substitutions in this file are passed directly to the shell. Exercise caution when using variables or user-provided input in your build commands to prevent potential security vulnerabilities.
+
+### `PreferredProfile`
+- Type: `Platform Map` with `string`
+- Optional: `false`
+- Default: None
+- Description: A profile to be used if not specified while running the build script
+??? example
+    ```yaml
+    PreferredProfile: 
+        DefaultPlatform: "gcc"
+        Windows: "msvc"
+    ```
+
+### `Profiles`
+- Type: `Profile[]`
+- Optional: `false`
+- Default: None
+- Description: List of compiler/linker profiles that instruct how to compile/link
+
+### `Parameters`
+- Type: `ParametersInfo`
+- Optional: `true`
+- Default: None
+- Description: See description of `ParametersInfo` type under [Build Settings](./build_settings.md)
+??? example
+    ```yaml
+    Parameters:
+        Param1:
+            Optional: true
+            Default: ""
+            Array: false
+            Constraint: "None"
+    ```
+
+### `Variables`
+- Type: `VariablesInfo`
+- Optional: `true`
+- Default: None
+- Description: See description of `VariablesInfo` type under [Build Settings](./build_settings.md)
+??? example
+    ```yaml
+    Variables:
+        VarName1: "Some string {Param1} substitution"
+    ```
+
+### `Import`
+- Type: `string` or `string[]`
+- Optioanl: `true`
+- Default: None
+- Description: Import other yaml files to merge to this file. Import can either be a single path or a list of paths. If there's any parameter/variables in the import file, it will applied to that file first before merging
+??? example
+    ```yaml
+    Import: "./OtherProfiles.yaml"
+    ```
+
+## Special Types
+
+### `Platform Map`
+- Description: A map of platforms
+
+???+ Example
+    ```yaml
+    ExampleSettings:
+        Windows:
+            ...
+        Linux:
+            ...
+        MacOS:
+            ...
+    ```
+
+### `File Info`
+- Type: `map`
+- Description: Information of different file types
+??? example
+    ```yaml
+    Prefix:
+        DefaultPlatform: ""
+        Linux: "lib"
+        MacOS: "lib"
+    Extension:
+        Windows: ".lib"
+        Linux: ".so"
+        MacOS: ".dylib"
+    ```
+
+#### `Prefix`
+- Type: `Platform Map` with `string`
+- Optional: `false
+- Default: None
+- Description: Prefix text of the file
+
+#### `Extension`
+- Type: `Platform Map` with `string`
+- Optional: `false
+- Default: None
+- Description: Extension text of the file (including .)
+
+### `Command Info`
+- Type: `map`
+- Description: Information for assembling a command
+- Child Fields:
+    - `Flags`
+        - Type: `string`
+        - Optional: `false`
+        - Default: None
+        - Description: Default flags to be substituted as `{Stage.CompileFlags}`/`{Stage.LinkFlags}`. This can be overridden by `OverrideCompileFlags`/`OverrideLinkFlags`
+    - `Executable`
+        - Type: `string`
+        - Optional: `false`
+        - Default: None
+        - Description: The executable to be substituted as `{Stage.Executable}`
+    - `RunParts`
+        - Type: `RunPartInfo[]`
+        - Optional: `false`
+        - Default: None
+        - Description: The components for the command to be run
+
+### `Profile`
+
+#### `Name`
+- Type: `string`
+- Optional: `false`
+- Default: None
+- Description: Name (case sensitive) of the profile that can be queried from a script
+??? example
+    ```yaml
+    Name: "g++"
+    ```
+
+#### `NameAliases`
+- Type: `string[]`
+- Optional: `true`
+- Default: None
+- Description: Name aliases (case sensitive) of the current profile
+??? example
+    ```yaml
+    NameAliases: ["mingw"]
+    ```
+
+#### `FileExtensions`
+- Type: `string[]`
+- Optional: `false`
+- Default: None
+- Description: The file extensions associated with the profile
+
+#### `Languages`
+- Type: `string[]`
+- Optional: `false`
+- Default: None
+- Description: The languages supported by the profile
+
+#### `Setup`
+- Type: `Platform Map` with `string[]`
+- Optional: `true`
+- Default: None
+- Description: The commands to run in **shell** before calling the compiler/linker for each platform. This is run inside the root build directory.
+
+#### `Cleanup`
+- Type: `Platform Map` with `string[]`
+- Optional: `true`
+- Default: None
+- Description: The commands to run in **shell** after calling the compiler/linker for each platform. This is run inside the root build directory.
+
+#### `FileTypes`
+- Type: `map`
+- Optional: `false`
+- Default: None
+- Description: Info for different file types
+- Child Fields:
+
+    - `ObjectLinkFile`
+        - Type: `File Info`
+        - Optional: `false`
+        - Default: None
+        - Description: The file properties for the files to be **linked** as object file for each platform
+    
+    - `SharedLinkFile`
+        - Type: `File Info`
+        - Optional: `false`
+        - Default: None
+        - Description: The file properties for the files to be **linked** as shared libraries for each platform
+    
+    - `SharedLibraryFile`
+        - Type: `File Info`
+        - Optional: `false`
+        - Default: None
+        - Description: The file properties for the files to be **copied** as shared libraries for each platform
+
+    - `StaticLinkFile`
+        - Type: `File Info`
+        - Optional: `false`
+        - Default: None
+        - Description: The file properties for the files to be linked as static libraries for each platform
+
+    - `ExecutableFile`
+        - Type: `File Info`
+        - Optional: `false`
+        - Default: None
+        - Description: The file properties for the files to be **copied** as executable for each platform
+
+    - `DebugSymbolFile`
+        - Type: `File Info`
+        - Optional: `true`
+        - Default: None
+        - Description: The file properties for debug symbols to be copied alongside the binary for each platform
+
+#### `Import`
+- Type: `string` or `string[]`
+- Optioanl: `true`
+- Default: None
+- Description: See description of `Import` under [Build Settings](./build_settings.md)
+
+#### `Parameters`
+- Type: `ParametersInfo`
+- Optional: `true`
+- Default: None
+- Description: See description of `ParametersInfo` type under [Build Settings](./build_settings.md)
+??? example
+    ```yaml
+    Parameters:
+        Param1:
+            Optional: true
+            Default: ""
+            Array: false
+            Constraint: "None"
+    ```
+
+#### `Variables`
+- Type: `VariablesInfo`
+- Optional: `true`
+- Default: None
+- Description: See description of `VariablesInfo` type under [Build Settings](./build_settings.md)
+??? example
+    ```yaml
+    Variables:
+        VarName1: "Some string {Param1} substitution"
+    ```
+
+#### `Compiler`
+- Type: `map`
+- Optional: `false`
+- Default: none
+- Description: Compiler settings, run once per input file
+- Child Fields:
+    
+    ##### `CheckExistence`
+    - Type: `Platform Map` with `string`
+    - Optional: `false`
+    - Default: None
+    - Description: Shell command to use for checking if the executable exists or not
+    
+    ##### `CompileTypes`
+    - Type: `map`
+    - Optional: `false`
+    - Default: None
+    - Description: Compilation commands for different file types. Below are all the built-in variables that can be used.
+    ??? info
+        Here are a list of substitution strings for RunParts, Setup and Cleanup. To escape '{' and '}' to avoid substitutioon, simply repeat the '{' or '}' character again.
+        
+        So to escape `"${MyBashVariable}"`, it will become `"${{MyBashVariable}}"` 
+
+        ### Constants
+        - `{Stage.SharedLibraryFile.Prefix}`
+        - `{Stage.SharedLinkFile.Prefix}`
+        - `{Stage.StaticLinkFile.Prefix}`
+        - `{Stage.ObjectLinkFile.Prefix}`
+        - `{Stage.ExecutableFile.Prefix}`
+        - `{Stage.DebugSymbolFile.Prefix}`
+        - `{Stage.SharedLibraryFile.Extension}`
+        - `{Stage.SharedLinkFile.Extension}`
+        - `{Stage.StaticLinkFile.Extension}`
+        - `{Stage.ObjectLinkFile.Extension}`
+        - `{Stage.ExecutableFile.Extension}`
+        - `{Stage.DebugSymbolFile.Extension}`
+        - `{/}`: Filesystem separator for the host platform
+        
+        
+        ### Stage Info
+        - `{Stage.Executable}`: Compiler executable
+        - `{Stage.CompileFlags}`: Compile flags from config and override
+        
+        
+        ### Input/Output Info
+        - `{Stage.Input.Name}`: Name of the current input source file (without directory path and extension)
+        - `{Stage.Input.Extension}`: Extension of the current input source file
+        - `{Stage.Input.Directory}`: Directory of the current input source file
+        - `{Stage.Input.Path}`: Full path to the current input source file
+        - `{Stage.Output.Directory}`: Directory of all the output files
+        
+        
+        ### Iterable variables, must be inside "Repeats" run type
+        - `{Stage.DefineNameOnly}`: All the defines without a value specified (equivalent to #define X)
+        - `{Stage.DefineName}`: Name of all the defines that has a value specified
+        - `{Stage.DefineValue}`: Value of all the defines that has a value specified (use together with {Stage.DefineName})
+        - `{Stage.IncludeDirectory.Path}`: Path to all the include directories
+            - `{Stage.IncludeDirectory.Source.Path}`: Path to source include directories, sub array
+            - `{Stage.IncludeDirectory.Dep.Path}`: Path to dependencies include directories, sub array
+
+    - Child Fields:
+        - `Executable`
+            - Type: `Platform Map` with `Command Info`
+            - Optional: `false`
+            - Default: None
+            - Description: Compilation commands for executable
+        - `Static`
+            - Type: `Platform Map` with `Command Info`
+            - Optional: `false`
+            - Default: None
+            - Description: Compilation commands for static library
+        - `Shared`
+            - Type: `Platform Map` with `Command Info`
+            - Optional: `false`
+            - Default: None
+            - Description: Compilation commands for shared library
+
+
+
 **TODO**
 
 ## `UserConfig.yaml`
@@ -20,7 +345,7 @@ PreferredProfile:
 Import: "./Default/DefaultProfiles.yaml"
 ```
 
-## `Default/g++.yaml`
+## `Default/AnnotatedG++.yaml`
 ```yaml
 # DO NOT modify this file. Changes will be overwritten when there's a reset or update
 

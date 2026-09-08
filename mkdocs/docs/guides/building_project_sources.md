@@ -7,7 +7,6 @@ The `BuildType` setting specifies what type of output to build. There are four s
 - **Executable**: Build as an executable program (default)
 - **Static**: Build as a static library
 - **Shared**: Build as a shared library
-- **Objects**: Only compile to object files without linking
 
 ???+ example
     ```yaml
@@ -193,7 +192,7 @@ can be configured per platform/profile:
     - Runs in the output directory where binaries are located
     - Useful for copying resources or post-processing binaries
 
-4. **Cleanup**: Run when using the `--cleanup` option
+4. **Cleanup**: Run when `runcpp2 reset ...` is used
     - Runs at the script's location before the build directory is removed
     - Useful for cleaning up generated files
 
@@ -206,17 +205,17 @@ can be configured per platform/profile:
             -   "mkdir assets"
     
     PreBuild:
-    -   "python generate_version.py"    # Generate version header
+    -   "python generate_version.py" # Generate version header
     
     PostBuild:
         Unix:
             DefaultProfile:
-            -   "cp -r assets/* ."              # Copy assets to output
+            -   "cp -r assets/* ." # Copy assets to output
     
     Cleanup:
         Unix:
             DefaultProfile:
-            -   "rm -rf assets"                 # Clean up generated files
+            -   "rm -rf assets" # Clean up generated files
     ```
 
 !!! warning

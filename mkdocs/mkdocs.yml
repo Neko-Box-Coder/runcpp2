@@ -1,3 +1,8 @@
+# pipx install mike
+# pipx inject mike mkdocs-material
+# pipx install mkdocs-material
+# mike deploy latest
+
 site_name: runcpp2
 site_url: 'https://neko-box-coder.github.io/runcpp2/'
 
@@ -19,7 +24,7 @@ theme:
             name: Switch to dark mode
     features:
     -   toc.follow
-    # -   toc.integrate
+    -   toc.integrate
     -   content.code.copy
     -   content.code.select
     -   navigation.sections
