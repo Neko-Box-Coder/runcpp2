@@ -82,7 +82,7 @@ You can find all the profiles in your config folder. This can be found by runnin
 - Type: `ParametersInfo`
 - Optional: `true`
 - Default: None
-- Description: See description of `ParametersInfo` type
+- Description: See [ParametersInfo](#ParametersInfo)
 ??? example
     ```yaml
     Parameters:
@@ -97,7 +97,7 @@ You can find all the profiles in your config folder. This can be found by runnin
 - Type: `VariablesInfo`
 - Optional: `true`
 - Default: None
-- Description: See description of `VariablesInfo` type
+- Description: See [VariablesInfo](#VariablesInfo)
 ??? example
     ```yaml
     Variables:
@@ -252,7 +252,7 @@ You can find all the profiles in your config folder. This can be found by runnin
 - Type: `Dependency[]`
 - Optional: `true`
 - Default: None
-- Description: The list of dependencies needed by the script
+- Description: The list of dependencies needed by the script. See [Dependency](#Dependency)
 ??? example
     ```yaml
     Dependencies:
