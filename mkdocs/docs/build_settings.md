@@ -1,4 +1,4 @@
-# Build Settings
+# Build Info Reference
 
 ## Platforms And Profiles
 
