@@ -54,7 +54,7 @@ You can find all the profiles in your config folder. This can be found by runnin
     ```
 
 ### `RequiredProfiles`
-- Type: `Platform Profile List`
+- Type: [Platform Profile List](#platform-profile-list){:target="_blank"}
 - Optional: `true`
 - Default: None
 - Description: Allowed profiles for the script for each platform. Any profiles will be used if none is specified for the platform.
@@ -79,10 +79,10 @@ You can find all the profiles in your config folder. This can be found by runnin
     ```
 
 ### `Parameters`
-- Type: `ParametersInfo`
+- Type: [ParametersInfo](#parametersinfo){:target="_blank"}
 - Optional: `true`
 - Default: None
-- Description: See [ParametersInfo](#ParametersInfo)
+- Description: See [ParametersInfo](#parametersinfo){:target="_blank"}
 ??? example
     ```yaml
     Parameters:
@@ -94,10 +94,10 @@ You can find all the profiles in your config folder. This can be found by runnin
     ```
 
 ### `Variables`
-- Type: `VariablesInfo`
+- Type: [VariablesInfo](#variablesinfo){:target="_blank"}
 - Optional: `true`
 - Default: None
-- Description: See [VariablesInfo](#VariablesInfo)
+- Description: See [VariablesInfo](#variablesinfo){:target="_blank"}
 ??? example
     ```yaml
     Variables:
@@ -106,7 +106,7 @@ You can find all the profiles in your config folder. This can be found by runnin
 
 
 ### `OverrideCompileFlags`
-- Type: `Platform Profile Map` with child fields
+- Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with child fields
 - Optional: `true`
 - Default: None
 - Description: Override the default compile flags for each platform.
@@ -131,7 +131,7 @@ You can find all the profiles in your config folder. This can be found by runnin
     ```
 
 ### `OverrideLinkFlags`
-- Type: `Platform Profile Map` with child fields
+- Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with child fields
 - Optional: `true`
 - Default: None
 - Description: Override the default link flags for each platform.
@@ -156,7 +156,7 @@ You can find all the profiles in your config folder. This can be found by runnin
     ```
 
 ### `SourceFiles`
-- Type: `Platform Profile Map` with `string[]`
+- Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string[]`
 - Optional: `true`
 - Default: None
 - Description: Other source files (relative to script file path) to be compiled.
@@ -169,7 +169,7 @@ You can find all the profiles in your config folder. This can be found by runnin
     ```
 
 ### `IncludePaths`
-- Type: `Platform Profile Map` with `string[]`
+- Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string[]`
 - Optional: `true`
 - Default: None
 - Description: Include paths (relative to script file path) for each platform and profile
@@ -183,7 +183,7 @@ You can find all the profiles in your config folder. This can be found by runnin
     ```
 
 ### `Defines`
-- Type: `Platform Profile Map` with `string[]`
+- Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string[]`
 - Optional: `true`
 - Default: None
 - Description: Defines for each platform and profile. Defines can be specified as just a name or as a name-value pair.
@@ -197,7 +197,7 @@ You can find all the profiles in your config folder. This can be found by runnin
     ```
 
 ### `Setup`
-- Type: `Platform Profile Map` with `string[]`
+- Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string[]`
 - Optional: `true`
 - Default: None
 - Description: Setup commands are run once before the script is first built. These commands are run at the script's location when no build directory exists.
@@ -210,7 +210,7 @@ You can find all the profiles in your config folder. This can be found by runnin
     ```
 
 ### `PreBuild`
-- Type: `Platform Profile Map` with `string[]`
+- Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string[]`
 - Optional: `true`
 - Default: None
 - Description: PreBuild commands are run before each build. These commands are run in the build directory before compilation starts.
@@ -223,7 +223,7 @@ You can find all the profiles in your config folder. This can be found by runnin
     ```
 
 ### `PostBuild`
-- Type: `Platform Profile Map` with `string[]`
+- Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string[]`
 - Optional: `true`
 - Default: None
 - Description: PostBuild commands are run after each successful build. These commands are run in the output directory where binaries are located.
@@ -236,7 +236,7 @@ You can find all the profiles in your config folder. This can be found by runnin
     ```
 
 ### `Cleanup`
-- Type: `Platform Profile Map` with `string[]`
+- Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string[]`
 - Optional: `true`
 - Default: None
 - Description: The cleanup commands used for cleaning up for each platform and profile. This runs when `runcpp2 reset ...` is used.
@@ -252,7 +252,7 @@ You can find all the profiles in your config folder. This can be found by runnin
 - Type: `Dependency[]`
 - Optional: `true`
 - Default: None
-- Description: The list of dependencies needed by the script. See [Dependency](#Dependency)
+- Description: The list of dependencies needed by the script. See [Dependency](#dependency){:target="_blank"}
 ??? example
     ```yaml
     Dependencies:
@@ -358,7 +358,7 @@ ExampleSettings:
 - Type: `map`
 - Optional: `true`
 - Default: None
-- Description: Parameters are user supplied input that can be substituted into any keys or values, with the syntax of `{<parameter name>}`. This in only applied to the same file.
+- Description: Parameters are user supplied input that can be substituted into any keys or values, with the syntax of `{<parameter name>}`. This is only applied to the same file.
 - `map` Key: Name of the parameter
 - Child Fields:
     - `Optional`
@@ -384,25 +384,62 @@ ExampleSettings:
             - `"None"`: No constraint
             - `"Bool"`: `true`, `false`, `1` or `0`
             - `"Float[:<Min Float>,<Max Float>]"`: Floating point number with optional inclusive min and max
+            ??? example
+                ```yaml
+                Parameters:
+                    Param1:
+                        Constraint: "Float:0.1,0.5"
+                ```
             - `"Int[:<Min Int>,<Max Int>]"`: Integer number  with optional inclusive min and max
+            ??? example
+                ```yaml
+                Parameters:
+                    Param1:
+                        Constraint: "Int:1,5"
+                ```
             - `["<Choice 1>[:Mapped Value 1]", "<Choice 2>[:Mapped Value 2]", ...]`: List of choices with optional corresponding mapped values
+            ??? example
+                ```yaml
+                Parameters:
+                    Param1:
+                        Constraint: ["A:A_Value", "B:B_Value", "C:C_Value", "All:A_Value B_Value C_Value"]
+                ```
+??? example
+    ```yaml
+    Parameters:
+        Param1:
+            Optional: true
+            Default: ""
+            Array: false
+            Constraint: "None"
+    ```
 
 ### `VariablesInfo`
 - Type: `map`
 - Optional: `true`
 - Default: None
-- Description: Variables can be substituted into any keys or values (excluding "Parameters"), with the syntax of `{<variable name>}`. This in only applied to the same file.
+- Description: Variables can be substituted into any keys or values (excluding "Parameters"), with the syntax of `{<variable name>}`. This is only applied to the same file.
 - `map` Key: Name of the variable
 - Child Fields:
     - `map` Value
         - Type: `string` or `string[]`
         - Optional: `false`
         - Default: `""`
-        - Description: A variable can be created by substituting a parameter into a string, using syntax of `{<parameter name>}`. If this contains an array parameter value, the substition is performed for each parameter array value and this variable will become an array variable, meaning this can only be used in config values that expect an array.
+        - Description: Variables where the map key is the variable name and the map value is the variable value, where parameters will be substituted when using syntax of `{<parameter name>}`.
+            - If this contains an array parameter value, then this will become an array variable and can only be used in config values that expect an array; where the content of this variable will be repeated with the corresponding array parameter value.
+            - If there are multiple array parameters present, they _must_ have the same length. 
+            - If a mixture of array and non array parameters are present, then the same non array parameters will be substituted for each iteration.
+            - To escape '{' and '}' to avoid substitutioon, simply repeat the '{' or '}' character again. So to escape `"${MyBashVariable}"`, it will become `"${{MyBashVariable}}"` 
 ??? example
     ```yaml
+    # If {Param1} is "value", then {VarName1} will become "Some string value substitution"
     Variables:
         VarName1: "Some string {Param1} substitution"
+    ```
+    ```yaml
+    # If {ParamArray} is "1,2,3" and {ParamConstant} is "a", then {VarName1} will become ["1 a", "2 a", "3 a"]
+    Variables:
+        VarName1: "{ParamArray} {ParamConstant}"
     ```
 ??? todo
     Conditional variables
@@ -428,85 +465,86 @@ ExampleSettings:
     - Optional: `false`
     - Default: None
     - Description: Where to get and copy the dependency
-        
-        ##### `ImportPath`
-        - Type: `string`
-        - Optional: `true`
-        - Default: None
-        - Description: Import dependency configuration from a YAML file if this field exists. All other fields (Name, Platforms, etc...) are not needed if this field exists. 
-            - For Git source: Path is relative to the git repository root. 
-            - For Local source: Path is relative to the path specified under `Local`. 
-            - If neither source exists, local source with root script directory is assumed.
-        
-        ##### `Git`
-        - Type: `map` with child fields
-        - Optional: `true` if `ImportPath` is specified or `Local` is specified
-        - Default: None
-        - Description: Dependency or import YAML file exists in a git server, and needs to be cloned to build directory
-        
-            ###### `URL`
+    - Child Fields: 
+        - `ImportPath`
             - Type: `string`
-            - Optional: `false`
+            - Optional: `true`
             - Default: None
-            - Description: Git repository URL
-            
-            !!! info inline end "This requires `v0.3.0` version"
-            ###### `Branch`
-            - Type: `string`
-            - Optional: `true`
-            - Default: Default branch on specified git repo
-            - Description: Branch name or tag name
-            
-            !!! info inline end "This requires `v0.3.0` version"
-            ###### `FullHistory`
-            - Type: `bool`
-            - Optional: `true`
-            - Default: `false`
-            - Description: Checkout full git history or just the target commit.
-            
-            !!! info inline end "This requires `v0.3.0` version"
-            ###### `SubmoduleInitType`
-            - Type: `enum string`, can be one of the following:
-                - `None`: Don't initialize submodules
-                - `Shallow`: Only checkout the target commit of all the submodules
-                - `Full`: Checkout the full git history of all the submodules
-            - Optional: `true`
-            - Default: `Shallow`
-            - Description: Initialization type for all the submodules recursively 
-        
-        ##### `Local`
-        - Type: `map` with child fields
-        - Optional: `true` if `ImportPath` is specified or `Git` is specified
-        - Default: None
-        - Description: Dependency or import YAML file exists in local filesystem directory, and needs to be copied to build directory
-            
-            ###### `Path`
-            - Type: `string`
-            - Optional: `false`
+            - Description: Import dependency configuration from a YAML file if this field exists. 
+            All other fields in `Dependency` (Name, Platforms, etc...) are not needed if this 
+            field exists. 
+                - For Git source: Path is relative to the git repository root. 
+                - For Local source: Path is relative to the path specified under `Local`. 
+                - If neither source exists, local source with root script directory is assumed.
+        - `Git`
+            - Type: `map` with child fields
+            - Optional: `true` if `ImportPath` is specified or `Local` is specified
             - Default: None
-            - Description: Path to the library directory
-            
-            ###### `CopyMode`
-            - Type: `enum string`, can be one of the following:
-                - `Auto`: Try symlink first, then hardlink, then copy as fallback
-                - `Symlink`: Create symbolic links only, fail if not possible
-                - `Hardlink`: Create hard links only, fail if not possible
-                - `Copy`: Copy files to build directory
-            - Optional: `true`
-            - Default: `Auto`
-            - Description: How to handle copying files to build directory
+            - Description: Dependency or import YAML file exists in a git server, and needs to be cloned to build directory
+            - Child Fields: 
+                - `URL`
+                    - Type: `string`
+                    - Optional: `false`
+                    - Default: None
+                    - Description: Git repository URL
+                
+                !!! info inline end "This requires `v0.3.0` version"
+                - `Branch`
+                    - Type: `string`
+                    - Optional: `true`
+                    - Default: Default branch on specified git repo
+                    - Description: Branch name or tag name
+                
+                !!! info inline end "This requires `v0.3.0` version"
+                - `FullHistory`
+                    - Type: `bool`
+                    - Optional: `true`
+                    - Default: `false`
+                    - Description: Checkout full git history or just the target commit.
+                
+                !!! info inline end "This requires `v0.3.0` version"
+                - `SubmoduleInitType`
+                    - Type: `enum string`, can be one of the following:
+                        - `None`: Don't initialize submodules
+                        - `Shallow`: Only checkout the target commit of all the submodules
+                        - `Full`: Checkout the full git history of all the submodules
+                    - Optional: `true`
+                    - Default: `Shallow`
+                    - Description: Initialization type for all the submodules recursively 
+        
+        - `Local`
+            - Type: `map` with child fields
+            - Optional: `true` if `ImportPath` is specified or `Git` is specified
+            - Default: None
+            - Description: Dependency or import YAML file exists in local filesystem directory, and needs to be copied to build directory
+            - Child Fields: 
+                - `Path`
+                    - Type: `string`
+                    - Optional: `false`
+                    - Default: None
+                    - Description: Path to the library directory
+                
+                - `CopyMode`
+                    - Type: `enum string`, can be one of the following:
+                        - `Auto`: Try symlink first, then hardlink, then copy as fallback
+                        - `Symlink`: Create symbolic links only, fail if not possible
+                        - `Hardlink`: Create hard links only, fail if not possible
+                        - `Copy`: Copy files to build directory
+                    - Optional: `true`
+                    - Default: `Auto`
+                    - Description: How to handle copying files to build directory
     
     #### `Parameters`
-    - Type: `ParametersInfo`
+    - Type: [ParametersInfo](#parametersinfo){:target="_blank"}
     - Optional: `true`
     - Default: None
-    - Description: See description of `ParametersInfo` type
+    - Description: See [ParametersInfo](#parametersinfo){:target="_blank"}
 
     #### `Variables`
-    - Type: `VariablesInfo`
+    - Type: [VariablesInfo](#variablesinfo){:target="_blank"}
     - Optional: `true`
     - Default: None
-    - Description: See description of `VariablesInfo` type
+    - Description: See [VariablesInfo](#variablesinfo){:target="_blank"}
 
     #### `LibraryType`
     - Type: `enum string`, can be one of the following:
@@ -569,7 +607,7 @@ ExampleSettings:
             - Description: Additional compile flags for this dependency when compiling source
     
     #### `Setup`
-    - Type: `Platform Profile Map` with `string[]`
+    - Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string[]`
     - Optional: `true`
     - Default: None
     - Description: Setup commands are run once when the dependency is populated
@@ -581,19 +619,19 @@ ExampleSettings:
         ```
 
     #### `Build`
-    - Type: `Platform Profile Map` with `string[]`
+    - Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string[]`
     - Optional: `true`
     - Default: None
     - Description: Build commands are run every time before the script is being built
 
     #### `Cleanup`
-    - Type: `Platform Profile Map` with `string[]`
+    - Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string[]`
     - Optional: `true`
     - Default: None
     - Description: Cleanup commands are run when reset is performed. Normally nothing needs to be done since the dependency folder will be removed automatically.
 
     #### `FilesToCopy`
-    - Type: `Platform Profile Map` with `string[]`
+    - Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string[]`
     - Optional: `true`
     - Default: None
     - Description: Files to be copied to next to output binary for each platform and profile

@@ -9,7 +9,7 @@
     All command substitutions in this file are passed directly to the shell. Exercise caution when using variables or user-provided input in your build commands to prevent potential security vulnerabilities.
 
 ### `PreferredProfile`
-- Type: `Platform Map` with `string`
+- Type: [Platform Map](#platform-map){:target="_blank"} with `string`
 - Optional: `false`
 - Default: None
 - Description: A profile to be used if not specified while running the build script
@@ -21,16 +21,16 @@
     ```
 
 ### `Profiles`
-- Type: `Profile[]`
+- Type: [`Profile[]`](#profile){:target="_blank"}
 - Optional: `false`
 - Default: None
 - Description: List of compiler/linker profiles that instruct how to compile/link
 
 ### `Parameters`
-- Type: `ParametersInfo`
+- Type: [ParametersInfo](./build_settings.md#parametersinfo){:target="_blank"}
 - Optional: `true`
 - Default: None
-- Description: See description of `ParametersInfo` type under [Build Settings](./build_settings.md)
+- Description: See [ParametersInfo](./build_settings.md#parametersinfo){:target="_blank"}
 ??? example
     ```yaml
     Parameters:
@@ -42,10 +42,10 @@
     ```
 
 ### `Variables`
-- Type: `VariablesInfo`
+- Type: [VariablesInfo](./build_settings.md#variablesinfo){:target="_blank"}
 - Optional: `true`
 - Default: None
-- Description: See description of `VariablesInfo` type under [Build Settings](./build_settings.md)
+- Description: See [VariablesInfo](./build_settings.md#variablesinfo){:target="_blank"}
 ??? example
     ```yaml
     Variables:
@@ -78,9 +78,21 @@
             ...
     ```
 
-### `File Info`
+### `FileInfo`
 - Type: `map`
 - Description: Information of different file types
+- Child Fields:
+    - `Prefix`
+        - Type: [Platform Map](#platform-map){:target="_blank"} with `string`
+        - Optional: `false`
+        - Default: None
+        - Description: Prefix text of the file
+
+    - `Extension`
+        - Type: [Platform Map](#platform-map){:target="_blank"} with `string`
+        - Optional: `false`
+        - Default: None
+        - Description: Extension text of the file (including .)
 ??? example
     ```yaml
     Prefix:
@@ -93,19 +105,35 @@
         MacOS: ".dylib"
     ```
 
-#### `Prefix`
-- Type: `Platform Map` with `string`
-- Optional: `false
-- Default: None
-- Description: Prefix text of the file
+### `RunPartInfo`
+- Type: `map`
+- Description: Information of part of a command
+- Child Fields:
+    - `Type`
+        - Type: `enum string`, can be one of the following:
+            - `Once`: This part is only appended once
+            - `Repeats`: This part is appended repeatedly
+        - Optional: `false`
+        - Default: None
+        - Description: Type of the command part, whether it is repeating or not. If this is `Once`, then array variables/parameters are not allowed. This follows the substitution rule specified in [VariablesInfo](./build_settings.md#variablesinfo){:target="_blank"}.
+    - `CommandPart`
+        - Type: `string`
+        - Optional: `false`
+        - Default: None
+        - Description: The content to be appended to the command string
 
-#### `Extension`
-- Type: `Platform Map` with `string`
-- Optional: `false
-- Default: None
-- Description: Extension text of the file (including .)
+??? example
+    ```yaml
+    Type: Once
+    CommandPart: "{Stage.Executable} {Stage.LinkFlags} -o \"{Stage.Output.Directory}\
+        {/}{Stage.Output.Name}\""
+    ```
+    ```yaml
+    Type: Repeats
+    CommandPart: " \"{Stage.Input.Path}\""
+    ```
 
-### `Command Info`
+### `CommandInfo`
 - Type: `map`
 - Description: Information for assembling a command
 - Child Fields:
@@ -120,10 +148,34 @@
         - Default: None
         - Description: The executable to be substituted as `{Stage.Executable}`
     - `RunParts`
-        - Type: `RunPartInfo[]`
+        - Type: [`RunPartInfo[]`](#runpartinfo){:target="_blank"}
         - Optional: `false`
         - Default: None
         - Description: The components for the command to be run
+    - `ExpectedOutputFiles`
+        - Type: `string[]`
+        - Optional: `false`
+        - Default: None
+        - Description: The expected files after running this command
+        ??? todo
+            Actually use this...
+??? example
+    ```yaml
+    Flags: "-FlagA -FlagB"
+    Executable: "g++"
+    RunParts:
+    -   Type: Once
+        CommandPart: "{Stage.Executable} -c {Stage.CompileFlags}"
+    -   Type: Repeats
+        CommandPart: " -I\"{Stage.IncludeDirectory.Path}\""
+    -   Type: Once
+        CommandPart: " \"{Stage.Input.Path}\" -o \"{Stage.Output.Directory}{/}\
+            {Stage.ObjectLinkFile.Prefix}{Stage.Input.Name}{Stage.ObjectLinkFile.Extension}\""
+    ExpectedOutputFiles: 
+    -   "{Stage.Output.Directory}{/}{Stage.ObjectLinkFile.Prefix}{Stage.Input.Name}{Stage.ObjectLinkFile.Extension}"
+    ```
+
+
 
 ### `Profile`
 
@@ -160,13 +212,13 @@
 - Description: The languages supported by the profile
 
 #### `Setup`
-- Type: `Platform Map` with `string[]`
+- Type: [Platform Map](#platform-map){:target="_blank"} with `string[]`
 - Optional: `true`
 - Default: None
 - Description: The commands to run in **shell** before calling the compiler/linker for each platform. This is run inside the root build directory.
 
 #### `Cleanup`
-- Type: `Platform Map` with `string[]`
+- Type: [Platform Map](#platform-map){:target="_blank"} with `string[]`
 - Optional: `true`
 - Default: None
 - Description: The commands to run in **shell** after calling the compiler/linker for each platform. This is run inside the root build directory.
@@ -179,37 +231,37 @@
 - Child Fields:
 
     - `ObjectLinkFile`
-        - Type: `File Info`
+        - Type: [FileInfo](#fileinfo){:target="_blank"}
         - Optional: `false`
         - Default: None
         - Description: The file properties for the files to be **linked** as object file for each platform
     
     - `SharedLinkFile`
-        - Type: `File Info`
+        - Type: [FileInfo](#fileinfo){:target="_blank"}
         - Optional: `false`
         - Default: None
         - Description: The file properties for the files to be **linked** as shared libraries for each platform
     
     - `SharedLibraryFile`
-        - Type: `File Info`
+        - Type: [FileInfo](#fileinfo){:target="_blank"}
         - Optional: `false`
         - Default: None
         - Description: The file properties for the files to be **copied** as shared libraries for each platform
 
     - `StaticLinkFile`
-        - Type: `File Info`
+        - Type: [FileInfo](#fileinfo){:target="_blank"}
         - Optional: `false`
         - Default: None
         - Description: The file properties for the files to be linked as static libraries for each platform
 
     - `ExecutableFile`
-        - Type: `File Info`
+        - Type: [FileInfo](#fileinfo){:target="_blank"}
         - Optional: `false`
         - Default: None
         - Description: The file properties for the files to be **copied** as executable for each platform
 
     - `DebugSymbolFile`
-        - Type: `File Info`
+        - Type: [FileInfo](#fileinfo){:target="_blank"}
         - Optional: `true`
         - Default: None
         - Description: The file properties for debug symbols to be copied alongside the binary for each platform
@@ -218,13 +270,13 @@
 - Type: `string` or `string[]`
 - Optioanl: `true`
 - Default: None
-- Description: See description of `Import` under [Build Settings](./build_settings.md)
+- Description: See [Import](./build_settings.md#import){:target="_blank"}
 
 #### `Parameters`
-- Type: `ParametersInfo`
+- Type: [ParametersInfo](./build_settings.md#parametersinfo){:target="_blank"}
 - Optional: `true`
 - Default: None
-- Description: See description of `ParametersInfo` type under [Build Settings](./build_settings.md)
+- Description: See [ParametersInfo](./build_settings.md#parametersinfo){:target="_blank"}
 ??? example
     ```yaml
     Parameters:
@@ -236,10 +288,10 @@
     ```
 
 #### `Variables`
-- Type: `VariablesInfo`
+- Type: [VariablesInfo](./build_settings.md#variablesinfo){:target="_blank"}
 - Optional: `true`
 - Default: None
-- Description: See description of `VariablesInfo` type under [Build Settings](./build_settings.md)
+- Description: See [VariablesInfo](./build_settings.md#variablesinfo){:target="_blank"}
 ??? example
     ```yaml
     Variables:
@@ -254,16 +306,14 @@
 - Child Fields:
     
     ##### `CheckExistence`
-    - Type: `Platform Map` with `string`
+    - Type: [Platform Map](#platform-map){:target="_blank"} with `string`
     - Optional: `false`
     - Default: None
     - Description: Shell command to use for checking if the executable exists or not
     
     ##### `CompileTypes`
     ??? info
-        Here are a list of substitution strings for RunParts, Setup and Cleanup. To escape '{' and '}' to avoid substitutioon, simply repeat the '{' or '}' character again.
-        
-        So to escape `"${MyBashVariable}"`, it will become `"${{MyBashVariable}}"` 
+        Here are a list of built-in variables for RunParts, Setup and Cleanup
 
         **Constants**
         
@@ -311,17 +361,17 @@
     - Description: Compilation commands for different file types
     - Child Fields:
         - `Executable`
-            - Type: `Platform Map` with `Command Info`
+            - Type: [Platform Map](#platform-map){:target="_blank"} with [CommandInfo](#commandinfo){:target="_blank"}
             - Optional: `false`
             - Default: None
             - Description: Compilation commands for executable
         - `Static`
-            - Type: `Platform Map` with `Command Info`
+            - Type: [Platform Map](#platform-map){:target="_blank"} with [CommandInfo](#commandinfo){:target="_blank"}
             - Optional: `false`
             - Default: None
             - Description: Compilation commands for static library
         - `Shared`
-            - Type: `Platform Map` with `Command Info`
+            - Type: [Platform Map](#platform-map){:target="_blank"} with [CommandInfo](#commandinfo){:target="_blank"}
             - Optional: `false`
             - Default: None
             - Description: Compilation commands for shared library
@@ -334,16 +384,14 @@
 - Child Fields:
     
     ##### `CheckExistence`
-    - Type: `Platform Map` with `string`
+    - Type: [Platform Map](#platform-map){:target="_blank"} with `string`
     - Optional: `false`
     - Default: None
     - Description: Shell command to use for checking if the executable exists or not
 
     ##### `LinkTypes`
     ??? info
-        Here are a list of substitution strings for RunParts, Setup and Cleanup. To escape '{' and '}' to avoid substitutioon, simply repeat the '{' or '}' character again.
-    
-        So to escape `"${MyBashVariable}"`, it will become `"${{MyBashVariable}}"` 
+        Here are a list of built-in variables for RunParts, Setup and Cleanup
 
         **Constants**
         
@@ -416,17 +464,17 @@
     - Description: Link commands for different file types
     - Child Fields:
         - `Executable`
-            - Type: `Platform Map` with `Command Info`
+            - Type: [Platform Map](#platform-map){:target="_blank"} with [CommandInfo](#commandinfo){:target="_blank"}
             - Optional: `false`
             - Default: None
             - Description: Compilation commands for executable
         - `Static`
-            - Type: `Platform Map` with `Command Info`
+            - Type: [Platform Map](#platform-map){:target="_blank"} with [CommandInfo](#commandinfo){:target="_blank"}
             - Optional: `false`
             - Default: None
             - Description: Compilation commands for static library
         - `Shared`
-            - Type: `Platform Map` with `Command Info`
+            - Type: [Platform Map](#platform-map){:target="_blank"} with [CommandInfo](#commandinfo){:target="_blank"}
             - Optional: `false`
             - Default: None
             - Description: Compilation commands for shared library

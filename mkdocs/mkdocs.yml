@@ -31,6 +31,7 @@ theme:
     -   navigation.expand
     -   navigation.tabs
     -   navigation.tabs.sticky
+    -   navigation.instant.preview
 
 nav:
 -   index.md
@@ -51,7 +52,7 @@ repo_name: Neko-Box-Coder/runcpp2
 extra_css: [extra.css]
 markdown_extensions:
 -   admonition
-# -   attr_list
+-   attr_list
 # -   material.extensions.preview:
 #         targets:
 #             include:
