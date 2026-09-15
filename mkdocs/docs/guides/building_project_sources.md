@@ -1,48 +1,61 @@
-# Building Project Sources
+# Build Info Basics
 
-## Specifying Build Type
+This page describes how to specify the most common options for the build info.
 
-The `BuildType` setting specifies what type of output to build. There are four supported types:
+## Build Type
+
+The `BuildType` setting specifies what type of output to build. Here are the supported types:
 
 - **Executable**: Build as an executable program (default)
 - **Static**: Build as a static library
 - **Shared**: Build as a shared library
 
-???+ example
-    ```yaml
-    # Build as a static library
-    BuildType: Static
-    ```
+```yaml
+BuildType: Static # Static library
+```
 
 !!! note
     If not specified, the default build type is Executable.
 
 ---
 
-## Editing Compile And Link Flags
+## Required Profiles
+
+A profile represents a compiler/linker toolchain. You can set what only profiles are allowed to 
+compile/link this project. For example
+
+```yaml
+RequiredProfiles: 
+    Windows: ["g++", "msvc"]
+    Linux: ["g++"]
+    MacOS: ["g++"]
+```
+
+---
+
+## Compile And Link Flags
 
 You can modify compile and link flags using `OverrideCompileFlags` and `OverrideLinkFlags`. 
 Each setting supports two operations:
 
-- `Remove`: Remove flags from the default flags
-- `Append`: Add additional flags after the default flags
+- `Remove`: Remove flags from the profile default flags
+- `Append`: Add additional flags in addition to the profile default flags
 
-???+ example
-    ```yaml
-    OverrideCompileFlags:
-        Windows:
-            "msvc":
-                Remove: "/W3"        # Remove default warning level
-                Append: "/W4 /WX"    # Use W4 and treat warnings as errors
-        DefaultPlatform:
-            "g++":
-                Append: "-Wall -Wextra -Werror"
+```yaml
+OverrideCompileFlags:
+    Windows:
+        "msvc":
+            Remove: "/W3"        # Remove default warning level
+            Append: "/W4 /WX"    # Use W4 and treat warnings as errors
+    DefaultPlatform:
+        "g++":
+            Append: "-Wall -Wextra -Werror"
 
-    OverrideLinkFlags:
-        Linux:
-            "g++":
-                Append: "-Wl,-rpath,\\$ORIGIN"    # Add rpath for shared libraries
-    ```
+OverrideLinkFlags:
+    Linux:
+        "g++":
+            Append: "-Wl,-rpath,\\$ORIGIN"    # Add rpath for shared libraries
+```
 
 !!! warning
     Flag modifications are passed directly to the shell. Be cautious when using variables or 
@@ -50,118 +63,54 @@ Each setting supports two operations:
 
 !!! note
     The default flags for each profile can be found in your user config file. 
-    Run `runcpp2 --show-config-path` to locate it.
+    Run `runcpp2 show-config-path` to locate it.
 
 ---
 
-## Adding Source Files And Include Paths
+## Source Files And Include Paths
 
-You can add additional source files and include paths using `SourceFiles` and `IncludePaths`.
-All paths are relative to the script file's location.
+You can specify source files and include paths using `SourceFiles` and `IncludePaths`. If you main 
+file is a source file (i.e. .cpp or .c), then it is included as a source file implicitly.
 
-???+ example
-    ```text title="Project Structure"
-    project/
-    ├── main.cpp
-    ├── src/
-    │   └── utils.cpp
-    │   └── helper.cpp
-    └── include/
-        └── utils.hpp
-        └── helper.hpp
-    ```
-    
-    ```yaml title="Build Settings"
-    SourceFiles:
-    -   "./src/utils.cpp"
-    -   "./src/helper.cpp"
-    IncludePaths:
-    -   "./include"
-    ```
+All paths are relative to main file's location, like so
+
+```text title="Project Structure"
+project/
+├── main.cpp
+├── main.yaml
+├── src/
+│   └── utils.cpp
+│   └── helper.cpp
+└── include/
+    └── utils.hpp
+    └── helper.hpp
+```
+
+```yaml title="main.yaml"
+SourceFiles: ["./src/utils.cpp", "./src/helper.cpp"]
+IncludePaths: ["./include"]
+```
 
 !!! note
-    You can specify different source files for different platforms/profiles, same for IncludePaths:
+    You can specify different source files for different platforms/profiles:
     ```yaml
     SourceFiles:
         Windows:
-            "msvc":
-            -   "./src/windows_impl.cpp"
+            "msvc": ["./src/windows_impl.cpp"]
         Unix:
-            "g++":
-            -   "./src/unix_impl.cpp"
+            "g++": ["./src/unix_impl.cpp"]
     IncludePaths:
         Windows:
-            "msvc":
-            -   "./include/win/msvc"
+            "msvc": ["./include/win/msvc"]
         Unix:
-            "g++":
-            -   "./include/unix/gcc"
+            "g++": ["./include/unix/gcc"]
     ```
-
-### Globbing Source Files
-
-**Coming Soon**. See [Roadmap](../TODO.md)
-
-### Mixing C And C++ Files
-
-When building a project with a mixture of c and c++ files, the same profile will be used for all files. 
-
-!!! note
-    This is different from other build systems like CMake where it will use the c compiler for c 
-    files and the c++ compiler for c++ files. 
-    
-    ??? example
-        If you need the same behavior, you will need to create a script file for building the c files as if it is a standalone library first
-        
-        ```text title="Project Structure"
-        project/
-        ├── main.cpp
-        ├── main.yaml
-        ├── src/
-        │   └── utils.c
-        │   └── math.c
-        │   └── helper.cpp
-        └── include/
-            └── utils.h
-            └── math.h
-            └── helper.hpp
-        ```
-
-        ```c title="src/utils.c"
-        /*runcpp2
-        Language: "c"
-        RequiredProfiles:
-            DefaultPlatform: ["gcc"]
-        SourceFiles:
-        -   "./math.c"
-        IncludePaths:
-        -   "../include"
-        */
-        #include "utils.h"
-        int add(int a, int b) { return a + b; }
-        ```
-        
-        ```yaml title="main.yaml"
-        Dependencies:
-        -   Name: "utils"
-            Source:
-                Local:
-                    Path: "./src"
-            LibraryType: "Static"
-            IncludePaths:
-                -   "./include"
-            Build:
-            -   "runcpp2 -b ./utils.c"
-            LinkProperties:
-                SearchLibraryNames: ["utils"]
-                SearchDirectories: ["./"]
-        ```
 
 ---
 
-## Adding Defines
+## Defines
 
-You can add preprocessor definitions using the `Defines` setting. Defines can be specified with or 
+You can add preprocessor definitions using the `Defines` field. Defines can be specified with or 
 without values, for different platforms/profiles:
 
 ???+ example
@@ -177,53 +126,42 @@ without values, for different platforms/profiles:
 
 ## Adding Command Hooks
 
-runcpp2 provides four types of command hooks that run at different stages of the build, all of which
+runcpp2 provides four types of command hooks that run at different stages of the build, all of which 
 can be configured per platform/profile:
 
 1. **Setup**: Run once before the script is first built
-    - Runs at the script's location when no build directory exists
-    - Useful for one-time initialization
+    ??? info
+        - Runs at the script's location when no build directory exists
+        - Useful for one-time initialization
 
 2. **PreBuild**: Run before each build
-    - Runs in the build directory before compilation starts
-    - Useful for generating files or updating dependencies
+    ??? info 
+        - Runs in the build directory before compilation starts
+        - Useful for generating files or updating dependencies
 
 3. **PostBuild**: Run after each successful build
-    - Runs in the output directory where binaries are located
-    - Useful for copying resources or post-processing binaries
+    ??? info
+        - Runs in the output directory where binaries are located
+        - Useful for copying resources or post-processing binaries
 
 4. **Cleanup**: Run when `runcpp2 reset ...` is used
-    - Runs at the script's location before the build directory is removed
-    - Useful for cleaning up generated files
+    ??? info
+        - Runs at the script's location before the build directory is removed
+        - Useful for cleaning up generated files
 
-???+ example
-    ```yaml
-    Setup:
-        Windows:
-            DefaultProfile:
-            -   "echo Setting up in %cd%"
-            -   "mkdir assets"
-    
-    PreBuild:
-    -   "python generate_version.py" # Generate version header
-    
-    PostBuild:
-        Unix:
-            DefaultProfile:
-            -   "cp -r assets/* ." # Copy assets to output
-    
-    Cleanup:
-        Unix:
-            DefaultProfile:
-            -   "rm -rf assets" # Clean up generated files
-    ```
+```yaml
+Setup:
+    Windows:
+        DefaultProfile: ["echo Setting up in %cd%", "mkdir assets"]
+PreBuild: ["python generate_version.py"] # Generate version header
+PostBuild:
+    Unix:
+        DefaultProfile: ["cp -r assets/* ."] # Copy assets to output
+Cleanup:
+    Unix:
+        DefaultProfile: ["rm -rf assets"] # Clean up generated files
+```
 
 !!! warning
-    All commands are passed directly to the shell. Be cautious when using variables or 
-    user-provided input in your commands.
-
----
-
-## Intellisense and language server support
-
-**Coming Soon**. See [Roadmap](../TODO.md)
+    All commands are passed directly to the shell. Be cautious when using variables or user-provided 
+    input in your commands.

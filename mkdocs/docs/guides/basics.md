@@ -41,10 +41,10 @@ runcpp2 run ./main.cpp <Arguments>
 For full reference on all the available build info options, see 
 [Build Info Reference](../build_settings.md){:target="_blank"}
 
-A build info template can also build generated with the following command
+A build info template can also be generated with the following command
 ```shell
-runcpp2 template ./script.cpp   # Embeds the build settings template as comment
-runcpp2 template ./script.yaml  # Creates the build settings template as dedicated yaml file
+runcpp2 template ./main.cpp   # Embeds the build settings template as comment
+runcpp2 template ./main.yaml  # Creates the build settings template as dedicated yaml file
 ```
 
 ---
@@ -138,8 +138,6 @@ Defines:
 in this case `Compiler` is defined to the name of the profile regardless of which platform you are on, 
 unless you are using a profile that is not `g++` or `msvc` in which case it will be defined as `other` 
 instead.
-
-
 
 !!! important
     DefaultPlatform and DefaultProfile settings are not additive. For example:
