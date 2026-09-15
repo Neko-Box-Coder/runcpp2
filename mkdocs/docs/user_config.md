@@ -12,7 +12,7 @@
 - Type: [Platform Map](#platform-map){:target="_blank"} with `string`
 - Optional: `false`
 - Default: None
-- Description: A profile to be used if not specified while running the build script
+- Description: A profile to be used if not specified while building
 ??? example
     ```yaml
     PreferredProfile: 
@@ -183,7 +183,7 @@
 - Type: `string`
 - Optional: `false`
 - Default: None
-- Description: Name (case sensitive) of the profile that can be queried from a script
+- Description: Name (case sensitive) of the profile that can be queried from the build info
 ??? example
     ```yaml
     Name: "g++"

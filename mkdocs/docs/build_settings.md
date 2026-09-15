@@ -26,16 +26,19 @@ You can find all the profiles in your config folder. This can be found by runnin
 - Type: `bool`
 - Optional: `true`
 - Default: `false`
-- Description: Whether to pass the script path as the second parameter when running in additional to the binary path.
+- Description: Whether to pass the main file path as the second parameter when running in additional to the binary path.
 ??? example
     ```yaml
     PassScriptPath: false
     ```
+??? todo
+    Rename this to PassMainFilePath
+
 ### `Language`
 - Type: `string`
 - Optional: `true`
 - Default: Determined by file extension
-- Description: The language of the script.
+- Description: The language of the project.
 ??? example
     ```yaml
     Language: "c++"
@@ -57,7 +60,7 @@ You can find all the profiles in your config folder. This can be found by runnin
 - Type: [Platform Profile List](#platform-profile-list){:target="_blank"}
 - Optional: `true`
 - Default: None
-- Description: Allowed profiles for the script for each platform. Any profiles will be used if none is specified for the platform.
+- Description: Allowed profiles for the project for each platform. Any profiles will be used if none is specified for the platform.
 ??? example
     ```yaml
     RequiredProfiles: 
@@ -129,6 +132,9 @@ You can find all the profiles in your config folder. This can be found by runnin
                 Remove: "-flagA -flagB"
                 Append: "-flagC -flagD"
     ```
+??? todo
+    Rename this to CompileFlags
+
 
 ### `OverrideLinkFlags`
 - Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with child fields
@@ -154,12 +160,15 @@ You can find all the profiles in your config folder. This can be found by runnin
                 Remove: "-flagA -flagB"
                 Append: "-flagC -flagD"
     ```
+??? todo
+    Rename this to LinkFlags
+
 
 ### `SourceFiles`
 - Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string[]`
 - Optional: `true`
 - Default: None
-- Description: Other source files (relative to script file path) to be compiled.
+- Description: Other source files (relative to main file path) to be compiled.
 ??? example
     ```yaml
     SourceFiles:
@@ -172,7 +181,7 @@ You can find all the profiles in your config folder. This can be found by runnin
 - Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string[]`
 - Optional: `true`
 - Default: None
-- Description: Include paths (relative to script file path) for each platform and profile
+- Description: Include paths (relative to main file path) for each platform and profile
 ??? example
     ```yaml
     IncludePaths:
@@ -200,13 +209,13 @@ You can find all the profiles in your config folder. This can be found by runnin
 - Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string[]`
 - Optional: `true`
 - Default: None
-- Description: Setup commands are run once before the script is first built. These commands are run at the script's location when no build directory exists.
+- Description: Setup commands are run once before the project is first built. These commands are run at the main file's location when no build directory exists.
 ??? example
     ```yaml
     Setup:
         DefaultPlatform:
             DefaultProfile:
-            -   "echo Setting up script..."
+            -   "echo Setting up project..."
     ```
 
 ### `PreBuild`
@@ -245,14 +254,14 @@ You can find all the profiles in your config folder. This can be found by runnin
     Cleanup:
         DefaultPlatform:
             DefaultProfile:
-            -   "echo Cleaning up script..."
+            -   "echo Cleaning up project..."
     ```
 
 ### `Dependencies`
 - Type: `Dependency[]`
 - Optional: `true`
 - Default: None
-- Description: The list of dependencies needed by the script. See [Dependency](#dependency){:target="_blank"}
+- Description: The list of dependencies needed by the project. See [Dependency](#dependency){:target="_blank"}
 ??? example
     ```yaml
     Dependencies:
@@ -475,7 +484,7 @@ ExampleSettings:
             field exists. 
                 - For Git source: Path is relative to the git repository root. 
                 - For Local source: Path is relative to the path specified under `Local`. 
-                - If neither source exists, local source with root script directory is assumed.
+                - If neither source exists, local source with main file directory is assumed.
         - `Git`
             - Type: `map` with child fields
             - Optional: `true` if `ImportPath` is specified or `Local` is specified
@@ -572,7 +581,7 @@ ExampleSettings:
             - Type: `string[]`
             - Optional: `true`
             - Default: None
-            - Description: The library names to be searched for when linking against the script. Binaries with linkable extension that contains one of the names will be linked
+            - Description: The library names to be searched for when linking against the project. Binaries with linkable extension that contains one of the names will be linked
         - `ExcludeLibraryNames`
             - Type: `string[]`
             - Optional: `true`
@@ -622,7 +631,7 @@ ExampleSettings:
     - Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string[]`
     - Optional: `true`
     - Default: None
-    - Description: Build commands are run every time before the script is being built
+    - Description: Build commands are run every time before the project is being built
 
     #### `Cleanup`
     - Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string[]`

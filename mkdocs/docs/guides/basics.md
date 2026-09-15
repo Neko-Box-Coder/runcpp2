@@ -1,126 +1,47 @@
 # Basics
 
-## Script File
+## Main File
 
-A script file is your entry point source file (typically a .cpp file) that runcpp2 uses to build 
-with the config specified either:
+A main file is the file that runcpp2 uses. It can either be a standalone build info yaml file or a 
+source file (which contains build info yaml as inline comment, optionally).
 
-- As inline comments in the source file:
-  ```cpp
-  /*runcpp2
-  RequiredProfiles:
-      Windows: ["msvc"]
-      Unix: ["g++"]
-  */
-  int main() { return 0; }
-  ```
+To embedding build info as an inline comment, simply put `runcpp2` in the first line, whether it is 
+a block comment or line comment (with or without space).
 
-- Or as a separate YAML file with the same name:
-  ```
-  script.cpp    # Your source file
-  script.yaml   # Your build settings
-  ```
-
-The name of the output binary will be the name of the script file therefore a script file will 
-always have a 1 to 1 relationship with the linker output, even if multiple sources are specified in 
-the script file build settings. 
-
-You can use any of your source files as a script file, or a dedicated .cpp file for building.
-
-Suppose you have a c++ file called `script.cpp`, you can run it immediately by doing 
-
-```shell
-runcpp2 ./script.cpp <any arguments>
-```
-
-??? example
-    ```cpp title="script.cpp"
-    #include <iostream>
-    int main(int argc, char** argv)
-    {
-        if(argc != 2)
-        {
-            std::cout << "Usage: runcpp2 ./script.cpp <Name>"
-            return 1;
-        }
-        
-        std::cout << "Hello " << argv[1] << std::endl;
-        return 0;
-    }
+???+ example
+    ```cpp
+    /*runcpp2
+    RequiredProfiles:
+        Windows: ["msvc"]
+        Unix: ["g++"]
+    */
+    int main() { return 0; }
     ```
 
+A single main file can only produce a single binary output, with the same name as the main file.
+
+Suppose you have a c++ file called `main.cpp`, you can run it immediately by doing 
+
+```shell
+runcpp2 run ./main.cpp <Arguments>
+```
+
 !!! note
-    On Unix, if you have added runcpp2 to your PATH and add this line `//bin/true;runcpp2 run "$0" "$@"; exit $?;` 
-    to the top of your script, you can run the script directly by `./script.cpp <arguments>`
+    On Unix, if you have added runcpp2 to your PATH and add this line 
+    `//bin/true;runcpp2 run "$0" "$@"; exit $?;` 
+    to the top of your script, you can run the script directly by `./main.cpp <arguments>`
     
     ??? example
-        ```cpp title="script.cpp"
+        ```cpp title="main.cpp"
         //bin/true;runcpp2 run "$0" "$@"; exit $?;
         #include <iostream>
         int main(int, char**) { std::cout << "Hello World" << std::endl; }
         ```
 
-### YAML File As Input
+For full reference on all the available build info options, see 
+[Build Info Reference](../build_settings.md){:target="_blank"}
 
-!!! info inline end "This requires `nightly` version"
-You can also use a YAML file as input. If this is the case, the name of the output 
-binary will be the name of the YAML file.
-
----
-
-## Error Feedback
-
-If you want to edit the script but want to have feedback for any error, you can use "watch" mode.
-
-```shell title="shell"
-runcpp2 watch ./script.cpp
-```
-
----
-
-## Spcifying Build Config
-
-Build config such as compile/link flags, external dependencies, command hooks, etc.
-can be spcified inlined inside a source file or as a separate yaml file in the format of YAML
-
-- To specify build config in a dedicated yaml file:
-    - The yaml file in the same directory and share the same as the source file being run will be used
-    !!! info inline end "This requires `nightly` version"
-    - The yaml file must specify at least one source if fed as input
-- To specify inline build config inside a source file: 
-    - Put them inside a comment with `runcpp2` at the beginning of the build config
-    - The inline build config can exist in anywhere of the source file
-    - Both inline (but continuous) comments (`#!cpp //`) and block comments are supported (`#!cpp /* */`)
-
-??? example "Example Inline Build Config"
-    ```cpp title="script.cpp"
-    /*runcpp2
-    OverrideCompileFlags:
-        DefaultPlatform:
-            "g++":
-                Append: "-Wfloat-equal -Wextra"
-    */
-    int main(int, char**) { float a = 1.f; float b = 1.f; return a == b ? 0 : 1; }
-    ```
-    ```shell title="shell"
-    runcpp2 script.cpp
-    ```
-
-??? example "Example Dedicated Build Config"
-    ```yaml title="script.yaml"
-    OverrideCompileFlags:
-        DefaultPlatform:
-            "g++":
-                Append: "-Wfloat-equal -Wextra"
-    ```
-    ```cpp title="script.cpp"
-    int main(int, char**) { float a = 1.f; float b = 1.f; return a == b ? 0 : 1; }
-    ```
-    ```shell title="shell"
-    runcpp2 script.cpp
-    ```
-
-For a complete list of build settings, see [Build Settings](../build_settings.md) or generate the template with
+A build info template can also build generated with the following command
 ```shell
 runcpp2 template ./script.cpp   # Embeds the build settings template as comment
 runcpp2 template ./script.yaml  # Creates the build settings template as dedicated yaml file
@@ -128,9 +49,17 @@ runcpp2 template ./script.yaml  # Creates the build settings template as dedicat
 
 ---
 
-## Platforms And Profiles
+## Error Feedback
 
-runcpp2 uses platforms and profiles to organize build settings. 
+If you want a live error feedback, you can use "watch" mode.
+
+```shell title="shell"
+runcpp2 watch ./main.cpp
+```
+
+---
+
+## Platforms And Profiles
 
 A platform represents a single host operating systems (not the target platform).
 
@@ -150,14 +79,26 @@ runcpp2 supports the following platforms:
 
 ### Default Profiles
 
-The default user configuration includes two compiler profiles:
+Below are the built-in profiles:
 
 - **g++**: GNU c++ compiler (with alias "mingw")
 - **vs2022_v17+**: Visual Studio 2022 compiler (with aliases "msvc1930+", "msvc")
+- **clang++**
+- **clang**
 
-### Specifying Platform/Profile Dependent Settings
+Custom profiles can be added by editing the user config file. For full reference, see 
+[User Config Reference](../user_config.md){:target="_blank"}
 
-Most build settings in runcpp2 follow this structure:
+### Specifying Build Info Values
+
+You can specify a value that applies to all platforms and profiles like so
+
+```yaml
+Defines: ["MyDefine=1"]
+```
+
+However, you can also specify a value per platform/profile with the following syntax
+
 ```yaml
 <Setting Name>:
     <Platform A>:
@@ -168,61 +109,45 @@ Most build settings in runcpp2 follow this structure:
             ...
 ```
 
-???+ example
-    ```yaml
-    OverrideCompileFlags:
-        Windows:
-            "g++":
-                Append: "-O2 -Wall"
-            "msvc":
-                Append: "/O2"
-        Linux:
-            "g++":
-                Append: "-O3"
-    ```
+For example
 
-There are two special keywords for more flexible configuration:
+```yaml
+Defines:
+    Windows:
+        "g++": ["OS=Windows", "Compiler=g++"]
+        "msvc": ["OS=Windows", "Compiler=msvc"]
+    Linux:
+        "g++": ["OS=Linux", "Compiler=g++"]
+```
+
+You can also specify values that apply to all platforms or profiles with the following keywords
 
 - **DefaultPlatform**: Settings that apply to any platform that doesn't have explicit settings
 - **DefaultProfile**: Settings that apply to any profile that doesn't have explicit settings
 
+For example
+
+```yaml
+Defines:
+    DefaultPlatform:
+        "g++": ["Compiler=g++"]
+        "msvc": ["Compiler=msvc"]
+        DefaultProfile: ["Compiler=other"]
+```
+
+in this case `Compiler` is defined to the name of the profile regardless of which platform you are on, 
+unless you are using a profile that is not `g++` or `msvc` in which case it will be defined as `other` 
+instead.
+
+
+
 !!! important
     DefaultPlatform and DefaultProfile settings are not additive. For example:
     ```yaml
-    OverrideCompileFlags:
+    Defines:
         DefaultPlatform:
-            DefaultProfile:
-                Append: "-Wall"
-            "g++":
-                Append: "-O2"
+            DefaultProfile: ["A=1"]
+            "g++": ["B=1"]
     ```
-    When using g++, only `-O2` will be used, not `-Wall -O2`.
-    When using any other profile, only `-Wall` will be used.
-
-!!! info inline end "This requires `v0.3.0` version"
-
-If you have a setting that **only** has DefaultPlatform and DefaultProfile, you can directly 
-specify the settings without listing it under DefaultPlatform and DefaultProfile.
-
-!!! info inline end ""
-
-For example:
-
-!!! info inline end ""
-
-```yaml
-OverrideCompileFlags:
-    Append: "-Wall"
-```
-
-!!! info inline end ""
-is equivalent to:
-
-!!! info inline end ""
-
-```yaml
-OverrideCompileFlags:
-    DefaultPlatform:
-        DefaultProfile:
-            Append: "-Wall"
-```
+    When using g++, only `A` is defined (Not both `A` and `B`).
+    When using any other profile, only `B` is defined.
