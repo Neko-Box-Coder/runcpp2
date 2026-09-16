@@ -130,21 +130,25 @@ runcpp2 provides four types of command hooks that run at different stages of the
 can be configured per platform/profile:
 
 1. **Setup**: Run once before the script is first built
+    
     ??? info
         - Runs at the script's location when no build directory exists
         - Useful for one-time initialization
 
 2. **PreBuild**: Run before each build
+    
     ??? info 
         - Runs in the build directory before compilation starts
         - Useful for generating files or updating dependencies
 
 3. **PostBuild**: Run after each successful build
+    
     ??? info
         - Runs in the output directory where binaries are located
         - Useful for copying resources or post-processing binaries
 
 4. **Cleanup**: Run when `runcpp2 reset ...` is used
+    
     ??? info
         - Runs at the script's location before the build directory is removed
         - Useful for cleaning up generated files
