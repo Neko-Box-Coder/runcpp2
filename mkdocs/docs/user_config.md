@@ -56,7 +56,9 @@
 - Type: `string` or `string[]`
 - Optioanl: `true`
 - Default: None
-- Description: Import other yaml files to merge to this file. Import can either be a single path or a list of paths. If there's any parameter/variables in the import file, it will applied to that file first before merging
+- Description: Import other yaml files to merge to this file. Import can either be a single path or 
+a list of paths. If there's any parameters/variables in the import file, it will applied to that file 
+first before merging.
 ??? example
     ```yaml
     Import: "./OtherProfiles.yaml"

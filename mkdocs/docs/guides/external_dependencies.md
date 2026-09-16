@@ -1,4 +1,73 @@
-# External Dependencies
+# Build Info Intermediates
+
+## Parameters & Variables
+
+Build info can be changed dynamically using parameters and variables. 
+
+Parameters and Variables are parsed first before parsing the rest of the fields, and they act like 
+macros in C where it just performs text replacements (in the YAML nodes level) to the user supplied 
+or default values.
+
+The user input values or default values are first applied to parameters, with or without constraints 
+optionally. Then a variable can "aggregate" one or more parameters values into a single variable 
+which can be used for text replacement.
+
+```yaml
+Parameters:
+    Param1:
+        Optional: true
+        Default: ""
+        Array: false
+        Constraint: None
+    Param2:
+        Optional: true
+        Default: "UserDefine1,UserDefine2"
+        Array: true
+        Constraint: None
+
+Variables:
+    VarName1: "Some string {Param1} substitution"
+
+Defines: ["ExampleDefine=\"{VarName1}\""]
+```
+
+The value of the parameter can be changed dynamically with the following syntax for different main 
+actions.
+
+`--parameters <name1=val1;name2=val2;...>`
+
+For example
+
+```shell
+runcpp2 run --parameters Param1=parameter;Param2=UserDefineA,UserDefineB ./main.cpp
+```
+
+where the value of `ExampleDefine` would be `"Some string parameter substitution"`, also 
+`UserDefineA` and `UserDefineB` would be defined too in this instance.
+
+See [ParametersInfo](../build_settings.md#parametersinfo){:target="_blank"} and 
+[VariablesInfo](../build_settings.md#variablesinfo) for details on all possible child fields.
+
+---
+
+## Adding Dependencies
+
+runcpp2 supports any dependencies as it is invoking the compiler/linker toolchains directly. So as 
+long as you know/can build the dependencies locally or have the prebuilt binaries, you can link 
+against or include it fairly trivially.
+
+Unless you are importing a standalone dependency YAML (which will be explained later), a dependency 
+must have at least the following fields:
+
+- **Name**: The name of the dependency
+- **Platforms**: Supported host platforms that can build the dependency
+- **Source**: Where to look for (and copy) the dependency
+- **LibraryType**: The type of the library (`Static`, `Object`, `Shared`, `Header`)
+
+
+
+
+
 
 ## Adding External Dependencies
 
@@ -8,13 +77,10 @@ You can specify the dependencies under the `Dependencies` section.
 
 Each dependency must have the following fields, other fields are optional:
 
-!!! note "Note: Dependencies that are imported (explained later) only need the `Source` field."
+!!! note "Note: Dependencies that are imported () only need the `Source` field."
     
 
-- **Name**: The name of the dependency
-- **Platforms**: The platforms the dependency is supported on
-- **Source**: The source of the dependency
-- **LibraryType**: The type of the library (`Static`, `Object`, `Shared`, `Header`)
+
 
 ---
 

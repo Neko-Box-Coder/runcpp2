@@ -59,6 +59,7 @@
 - Add the ability to list script dependencies
 - Show build directory for a given cpp
 - Refactor CLI arguments to be action based
+- RequiredProfiles for dependencies
 
 ## TBD
 

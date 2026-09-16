@@ -420,7 +420,7 @@ ExampleSettings:
             Optional: true
             Default: ""
             Array: false
-            Constraint: "None"
+            Constraint: None
     ```
 
 ### `VariablesInfo`
@@ -467,13 +467,13 @@ ExampleSettings:
     - Type: `string[]`
     - Optional: `false`
     - Default: None
-    - Description: Supported platforms for the dependency
+    - Description: Supported host platforms that can build the dependency
 
     #### `Source`
     - Type: `map` with child fields
     - Optional: `false`
     - Default: None
-    - Description: Where to get and copy the dependency
+    - Description: Where to look for (and copy) the dependency
     - Child Fields: 
         - `ImportPath`
             - Type: `string`

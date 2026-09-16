@@ -169,3 +169,16 @@ Cleanup:
 !!! warning
     All commands are passed directly to the shell. Be cautious when using variables or user-provided 
     input in your commands.
+
+---
+
+## Importing Fields
+
+Common values that are shared between multiple build info files can be reused by being imported to 
+the current build info.
+
+This can be done by specifying a path to the target yaml as a string or as an array of strings.
+
+```yaml
+Import: "./OtherDefines.yaml"
+```
