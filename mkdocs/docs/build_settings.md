@@ -572,16 +572,16 @@ ExampleSettings:
     - Description: Paths to be added to the include paths, relative to the dependency folder
 
     #### `LinkProperties`
-    - Type: `map`
+    - Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `map`
     - Optional: `true` if `LibraryType` is `Header` or `Source.ImportPath` is specified
     - Default: None
-    - Description: Link properties of the dependency
+    - Description: Link properties of the dependency. Shared libraries will be copied automatically by searching for the corresponding runtime files with the same name.
     - Child Fields:
         - `SearchLibraryNames`
             - Type: `string[]`
             - Optional: `true`
             - Default: None
-            - Description: The library names to be searched for when linking against the project. Binaries with linkable extension that contains one of the names will be linked
+            - Description: The library names to be searched for when linking against the project. Binaries with linkable extension that contains one of the names will be linked.
         - `ExcludeLibraryNames`
             - Type: `string[]`
             - Optional: `true`
@@ -599,7 +599,7 @@ ExampleSettings:
             - Description: Additional link flags for this dependency
     
     #### `CompileProperties`
-    - Type: `map`
+    - Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `map`
     - Optional: `true`
     - Default: None
     - Description: Compile properties of the dependency
