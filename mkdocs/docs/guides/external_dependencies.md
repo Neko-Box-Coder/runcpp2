@@ -39,7 +39,7 @@ actions.
 For example
 
 ```shell
-runcpp2 run --parameters Param1=parameter;Param2=UserDefineA,UserDefineB ./main.cpp
+runcpp2 run --parameters 'Param1=parameter;Param2=UserDefineA,UserDefineB' ./main.cpp
 ```
 
 where the value of `ExampleDefine` would be `"Some string parameter substitution"`, also 
@@ -54,8 +54,8 @@ See [ParametersInfo](../build_settings.md#parametersinfo){:target="_blank"} and
 
 runcpp2 supports any dependencies as it is invoking the compiler/linker toolchains directly. So as 
 long as you know/can build the dependencies locally or have the prebuilt binaries, you can link 
-against or include it fairly trivially.
-
+against or include them fairly trivially.
+s
 Unless you are importing a standalone dependency YAML (which will be explained later), a dependency 
 must have at least the following fields:
 
