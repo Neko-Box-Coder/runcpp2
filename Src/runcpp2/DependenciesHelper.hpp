@@ -497,20 +497,6 @@ namespace runcpp2
         for(int i = 0; i < outBinariesPaths.size(); ++i)
             binariesPathsSet.insert(outBinariesPaths[i]);
         
-        int minimumDependenciesCopiesCount = 0;
-        for(int i = 0; i < availableDependencies.size(); ++i)
-        {
-            if(availableDependencies.at(i)->LibraryType != runcpp2::Data::DependencyLibraryType::HEADER)
-                ++minimumDependenciesCopiesCount;
-        }
-
-        if(minimumDependenciesCopiesCount > dependenciesCopiesPaths.size())
-        {
-            return DS_ERROR_MSG("The amount of available dependencies do not match" 
-                                " the amount of dependencies copies paths");
-        }
-        
-        int nonLinkFilesCount = 0;
         for(int i = 0; i < availableDependencies.size(); ++i)
         {
             ssLOG_INFO("Evaluating dependency " << availableDependencies.at(i)->Name);
@@ -537,7 +523,6 @@ namespace runcpp2
                             const std::string processedSrcPath = runcpp2::ProcessPath(srcPath);
                             outBinariesPaths.push_back(processedSrcPath);
                             binariesPathsSet.insert(processedSrcPath);
-                            ++nonLinkFilesCount;
                             ssLOG_INFO("Added binary path: " << srcPath.string());
                         }
                         else
@@ -580,7 +565,14 @@ namespace runcpp2
                 runcpp2::GetValueFromProfileMap(profile, linkProperty.ProfileProperties);
                 
             if(!profileLinkProperty)
+            {
+                ssLOG_WARNING(  "Missing link properties for dependency: " << 
+                                availableDependencies.at(i)->Name << " at index " << i);
+                ssLOG_WARNING("Is this intended?");
                 continue;
+            }
+            
+            int originalBinarySize = outBinariesPaths.size();
 
             for(int searchLibIndex = 0; 
                 searchLibIndex < profileLinkProperty->SearchLibraryNames.size(); 
@@ -691,15 +683,13 @@ namespace runcpp2
                 //searchLibIndex < profileLinkProperty->SearchLibraryNames.size(); 
                 //++searchLibIndex)
         
+            if(originalBinarySize == outBinariesPaths.size())
+            {
+                ssLOG_WARNING(  "Link files not found for dependency: " << 
+                                availableDependencies.at(i)->Name << " at index " << i);
+                ssLOG_WARNING("Is this intended?");
+            }
         } //for(int i = 0; i < availableDependencies.size(); ++i)
-        
-        //Do a check to see if any dependencies are copied
-        if(outBinariesPaths.size() - nonLinkFilesCount < minimumDependenciesCopiesCount)
-        {
-            ssLOG_WARNING("We could be missing some link files for dependencies");
-            for(int i = 0; i < outBinariesPaths.size(); ++i)
-                ssLOG_WARNING("outBinariesPaths[" << i << "]: " << outBinariesPaths.at(i));
-        }
         
         return {};
     }
