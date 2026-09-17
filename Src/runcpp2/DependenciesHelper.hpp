@@ -896,6 +896,7 @@ namespace runcpp2
                 }
             }
 
+            #if 0
             if(!ghc::filesystem::exists(srcPath, ec))
             {
                 //File no longer exists in source, remove it
@@ -903,6 +904,10 @@ namespace runcpp2
                 ghc::filesystem::remove_all(targetPath, ec);
                 continue;
             }
+            #else
+            if(!ghc::filesystem::exists(srcPath, ec))
+                continue;
+            #endif
             
             //If file/dir exists in source and not symlink, check if it needs update
             if(!needsUpdate && !ghc::filesystem::is_symlink(targetPath, ec))
