@@ -1,6 +1,6 @@
 /* runcpp2
 
-PassScriptPath: true
+# PassScriptPath: true
 
 OverrideCompileFlags:
     DefaultPlatform:
@@ -196,10 +196,13 @@ DS::Result<void> GenerateDefaultYAMLs(const std::string runcpp2Path, const std::
 
 DS::Result<void> Main(int argc, char** argv)
 {
-    if(argc <= 2 || strcmp(argv[2], "--help") == 0)
+    for(int i = 0; i < argc; ++i)
+        printf("argv[%i]: %s\n", i, argv[i]);
+
+    if(argc >= 2 && strcmp(argv[1], "--help") == 0)
     {
         printf( "runcpp2 run Build.cpp [--runcpp2-path <path>] [--no-werror] [--info] [--rebuild] "
-                "[--no-test] [--release]\n");
+                "[--no-test] [--release] [--output-dir <path>]\n");
         return {};
     }
     
@@ -215,8 +218,12 @@ DS::Result<void> Main(int argc, char** argv)
     bool rebuild = false;
     bool buildTest = true;
     bool release = false;
-    for(int i = 2; i < argc; ++i)
+    ghc::filesystem::path outputDir = "Build";
+    std::error_code ec;
+    for(int i = 1; i < argc; ++i)
     {
+        if(i >= argc)
+            break;
         if(strcmp(argv[i], "--runcpp2-path") == 0)
         {
             if(i + 1 >= argc)
@@ -237,6 +244,18 @@ DS::Result<void> Main(int argc, char** argv)
             buildTest = false;
         else if(strcmp(argv[i], "--release") == 0)
             release = true;
+        else if(strcmp(argv[i], "--output-dir") == 0)
+        {
+            if(i + 1 >= argc)
+                return DS_ERROR_MSG("Output directory expected");
+            
+            if(!ghc::filesystem::exists(argv[i + 1], ec))
+                ghc::filesystem::create_directories(argv[i + 1], ec);
+            if(!ghc::filesystem::is_directory(argv[i + 1], ec))
+                return DS_ERROR_MSG("Output directory path is not a directory");
+            outputDir = argv[i + 1];
+            ++i;
+        }
         else
             return DS_ERROR_MSG(DS_STR("Unexpected option: \"") + argv[i] + "\"");
     }
@@ -244,7 +263,6 @@ DS::Result<void> Main(int argc, char** argv)
     if(!ghc::filesystem::exists("./External/cfgpath/cfgpath.h"))
         return DS_ERROR_MSG("./External/cfgpath/cfgpath.h doesn't exist");
     
-    std::error_code ec;
     ghc::filesystem::copy_file( "./External/cfgpath/cfgpath.h", 
                                 "./Src/cfgpath.h", 
                                 ghc::filesystem::copy_options::update_existing,
@@ -278,8 +296,7 @@ DS::Result<void> Main(int argc, char** argv)
         return DS_ERROR_MSG("Failed to get git tag");
     }
     
-    ghc::filesystem::path rootDir = ghc::filesystem::path(argv[1]).parent_path();
-    
+    ghc::filesystem::path rootDir = ghc::filesystem::absolute(".", ec);
     std::string params = "RUNCPP2_VERSION=" + versionString + ";RootPath=\\\"" + rootDir.string() + "\\\"";
     if(warnError)
     {
@@ -321,9 +338,7 @@ DS::Result<void> Main(int argc, char** argv)
     }
     
     
-    ghc::filesystem::path buildDir =    ghc::filesystem::exists(runcpp2Path) ? 
-                                        ghc::filesystem::path(runcpp2Path).parent_path() :
-                                        "./Build";
+    ghc::filesystem::path buildDir = outputDir;
     
     #if defined(_WIN32)
         RunCommand( "copy /y " + EscapePath("./Src/Tests/RunAllTests.bat") + " " +

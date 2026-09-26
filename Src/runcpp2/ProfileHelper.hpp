@@ -225,7 +225,7 @@ namespace
                 else
                     checkPath = scriptPath;
                 
-                if(IsProfileValidForScript(profiles[i], scriptInfo, scriptPath))
+                if(IsProfileValidForScript(profiles[i], scriptInfo, checkPath))
                     availableProfiles.push_back(i);
             }
         }

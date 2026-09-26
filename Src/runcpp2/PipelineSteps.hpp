@@ -204,15 +204,6 @@ namespace runcpp2
         
         //Get parsable info
         {
-            //Record write time for script file for watch option
-            outScriptInfo.LastWriteTime = ghc::filesystem::last_write_time(scriptInfoFile, e);
-            if(e)
-            {
-                std::string errorMsg = e.message();
-                errorMsg += "\nFailed to get last write time for: " + scriptInfoFile.string();
-                return DS_ERROR_MSG(errorMsg);
-            }
-
             inputFile.open(scriptInfoFile);
             
             if(!inputFile)
@@ -245,6 +236,15 @@ namespace runcpp2
             ssLOG_DEBUG("Parsed script info YAML:");
             std::string scriptInfoStr = outScriptInfo.ToString("").DS_TRY();
             ssLOG_DEBUG("\n" << scriptInfoStr);
+        }
+
+        //Record write time for script file for watch option
+        outScriptInfo.LastWriteTime = ghc::filesystem::last_write_time(scriptInfoFile, e);
+        if(e)
+        {
+            std::string errorMsg = e.message();
+            errorMsg += "\nFailed to get last write time for: " + scriptInfoFile.string();
+            return DS_ERROR_MSG(errorMsg);
         }
 
         return {};
