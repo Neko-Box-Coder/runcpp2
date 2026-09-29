@@ -4,6 +4,7 @@
 ## Done
 
 ### Nightly
+- Add more default profiles
 - Add version for default user config and prompt for update
 - Rename "OtherFilesToBeCompiled" to "SourceFiles"
 - Migrate to libyaml
@@ -41,8 +42,6 @@
 
 ### v0.4.0
 - Add support to object output type
-- Allow runcpp2 to be library for scriptable pipeline
-- Add more default profiles (gcc, clang, emscripten?)
 - Move to variant-lite instead of mpark-variant
 
 ## High Priority
