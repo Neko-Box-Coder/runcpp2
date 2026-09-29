@@ -1,0 +1,18 @@
+SourceFiles: ["./config_app.cpp"]
+
+Dependencies:
+-   Name: CLI11
+    Platforms: [DefaultPlatform]
+    Source:
+        Git:
+            URL: "https://github.com/CLIUtils/CLI11.git"
+            Branch: v2.7.2
+    LibraryType: Static
+    IncludePaths: ["include"]
+    LinkProperties:
+        SearchLibraryNames: ["CLI11"]
+        SearchDirectories: ["./output/src", "./output/src/Debug"]
+    Setup:
+    -   "mkdir output"
+    -   "cd output && cmake .. -DCLI11_BUILD_DOCS=OFF -DCLI11_BUILD_TESTS=OFF -DCLI11_BUILD_EXAMPLES=OFF -DCLI11_PRECOMPILED=ON"
+    -   "cd output && cmake --build . -j 8"
