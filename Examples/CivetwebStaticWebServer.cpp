@@ -1,7 +1,5 @@
 /* runcpp2
 
-BuildType: InternalExecutable
-
 Dependencies:
 -   Name: civetweb
     Platforms: [DefaultPlatform]
@@ -9,8 +7,7 @@ Dependencies:
         Git:
             URL: "https://github.com/civetweb/civetweb.git"
     LibraryType: Static
-    IncludePaths:
-    -   "./include"
+    IncludePaths: ["include"]
     LinkProperties:
         Windows:
             DefaultProfile:
