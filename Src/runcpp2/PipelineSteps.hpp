@@ -47,11 +47,10 @@
 
 namespace
 {
-    bool RunCompiledScript( const ghc::filesystem::path& executable,
-                            const std::vector<std::string>& runArgs,
-                            int& returnStatus)
+    DS::Result<void> RunCompiledScript( const ghc::filesystem::path& executable,
+                                        const std::vector<std::string>& runArgs,
+                                        int& returnStatus)
     {
-        INTERNAL_RUNCPP2_SAFE_START();
         ssLOG_FUNC_INFO();
         
         std::vector<const char*> args;
@@ -70,22 +69,23 @@ namespace
         
         if(result != SYSTEM2_RESULT_SUCCESS)
         {
-            ssLOG_ERROR("System2Run failed with result: " << result);
             System2CleanupCommand(&runCommandInfo);
-            return false;
+            return DS_ERROR_MSG("System2Run failed with result: " + DS_STR(result));
         }
         
         result = System2GetCommandReturnValue(&runCommandInfo, -1, &returnStatus);
+        System2CleanupCommand(&runCommandInfo);
+        
+        if(result == SYSTEM2_RESULT_COMMAND_TERMINATED)
+            return DS_ERROR_MSG("Program terminated.");
+        
         if(result != SYSTEM2_RESULT_SUCCESS)
         {
-            ssLOG_ERROR("System2GetCommandReturnValueSync failed with result: " << result);
-            System2CleanupCommand(&runCommandInfo);
-            return false;
+            return DS_ERROR_MSG("System2GetCommandReturnValueSync failed with result: " + 
+                                DS_STR(result));
         }
         
-        System2CleanupCommand(&runCommandInfo);
-        return true;
-        INTERNAL_RUNCPP2_SAFE_CATCH_RETURN(false);
+        return {};
     }
 }
 
@@ -721,8 +721,7 @@ namespace runcpp2
             finalRunArgs.push_back(runArgs[i]);
         
         //Running the script with modified args
-        if(!RunCompiledScript(target, finalRunArgs, returnStatus))
-            return DS_ERROR_MSG("Failed to run script");
+        RunCompiledScript(target, finalRunArgs, returnStatus).DS_TRY();
         
         return {};
     }
