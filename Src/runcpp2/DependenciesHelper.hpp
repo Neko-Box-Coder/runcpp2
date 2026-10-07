@@ -51,11 +51,11 @@ namespace
                                         ghc::filesystem::path& outCopyPath,
                                         ghc::filesystem::path& outSourcePath);
     
-    DS::Result<void> PopulateLocalDependency(   const runcpp2::Data::DependencyInfo& dependency,
-                                                const ghc::filesystem::path& copyPath,
-                                                const ghc::filesystem::path& sourcePath,
-                                                const ghc::filesystem::path& buildDir,
-                                                bool& outPrePopulated);
+    DS::Result<void> PopulateDependency(const runcpp2::Data::DependencyInfo& dependency,
+                                        const ghc::filesystem::path& copyPath,
+                                        const ghc::filesystem::path& sourcePath,
+                                        const ghc::filesystem::path& buildDir,
+                                        bool& outPrePopulated);
     
     DS::Result<void> 
     PopulateLocalDependencies(  const std::vector<runcpp2::Data::DependencyInfo*>& dependencies,
@@ -813,7 +813,7 @@ namespace runcpp2
             GetDependencyPath(dependency, scriptDirectory, buildDir, copyPath, sourcePath).DS_TRY();
 
             bool prePopulated = false;
-            PopulateLocalDependency(dependency, copyPath, sourcePath, buildDir, prePopulated).DS_TRY();
+            PopulateDependency(dependency, copyPath, sourcePath, buildDir, prePopulated).DS_TRY();
             
             //Parse the import file
             HandleImport(dependency, scriptInfo.SubstitutionMap, copyPath, inputParameters).DS_TRY();
@@ -1045,6 +1045,28 @@ namespace runcpp2
 
 namespace
 {
+    DS::Result<ghc::filesystem::path> GetLinkUrlFileName(const std::string& url)
+    {
+        size_t lastSlashFoundIndex = url.find_last_of("/");
+        if(lastSlashFoundIndex == std::string::npos)
+            return DS_ERROR_MSG(DS_STR("Invalid link url: ") + url);
+        else
+        {
+            size_t questionMarkFoundIndex = url.find("?", lastSlashFoundIndex);
+            size_t hashMarkFoundIndex = url.find("#", lastSlashFoundIndex);
+            
+            size_t subLen = url.size();
+            if(questionMarkFoundIndex != std::string::npos)
+                subLen = questionMarkFoundIndex;
+            if(hashMarkFoundIndex != std::string::npos && hashMarkFoundIndex < subLen)
+                subLen = hashMarkFoundIndex;
+            
+            subLen -= lastSlashFoundIndex + 1;
+            //+1 for / to not include it
+            return url.substr(lastSlashFoundIndex + 1, subLen);
+        }
+    }
+    
     DS::Result<void> GetDependencyPath( const runcpp2::Data::DependencyInfo& dependency,
                                         const ghc::filesystem::path& scriptDirectory,
                                         const ghc::filesystem::path& buildDir,
@@ -1114,15 +1136,32 @@ namespace
             else
                 outCopyPath = outSourcePath;
         }
+        else if(mpark::get_if<runcpp2::Data::LinkSource>(&currentSource.Source))
+        {
+            const runcpp2::Data::LinkSource* link = 
+                mpark::get_if<runcpp2::Data::LinkSource>(&currentSource.Source);
+            
+            ghc::filesystem::path filename =    link->Filename.empty() ? 
+                                                GetLinkUrlFileName(link->URL).DS_TRY() :
+                                                link->Filename;
+            ghc::filesystem::path stem = filename.stem();
+            if(stem.extension() == ".tar") //Special case for .tar.gz
+                outCopyPath = (buildDir / stem.stem());
+            else
+                outCopyPath = (buildDir / stem);
+            outSourcePath.clear();
+        }
+        else
+            return DS_ERROR_MSG("Unrecognized source type: " + DS_STR(currentSource.Source.index()));
         
         return {};
     }
     
-    DS::Result<void> PopulateLocalDependency(   const runcpp2::Data::DependencyInfo& dependency,
-                                                const ghc::filesystem::path& copyPath,
-                                                const ghc::filesystem::path& sourcePath,
-                                                const ghc::filesystem::path& buildDir,
-                                                bool& outPrePopulated)
+    DS::Result<void> PopulateDependency(const runcpp2::Data::DependencyInfo& dependency,
+                                        const ghc::filesystem::path& copyPath,
+                                        const ghc::filesystem::path& sourcePath,
+                                        const ghc::filesystem::path& buildDir,
+                                        bool& outPrePopulated)
     {
         ssLOG_FUNC_INFO();
         
@@ -1144,6 +1183,19 @@ namespace
             {
                 const runcpp2::Data::GitSource* git = 
                     mpark::get_if<runcpp2::Data::GitSource>(&(dependency.Source.Source));
+                
+                {
+                    std::string dummy;
+                    int returnCode = 0;
+                    if(!runcpp2::RunCommand("git --version", 
+                                            false, 
+                                            buildDir.string(), 
+                                            dummy, 
+                                            returnCode))
+                    {
+                        return DS_ERROR_MSG("Git not found. Git is required for git source");
+                    }
+                }
                 
                 std::string submoduleString;
                 static_assert(  static_cast<int>(runcpp2::Data::SubmoduleInitType::COUNT) == 3, 
@@ -1192,7 +1244,7 @@ namespace
                 }
                 //else
                 //    ssLOG_INFO("Output: \n" << output);
-            }
+            } //if(mpark::get_if<runcpp2::Data::GitSource>(&(dependency.Source.Source)))
             else if(mpark::get_if<runcpp2::Data::LocalSource>(&(dependency.Source.Source)))
             {
                 //Copy/link local directory if it doesn't have any import path
@@ -1201,10 +1253,129 @@ namespace
                     runcpp2::SyncLocalDependency(dependency, sourcePath, copyPath).DS_TRY();
                 }
             }
+            else if(mpark::get_if<runcpp2::Data::LinkSource>(&(dependency.Source.Source)))
+            {
+                const runcpp2::Data::LinkSource* link = 
+                    mpark::get_if<runcpp2::Data::LinkSource>(&(dependency.Source.Source));
+                
+                {
+                    std::string dummy;
+                    int returnCode = 0;
+                    if(!runcpp2::RunCommand("curl --version", 
+                                            false, 
+                                            buildDir.string(), 
+                                            dummy, 
+                                            returnCode))
+                    {
+                        return DS_ERROR_MSG("Curl not found. Curl is required for link source");
+                    }
+                }
+                
+                bool hasTar = false;
+                bool has7z = false;
+                bool hasUnzip = false;
+                {
+                    std::string dummy;
+                    int returnCode = 0;
+                    hasTar = runcpp2::RunCommand(  "tar --version", 
+                                                    true, 
+                                                    buildDir.string(), 
+                                                    dummy, 
+                                                    returnCode);
+                
+                    has7z = runcpp2::RunCommand("7z --help", 
+                                                true, 
+                                                buildDir.string(), 
+                                                dummy, 
+                                                returnCode);
+                    hasUnzip = runcpp2::RunCommand( "unzip -v", 
+                                                    true, 
+                                                    buildDir.string(), 
+                                                    dummy, 
+                                                    returnCode);
+                }
+                
+                {
+                    std::string curlOutput;
+                    int returnCode = 0;
+                    if(!runcpp2::RunCommand("curl -L -O " + link->URL, 
+                                            true,
+                                            buildDir.string(),
+                                            curlOutput,
+                                            returnCode))
+                    {
+                        return DS_ERROR_MSG("Failed to download file with the specified URL with "
+                                            "curl: " + curlOutput);
+                    }
+                }
+                
+                ghc::filesystem::path filename =    link->Filename.empty() ? 
+                                                    GetLinkUrlFileName(link->URL).DS_TRY() :
+                                                    link->Filename;
+                if(!ghc::filesystem::exists(buildDir / filename, e))
+                {
+                    return DS_ERROR_MSG("We expect file " + filename.string() + " to be downloaded "
+                                        "in " + buildDir.string() + " but we can't find it");
+                }
+                
+                std::string ext = filename.extension().string();
+                for(int i = 0; i < ext.size(); ++i)
+                    ext[i] = tolower(ext[i]);
+                
+                if(ext == ".zip")
+                {
+                    int returnCode = 0;
+                    std::string output;
+                    if(!runcpp2::RunCommand("unzip \"" + filename.string() + "\" -d \"" + 
+                                            copyPath.string() + "\"", 
+                                            true,
+                                            buildDir.string(),
+                                            output, 
+                                            returnCode))
+                    {
+                        return DS_ERROR_MSG("Failed to unzip: " + output);
+                    }
+                }
+                else if(ext.size() >= 4 && ext.substr(0, 4) == ".tar")
+                {
+                    if(!ghc::filesystem::exists(copyPath, e))
+                    {
+                        int returnCode = 0;
+                        std::string output;
+                        if(!runcpp2::RunCommand("mkdir \"" + copyPath.string() + "\"",
+                                                true,
+                                                buildDir.string(),
+                                                output, 
+                                                returnCode))
+                        {
+                            return DS_ERROR_MSG("Failed to mkdir: " + output);
+                        }
+                    }
+                    
+                    int returnCode = 0;
+                    std::string output;
+                    if(!runcpp2::RunCommand("tar xvf \"" + filename.string() + "\" -C \"" + 
+                                            copyPath.string() + "\"",
+                                            true,
+                                            buildDir.string(),
+                                            output, 
+                                            returnCode))
+                    {
+                        return DS_ERROR_MSG("Failed to tar: " + output);
+                    }
+                }
+                else
+                    return DS_ERROR_MSG("Unrecognized file extension " + DS_STR(ext) + " from url");
+            } //else if(mpark::get_if<runcpp2::Data::LinkSource>(&(dependency.Source.Source)))
+            else
+            {
+                return DS_ERROR_MSG("Unrecognized source type: " + 
+                                    DS_STR(dependency.Source.Source.index()));
+            }
             
             outPrePopulated = false;
             return {};
-        }
+        } //else
     }
     
     DS::Result<void> 
@@ -1224,11 +1395,11 @@ namespace
                 return DS_ERROR_MSG("Dependency import not resolved before populating.");
             
             bool prePopulated = false;
-            PopulateLocalDependency(*dependencies.at(i),
-                                    ghc::filesystem::path(dependenciesCopiesPaths.at(i)),
-                                    ghc::filesystem::path(dependenciesSourcesPaths.at(i)),
-                                    buildDir,
-                                    prePopulated).DS_TRY();
+            PopulateDependency( *dependencies.at(i),
+                                ghc::filesystem::path(dependenciesCopiesPaths.at(i)),
+                                ghc::filesystem::path(dependenciesSourcesPaths.at(i)),
+                                buildDir,
+                                prePopulated).DS_TRY();
             outPrePopulated.at(i) = prePopulated;
         }
         
