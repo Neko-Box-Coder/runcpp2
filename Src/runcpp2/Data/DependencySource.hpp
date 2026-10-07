@@ -3,6 +3,7 @@
 
 #include "runcpp2/Data/GitSource.hpp"
 #include "runcpp2/Data/LocalSource.hpp"
+#include "runcpp2/Data/LinkSource.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/LibYAML_Wrapper.hpp"
 
@@ -21,7 +22,7 @@ namespace Data
 {
     struct DependencySource
     {
-        mpark::variant<GitSource, LocalSource> Source;
+        mpark::variant<GitSource, LocalSource, LinkSource> Source;
         ghc::filesystem::path ImportPath;
         std::vector<std::shared_ptr<DependencySource>> ImportedSources;
         
@@ -29,10 +30,11 @@ namespace Data
         {
             if(ExistAndHasChild(node, "ImportPath"))
             {
-                DS_UNWRAP_ASSIGN_ACT(   ImportPath, 
-                                        node->GetMapValueScalar<std::string>("ImportPath"), 
-                                        ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
-                
+                ImportPath =    node->GetMapValueScalar<std::string>("ImportPath").DS_TRY_ACT
+                                (
+                                    ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
+                                    return false;
+                                );
                 if(ImportPath.is_absolute())
                 {
                     ssLOG_ERROR("DependencySource: ImportPath must be relative: " << 
@@ -48,6 +50,11 @@ namespace Data
                     ssLOG_ERROR("DependencySource: Both Git and Local sources found");
                     return false;
                 }
+                else if(ExistAndHasChild(node, "Link"))
+                {
+                    ssLOG_ERROR("DependencySource: Both Git and Link sources found");
+                    return false;
+                }
                 
                 GitSource gitSource;
                 YAML::ConstNodePtr gitNode = node->GetMapValueNode("Git");
@@ -60,7 +67,12 @@ namespace Data
             {
                 if(ExistAndHasChild(node, "Git"))
                 {
-                    ssLOG_ERROR("DependencySource: Both Git and Local sources found");
+                    ssLOG_ERROR("DependencySource: Both Local and Git sources found");
+                    return false;
+                }
+                else if(ExistAndHasChild(node, "Link"))
+                {
+                    ssLOG_ERROR("DependencySource: Both Local and Link sources found");
                     return false;
                 }
                 
@@ -69,6 +81,26 @@ namespace Data
                 if(!localSource.ParseYAML_Node(localNode))
                     return false;
                 Source = localSource;
+                return true;
+            }
+            else if(ExistAndHasChild(node, "Link"))
+            {
+                if(ExistAndHasChild(node, "Git"))
+                {
+                    ssLOG_ERROR("DependencySource: Both Link and Git sources found");
+                    return false;
+                }
+                else if(ExistAndHasChild(node, "Local"))
+                {
+                    ssLOG_ERROR("DependencySource: Both Link and Local sources found");
+                    return false;
+                }
+                
+                LinkSource linkSource;
+                YAML::ConstNodePtr localNode = node->GetMapValueNode("Link");
+                if(!linkSource.ParseYAML_Node(localNode))
+                    return false;
+                Source = linkSource;
                 return true;
             }
             //If no source is found, we need to check if it's an imported source. 
@@ -101,6 +133,11 @@ namespace Data
                 const LocalSource* local = mpark::get_if<LocalSource>(&Source);
                 out += local->ToString(indentation);
             }
+            else if(mpark::get_if<LinkSource>(&Source))
+            {
+                const LinkSource* link = mpark::get_if<LinkSource>(&Source);
+                out += link->ToString(indentation);
+            }
             else
             {
                 ssLOG_ERROR("Invalid DependencySource type");
@@ -132,6 +169,17 @@ namespace Data
                     const LocalSource* local = mpark::get_if<LocalSource>(&Source);
                     const LocalSource* otherLocal = mpark::get_if<LocalSource>(&other.Source);
                     return local->Equals(*otherLocal);
+                }
+                else
+                    return false;
+            }
+            else if(mpark::get_if<LinkSource>(&Source))
+            {
+                if(mpark::get_if<LinkSource>(&other.Source))
+                {
+                    const LinkSource* link = mpark::get_if<LinkSource>(&Source);
+                    const LinkSource* otherLink = mpark::get_if<LinkSource>(&other.Source);
+                    return link->Equals(*otherLink);
                 }
                 else
                     return false;
