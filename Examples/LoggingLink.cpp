@@ -18,7 +18,7 @@ Dependencies:
     Source:
         Link:
             URL: "https://github.com/Neko-Box-Coder/ssLogger/archive/refs/heads/main.zip"
-            Filename: "ssLogger-main.zip"
+            # Filename: "ssLogger-main.zip"
     LibraryType: Header
     IncludePaths: ["ssLogger-main/Include"]
 */

@@ -1045,6 +1045,7 @@ namespace runcpp2
 
 namespace
 {
+    /*
     DS::Result<ghc::filesystem::path> GetLinkUrlFileName(const std::string& url)
     {
         size_t lastSlashFoundIndex = url.find_last_of("/");
@@ -1066,6 +1067,7 @@ namespace
             return url.substr(lastSlashFoundIndex + 1, subLen);
         }
     }
+    */
     
     DS::Result<void> GetDependencyPath( const runcpp2::Data::DependencyInfo& dependency,
                                         const ghc::filesystem::path& scriptDirectory,
@@ -1140,15 +1142,7 @@ namespace
         {
             const runcpp2::Data::LinkSource* link = 
                 mpark::get_if<runcpp2::Data::LinkSource>(&currentSource.Source);
-            
-            ghc::filesystem::path filename =    link->Filename.empty() ? 
-                                                GetLinkUrlFileName(link->URL).DS_TRY() :
-                                                link->Filename;
-            ghc::filesystem::path stem = filename.stem();
-            if(stem.extension() == ".tar") //Special case for .tar.gz
-                outCopyPath = (buildDir / stem.stem());
-            else
-                outCopyPath = (buildDir / stem);
+            outCopyPath = buildDir / link->Name;
             outSourcePath.clear();
         }
         else
@@ -1294,6 +1288,8 @@ namespace
                                                     dummy, 
                                                     returnCode);
                 }
+                
+                //TODO(NOW): Update this
                 
                 {
                     std::string curlOutput;

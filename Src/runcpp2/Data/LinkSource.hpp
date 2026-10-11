@@ -17,14 +17,14 @@ namespace Data
     struct LinkSource
     {
         std::string URL;
-        std::string Filename;
+        std::string Name;
         
         inline bool ParseYAML_Node(YAML::ConstNodePtr node)
         {
             std::vector<NodeRequirement> requirements =
             {
                 NodeRequirement("URL", YAML::NodeType::Scalar, true, false),
-                NodeRequirement("Filename", YAML::NodeType::Scalar, false, false),
+                NodeRequirement("Name", YAML::NodeType::Scalar, true, false),
             };
             
             if(!CheckNodeRequirements(node, requirements))
@@ -34,10 +34,7 @@ namespace Data
             }
             
             URL = node->GetMapValueScalar<std::string>("URL").value();
-            if(ExistAndHasChild(node, "Filename"))
-            {
-                Filename = node->GetMapValueScalar<std::string>("Filename").value();
-            }
+            Name = node->GetMapValueScalar<std::string>("Name").value();
             
             return true;
         }
@@ -47,14 +44,13 @@ namespace Data
             std::string out;
             out += indentation + "Link:\n";
             out += indentation + "    URL: " + GetEscapedYAMLString(URL) + "\n";
-            if(!Filename.empty())
-                out += indentation + "    Filename: " + GetEscapedYAMLString(Filename) + "\n";
+            out += indentation + "    Name: " + GetEscapedYAMLString(Name) + "\n";
             return out;
         }
 
         inline bool Equals(const LinkSource& other) const
         {
-            return URL == other.URL;
+            return URL == other.URL && Name == other.Name;
         }
     };
 }
