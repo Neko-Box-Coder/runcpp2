@@ -1289,14 +1289,31 @@ namespace
                                                     returnCode);
                 }
                 
-                //TODO(NOW): Update this
+                ghc::filesystem::create_directories(copyPath, e);
+                DS_ASSERT_TRUE(ghc::filesystem::exists(copyPath, e));
+                
+                //Record the last write time for copyPath, then we can find the file downloaded by 
+                //looking at the file that has the write time past that.
+                ghc::filesystem::file_time_type lastWriteTime = {};
+                for(const ghc::filesystem::directory_entry& entry : 
+                    ghc::filesystem::directory_iterator(copyPath, e))
+                {
+                    if(ghc::filesystem::is_directory(entry.path(), e))
+                        continue;
+                    
+                    ghc::filesystem::file_time_type curWriteTime = 
+                        ghc::filesystem::last_write_time(entry.path(), e);
+                    
+                    if(curWriteTime > lastWriteTime)
+                        lastWriteTime = curWriteTime;
+                }
                 
                 {
                     std::string curlOutput;
                     int returnCode = 0;
                     if(!runcpp2::RunCommand("curl -L -O " + link->URL, 
                                             true,
-                                            buildDir.string(),
+                                            copyPath.string(),
                                             curlOutput,
                                             returnCode))
                     {
@@ -1305,14 +1322,28 @@ namespace
                     }
                 }
                 
-                ghc::filesystem::path filename =    link->Filename.empty() ? 
-                                                    GetLinkUrlFileName(link->URL).DS_TRY() :
-                                                    link->Filename;
-                if(!ghc::filesystem::exists(buildDir / filename, e))
+                bool found = false;
+                ghc::filesystem::path filename = {};
+                
+                for(const ghc::filesystem::directory_entry& entry : 
+                    ghc::filesystem::directory_iterator(copyPath, e))
                 {
-                    return DS_ERROR_MSG("We expect file " + filename.string() + " to be downloaded "
-                                        "in " + buildDir.string() + " but we can't find it");
+                    if(ghc::filesystem::is_directory(entry.path(), e))
+                        continue;
+                    
+                    ghc::filesystem::file_time_type curWriteTime = 
+                        ghc::filesystem::last_write_time(entry.path(), e);
+                    
+                    if(curWriteTime > lastWriteTime)
+                    {
+                        filename = entry.path();
+                        found = true;
+                        break;
+                    }
                 }
+                
+                if(!found)
+                    return DS_ERROR_MSG("Failed to download file from " + link->URL);
                 
                 std::string ext = filename.extension().string();
                 for(int i = 0; i < ext.size(); ++i)
@@ -1322,10 +1353,9 @@ namespace
                 {
                     int returnCode = 0;
                     std::string output;
-                    if(!runcpp2::RunCommand("unzip \"" + filename.string() + "\" -d \"" + 
-                                            copyPath.string() + "\"", 
+                    if(!runcpp2::RunCommand("unzip \"" + filename.filename().string() + "\"", 
                                             true,
-                                            buildDir.string(),
+                                            copyPath.string(),
                                             output, 
                                             returnCode))
                     {
@@ -1334,26 +1364,11 @@ namespace
                 }
                 else if(ext.size() >= 4 && ext.substr(0, 4) == ".tar")
                 {
-                    if(!ghc::filesystem::exists(copyPath, e))
-                    {
-                        int returnCode = 0;
-                        std::string output;
-                        if(!runcpp2::RunCommand("mkdir \"" + copyPath.string() + "\"",
-                                                true,
-                                                buildDir.string(),
-                                                output, 
-                                                returnCode))
-                        {
-                            return DS_ERROR_MSG("Failed to mkdir: " + output);
-                        }
-                    }
-                    
                     int returnCode = 0;
                     std::string output;
-                    if(!runcpp2::RunCommand("tar xvf \"" + filename.string() + "\" -C \"" + 
-                                            copyPath.string() + "\"",
+                    if(!runcpp2::RunCommand("tar xvf \"" + filename.filename().string() + "\"", 
                                             true,
-                                            buildDir.string(),
+                                            copyPath.string(),
                                             output, 
                                             returnCode))
                     {
