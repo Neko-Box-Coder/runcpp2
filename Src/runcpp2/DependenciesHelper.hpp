@@ -1288,6 +1288,9 @@ namespace
                                                     dummy, 
                                                     returnCode);
                 }
+                (void)hasTar;
+                (void)has7z;
+                (void)hasUnzip; //TODO(NOW): Check these ffs
                 
                 ghc::filesystem::create_directories(copyPath, e);
                 DS_ASSERT_TRUE(ghc::filesystem::exists(copyPath, e));
