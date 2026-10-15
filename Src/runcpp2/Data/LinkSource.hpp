@@ -16,7 +16,7 @@ namespace Data
 {
     struct LinkSource
     {
-        std::string URL;
+        std::string URL; //TODO(NOW): Make this Platform profile map
         std::string Name;
         
         inline bool ParseYAML_Node(YAML::ConstNodePtr node)
