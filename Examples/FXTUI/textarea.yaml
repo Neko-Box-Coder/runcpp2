@@ -1,0 +1,18 @@
+SourceFiles: ["./textarea.cpp"]
+
+Dependencies:
+-   Name: fxtui
+    Platforms: [DefaultPlatform]
+    Source:
+        Git:
+            URL: "https://github.com/ArthurSonzogni/FTXUI.git"
+            Branch: v7.0.3
+    LibraryType: Static
+    IncludePaths: ["src", "include"]
+    LinkProperties:
+        SearchLibraryNames: ["component", "dom", "screen"] # NOTE: The order matters here
+        SearchDirectories: ["./output", "./output/Debug"]
+    Setup:
+    -   "mkdir output"
+    -   "cd output && cmake .."
+    -   "cd output && cmake --build . -j 8"
