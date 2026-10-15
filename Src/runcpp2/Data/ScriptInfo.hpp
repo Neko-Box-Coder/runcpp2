@@ -42,10 +42,11 @@ namespace Data
         std::string Language;
         bool PassScriptPath = false;
         BuildType CurrentBuildType = BuildType::EXECUTABLE;
+        
+        //TODO: Add platform container similar to PlatformProfileContainer
         std::unordered_map<PlatformName, std::vector<ProfileName>> RequiredProfiles;
         std::unordered_map<std::string, ParameterValue> Parameters;
         std::unordered_map<std::string, std::string> Variables;
-        
         PlatformProfileContainer<FlagsOverrideInfo> OverrideCompileFlags;
         PlatformProfileContainer<FlagsOverrideInfo> OverrideLinkFlags;
         PlatformProfileContainer<ProcessPaths> OtherFilesToBeCompiled;

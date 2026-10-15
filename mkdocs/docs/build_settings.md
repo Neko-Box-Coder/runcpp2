@@ -390,7 +390,7 @@ ExampleSettings:
         - Description: Parameter for array. If this is true, comma separated values is expected. If this is true, this parameter can only be used in config values that expect an array.
     - `Constraint`
         - Type: `string` or `string[]`
-        - Optional: `true`
+        - Optional: `false`
         - Default: `"None"`
         - Description: Constraint of this parameter value. An array means a multiple choice constraint. Can be one of the following:
             - `"None"`: No constraint
