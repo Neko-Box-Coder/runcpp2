@@ -1,9 +1,8 @@
 - civetweb
 - CLI11
-
-- FTXUI (TODO)
-
+- FTXUI
 - FreeType
+
 - HarfBuzz?
 - imgui
 - GLFW?

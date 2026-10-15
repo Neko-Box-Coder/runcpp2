@@ -1,0 +1,29 @@
+SourceFiles: ["./example1.c"]
+
+OverrideCompileFlags:
+    Unix:
+        DefaultProfile:
+            Remove: "-Og"
+            Append: "-O0"
+
+OverrideLinkFlags:
+    Unix:
+        DefaultProfile:
+            Append: "-lm"
+
+Dependencies:
+-   Name: freetype
+    Platforms: [DefaultPlatform]
+    Source:
+        Git:
+            URL: "https://github.com/freetype/freetype.git"
+            Branch: VER-2-14-3
+    LibraryType: Static
+    IncludePaths: ["output/include", "include"]
+    LinkProperties:
+        SearchLibraryNames: ["freetype"]
+        SearchDirectories: ["./output", "./output/Debug"]
+    Setup:
+    -   "mkdir output"
+    -   "cd output && cmake .. -DFT_DISABLE_BZIP2=ON -DFT_DISABLE_ZLIB=ON -DFT_DISABLE_PNG=ON -DFT_DISABLE_BROTLI=ON"
+    -   "cd output && cmake --build . -j 8"
