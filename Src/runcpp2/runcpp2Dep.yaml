@@ -40,13 +40,18 @@ Dependencies:
             Path: "{RootPath}/External/ssLogger"
     LibraryType: Header
     IncludePaths: ["Include"]
+    Parameters:
+        ssLogger.LogLevel:
+            Optional: true
+            Constraint: ["Debug:5", "Info:4", "Warning:3", "Error:2", "Fatal:1", "None:0"]
+            Default: "Debug"
     CompileProperties:
         Defines:
         -   "ssLOG_ASCII=0"
         -   "ssLOG_CALL_STACK=1"
         -   "ssLOG_CALL_STACK_ONLY=0"
         -   "ssLOG_IMMEDIATE_FLUSH=0"
-        -   "ssLOG_LEVEL=5"
+        -   "ssLOG_LEVEL={ssLogger.LogLevel}"
         -   "ssLOG_LOG_TO_FILE=0"
         -   "ssLOG_SHOW_DATE=0"
         -   "ssLOG_SHOW_FILE_NAME=1"

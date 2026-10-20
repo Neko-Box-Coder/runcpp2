@@ -313,17 +313,27 @@ DS::Result<void> Main(int argc, char** argv)
     if(release)
         params += ";Profile.CompileMode=Release";
     
-    const std::string commonBuildCommand =  runcpp2Path + 
-                                            " build -o " + EscapePath("./TempBuild ") +
-                                            (rebuild ? "--rebuild " : "") +
-                                            (info ? "--log-level info " : "") +
-                                            runcpp2Args + 
-                                            "--parameters \"" + params + "\" ";
+    std::string commonBuildCommand =    runcpp2Path + 
+                                        " build -o " + EscapePath("./TempBuild ") +
+                                        (rebuild ? "--rebuild " : "") +
+                                        (info ? "--log-level info " : "") +
+                                        runcpp2Args + 
+                                        "--parameters \"" + params + "\" ";
     
     RunCommand(commonBuildCommand + EscapePath("./Src/runcpp2/runcpp2.cpp")).DS_TRY();
     
     if(buildTest)
     {
+        if(!params.empty())
+            params += ";";
+        params += "ssLogger.LogLevel=Info";
+        commonBuildCommand =    runcpp2Path + 
+                                " build -o " + EscapePath("./TempBuild ") +
+                                (rebuild ? "--rebuild " : "") +
+                                (info ? "--log-level info " : "") +
+                                runcpp2Args + 
+                                "--parameters \"" + params + "\" ";
+        
         RunCommand(commonBuildCommand + EscapePath("./Src/Tests/BuildsManagerTest.cpp")).DS_TRY();
         RunCommand(commonBuildCommand + EscapePath("./Src/Tests/IncludeManagerTest.cpp")).DS_TRY();
         RunCommand(commonBuildCommand + EscapePath("./Src/Tests/ConfigParsingTest.cpp")).DS_TRY();

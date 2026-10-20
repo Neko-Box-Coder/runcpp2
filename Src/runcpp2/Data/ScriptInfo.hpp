@@ -2,15 +2,16 @@
 #define RUNCPP2_DATA_SCRIPT_INFO_HPP
 
 #include "runcpp2/Data/DependencyInfo.hpp"
-#include "runcpp2/Data/ProfilesFlagsOverride.hpp"
-#include "runcpp2/Data/ProfilesProcessPaths.hpp"
-#include "runcpp2/Data/ProfilesDefines.hpp"
-#include "runcpp2/Data/ProfilesCommands.hpp"
+#include "runcpp2/Data/Commands.hpp"
 #include "runcpp2/Data/BuildType.hpp"
 #include "runcpp2/Data/ParameterValue.hpp"
+#include "runcpp2/Data/ProcessPaths.hpp"
+#include "runcpp2/Data/Defines.hpp"
+#include "runcpp2/Data/FlagsOverrideInfo.hpp"
 #include "runcpp2/ParameterUtil.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
+#include "runcpp2/Data/PlatformProfileContainer.hpp"
 #include "runcpp2/LibYAML_Wrapper.hpp"
 #include "runcpp2/DeferUtil.hpp"
 
@@ -44,16 +45,18 @@ namespace Data
         std::unordered_map<PlatformName, std::vector<ProfileName>> RequiredProfiles;
         std::unordered_map<std::string, ParameterValue> Parameters;
         std::unordered_map<std::string, std::string> Variables;
-        std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideCompileFlags;
-        std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideLinkFlags;
-        std::unordered_map<PlatformName, ProfilesProcessPaths> OtherFilesToBeCompiled;
-        std::unordered_map<PlatformName, ProfilesProcessPaths> IncludePaths;
+        
+        PlatformProfileContainer<FlagsOverrideInfo> OverrideCompileFlags;
+        PlatformProfileContainer<FlagsOverrideInfo> OverrideLinkFlags;
+        PlatformProfileContainer<ProcessPaths> OtherFilesToBeCompiled;
+        PlatformProfileContainer<ProcessPaths> IncludePaths;
         std::vector<DependencyInfo> Dependencies;
-        std::unordered_map<PlatformName, ProfilesDefines> Defines;
-        std::unordered_map<PlatformName, ProfilesCommands> Setup;
-        std::unordered_map<PlatformName, ProfilesCommands> PreBuild;
-        std::unordered_map<PlatformName, ProfilesCommands> PostBuild;
-        std::unordered_map<PlatformName, ProfilesCommands> Cleanup;
+        
+        PlatformProfileContainer<Defines> Defines;
+        PlatformProfileContainer<Commands> Setup;
+        PlatformProfileContainer<Commands> PreBuild;
+        PlatformProfileContainer<Commands> PostBuild;
+        PlatformProfileContainer<Commands> Cleanup;
         
         //Internal tracking
         bool Populated = false;
@@ -181,27 +184,27 @@ namespace Data
                 }
             }
             
-            //TODO: Use DS::Result for ParsePlatformProfileMap
-            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesFlagsOverride>(  clonedNode, 
-                                                                            "OverrideCompileFlags", 
-                                                                            OverrideCompileFlags, 
-                                                                            "OverrideCompileFlags"));
-            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesFlagsOverride>(  clonedNode, 
-                                                                            "OverrideLinkFlags", 
-                                                                            OverrideLinkFlags, 
-                                                                            "OverrideLinkFlags"));
-            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesProcessPaths>(   clonedNode, 
-                                                                            "OtherFilesToBeCompiled", 
-                                                                            OtherFilesToBeCompiled, 
-                                                                            "OtherFilesToBeCompiled"));
-            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesProcessPaths>(   clonedNode, 
-                                                                            "SourceFiles", 
-                                                                            OtherFilesToBeCompiled, 
-                                                                            "SourceFiles"));
-            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesProcessPaths>(   clonedNode, 
-                                                                            "IncludePaths", 
-                                                                            IncludePaths, 
-                                                                            "IncludePaths"));
+            YAML::ConstNodePtr overrideCompileFlagsNode = 
+                clonedNode->GetMapValueNode("OverrideCompileFlags");
+            if(overrideCompileFlagsNode)
+                DS_ASSERT_TRUE(OverrideCompileFlags.ParseYAML_Node(overrideCompileFlagsNode));
+            
+            YAML::ConstNodePtr overrideLinkFlagsNode = 
+                clonedNode->GetMapValueNode("OverrideLinkFlags");
+            if(overrideLinkFlagsNode)
+                DS_ASSERT_TRUE(OverrideLinkFlags.ParseYAML_Node(overrideLinkFlagsNode));
+            
+            YAML::ConstNodePtr otherFilesToBeCompiledNode = 
+                clonedNode->GetMapValueNode("OtherFilesToBeCompiled");
+            if(!otherFilesToBeCompiledNode)
+                otherFilesToBeCompiledNode = clonedNode->GetMapValueNode("SourceFiles");
+            if(!otherFilesToBeCompiledNode)
+                DS_ASSERT_TRUE(OtherFilesToBeCompiled.ParseYAML_Node(otherFilesToBeCompiledNode));
+            
+            YAML::ConstNodePtr includePathsNode = clonedNode->GetMapValueNode("IncludePaths");
+            if(includePathsNode)
+                DS_ASSERT_TRUE(IncludePaths.ParseYAML_Node(includePathsNode));
+            
             if(ExistAndHasChild(clonedNode, "Dependencies"))
             {
                 YAML::ConstNodePtr dependenciesNode = clonedNode->GetMapValueNode("Dependencies");
@@ -220,26 +223,26 @@ namespace Data
                 }
             }
             
-            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesDefines>(clonedNode, 
-                                                                    "Defines", 
-                                                                    Defines, 
-                                                                    "Defines"));
-            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesCommands>(   clonedNode, 
-                                                                        "Setup", 
-                                                                        Setup, 
-                                                                        "Setup"));
-            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesCommands>(   clonedNode, 
-                                                                        "PreBuild", 
-                                                                        PreBuild, 
-                                                                        "PreBuild"));
-            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesCommands>(   clonedNode, 
-                                                                        "PostBuild", 
-                                                                        PostBuild, 
-                                                                        "PostBuild"));
-            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesCommands>(   clonedNode, 
-                                                                        "Cleanup", 
-                                                                        Cleanup, 
-                                                                        "Cleanup"));
+            YAML::ConstNodePtr definesNode = clonedNode->GetMapValueNode("Defines");
+            if(definesNode)
+                DS_ASSERT_TRUE(Defines.ParseYAML_Node(definesNode));
+            
+            YAML::ConstNodePtr setupNode = clonedNode->GetMapValueNode("Setup");
+            if(setupNode)
+                DS_ASSERT_TRUE(Setup.ParseYAML_Node(setupNode));
+            
+            YAML::ConstNodePtr preBuildNode = clonedNode->GetMapValueNode("PreBuild");
+            if(preBuildNode)
+                DS_ASSERT_TRUE(PreBuild.ParseYAML_Node(preBuildNode));
+            
+            YAML::ConstNodePtr postBuildNode = clonedNode->GetMapValueNode("PostBuild");
+            if(postBuildNode)
+                DS_ASSERT_TRUE(PostBuild.ParseYAML_Node(postBuildNode));
+            
+            YAML::ConstNodePtr cleanupNode = clonedNode->GetMapValueNode("Cleanup");
+            if(cleanupNode)
+                DS_ASSERT_TRUE(Cleanup.ParseYAML_Node(cleanupNode));
+            
             return {};
         }
 
@@ -295,46 +298,28 @@ namespace Data
                 }
             }
             
-            if(!OverrideCompileFlags.empty())
+            if(!OverrideCompileFlags.Data.empty())
             {
                 out += indentation + "OverrideCompileFlags:\n";
-                for(auto it = OverrideCompileFlags.begin(); it != OverrideCompileFlags.end(); ++it)
-                {
-                    out += indentation + "    " + it->first + ":\n";
-                    out += it->second.ToString(indentation + "        ");
-                }
+                out += OverrideCompileFlags.ToString(indentation + "    ");
             }
             
-            if(!OverrideLinkFlags.empty())
+            if(!OverrideLinkFlags.Data.empty())
             {
                 out += indentation + "OverrideLinkFlags:\n";
-                for(auto it = OverrideLinkFlags.begin(); it != OverrideLinkFlags.end(); ++it)
-                {
-                    out += indentation + "    " + it->first + ":\n";
-                    out += it->second.ToString(indentation + "        ");
-                }
+                out += OverrideLinkFlags.ToString(indentation + "    ");
             }
             
-            if(!OtherFilesToBeCompiled.empty())
+            if(!OtherFilesToBeCompiled.Data.empty())
             {
                 out += indentation + "SourceFiles:\n";
-                for(auto it = OtherFilesToBeCompiled.begin(); 
-                    it != OtherFilesToBeCompiled.end(); 
-                    ++it)
-                {
-                    out += indentation + "    " + it->first + ":\n";
-                    out += it->second.ToString(indentation + "        ");
-                }
+                out += OtherFilesToBeCompiled.ToString(indentation + "    ");
             }
 
-            if(!IncludePaths.empty())
+            if(!IncludePaths.Data.empty())
             {
                 out += indentation + "IncludePaths:\n";
-                for(auto it = IncludePaths.begin(); it != IncludePaths.end(); ++it)
-                {
-                    out += indentation + "    " + it->first + ":\n";
-                    out += it->second.ToString(indentation + "        ");
-                }
+                out += IncludePaths.ToString(indentation + "    ");
             }
             
             if(!Dependencies.empty())
@@ -350,54 +335,34 @@ namespace Data
                 }
             }
             
-            if(!Defines.empty())
+            if(!Defines.Data.empty())
             {
                 out += indentation + "Defines:\n";
-                for(auto it = Defines.begin(); it != Defines.end(); ++it)
-                {
-                    out += indentation + "    " + it->first + ":\n";
-                    out += it->second.ToString(indentation + "        ");
-                }
+                out += Defines.ToString(indentation + "    ");
             }
             
-            if(!Setup.empty())
+            if(!Setup.Data.empty())
             {
                 out += indentation + "Setup:\n";
-                for(auto it = Setup.begin(); it != Setup.end(); ++it)
-                {
-                    out += indentation + "    " + it->first + ":\n";
-                    out += it->second.ToString(indentation + "        ");
-                }
+                out += Setup.ToString(indentation + "    ");
             }
             
-            if(!PreBuild.empty())
+            if(!PreBuild.Data.empty())
             {
                 out += indentation + "PreBuild:\n";
-                for(auto it = PreBuild.begin(); it != PreBuild.end(); ++it)
-                {
-                    out += indentation + "    " + it->first + ":\n";
-                    out += it->second.ToString(indentation + "        ");
-                }
+                out += PreBuild.ToString(indentation + "    ");
             }
             
-            if(!PostBuild.empty())
+            if(!PostBuild.Data.empty())
             {
                 out += indentation + "PostBuild:\n";
-                for(auto it = PostBuild.begin(); it != PostBuild.end(); ++it)
-                {
-                    out += indentation + "    " + it->first + ":\n";
-                    out += it->second.ToString(indentation + "        ");
-                }
+                out += PostBuild.ToString(indentation + "    ");
             }
             
-            if(!Cleanup.empty())
+            if(!Cleanup.Data.empty())
             {
                 out += indentation + "Cleanup:\n";
-                for(auto it = Cleanup.begin(); it != Cleanup.end(); ++it)
-                {
-                    out += indentation + "    " + it->first + ":\n";
-                    out += it->second.ToString(indentation + "        ");
-                }
+                out += Cleanup.ToString(indentation + "    ");
             }
             
             return out;
@@ -410,11 +375,7 @@ namespace Data
                 RequiredProfiles.size() != other.RequiredProfiles.size() ||
                 Parameters.size() != other.Parameters.size() ||
                 Variables.size() != other.Variables.size() ||
-                OverrideCompileFlags.size() != other.OverrideCompileFlags.size() ||
-                OtherFilesToBeCompiled.size() != other.OtherFilesToBeCompiled.size() ||
-                IncludePaths.size() != other.IncludePaths.size() ||
                 Dependencies.size() != other.Dependencies.size() ||
-                Defines.size() != other.Defines.size() ||
                 Populated != other.Populated)
             {
                 return true;
@@ -447,32 +408,14 @@ namespace Data
                 }
             }
 
-            for(const auto& it : OverrideCompileFlags)
-            {
-                if( other.OverrideCompileFlags.count(it.first) == 0 || 
-                    !other.OverrideCompileFlags.at(it.first).Equals(it.second))
-                {
-                    return true;
-                }
-            }
+            if(!OverrideCompileFlags.Equals(other.OverrideCompileFlags))
+                return false;
+            
+            if(!OtherFilesToBeCompiled.Equals(other.OtherFilesToBeCompiled))
+                return false;
 
-            for(const auto& it : OtherFilesToBeCompiled)
-            {
-                if( other.OtherFilesToBeCompiled.count(it.first) == 0 || 
-                    !other.OtherFilesToBeCompiled.at(it.first).Equals(it.second))
-                {
-                    return true;
-                }
-            }
-
-            for(const auto& it : IncludePaths)
-            {
-                if( other.IncludePaths.count(it.first) == 0 || 
-                    !other.IncludePaths.at(it.first).Equals(it.second))
-                {
-                    return true;
-                }
-            }
+            if(!IncludePaths.Equals(other.IncludePaths))
+                return false;
 
             for(size_t i = 0; i < Dependencies.size(); ++i)
             {
@@ -480,11 +423,8 @@ namespace Data
                     return true;
             }
 
-            for(const auto& it : Defines)
-            {
-                if(other.Defines.count(it.first) == 0 || !other.Defines.at(it.first).Equals(it.second))
-                    return true;
-            }
+            if(!Defines.Equals(other.Defines))
+                return false;
 
             return false;
         }
@@ -497,16 +437,7 @@ namespace Data
                 RequiredProfiles.size() != other.RequiredProfiles.size() ||
                 Parameters.size() != other.Parameters.size() ||
                 Variables.size() != other.Variables.size() ||
-                OverrideCompileFlags.size() != other.OverrideCompileFlags.size() ||
-                OverrideLinkFlags.size() != other.OverrideLinkFlags.size() ||
-                OtherFilesToBeCompiled.size() != other.OtherFilesToBeCompiled.size() ||
-                IncludePaths.size() != other.IncludePaths.size() ||
                 Dependencies.size() != other.Dependencies.size() ||
-                Defines.size() != other.Defines.size() ||
-                Setup.size() != other.Setup.size() ||
-                PreBuild.size() != other.PreBuild.size() ||
-                PostBuild.size() != other.PostBuild.size() ||
-                Cleanup.size() != other.Cleanup.size() ||
                 Populated != other.Populated)
             {
                 return false;
@@ -539,41 +470,17 @@ namespace Data
                 }
             }
 
-            for(const auto& it : OverrideCompileFlags)
-            {
-                if( other.OverrideCompileFlags.count(it.first) == 0 || 
-                    !other.OverrideCompileFlags.at(it.first).Equals(it.second))
-                {
-                    return false;
-                }
-            }
+            if(!OverrideCompileFlags.Equals(other.OverrideCompileFlags))
+                return false;
 
-            for(const auto& it : OverrideLinkFlags)
-            {
-                if( other.OverrideLinkFlags.count(it.first) == 0 || 
-                    !other.OverrideLinkFlags.at(it.first).Equals(it.second))
-                {
-                    return false;
-                }
-            }
-
-            for(const auto& it : OtherFilesToBeCompiled)
-            {
-                if( other.OtherFilesToBeCompiled.count(it.first) == 0 || 
-                    !other.OtherFilesToBeCompiled.at(it.first).Equals(it.second))
-                {
-                    return false;
-                }
-            }
-
-            for(const auto& it : IncludePaths)
-            {
-                if( other.IncludePaths.count(it.first) == 0 || 
-                    !other.IncludePaths.at(it.first).Equals(it.second))
-                {
-                    return false;
-                }
-            }
+            if(!OverrideLinkFlags.Equals(other.OverrideLinkFlags))
+                return false;
+            
+            if(!OtherFilesToBeCompiled.Equals(other.OtherFilesToBeCompiled))
+                return false;
+            
+            if(!IncludePaths.Equals(other.IncludePaths))
+                return false;
 
             for(size_t i = 0; i < Dependencies.size(); ++i)
             {
@@ -581,41 +488,20 @@ namespace Data
                     return false;
             }
 
-            for(const auto& it : Defines)
-            {
-                if(other.Defines.count(it.first) == 0 || !other.Defines.at(it.first).Equals(it.second))
-                    return false;
-            }
+            if(!Defines.Equals(other.Defines))
+                return false;
 
-            for(const auto& it : Setup)
-            {
-                if(other.Setup.count(it.first) == 0 || !other.Setup.at(it.first).Equals(it.second))
-                    return false;
-            }
-
-            for(const auto& it : PreBuild)
-            {
-                if( other.PreBuild.count(it.first) == 0 || 
-                    !other.PreBuild.at(it.first).Equals(it.second))
-                {
-                    return false;
-                }
-            }
-
-            for(const auto& it : PostBuild)
-            {
-                if( other.PostBuild.count(it.first) == 0 || 
-                    !other.PostBuild.at(it.first).Equals(it.second))
-                {
-                    return false;
-                }
-            }
-
-            for(const auto& it : Cleanup)
-            {
-                if(other.Cleanup.count(it.first) == 0 || !other.Cleanup.at(it.first).Equals(it.second))
-                    return false;
-            }
+            if(!Setup.Equals(other.Setup))
+                return false;
+            
+            if(!PreBuild.Equals(other.PreBuild))
+                return false;
+            
+            if(!PostBuild.Equals(other.PostBuild))
+                return false;
+            
+            if(!Cleanup.Equals(other.Cleanup))
+                return false;
             
             return true;
         }
