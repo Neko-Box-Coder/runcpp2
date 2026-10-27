@@ -152,10 +152,10 @@ namespace Data
                     std::vector<std::string> profileNames;
                     profile.GetNames(profileNames);
                     
-                    for(int i = 0; i < profileNames.size(); ++i)
+                    for(int j = 0; j < profileNames.size(); ++j)
                     {
-                        if(profileMap.count(profileNames.at(i)))
-                            return &profileMap.at(profileNames.at(i));
+                        if(profileMap.count(profileNames.at(j)))
+                            return &profileMap.at(profileNames.at(j));
                     }
                 }
             }
