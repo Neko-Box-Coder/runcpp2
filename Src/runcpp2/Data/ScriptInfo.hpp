@@ -11,6 +11,7 @@
 #include "runcpp2/ParameterUtil.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
+#include "runcpp2/Data/PlatformProfileContainer.hpp"
 #include "runcpp2/LibYAML_Wrapper.hpp"
 #include "runcpp2/DeferUtil.hpp"
 
@@ -44,8 +45,14 @@ namespace Data
         std::unordered_map<PlatformName, std::vector<ProfileName>> RequiredProfiles;
         std::unordered_map<std::string, ParameterValue> Parameters; //TODO(NOW): Make this Platform profile map
         std::unordered_map<std::string, std::string> Variables;     //TODO(NOW): Make this Platform profile map
-        std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideCompileFlags;
-        std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideLinkFlags;
+        
+        
+        //std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideCompileFlags;
+        
+        PlatformProfileContainer<FlagsOverrideInfo> OverrideCompileFlags;
+        PlatformProfileContainer<FlagsOverrideInfo> OverrideLinkFlags;
+        
+        //std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideLinkFlags;
         std::unordered_map<PlatformName, ProfilesProcessPaths> OtherFilesToBeCompiled;
         std::unordered_map<PlatformName, ProfilesProcessPaths> IncludePaths;
         std::vector<DependencyInfo> Dependencies;
@@ -182,14 +189,27 @@ namespace Data
             }
             
             //TODO: Use DS::Result for ParsePlatformProfileMap
-            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesFlagsOverride>(  clonedNode, 
-                                                                            "OverrideCompileFlags", 
-                                                                            OverrideCompileFlags, 
-                                                                            "OverrideCompileFlags"));
-            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesFlagsOverride>(  clonedNode, 
-                                                                            "OverrideLinkFlags", 
-                                                                            OverrideLinkFlags, 
-                                                                            "OverrideLinkFlags"));
+            //DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesFlagsOverride>(  clonedNode, 
+            //                                                                "OverrideCompileFlags", 
+            //                                                                OverrideCompileFlags, 
+            //                                                                "OverrideCompileFlags"));
+            
+            YAML::ConstNodePtr overrideCompileFlagsNode = 
+                clonedNode->GetMapValueNode("OverrideCompileFlags");
+            if(overrideCompileFlagsNode)
+                DS_ASSERT_TRUE(OverrideCompileFlags.ParseYAML_Node(overrideCompileFlagsNode));
+            
+            YAML::ConstNodePtr overrideLinkFlagsNode = 
+                clonedNode->GetMapValueNode("OverrideLinkFlags");
+            if(overrideLinkFlagsNode)
+                DS_ASSERT_TRUE(OverrideLinkFlags.ParseYAML_Node(overrideLinkFlagsNode));
+            
+            //DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesFlagsOverride>(  clonedNode, 
+            //                                                                "OverrideLinkFlags", 
+            //                                                                OverrideLinkFlags, 
+            //                                                                "OverrideLinkFlags"));
+            
+            
             DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesProcessPaths>(   clonedNode, 
                                                                             "OtherFilesToBeCompiled", 
                                                                             OtherFilesToBeCompiled, 
@@ -295,24 +315,30 @@ namespace Data
                 }
             }
             
-            if(!OverrideCompileFlags.empty())
+            //if(!OverrideCompileFlags.empty())
+            if(!OverrideCompileFlags.Data.empty())
             {
                 out += indentation + "OverrideCompileFlags:\n";
-                for(auto it = OverrideCompileFlags.begin(); it != OverrideCompileFlags.end(); ++it)
-                {
-                    out += indentation + "    " + it->first + ":\n";
-                    out += it->second.ToString(indentation + "        ");
-                }
+                out += OverrideCompileFlags.ToString(indentation + "    ");
+                
+                //for(auto it = OverrideCompileFlags.begin(); it != OverrideCompileFlags.end(); ++it)
+                //{
+                //    out += indentation + "    " + it->first + ":\n";
+                //    out += it->second.ToString(indentation + "        ");
+                //}
             }
             
-            if(!OverrideLinkFlags.empty())
+            //if(!OverrideLinkFlags.empty())
+            if(!OverrideLinkFlags.Data.empty())
             {
                 out += indentation + "OverrideLinkFlags:\n";
-                for(auto it = OverrideLinkFlags.begin(); it != OverrideLinkFlags.end(); ++it)
-                {
-                    out += indentation + "    " + it->first + ":\n";
-                    out += it->second.ToString(indentation + "        ");
-                }
+                out += OverrideLinkFlags.ToString(indentation + "    ");
+                
+                //for(auto it = OverrideLinkFlags.begin(); it != OverrideLinkFlags.end(); ++it)
+                //{
+                //    out += indentation + "    " + it->first + ":\n";
+                //    out += it->second.ToString(indentation + "        ");
+                //}
             }
             
             if(!OtherFilesToBeCompiled.empty())
@@ -410,7 +436,9 @@ namespace Data
                 RequiredProfiles.size() != other.RequiredProfiles.size() ||
                 Parameters.size() != other.Parameters.size() ||
                 Variables.size() != other.Variables.size() ||
-                OverrideCompileFlags.size() != other.OverrideCompileFlags.size() ||
+                
+                //OverrideCompileFlags.size() != other.OverrideCompileFlags.size() ||
+                
                 OtherFilesToBeCompiled.size() != other.OtherFilesToBeCompiled.size() ||
                 IncludePaths.size() != other.IncludePaths.size() ||
                 Dependencies.size() != other.Dependencies.size() ||
@@ -447,14 +475,17 @@ namespace Data
                 }
             }
 
-            for(const auto& it : OverrideCompileFlags)
-            {
-                if( other.OverrideCompileFlags.count(it.first) == 0 || 
-                    !other.OverrideCompileFlags.at(it.first).Equals(it.second))
-                {
-                    return true;
-                }
-            }
+            if(!OverrideCompileFlags.Equals(other.OverrideCompileFlags))
+                return false;
+            
+            //for(const auto& it : OverrideCompileFlags)
+            //{
+            //    if( other.OverrideCompileFlags.count(it.first) == 0 || 
+            //        !other.OverrideCompileFlags.at(it.first).Equals(it.second))
+            //    {
+            //        return true;
+            //    }
+            //}
 
             for(const auto& it : OtherFilesToBeCompiled)
             {
@@ -497,8 +528,12 @@ namespace Data
                 RequiredProfiles.size() != other.RequiredProfiles.size() ||
                 Parameters.size() != other.Parameters.size() ||
                 Variables.size() != other.Variables.size() ||
-                OverrideCompileFlags.size() != other.OverrideCompileFlags.size() ||
-                OverrideLinkFlags.size() != other.OverrideLinkFlags.size() ||
+                
+                
+                //OverrideCompileFlags.size() != other.OverrideCompileFlags.size() ||
+                //OverrideLinkFlags.size() != other.OverrideLinkFlags.size() ||
+                
+                
                 OtherFilesToBeCompiled.size() != other.OtherFilesToBeCompiled.size() ||
                 IncludePaths.size() != other.IncludePaths.size() ||
                 Dependencies.size() != other.Dependencies.size() ||
@@ -539,23 +574,29 @@ namespace Data
                 }
             }
 
-            for(const auto& it : OverrideCompileFlags)
-            {
-                if( other.OverrideCompileFlags.count(it.first) == 0 || 
-                    !other.OverrideCompileFlags.at(it.first).Equals(it.second))
-                {
-                    return false;
-                }
-            }
+            if(!OverrideCompileFlags.Equals(other.OverrideCompileFlags))
+                return false;
 
-            for(const auto& it : OverrideLinkFlags)
-            {
-                if( other.OverrideLinkFlags.count(it.first) == 0 || 
-                    !other.OverrideLinkFlags.at(it.first).Equals(it.second))
-                {
-                    return false;
-                }
-            }
+            //for(const auto& it : OverrideCompileFlags)
+            //{
+            //    if( other.OverrideCompileFlags.count(it.first) == 0 || 
+            //        !other.OverrideCompileFlags.at(it.first).Equals(it.second))
+            //    {
+            //        return false;
+            //    }
+            //}
+
+
+            if(!OverrideLinkFlags.Equals(other.OverrideLinkFlags))
+                return false;
+            //for(const auto& it : OverrideLinkFlags)
+            //{
+            //    if( other.OverrideLinkFlags.count(it.first) == 0 || 
+            //        !other.OverrideLinkFlags.at(it.first).Equals(it.second))
+            //    {
+            //        return false;
+            //    }
+            //}
 
             for(const auto& it : OtherFilesToBeCompiled)
             {

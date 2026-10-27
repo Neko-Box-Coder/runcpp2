@@ -423,20 +423,7 @@ namespace runcpp2
         if(lastInfo != nullptr)
         {
             //Relink if there are any changes to the link flags
-            {
-                const Data::ProfilesFlagsOverride* lastLinkFlags = 
-                    runcpp2::GetValueFromPlatformMap(lastInfo->OverrideLinkFlags);
-                const Data::ProfilesFlagsOverride* currentLinkFlags = 
-                    runcpp2::GetValueFromPlatformMap(scriptInfo.OverrideLinkFlags);
-                
-                outRelinkNeeded =   (lastLinkFlags == nullptr) != (currentLinkFlags == nullptr) ||
-                                    (
-                                        lastLinkFlags != nullptr && 
-                                        currentLinkFlags != nullptr && 
-                                        !lastLinkFlags->Equals(*currentLinkFlags)
-                                    );
-            }
-            
+            outRelinkNeeded = lastInfo->OverrideLinkFlags.PlatformEquals(scriptInfo.OverrideLinkFlags);
             outAllRecompileNeeded = scriptInfo.IsAllCompiledCacheInvalidated(*lastInfo);
 
             //Check dependencies
