@@ -670,7 +670,7 @@ namespace
             std::string linkFlags = (*currentOutputTypeInfo).Flags;
             //AppendAndRemoveFlags(profile, scriptInfo.OverrideLinkFlags, linkFlags);
             AppendAndRemoveFlags2(profile, scriptInfo.OverrideLinkFlags, linkFlags);
-            (void)AppendAndRemoveFlags;
+            (void)&AppendAndRemoveFlags;
             
             if(!additionalLinkFlags.empty())
             {
