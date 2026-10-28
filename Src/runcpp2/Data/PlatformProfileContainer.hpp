@@ -141,6 +141,18 @@ namespace Data
             return true;
         }
         
+        inline bool HasValueForCurrentPlatform() const
+        {
+            std::vector<std::string> platformNames = runcpp2::GetPlatformNames();
+            for(int i = 0; i < platformNames.size(); ++i)
+            {
+                if(Data.count(platformNames.at(i)) > 0)
+                    return true;
+            }
+            
+            return false;
+        }
+        
         inline const T* GetValueFromProfile(const runcpp2::Data::Profile& profile) const
         {
             std::vector<std::string> platformNames = runcpp2::GetPlatformNames();

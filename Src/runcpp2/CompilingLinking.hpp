@@ -12,8 +12,6 @@
 #include "runcpp2/Data/FilesTypesInfo.hpp"
 #include "runcpp2/Data/FlagsOverrideInfo.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
-#include "runcpp2/Data/ProfilesDefines.hpp"
-#include "runcpp2/Data/ProfilesFlagsOverride.hpp"
 #include "runcpp2/Data/StageInfo.hpp"
 
 #include "runcpp2/PlatformUtil.hpp"
@@ -38,14 +36,11 @@
 
 namespace
 {
-    using OverrideFlags = 
-        std::unordered_map<PlatformName, runcpp2::Data::ProfilesFlagsOverride>;
-
-    using OverrideFlags2 = runcpp2::Data::PlatformProfileContainer<runcpp2::Data::FlagsOverrideInfo>;
+    using OverrideFlags = runcpp2::Data::PlatformProfileContainer<runcpp2::Data::FlagsOverrideInfo>;
 
     //TODO: Add option to add/remove flags for each run option (executable, shared, static)
-    void AppendAndRemoveFlags2( const runcpp2::Data::Profile& profile,
-                                const OverrideFlags2& overrideFlags,
+    void AppendAndRemoveFlags(  const runcpp2::Data::Profile& profile,
+                                const OverrideFlags& overrideFlags,
                                 std::string& inOutFlags)
     {
         ssLOG_FUNC_DEBUG();
@@ -53,58 +48,6 @@ namespace
         const runcpp2::Data::FlagsOverrideInfo* profileFlagsOverride = 
             overrideFlags.GetValueFromProfile(profile);
             
-        if(!profileFlagsOverride)
-        {
-            ssLOG_DEBUG("No override flags found for current profile");
-            return;
-        }
-        
-        std::vector<std::string> flagsToRemove; 
-        runcpp2::SplitString(profileFlagsOverride->Remove, " ", flagsToRemove);
-        
-        for(int i = 0; i < flagsToRemove.size(); ++i)
-        {
-            const std::string currentFlagToRemove = flagsToRemove.at(i);
-            std::size_t foundIndex = inOutFlags.find(currentFlagToRemove);
-            
-            if(foundIndex != std::string::npos)
-            {
-                //Remove the trailing space as well if the flag is in the middle
-                if(foundIndex + currentFlagToRemove.size() + 1 <= inOutFlags.size())
-                    inOutFlags.erase(foundIndex, currentFlagToRemove.size() + 1);
-                else
-                    inOutFlags.erase(foundIndex, currentFlagToRemove.size());
-                
-                continue;
-            }
-            
-            ssLOG_WARNING("Flag to remove not found: " << currentFlagToRemove);
-        }
-        
-        runcpp2::TrimRight(inOutFlags);
-        inOutFlags += " " + profileFlagsOverride->Append;
-        runcpp2::TrimRight(inOutFlags);
-    }
-    
-    //TODO: Add option to add/remove flags for each run option (executable, shared, static)
-    void AppendAndRemoveFlags(  const runcpp2::Data::Profile& profile,
-                                const OverrideFlags overrideFlags,
-                                std::string& inOutFlags)
-    {
-        ssLOG_FUNC_DEBUG();
-        
-        if(!runcpp2::HasValueFromPlatformMap(overrideFlags))
-        {
-            ssLOG_DEBUG("No override flags found for current platform");
-            return;
-        }
-        
-        const runcpp2::Data::ProfilesFlagsOverride& currentFlagsOverride = 
-            *runcpp2::GetValueFromPlatformMap(overrideFlags);
-        
-        const runcpp2::Data::FlagsOverrideInfo* profileFlagsOverride = 
-            runcpp2::GetValueFromProfileMap(profile, currentFlagsOverride.FlagsOverrides);
-        
         if(!profileFlagsOverride)
         {
             ssLOG_DEBUG("No override flags found for current profile");
@@ -230,8 +173,7 @@ namespace
         //Compile flags
         {
             std::string compileFlags = (*currentOutputTypeInfo).Flags;
-            //AppendAndRemoveFlags(profile, scriptInfo.OverrideCompileFlags, compileFlags);
-            AppendAndRemoveFlags2(profile, scriptInfo.OverrideCompileFlags, compileFlags);
+            AppendAndRemoveFlags(profile, scriptInfo.OverrideCompileFlags, compileFlags);
             substitutionMapTemplate["{Stage.CompileFlags}"] = {compileFlags};
         }
         
@@ -256,19 +198,15 @@ namespace
         substitutionMapTemplate["{Stage.DefineName}"] = {};
         substitutionMapTemplate["{Stage.DefineValue}"] = {};
         substitutionMapTemplate["{Stage.DefineNameOnly}"] = {};
-        if(runcpp2::HasValueFromPlatformMap(scriptInfo.Defines))
         {
-            const runcpp2::Data::ProfilesDefines& platformDefines = 
-                *runcpp2::GetValueFromPlatformMap(scriptInfo.Defines);
-            
-            const std::vector<runcpp2::Data::Define>* profileDefines = 
-                runcpp2::GetValueFromProfileMap(profile, platformDefines.Defines);
+            const runcpp2::Data::Defines* profileDefines = 
+                scriptInfo.Defines.GetValueFromProfile(profile);
             
             if(profileDefines)
             {
-                for(int i = 0; i < profileDefines->size(); ++i)
+                for(int i = 0; i < profileDefines->CurDefines.size(); ++i)
                 {
-                    const runcpp2::Data::Define& define = profileDefines->at(i);
+                    const runcpp2::Data::Define& define = profileDefines->CurDefines.at(i);
                     if(define.HasValue)
                     {
                         substitutionMapTemplate["{Stage.DefineName}"].push_back(define.Name);
@@ -668,9 +606,7 @@ namespace
         //Link Flags
         {
             std::string linkFlags = (*currentOutputTypeInfo).Flags;
-            //AppendAndRemoveFlags(profile, scriptInfo.OverrideLinkFlags, linkFlags);
-            AppendAndRemoveFlags2(profile, scriptInfo.OverrideLinkFlags, linkFlags);
-            (void)&AppendAndRemoveFlags;
+            AppendAndRemoveFlags(profile, scriptInfo.OverrideLinkFlags, linkFlags);
             
             if(!additionalLinkFlags.empty())
             {

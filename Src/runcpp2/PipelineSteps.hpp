@@ -2,7 +2,6 @@
 #define RUNCPP2_PIPELINE_STEPS_HPP
 
 #include "runcpp2/Data/Profile.hpp"
-#include "runcpp2/Data/ProfilesCommands.hpp"
 #include "runcpp2/Data/ScriptInfo.hpp"
 #include "runcpp2/Data/BuildTypeHelper.hpp"
 #include "runcpp2/Data/BuildType.hpp"
@@ -10,8 +9,7 @@
 #include "runcpp2/Data/FileProperties.hpp"
 #include "runcpp2/Data/FilesTypesInfo.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
-#include "runcpp2/Data/ProfilesFlagsOverride.hpp"
-#include "runcpp2/Data/ProfilesProcessPaths.hpp"
+#include "runcpp2/Data/ProcessPaths.hpp"
 
 #include "runcpp2/BuildsManager.hpp"
 #include "runcpp2/IncludeManager.hpp"
@@ -126,38 +124,26 @@ namespace runcpp2
         return {};
     }
     
-    inline DS::Result<void> RunProfileCommands( const Data::ProfilesCommands* commands,
-                                                const Data::Profile& profile,
-                                                const std::string& workingDir,
-                                                const std::string& commandType)
+    inline DS::Result<void> RunCommands(const Data::Commands& commands, 
+                                        const std::string& workingDir,
+                                        const std::string& commandType)
     {
-        ssLOG_FUNC_INFO();
-        
-        if(commands != nullptr)
+        for(int i = 0; i < commands.Steps.size(); ++i)
         {
-            const std::vector<std::string>* commandSteps = 
-                runcpp2::GetValueFromProfileMap(profile, commands->CommandSteps);
-                
-            if(commandSteps != nullptr)
+            std::string output;
+            int returnCode = 0;
+            
+            if(!runcpp2::RunCommand(commands.Steps.at(i), true, workingDir, output, returnCode))
             {
-                for(const std::string& cmd : *commandSteps)
-                {
-                    std::string output;
-                    int returnCode = 0;
-                    
-                    if(!runcpp2::RunCommand(cmd, true, workingDir, output, returnCode))
-                    {
-                        std::string errorMsg =  commandType + " command failed: " + cmd + 
-                                                " with return code " + DS_STR(returnCode) + "\n";
-                        errorMsg += "Was trying to run: " + cmd + "\n";
-                        errorMsg += "Output: \n" + output;
-                        return DS_ERROR_MSG(errorMsg);
-                    }
-                    
-                    ssLOG_INFO(commandType << " command ran: \n" << cmd);
-                    ssLOG_INFO(commandType << " command output: \n" << output);
-                }
+                std::string errorMsg =  commandType + " command failed: " + commands.Steps.at(i) + 
+                                        " with return code " + DS_STR(returnCode) + "\n";
+                errorMsg += "Was trying to run: " + commands.Steps.at(i) + "\n";
+                errorMsg += "Output: \n" + output;
+                return DS_ERROR_MSG(errorMsg);
             }
+            
+            ssLOG_INFO(commandType << " command ran: \n" << commands.Steps.at(i));
+            ssLOG_INFO(commandType << " command output: \n" << output);
         }
         
         return {};
@@ -259,29 +245,21 @@ namespace runcpp2
     {
         ssLOG_FUNC_INFO();
         
-        const Data::ProfilesCommands* cleanupCommands = 
-            runcpp2::GetValueFromPlatformMap(scriptInfo.Cleanup);
-                
+        const Data::Commands* cleanupCommands = scriptInfo.Cleanup.GetValueFromProfile(profile);
         if(cleanupCommands != nullptr)
         {
-            const std::vector<std::string>* commands = 
-                runcpp2::GetValueFromProfileMap(profile, cleanupCommands->CommandSteps);
-            if(commands != nullptr)
+            for(const std::string& cmd : cleanupCommands->Steps)
             {
-                for(const std::string& cmd : *commands)
+                std::string output;
+                int returnCode = 0;
+                if(!runcpp2::RunCommand(cmd, true, scriptDirectory, output, returnCode))
                 {
-                    std::string output;
-                    int returnCode = 0;
-                    
-                    if(!runcpp2::RunCommand(cmd, true, scriptDirectory, output, returnCode))
-                    {
-                        return DS_ERROR_MSG("Cleanup command failed: " + cmd + " with return code " + 
-                                            DS_STR(returnCode) + "\nOutput: \n"  + output);
-                    }
-                    
-                    ssLOG_INFO("Cleanup command ran: \n" << cmd);
-                    ssLOG_INFO("Cleanup command output: \n" << output);
+                    return DS_ERROR_MSG("Cleanup command failed: " + cmd + " with return code " + 
+                                        DS_STR(returnCode) + "\nOutput: \n"  + output);
                 }
+                
+                ssLOG_INFO("Cleanup command ran: \n" << cmd);
+                ssLOG_INFO("Cleanup command output: \n" << output);
             }
         }
         
@@ -367,12 +345,10 @@ namespace runcpp2
         //Run Setup commands if we don't have previous build
         if(!ghc::filesystem::exists(lastScriptInfoFilePath, e))
         {
-            const Data::ProfilesCommands* setupCommands = 
-                runcpp2::GetValueFromPlatformMap(scriptInfo.Setup);
-                
+            const Data::Commands* setupCommands = scriptInfo.Setup.GetValueFromProfile(profile);
             if(setupCommands != nullptr)
             {
-                RunProfileCommands(setupCommands, profile, scriptDirectory.string(), "Setup").DS_TRY();
+                RunCommands(*setupCommands, scriptDirectory.string(), "Setup").DS_TRY();
             }
         }
         
@@ -657,11 +633,10 @@ namespace runcpp2
                                             const ghc::filesystem::path& buildDir)
     {
         ssLOG_FUNC_INFO();
-        
-        const Data::ProfilesCommands* preBuildCommands = 
-            runcpp2::GetValueFromPlatformMap(scriptInfo.PreBuild);
-        
-        RunProfileCommands(preBuildCommands, profile, buildDir.string(), "PreBuild").DS_TRY();
+        const Data::Commands* commands = scriptInfo.PreBuild.GetValueFromProfile(profile);
+        if(!commands)
+            return {};
+        RunCommands(*commands, buildDir.string(), "PreBuild").DS_TRY();
         return {};
     }
 
@@ -670,11 +645,10 @@ namespace runcpp2
                                             const ghc::filesystem::path& buildDir)
     {
         ssLOG_FUNC_INFO();
-        
-        const Data::ProfilesCommands* postBuildCommands = 
-            GetValueFromPlatformMap(scriptInfo.PostBuild);
-        
-        RunProfileCommands(postBuildCommands, profile, buildDir.string(), "PostBuild").DS_TRY();
+        const Data::Commands* commands = scriptInfo.PostBuild.GetValueFromProfile(profile);
+        if(!commands)
+            return {};
+        RunCommands(*commands, buildDir.string(), "PostBuild").DS_TRY();
         return {};
     }
 
@@ -788,28 +762,11 @@ namespace runcpp2
         
         do
         {
-            const Data::ProfilesProcessPaths* compileFiles = 
-                GetValueFromPlatformMap(scriptInfo.OtherFilesToBeCompiled);
-            
-            if(compileFiles == nullptr)
+            const Data::ProcessPaths* compileFiles = scriptInfo .OtherFilesToBeCompiled
+                                                                .GetValueFromProfile(currentProfile);
+            if(!compileFiles)
             {
-                ssLOG_INFO("No other files to be compiled files current platform");
-                
-                if(!scriptInfo.OtherFilesToBeCompiled.empty())
-                {
-                    ssLOG_WARNING(  "Other source files are present, "
-                                    "but none are included for current configuration. "
-                                    "Is this intended?");
-                }
-                break;
-            }
-            
-            const std::vector<ghc::filesystem::path>* profileCompileFiles = 
-                GetValueFromProfileMap(currentProfile, compileFiles->Paths);
-                
-            if(!profileCompileFiles)
-            {
-                ssLOG_INFO("No other files to be compiled for current profile");
+                ssLOG_INFO("No other files to be compiled for current profile/platform");
                 break;
             }
 
@@ -826,16 +783,16 @@ namespace runcpp2
                 const ghc::filesystem::path scriptDirectory = 
                     ghc::filesystem::path(absoluteScriptPath).parent_path();
                 
-                for(int i = 0; i < profileCompileFiles->size(); ++i)
+                for(int i = 0; i < compileFiles->Paths.size(); ++i)
                 {
-                    ghc::filesystem::path currentPath = profileCompileFiles->at(i);
+                    ghc::filesystem::path currentPath = compileFiles->Paths.at(i);
                     if(currentPath.is_relative())
                         currentPath = scriptDirectory / currentPath;
                     
                     if(currentPath.is_relative())
                     {
                         std::string errMsg =    DS_STR("Failed to process compile path: ") + 
-                                                DS_STR(profileCompileFiles->at(i)) +
+                                                DS_STR(compileFiles->Paths.at(i)) +
                                                 "\nTry to append path to script directory but failed" +
                                                 "\nFinal appended path: " + 
                                                 DS_STR(currentPath);
@@ -846,13 +803,13 @@ namespace runcpp2
                     if(ghc::filesystem::is_directory(currentPath, e))
                     {
                         return DS_ERROR_MSG("Directory is found instead of file: " + 
-                                            DS_STR(profileCompileFiles->at(i)));
+                                            DS_STR(compileFiles->Paths.at(i)));
                     }
                     
                     if(!ghc::filesystem::exists(currentPath, e))
                     {
                         return DS_ERROR_MSG("File doesn't exist: " + 
-                                            DS_STR(profileCompileFiles->at(i)));
+                                            DS_STR(compileFiles->Paths.at(i)));
                     }
                     
                     outSourcePaths.push_back(currentPath);
@@ -884,52 +841,44 @@ namespace runcpp2
             return DS_ERROR_MSG("Script directory is not absolute: " + DS_STR(scriptDirectory));
 
         //Get include paths from script
-        const Data::ProfilesProcessPaths* includePaths = 
-            GetValueFromPlatformMap(scriptInfo.IncludePaths);
-        
+        const Data::ProcessPaths* includePaths = scriptInfo .IncludePaths
+                                                            .GetValueFromProfile(currentProfile);
         outSourceIncludePaths.push_back(scriptDirectory);
-        
         if(includePaths != nullptr)
         {
-            const std::vector<ghc::filesystem::path>* profileIncludePaths = 
-                GetValueFromProfileMap(currentProfile, includePaths->Paths);
-                
-            if(profileIncludePaths != nullptr)
+            for(const auto& currentPath : includePaths->Paths)
             {
-                for(const auto& currentPath : *profileIncludePaths)
+                ghc::filesystem::path resolvedPath = currentPath;
+                if(currentPath.is_relative())
+                    resolvedPath = scriptDirectory / currentPath;
+                
+                if(resolvedPath.is_relative())
                 {
-                    ghc::filesystem::path resolvedPath = currentPath;
-                    if(currentPath.is_relative())
-                        resolvedPath = scriptDirectory / currentPath;
-                    
-                    if(resolvedPath.is_relative())
-                    {
-                        std::string errMsg = 
-                            DS_STR("Failed to process include path: ") + DS_STR(currentPath) +
-                            "\nTry to append path to script directory but failed" +
-                            "\nFinal appended path: " + DS_STR(resolvedPath);
-                        return DS_ERROR_MSG(errMsg);
-                    }
-                    
-                    std::error_code e;
-                    if(!ghc::filesystem::exists(resolvedPath, e))
-                    {
-                        std::string errMsg = 
-                            DS_STR("Include path doesn't exist: ") + DS_STR(currentPath) +
-                            "\nFullpath: " + DS_STR(resolvedPath);
-                        return DS_ERROR_MSG(errMsg);
-                    }
-                    
-                    if(!ghc::filesystem::is_directory(resolvedPath, e))
-                    {
-                        std::string errMsg = 
-                            DS_STR("Include path is not a directory: ") + DS_STR(currentPath) +
-                            "\nFullpath: " + DS_STR(resolvedPath);
-                        return DS_ERROR_MSG(errMsg);
-                    }
-                    
-                    outSourceIncludePaths.push_back(resolvedPath);
+                    std::string errMsg = 
+                        DS_STR("Failed to process include path: ") + DS_STR(currentPath) +
+                        "\nTry to append path to script directory but failed" +
+                        "\nFinal appended path: " + DS_STR(resolvedPath);
+                    return DS_ERROR_MSG(errMsg);
                 }
+                
+                std::error_code e;
+                if(!ghc::filesystem::exists(resolvedPath, e))
+                {
+                    std::string errMsg = 
+                        DS_STR("Include path doesn't exist: ") + DS_STR(currentPath) +
+                        "\nFullpath: " + DS_STR(resolvedPath);
+                    return DS_ERROR_MSG(errMsg);
+                }
+                
+                if(!ghc::filesystem::is_directory(resolvedPath, e))
+                {
+                    std::string errMsg = 
+                        DS_STR("Include path is not a directory: ") + DS_STR(currentPath) +
+                        "\nFullpath: " + DS_STR(resolvedPath);
+                    return DS_ERROR_MSG(errMsg);
+                }
+                
+                outSourceIncludePaths.push_back(resolvedPath);
             }
         }
         
