@@ -8,6 +8,7 @@
 #include "runcpp2/Data/ProfilesCommands.hpp"
 #include "runcpp2/Data/BuildType.hpp"
 #include "runcpp2/Data/ParameterValue.hpp"
+#include "runcpp2/Data/ProcessPaths.hpp"
 #include "runcpp2/ParameterUtil.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
@@ -46,15 +47,16 @@ namespace Data
         std::unordered_map<std::string, ParameterValue> Parameters; //TODO(NOW): Make this Platform profile map
         std::unordered_map<std::string, std::string> Variables;     //TODO(NOW): Make this Platform profile map
         
-        
         //std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideCompileFlags;
-        
+        //std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideLinkFlags;
+        //std::unordered_map<PlatformName, ProfilesProcessPaths> OtherFilesToBeCompiled;
         PlatformProfileContainer<FlagsOverrideInfo> OverrideCompileFlags;
         PlatformProfileContainer<FlagsOverrideInfo> OverrideLinkFlags;
+        PlatformProfileContainer<ProcessPaths> OtherFilesToBeCompiled;
         
-        //std::unordered_map<PlatformName, ProfilesFlagsOverride> OverrideLinkFlags;
-        std::unordered_map<PlatformName, ProfilesProcessPaths> OtherFilesToBeCompiled;
         std::unordered_map<PlatformName, ProfilesProcessPaths> IncludePaths;
+        
+        
         std::vector<DependencyInfo> Dependencies;
         std::unordered_map<PlatformName, ProfilesDefines> Defines;
         std::unordered_map<PlatformName, ProfilesCommands> Setup;
@@ -204,20 +206,31 @@ namespace Data
             if(overrideLinkFlagsNode)
                 DS_ASSERT_TRUE(OverrideLinkFlags.ParseYAML_Node(overrideLinkFlagsNode));
             
+            YAML::ConstNodePtr otherFilesToBeCompiledNode = 
+                clonedNode->GetMapValueNode("OtherFilesToBeCompiled")
+            if(!otherFilesToBeCompiledNode)
+                otherFilesToBeCompiledNode = clonedNode->GetMapValueNode("SourceFiles");
+            if(!otherFilesToBeCompiledNode)
+                DS_ASSERT_TRUE(OtherFilesToBeCompiled.ParseYAML_Node(otherFilesToBeCompiledNode));
+            
             //DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesFlagsOverride>(  clonedNode, 
             //                                                                "OverrideLinkFlags", 
             //                                                                OverrideLinkFlags, 
             //                                                                "OverrideLinkFlags"));
             
             
-            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesProcessPaths>(   clonedNode, 
-                                                                            "OtherFilesToBeCompiled", 
-                                                                            OtherFilesToBeCompiled, 
-                                                                            "OtherFilesToBeCompiled"));
-            DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesProcessPaths>(   clonedNode, 
-                                                                            "SourceFiles", 
-                                                                            OtherFilesToBeCompiled, 
-                                                                            "SourceFiles"));
+            //DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesProcessPaths>(   clonedNode, 
+            //                                                                "OtherFilesToBeCompiled", 
+            //                                                                OtherFilesToBeCompiled, 
+            //                                                                "OtherFilesToBeCompiled"));
+            
+            
+            //DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesProcessPaths>(   clonedNode, 
+            //                                                                "SourceFiles", 
+            //                                                                OtherFilesToBeCompiled, 
+            //                                                                "SourceFiles"));
+            
+            
             DS_ASSERT_TRUE(ParsePlatformProfileMap<ProfilesProcessPaths>(   clonedNode, 
                                                                             "IncludePaths", 
                                                                             IncludePaths, 
@@ -341,16 +354,19 @@ namespace Data
                 //}
             }
             
-            if(!OtherFilesToBeCompiled.empty())
+            //if(!OtherFilesToBeCompiled.empty())
+            if(!OtherFilesToBeCompiled.Data.empty())
             {
                 out += indentation + "SourceFiles:\n";
-                for(auto it = OtherFilesToBeCompiled.begin(); 
-                    it != OtherFilesToBeCompiled.end(); 
-                    ++it)
-                {
-                    out += indentation + "    " + it->first + ":\n";
-                    out += it->second.ToString(indentation + "        ");
-                }
+                out += OtherFilesToBeCompiled.ToString(indentation + "    ");
+                
+                //for(auto it = OtherFilesToBeCompiled.begin(); 
+                //    it != OtherFilesToBeCompiled.end(); 
+                //    ++it)
+                //{
+                //    out += indentation + "    " + it->first + ":\n";
+                //    out += it->second.ToString(indentation + "        ");
+                //}
             }
 
             if(!IncludePaths.empty())
@@ -438,8 +454,8 @@ namespace Data
                 Variables.size() != other.Variables.size() ||
                 
                 //OverrideCompileFlags.size() != other.OverrideCompileFlags.size() ||
+                //OtherFilesToBeCompiled.size() != other.OtherFilesToBeCompiled.size() ||
                 
-                OtherFilesToBeCompiled.size() != other.OtherFilesToBeCompiled.size() ||
                 IncludePaths.size() != other.IncludePaths.size() ||
                 Dependencies.size() != other.Dependencies.size() ||
                 Defines.size() != other.Defines.size() ||
@@ -487,14 +503,17 @@ namespace Data
             //    }
             //}
 
-            for(const auto& it : OtherFilesToBeCompiled)
-            {
-                if( other.OtherFilesToBeCompiled.count(it.first) == 0 || 
-                    !other.OtherFilesToBeCompiled.at(it.first).Equals(it.second))
-                {
-                    return true;
-                }
-            }
+            if(!OtherFilesToBeCompiled.Equals(other.OtherFilesToBeCompiled))
+                return false;
+
+            //for(const auto& it : OtherFilesToBeCompiled)
+            //{
+            //    if( other.OtherFilesToBeCompiled.count(it.first) == 0 || 
+            //        !other.OtherFilesToBeCompiled.at(it.first).Equals(it.second))
+            //    {
+            //        return true;
+            //    }
+            //}
 
             for(const auto& it : IncludePaths)
             {
@@ -532,9 +551,9 @@ namespace Data
                 
                 //OverrideCompileFlags.size() != other.OverrideCompileFlags.size() ||
                 //OverrideLinkFlags.size() != other.OverrideLinkFlags.size() ||
+                //OtherFilesToBeCompiled.size() != other.OtherFilesToBeCompiled.size() ||
                 
                 
-                OtherFilesToBeCompiled.size() != other.OtherFilesToBeCompiled.size() ||
                 IncludePaths.size() != other.IncludePaths.size() ||
                 Dependencies.size() != other.Dependencies.size() ||
                 Defines.size() != other.Defines.size() ||
@@ -598,14 +617,18 @@ namespace Data
             //    }
             //}
 
-            for(const auto& it : OtherFilesToBeCompiled)
-            {
-                if( other.OtherFilesToBeCompiled.count(it.first) == 0 || 
-                    !other.OtherFilesToBeCompiled.at(it.first).Equals(it.second))
-                {
-                    return false;
-                }
-            }
+
+            if(!OtherFilesToBeCompiled.Equals(other.OtherFilesToBeCompiled))
+                return false;
+            
+            //for(const auto& it : OtherFilesToBeCompiled)
+            //{
+            //    if( other.OtherFilesToBeCompiled.count(it.first) == 0 || 
+            //        !other.OtherFilesToBeCompiled.at(it.first).Equals(it.second))
+            //    {
+            //        return false;
+            //    }
+            //}
 
             for(const auto& it : IncludePaths)
             {

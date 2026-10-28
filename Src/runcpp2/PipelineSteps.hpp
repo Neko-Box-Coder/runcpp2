@@ -12,6 +12,7 @@
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/Data/ProfilesFlagsOverride.hpp"
 #include "runcpp2/Data/ProfilesProcessPaths.hpp"
+#include "runcpp2/Data/ProcessPaths.hpp"
 
 #include "runcpp2/BuildsManager.hpp"
 #include "runcpp2/IncludeManager.hpp"
@@ -788,28 +789,11 @@ namespace runcpp2
         
         do
         {
-            const Data::ProfilesProcessPaths* compileFiles = 
-                GetValueFromPlatformMap(scriptInfo.OtherFilesToBeCompiled);
-            
-            if(compileFiles == nullptr)
+            const Data::ProcessPaths* compileFiles = scriptInfo .OtherFilesToBeCompiled
+                                                                .GetValueFromProfile(currentProfile);
+            if(!compileFiles)
             {
-                ssLOG_INFO("No other files to be compiled files current platform");
-                
-                if(!scriptInfo.OtherFilesToBeCompiled.empty())
-                {
-                    ssLOG_WARNING(  "Other source files are present, "
-                                    "but none are included for current configuration. "
-                                    "Is this intended?");
-                }
-                break;
-            }
-            
-            const std::vector<ghc::filesystem::path>* profileCompileFiles = 
-                GetValueFromProfileMap(currentProfile, compileFiles->Paths);
-                
-            if(!profileCompileFiles)
-            {
-                ssLOG_INFO("No other files to be compiled for current profile");
+                ssLOG_INFO("No other files to be compiled for current profile/platform");
                 break;
             }
 

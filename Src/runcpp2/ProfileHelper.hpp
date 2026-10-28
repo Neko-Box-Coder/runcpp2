@@ -5,6 +5,7 @@
 #include "runcpp2/Data/ScriptInfo.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/Data/StageInfo.hpp"
+#include "runcpp2/Data/ProcessPaths.hpp"
 
 #include "runcpp2/PlatformUtil.hpp"
 
@@ -194,15 +195,15 @@ namespace
         
         std::string scriptExtension = ghc::filesystem::path(scriptPath).extension().string();
         bool isYaml = scriptExtension == ".yaml" || scriptExtension == ".yml";
-        const ProfilesProcessPaths* sources = 
-            isYaml ? runcpp2::GetValueFromPlatformMap(scriptInfo.OtherFilesToBeCompiled) : nullptr;
+        bool hasSources =   isYaml ? 
+                            scriptInfo.OtherFilesToBeCompiled.HasValueForCurrentPlatform() :
+                            false;
         
-        if(isYaml && !sources)
+        if(isYaml && !hasSources)
             return DS_ERROR_MSG("No valid source files found when using yaml as input");
         
         //Check which profile is available
         std::vector<int> availableProfiles;
-        
         for(int i = 0; i < profiles.size(); ++i)
         {
             ssLOG_DEBUG("Checking profile: " << profiles[i].Name);
@@ -213,14 +214,10 @@ namespace
                 if(isYaml)
                 {
                     //TODO: Maybe need to check all the paths to be explicit
-                    bool explicitProfileFound = sources->Paths.count(profiles[i].Name) > 0 && 
-                                                !sources->Paths.at(profiles[i].Name).empty();
-                    if(explicitProfileFound)
-                        checkPath = sources->Paths.at(profiles[i].Name)[0].string();
-                    else if(sources->Paths.count("DefaultProfile") > 0)
-                        checkPath = sources->Paths.at("DefaultProfile")[0].string();
-                    else
+                    const ProcessPaths* sources = scriptInfo.GetValueFromProfile(profiles[i]);
+                    if(!sources)
                         continue;
+                    checkPath = sources->Paths.at(0).string();
                 }
                 else
                     checkPath = scriptPath;
