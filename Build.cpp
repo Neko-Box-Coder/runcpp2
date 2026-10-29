@@ -78,9 +78,14 @@ DS::Result<std::string> RunAndGetOutput(const std::string& command)
     std::string output = std::string(" ", 1024);
     uint32_t outputSize = 0;
     int returnCode = -1;
+    //do
+    //{
+        
+        system2Result = System2GetCommandReturnValue(&commandInfo, -1, &returnCode);
+    //}
+    //while(system2Result == SYSTEM2_RESULT_COMMAND_NOT_FINISHED);
+    
     do
-    {
-        do
         {
             uint32_t readBytes = 0;
             system2Result = System2ReadFromOutput(  &commandInfo, 
@@ -104,10 +109,6 @@ DS::Result<std::string> RunAndGetOutput(const std::string& command)
         }
         while(system2Result == SYSTEM2_RESULT_READ_NOT_FINISHED);
         output.resize(outputSize);
-        
-        system2Result = System2GetCommandReturnValue(&commandInfo, 5, &returnCode);
-    }
-    while(system2Result == SYSTEM2_RESULT_COMMAND_NOT_FINISHED);
     
     System2CleanupCommand(&commandInfo);
     DS_ASSERT_EQ(system2Result, SYSTEM2_RESULT_SUCCESS);
