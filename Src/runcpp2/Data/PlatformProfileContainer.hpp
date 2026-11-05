@@ -1,6 +1,7 @@
 #ifndef RUNCPP2_DATA_PLATFORM_PROFILE_CONTAINER_HPP
 #define RUNCPP2_DATA_PLATFORM_PROFILE_CONTAINER_HPP
 
+#include "runcpp2/Data/Profile.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
 #include "runcpp2/LibYAML_Wrapper.hpp"
 

@@ -494,7 +494,7 @@ namespace runcpp2
         YAML::NodePtr rootScriptNode = scriptNodes.front();
         
         std::unordered_map<std::string, std::vector<std::string>> subMap;
-        outScriptInfo = ResolveImport<Data::ScriptInfo>(rootScriptNode,
+        outScriptInfo = ResolveImport<Data::ScriptInfo>(rootScriptNode, //TODO(NOW): Exclude name "Dependencies"
                                                         yamlDir,
                                                         resourceHandle,
                                                         subMap,
