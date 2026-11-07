@@ -65,7 +65,8 @@ namespace runcpp2
                                 std::unordered_map< std::string, 
                                                     std::vector<std::string>>& substitutionMap,
                                 const std::unordered_map<std::string, std::string>& inputParameters,
-                                const std::vector<YAML::ConstNodePtr>& excludedNodes)
+                                const std::vector<YAML::ConstNodePtr>& excludedNodes, 
+                                bool allowMissing)
     {
         //Remove parameters and variables in the cloned node.
         if(node->HasMapKey("Parameters"))
@@ -167,6 +168,7 @@ namespace runcpp2
             PerformMultiSubstitutions(  substitutionMap, 
                                         {}, 
                                         it->second, 
+                                        allowMissing, 
                                         variablesMap[subKey]).DS_TRY();
         }
         substitutionMap.insert(variablesMap.begin(), variablesMap.end());
@@ -207,6 +209,7 @@ namespace runcpp2
                         PerformMultiSubstitutions(  substitutionMap, 
                                                     {}, 
                                                     scalarValue, 
+                                                    allowMissing, 
                                                     newValues).DS_TRY();
                         if(newValues.empty())
                             return DS_ERROR_MSG("Substitution array returned empty");
@@ -241,7 +244,7 @@ namespace runcpp2
                     }
                     else
                     {
-                        PerformSubstitutions(substitutionMap, {}, scalarValue).DS_TRY();
+                        PerformSubstitutions(substitutionMap, {}, allowMissing, scalarValue).DS_TRY();
                         currentNode->InitScalar(scalarValue, resourceHandle).DS_TRY();
                     }
                     break;

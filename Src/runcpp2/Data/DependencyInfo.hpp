@@ -62,7 +62,8 @@ namespace Data
                                         resourceHandle, 
                                         substitutionMap, 
                                         inputParameters, 
-                                        {}).DS_TRY();
+                                        {}, 
+                                        false).DS_TRY();
             
             //If import is needed, we only need to parse the Source section
             do

@@ -52,7 +52,7 @@ namespace Data
         PlatformProfileContainer<ProcessPaths> IncludePaths;
         std::vector<DependencyInfo> Dependencies;
         
-        PlatformProfileContainer<Defines> Defines;
+        PlatformProfileContainer<Defines> CurDefines;
         PlatformProfileContainer<Commands> Setup;
         PlatformProfileContainer<Commands> PreBuild;
         PlatformProfileContainer<Commands> PostBuild;
@@ -65,41 +65,62 @@ namespace Data
         
         inline DS::Result<void> 
         ParseYAML_Node( YAML::ConstNodePtr node, 
-                        bool parseParameters,
                         const std::unordered_map<std::string, std::string>& inputParameters)
         {
             ssLOG_FUNC_DEBUG();
             
-            if(parseParameters)
-            {
-                ParseParametersAndVariables(*this, node).DS_TRY();
-            }
+            ParseParametersAndVariables(*this, node).DS_TRY();
             
             //Clone and modify the yaml node
             YAML::ResourceHandle resourceHandle;
             YAML::NodePtr clonedNode = node->Clone(false, resourceHandle).DS_TRY();
             DEFER { YAML::FreeYAMLResource(resourceHandle); };
             
-            std::vector<YAML::ConstNodePtr> exclusions;
-            if(ExistAndHasChild(clonedNode, "Dependencies"))
+            //Apply parameters to non dependencies first
             {
-                YAML::ConstNodePtr keyNode = clonedNode->GetMapKeyNode("Dependencies");
-                YAML::ConstNodePtr valueNode = clonedNode->GetMapValueNode("Dependencies");
-                DS_ASSERT_TRUE(keyNode != nullptr);
-                DS_ASSERT_TRUE(valueNode != nullptr);
-                exclusions.push_back(keyNode);
-                exclusions.push_back(valueNode);
-            }
-            
-            if(parseParameters)
-            {
+                std::vector<YAML::ConstNodePtr> exclusions;
+                if(ExistAndHasChild(clonedNode, "Dependencies"))
+                {
+                    YAML::ConstNodePtr keyNode = clonedNode->GetMapKeyNode("Dependencies");
+                    YAML::ConstNodePtr valueNode = clonedNode->GetMapValueNode("Dependencies");
+                    DS_ASSERT_TRUE(keyNode != nullptr);
+                    DS_ASSERT_TRUE(valueNode != nullptr);
+                    exclusions.push_back(keyNode);
+                    exclusions.push_back(valueNode);
+                }
+                
                 SubstitutionMap = {};
                 ApplyParametersAndVariables(*this, 
                                             clonedNode, 
                                             resourceHandle, 
                                             SubstitutionMap, 
                                             inputParameters,
-                                            exclusions).DS_TRY();
+                                            exclusions, 
+                                            false).DS_TRY();
+            }
+            
+            //Then we apply parameters to dependencies but allow it to fail
+            if(ExistAndHasChild(clonedNode, "Dependencies"))
+            {
+                std::vector<YAML::ConstNodePtr> exclusions;
+                for(int i = 0; i < clonedNode->GetChildrenCount(); ++i)
+                {
+                    StringView key = clonedNode->GetMapKeyScalarAt<StringView>(i).DS_TRY();
+                    if(key == "Dependencies")
+                        continue;
+                    
+                    exclusions.push_back(clonedNode->GetMapKeyNodeAt(i));
+                    exclusions.push_back(clonedNode->GetMapValueNodeAt(i));
+                }
+                
+                SubstitutionMap = {};
+                ApplyParametersAndVariables(*this, 
+                                            clonedNode, 
+                                            resourceHandle, 
+                                            SubstitutionMap, 
+                                            inputParameters,
+                                            exclusions, 
+                                            true).DS_TRY();
             }
             
             std::vector<NodeRequirement> requirements =
@@ -198,7 +219,7 @@ namespace Data
                 clonedNode->GetMapValueNode("OtherFilesToBeCompiled");
             if(!otherFilesToBeCompiledNode)
                 otherFilesToBeCompiledNode = clonedNode->GetMapValueNode("SourceFiles");
-            if(!otherFilesToBeCompiledNode)
+            if(otherFilesToBeCompiledNode)
                 DS_ASSERT_TRUE(OtherFilesToBeCompiled.ParseYAML_Node(otherFilesToBeCompiledNode));
             
             YAML::ConstNodePtr includePathsNode = clonedNode->GetMapValueNode("IncludePaths");
@@ -225,7 +246,7 @@ namespace Data
             
             YAML::ConstNodePtr definesNode = clonedNode->GetMapValueNode("Defines");
             if(definesNode)
-                DS_ASSERT_TRUE(Defines.ParseYAML_Node(definesNode));
+                DS_ASSERT_TRUE(CurDefines.ParseYAML_Node(definesNode));
             
             YAML::ConstNodePtr setupNode = clonedNode->GetMapValueNode("Setup");
             if(setupNode)
@@ -335,10 +356,10 @@ namespace Data
                 }
             }
             
-            if(!Defines.Data.empty())
+            if(!CurDefines.Data.empty())
             {
-                out += indentation + "Defines:\n";
-                out += Defines.ToString(indentation + "    ");
+                out += indentation + "CurDefines:\n";
+                out += CurDefines.ToString(indentation + "    ");
             }
             
             if(!Setup.Data.empty())
@@ -423,7 +444,7 @@ namespace Data
                     return true;
             }
 
-            if(!Defines.Equals(other.Defines))
+            if(!CurDefines.Equals(other.CurDefines))
                 return false;
 
             return false;
@@ -488,7 +509,7 @@ namespace Data
                     return false;
             }
 
-            if(!Defines.Equals(other.Defines))
+            if(!CurDefines.Equals(other.CurDefines))
                 return false;
 
             if(!Setup.Equals(other.Setup))

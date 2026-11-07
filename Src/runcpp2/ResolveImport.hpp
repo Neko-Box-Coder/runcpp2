@@ -14,7 +14,7 @@ namespace runcpp2
                     runcpp2::YAML::ResourceHandle& currentYamlResources,
                     std::unordered_map<std::string, std::vector<std::string>> subMap,
                     const std::unordered_map<std::string, std::string>& inputParameters,
-                    const std::vector<YAML::ConstNodePtr>& excludedNodes)
+                    std::vector<YAML::ConstNodePtr> excludedNodes)
     {
         using namespace runcpp2;
         
@@ -23,6 +23,20 @@ namespace runcpp2
         std::stack<ghc::filesystem::path> pathsToImport;
         ImportType importObj = {};
         
+        DS_ASSERT_TRUE(currentNode != nullptr);
+        DS_ASSERT_TRUE(currentNode->IsMap());
+        
+        //Only apply parameter substitutions to Import for original file
+        for(int i = 0; i < currentNode->GetChildrenCount(); ++i)
+        {
+            runcpp2::StringView key = currentNode->GetMapKeyScalarAt<runcpp2::StringView>(i).DS_TRY();
+            if(key == "Import")
+                continue;
+            
+            excludedNodes.push_back(currentNode->GetMapKeyNodeAt(i));
+            excludedNodes.push_back(currentNode->GetMapValueNodeAt(i));
+        }
+        
         //Resovle parameters and variables first, before importing
         ParseParametersAndVariables(importObj, currentNode).DS_TRY();
         ApplyParametersAndVariables(importObj, 
@@ -30,7 +44,8 @@ namespace runcpp2
                                     currentYamlResources, 
                                     subMap,
                                     inputParameters,
-                                    excludedNodes).DS_TRY();
+                                    excludedNodes, 
+                                    false).DS_TRY();
         
         ghc::filesystem::path currentImportFilePath = yamlDir / "Stub";
         while(runcpp2::ExistAndHasChild(currentNode, "Import") || !pathsToImport.empty())
@@ -110,7 +125,8 @@ namespace runcpp2
                                             currentYamlResources, 
                                             subMapCopy,
                                             inputParameters,
-                                            {}).DS_TRY();
+                                            {}, 
+                                            true).DS_TRY();
                 
                 MergeYamlNode(importNode, currentNode, currentYamlResources).DS_TRY();
                 

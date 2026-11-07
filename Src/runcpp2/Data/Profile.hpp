@@ -153,7 +153,8 @@ namespace Data
                                             resourceHandle, 
                                             substitutionMap, 
                                             inputParameters, 
-                                            {}).DS_TRY();
+                                            {}, 
+                                            false).DS_TRY();
             }
             
             std::vector<NodeRequirement> requirements =

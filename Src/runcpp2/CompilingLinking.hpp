@@ -199,9 +199,8 @@ namespace
         substitutionMapTemplate["{Stage.DefineValue}"] = {};
         substitutionMapTemplate["{Stage.DefineNameOnly}"] = {};
         {
-            const runcpp2::Data::Defines* profileDefines = 
-                scriptInfo.Defines.GetValueFromProfile(profile);
-            
+            const runcpp2::Data::Defines* profileDefines = scriptInfo   .CurDefines
+                                                                        .GetValueFromProfile(profile);
             if(profileDefines)
             {
                 for(int i = 0; i < profileDefines->CurDefines.size(); ++i)
@@ -319,14 +318,15 @@ namespace
                     continue;
                 }
                 
-                std::string objectExt = 
-                    *runcpp2::GetValueFromPlatformMap(profile.FilesTypes.ObjectLinkFile.Extension);
-                
+                std::string objectExt = *runcpp2::GetValueFromPlatformMap(profile   .FilesTypes
+                                                                                    .ObjectLinkFile
+                                                                                    .Extension);
                 for(int j = 0; j < currentOutputTypeInfo->ExpectedOutputFiles.size(); ++j)
                 {
                     std::string currentPath = currentOutputTypeInfo->ExpectedOutputFiles.at(j);
                     DS::Result<void> res = runcpp2::PerformSubstitutions(   substitutionMap, 
                                                                             escapeChars, 
+                                                                            false, 
                                                                             currentPath);
                     if(!res.HasValue())
                     {
@@ -390,6 +390,7 @@ namespace
                             
                             DS::Result<void> res = runcpp2::PerformSubstitutions(   substitutionMap, 
                                                                                     escapeChars, 
+                                                                                    false, 
                                                                                     setupStep);
                             if(!res.HasValue())
                             {
@@ -467,7 +468,10 @@ namespace
                         for(int j = 0; j < currentOutputTypeInfo->Cleanup.size(); ++j)
                         {
                             std::string cleanupStep = currentOutputTypeInfo->Cleanup.at(j);
-                            runcpp2::PerformSubstitutions(substitutionMap, escapeChars, cleanupStep)
+                            runcpp2::PerformSubstitutions(  substitutionMap, 
+                                                            escapeChars, 
+                                                            false, 
+                                                            cleanupStep)
                                 .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                             
                             if(!preRun.empty())
@@ -832,7 +836,7 @@ namespace
             for(int i = 0; i < currentOutputTypeInfo->Setup.size(); ++i)
             {
                 std::string setupStep = currentOutputTypeInfo->Setup.at(i);
-                runcpp2::PerformSubstitutions(substitutionMap, escapeChars, setupStep)
+                runcpp2::PerformSubstitutions(substitutionMap, escapeChars, false, setupStep)
                     .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                 
                 if(!preRun.empty())
@@ -904,7 +908,7 @@ namespace
             for(int i = 0; i < currentOutputTypeInfo->Cleanup.size(); ++i)
             {
                 std::string cleanupStep = currentOutputTypeInfo->Cleanup.at(i);
-                runcpp2::PerformSubstitutions(substitutionMap, escapeChars, cleanupStep)
+                runcpp2::PerformSubstitutions(substitutionMap, escapeChars, false, cleanupStep)
                     .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                 
                 if(!preRun.empty())
