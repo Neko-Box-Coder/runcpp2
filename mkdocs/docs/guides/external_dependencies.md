@@ -12,6 +12,8 @@ The user input values or default values are first applied to parameters, with or
 optionally. Then a variable can "aggregate" one or more parameters values into a single variable 
 which can be used for text replacement.
 
+To escape the '{' or '}' characters, simply repeat the same character again.
+
 ```yaml
 Parameters:
     Param1:
