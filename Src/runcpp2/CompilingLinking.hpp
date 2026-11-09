@@ -12,8 +12,6 @@
 #include "runcpp2/Data/FilesTypesInfo.hpp"
 #include "runcpp2/Data/FlagsOverrideInfo.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
-#include "runcpp2/Data/ProfilesDefines.hpp"
-#include "runcpp2/Data/ProfilesFlagsOverride.hpp"
 #include "runcpp2/Data/StageInfo.hpp"
 
 #include "runcpp2/PlatformUtil.hpp"
@@ -38,28 +36,18 @@
 
 namespace
 {
-    using OverrideFlags = 
-        std::unordered_map<PlatformName, runcpp2::Data::ProfilesFlagsOverride>;
+    using OverrideFlags = runcpp2::Data::PlatformProfileContainer<runcpp2::Data::FlagsOverrideInfo>;
 
     //TODO: Add option to add/remove flags for each run option (executable, shared, static)
     void AppendAndRemoveFlags(  const runcpp2::Data::Profile& profile,
-                                const OverrideFlags overrideFlags,
+                                const OverrideFlags& overrideFlags,
                                 std::string& inOutFlags)
     {
         ssLOG_FUNC_DEBUG();
         
-        if(!runcpp2::HasValueFromPlatformMap(overrideFlags))
-        {
-            ssLOG_DEBUG("No override flags found for current platform");
-            return;
-        }
-        
-        const runcpp2::Data::ProfilesFlagsOverride& currentFlagsOverride = 
-            *runcpp2::GetValueFromPlatformMap(overrideFlags);
-        
         const runcpp2::Data::FlagsOverrideInfo* profileFlagsOverride = 
-            runcpp2::GetValueFromProfileMap(profile, currentFlagsOverride.FlagsOverrides);
-        
+            overrideFlags.GetValueFromProfile(profile);
+            
         if(!profileFlagsOverride)
         {
             ssLOG_DEBUG("No override flags found for current profile");
@@ -210,19 +198,14 @@ namespace
         substitutionMapTemplate["{Stage.DefineName}"] = {};
         substitutionMapTemplate["{Stage.DefineValue}"] = {};
         substitutionMapTemplate["{Stage.DefineNameOnly}"] = {};
-        if(runcpp2::HasValueFromPlatformMap(scriptInfo.Defines))
         {
-            const runcpp2::Data::ProfilesDefines& platformDefines = 
-                *runcpp2::GetValueFromPlatformMap(scriptInfo.Defines);
-            
-            const std::vector<runcpp2::Data::Define>* profileDefines = 
-                runcpp2::GetValueFromProfileMap(profile, platformDefines.Defines);
-            
+            const runcpp2::Data::Defines* profileDefines = scriptInfo   .CurDefines
+                                                                        .GetValueFromProfile(profile);
             if(profileDefines)
             {
-                for(int i = 0; i < profileDefines->size(); ++i)
+                for(int i = 0; i < profileDefines->CurDefines.size(); ++i)
                 {
-                    const runcpp2::Data::Define& define = profileDefines->at(i);
+                    const runcpp2::Data::Define& define = profileDefines->CurDefines.at(i);
                     if(define.HasValue)
                     {
                         substitutionMapTemplate["{Stage.DefineName}"].push_back(define.Name);
@@ -335,14 +318,15 @@ namespace
                     continue;
                 }
                 
-                std::string objectExt = 
-                    *runcpp2::GetValueFromPlatformMap(profile.FilesTypes.ObjectLinkFile.Extension);
-                
+                std::string objectExt = *runcpp2::GetValueFromPlatformMap(profile   .FilesTypes
+                                                                                    .ObjectLinkFile
+                                                                                    .Extension);
                 for(int j = 0; j < currentOutputTypeInfo->ExpectedOutputFiles.size(); ++j)
                 {
                     std::string currentPath = currentOutputTypeInfo->ExpectedOutputFiles.at(j);
                     DS::Result<void> res = runcpp2::PerformSubstitutions(   substitutionMap, 
                                                                             escapeChars, 
+                                                                            false, 
                                                                             currentPath);
                     if(!res.HasValue())
                     {
@@ -406,6 +390,7 @@ namespace
                             
                             DS::Result<void> res = runcpp2::PerformSubstitutions(   substitutionMap, 
                                                                                     escapeChars, 
+                                                                                    false, 
                                                                                     setupStep);
                             if(!res.HasValue())
                             {
@@ -483,7 +468,10 @@ namespace
                         for(int j = 0; j < currentOutputTypeInfo->Cleanup.size(); ++j)
                         {
                             std::string cleanupStep = currentOutputTypeInfo->Cleanup.at(j);
-                            runcpp2::PerformSubstitutions(substitutionMap, escapeChars, cleanupStep)
+                            runcpp2::PerformSubstitutions(  substitutionMap, 
+                                                            escapeChars, 
+                                                            false, 
+                                                            cleanupStep)
                                 .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                             
                             if(!preRun.empty())
@@ -848,7 +836,7 @@ namespace
             for(int i = 0; i < currentOutputTypeInfo->Setup.size(); ++i)
             {
                 std::string setupStep = currentOutputTypeInfo->Setup.at(i);
-                runcpp2::PerformSubstitutions(substitutionMap, escapeChars, setupStep)
+                runcpp2::PerformSubstitutions(substitutionMap, escapeChars, false, setupStep)
                     .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                 
                 if(!preRun.empty())
@@ -920,7 +908,7 @@ namespace
             for(int i = 0; i < currentOutputTypeInfo->Cleanup.size(); ++i)
             {
                 std::string cleanupStep = currentOutputTypeInfo->Cleanup.at(i);
-                runcpp2::PerformSubstitutions(substitutionMap, escapeChars, cleanupStep)
+                runcpp2::PerformSubstitutions(substitutionMap, escapeChars, false, cleanupStep)
                     .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
                 
                 if(!preRun.empty())

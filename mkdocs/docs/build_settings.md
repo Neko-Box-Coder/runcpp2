@@ -369,7 +369,8 @@ ExampleSettings:
 - Type: `map`
 - Optional: `true`
 - Default: None
-- Description: Parameters are user supplied input that can be substituted into any keys or values, with the syntax of `{<parameter name>}`. This is only applied to the same file.
+- Description: Parameters are user supplied input that can be substituted into any keys or values, with the syntax of `{<parameter name>}`. This is only applied to the _same_ file.
+    - To escape '{' and '}' to avoid substitution, simply repeat the '{' or '}' character again. So to escape `"${MyBashVariable}"`, it will become `"${{MyBashVariable}}"` 
 - `map` Key: Name of the parameter
 - Child Fields:
     - `Optional`
@@ -440,7 +441,7 @@ ExampleSettings:
             - If this contains an array parameter value, then this will become an array variable and can only be used in config values that expect an array; where the content of this variable will be repeated with the corresponding array parameter value.
             - If there are multiple array parameters present, they _must_ have the same length. 
             - If a mixture of array and non array parameters are present, then the same non array parameters will be substituted for each iteration.
-            - To escape '{' and '}' to avoid substitutioon, simply repeat the '{' or '}' character again. So to escape `"${MyBashVariable}"`, it will become `"${{MyBashVariable}}"` 
+
 ??? example
     ```yaml
     # If {Param1} is "value", then {VarName1} will become "Some string value substitution"

@@ -134,7 +134,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        scriptInfo.ParseYAML_Node(root, true, tempParameters).DS_TRY();
+        scriptInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
         
         //Verify basic fields
         DS_ASSERT_EQ(scriptInfo.Language, "C++");
@@ -181,52 +181,52 @@ DS::Result<void> TestMain()
         
         //Verify OverrideCompileFlags
         const runcpp2::Data::FlagsOverrideInfo& msvcCompileFlags = 
-            scriptInfo.OverrideCompileFlags.at("Windows").FlagsOverrides.at("MSVC");
+            scriptInfo.OverrideCompileFlags.Data.at("Windows").at("MSVC");
         DS_ASSERT_EQ(msvcCompileFlags.Remove, "/W4");
         DS_ASSERT_EQ(msvcCompileFlags.Append, "/W3");
         
         //Verify OverrideLinkFlags
         const runcpp2::Data::FlagsOverrideInfo& msvcLinkFlags = 
-            scriptInfo.OverrideLinkFlags.at("Windows").FlagsOverrides.at("MSVC");
+            scriptInfo.OverrideLinkFlags.Data.at("Windows").at("MSVC");
         DS_ASSERT_EQ(msvcLinkFlags.Remove, "/SUBSYSTEM:CONSOLE");
         DS_ASSERT_EQ(msvcLinkFlags.Append, "/SUBSYSTEM:WINDOWS");
         
         //Verify OtherFilesToBeCompiled
         const std::vector<ghc::filesystem::path>& msvcCompileFiles = 
-            scriptInfo.OtherFilesToBeCompiled.at("Windows").Paths.at("MSVC");
+            scriptInfo.OtherFilesToBeCompiled.Data.at("Windows").at("MSVC").Paths;
         DS_ASSERT_EQ(msvcCompileFiles.size(), 2);
         DS_ASSERT_EQ(msvcCompileFiles.at(0), "src/extra.cpp");
         
         
         const std::vector<ghc::filesystem::path>& gccCompileFiles = 
-            scriptInfo.OtherFilesToBeCompiled.at("Linux").Paths.at("GCC");
+            scriptInfo.OtherFilesToBeCompiled.Data.at("Linux").at("GCC").Paths;
         
         DS_ASSERT_EQ(gccCompileFiles.size(), 2);
         DS_ASSERT_EQ(gccCompileFiles.at(1), "src/optimized.cpp");
         
         //Verify IncludePaths
         const std::vector<ghc::filesystem::path>& msvcIncludeFiles = 
-            scriptInfo.IncludePaths.at("Windows").Paths.at("MSVC");
+            scriptInfo.IncludePaths.Data.at("Windows").at("MSVC").Paths;
         DS_ASSERT_EQ(msvcIncludeFiles.size(), 1);
         DS_ASSERT_EQ(msvcIncludeFiles.at(0), "include");
 
         //Verify Defines
         const std::vector<runcpp2::Data::Define>& msvcDefines = 
-            scriptInfo.Defines.at("Windows").Defines.at("MSVC");
+            scriptInfo.CurDefines.Data.at("Windows").at("MSVC").CurDefines;
         DS_ASSERT_EQ(msvcDefines.size(), 2);
         DS_ASSERT_EQ(msvcDefines.at(0).Name, "_DEBUG");
         DS_ASSERT_EQ(msvcDefines.at(1).Name, "VERSION");
         DS_ASSERT_EQ(msvcDefines.at(1).Value, "1.0.0");
         
         //Verify Setup
-        DS_ASSERT_EQ(scriptInfo.Setup.at("Windows").CommandSteps.at("MSVC").size(), 2);
-        DS_ASSERT_EQ(scriptInfo.Setup.at("Unix").CommandSteps.at("GCC").size(), 2);
+        DS_ASSERT_EQ(scriptInfo.Setup.Data.at("Windows").at("MSVC").Steps.size(), 2);
+        DS_ASSERT_EQ(scriptInfo.Setup.Data.at("Unix").at("GCC").Steps.size(), 2);
         
         const std::vector<std::string>& msvcSetupCommands = 
-            scriptInfo.Setup.at("Windows").CommandSteps.at("MSVC");
+            scriptInfo.Setup.Data.at("Windows").at("MSVC").Steps;
             
         const std::vector<std::string>& gccSetupCommands = 
-            scriptInfo.Setup.at("Unix").CommandSteps.at("GCC");
+            scriptInfo.Setup.Data.at("Unix").at("GCC").Steps;
         
         DS_ASSERT_EQ(msvcSetupCommands.size(), 2);
         DS_ASSERT_EQ(msvcSetupCommands.at(0), "echo 1");
@@ -235,14 +235,14 @@ DS::Result<void> TestMain()
         DS_ASSERT_EQ(gccSetupCommands.at(0), "echo 3");
         
         //Verify PreBuild
-        DS_ASSERT_EQ(scriptInfo.PreBuild.at("Windows").CommandSteps.at("MSVC").size(), 2);
-        DS_ASSERT_EQ(scriptInfo.PreBuild.at("Unix").CommandSteps.at("GCC").size(), 2);
+        DS_ASSERT_EQ(scriptInfo.PreBuild.Data.at("Windows").at("MSVC").Steps.size(), 2);
+        DS_ASSERT_EQ(scriptInfo.PreBuild.Data.at("Unix").at("GCC").Steps.size(), 2);
         
         const std::vector<std::string>& msvcPreBuildCommands = 
-            scriptInfo.PreBuild.at("Windows").CommandSteps.at("MSVC");
+            scriptInfo.PreBuild.Data.at("Windows").at("MSVC").Steps;
 
         const std::vector<std::string>& gccPreBuildCommands = 
-            scriptInfo.PreBuild.at("Unix").CommandSteps.at("GCC");
+            scriptInfo.PreBuild.Data.at("Unix").at("GCC").Steps;
         
         DS_ASSERT_EQ(msvcPreBuildCommands.size(), 2);
         DS_ASSERT_EQ(msvcPreBuildCommands.at(0), "echo 2");
@@ -251,19 +251,19 @@ DS::Result<void> TestMain()
         DS_ASSERT_EQ(gccPreBuildCommands.at(1), "echo 5");
 
         //Verify PostBuild
-        DS_ASSERT_EQ(scriptInfo.PostBuild.at("Unix").CommandSteps.at("GCC").size(), 2);
+        DS_ASSERT_EQ(scriptInfo.PostBuild.Data.at("Unix").at("GCC").Steps.size(), 2);
 
         const std::vector<std::string>& gccPostBuildCommands = 
-            scriptInfo.PostBuild.at("Unix").CommandSteps.at("GCC");
+            scriptInfo.PostBuild.Data.at("Unix").at("GCC").Steps;
         
         DS_ASSERT_EQ(gccPostBuildCommands.size(), 2);
         DS_ASSERT_EQ(gccPostBuildCommands.at(1), "echo 6");
 
         //Verify Cleanup
-        DS_ASSERT_EQ(scriptInfo.Cleanup.at("Windows").CommandSteps.at("MSVC").size(), 2);
+        DS_ASSERT_EQ(scriptInfo.Cleanup.Data.at("Windows").at("MSVC").Steps.size(), 2);
         
         const std::vector<std::string>& msvcCleanupCommands = 
-            scriptInfo.Cleanup.at("Windows").CommandSteps.at("MSVC");
+            scriptInfo.Cleanup.Data.at("Windows").at("MSVC").Steps;
 
         DS_ASSERT_EQ(msvcCleanupCommands.size(), 2);
         DS_ASSERT_EQ(msvcCleanupCommands.at(0), "echo 4");
@@ -280,7 +280,7 @@ DS::Result<void> TestMain()
         DS_ASSERT_EQ(roots.size(), 1);
         
         runcpp2::Data::ScriptInfo parsedOutput;
-        parsedOutput.ParseYAML_Node(roots.front(), true, tempParameters).DS_TRY();
+        parsedOutput.ParseYAML_Node(roots.front(), tempParameters).DS_TRY();
         DS_ASSERT_TRUE(scriptInfo.Equals(parsedOutput));
     }
     
@@ -304,11 +304,11 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        scriptInfo.ParseYAML_Node(root, true, tempParameters).DS_TRY();
+        scriptInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
         
         //Verify SourceFiles
         const std::vector<ghc::filesystem::path>& msvcCompileFiles = 
-            scriptInfo.OtherFilesToBeCompiled.at("Windows").Paths.at("MSVC");
+            scriptInfo.OtherFilesToBeCompiled.Data.at("Windows").at("MSVC").Paths;
         
         DS_ASSERT_EQ(msvcCompileFiles.size(), 2);
         DS_ASSERT_EQ(msvcCompileFiles.at(0), "src/extra.cpp");
@@ -357,30 +357,30 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        scriptInfo.ParseYAML_Node(root, true, tempParameters).DS_TRY();
+        scriptInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
         
         //Verify basic fields
         DS_ASSERT_EQ(scriptInfo.Language, "C++");
         
         //Verify OverrideCompileFlags with default platform and profile
         const runcpp2::Data::FlagsOverrideInfo& defaultCompileFlags = scriptInfo.OverrideCompileFlags
+                                                                                .Data
                                                                                 .at("DefaultPlatform")
-                                                                                .FlagsOverrides
                                                                                 .at("DefaultProfile");
         DS_ASSERT_EQ(defaultCompileFlags.Remove, "/W4");
         DS_ASSERT_EQ(defaultCompileFlags.Append, "/W3");
         
         //Verify OverrideLinkFlags with default platform and profile
         const runcpp2::Data::FlagsOverrideInfo& defaultLinkFlags = scriptInfo   .OverrideLinkFlags
+                                                                                .Data
                                                                                 .at("DefaultPlatform")
-                                                                                .FlagsOverrides
                                                                                 .at("DefaultProfile");
         DS_ASSERT_EQ(defaultLinkFlags.Remove, "/SUBSYSTEM:CONSOLE");
         DS_ASSERT_EQ(defaultLinkFlags.Append, "/SUBSYSTEM:WINDOWS");
         
         //Verify OtherFilesToBeCompiled with default platform and profile
         const std::vector<ghc::filesystem::path>& defaultCompileFiles = 
-            scriptInfo.OtherFilesToBeCompiled.at("DefaultPlatform").Paths.at("DefaultProfile");
+            scriptInfo.OtherFilesToBeCompiled.Data.at("DefaultPlatform").at("DefaultProfile").Paths;
         
         DS_ASSERT_EQ(defaultCompileFiles.size(), 2);
         DS_ASSERT_EQ(defaultCompileFiles.at(0), "src/extra.cpp");
@@ -388,14 +388,14 @@ DS::Result<void> TestMain()
         
         //Verify IncludePaths with default platform and profile
         const std::vector<ghc::filesystem::path>& defaultIncludePaths = 
-            scriptInfo.IncludePaths.at("DefaultPlatform").Paths.at("DefaultProfile");
+            scriptInfo.IncludePaths.Data.at("DefaultPlatform").at("DefaultProfile").Paths;
         DS_ASSERT_EQ(defaultIncludePaths.size(), 2);
         DS_ASSERT_EQ(defaultIncludePaths.at(0), "include");
         DS_ASSERT_EQ(defaultIncludePaths.at(1), "src/include");
         
         //Verify Defines with default platform and profile
         const std::vector<runcpp2::Data::Define>& defaultDefines = 
-            scriptInfo.Defines.at("DefaultPlatform").Defines.at("DefaultProfile");
+            scriptInfo.CurDefines.Data.at("DefaultPlatform").at("DefaultProfile").CurDefines;
         
         DS_ASSERT_EQ(defaultDefines.size(), 2);
         DS_ASSERT_EQ(defaultDefines.at(0).Name, "_DEBUG");
@@ -404,28 +404,28 @@ DS::Result<void> TestMain()
         
         //Verify Setup with default platform and profile
         const std::vector<std::string>& defaultSetupCommands = 
-            scriptInfo.Setup.at("DefaultPlatform").CommandSteps.at("DefaultProfile");
+            scriptInfo.Setup.Data.at("DefaultPlatform").at("DefaultProfile").Steps;
         DS_ASSERT_EQ(defaultSetupCommands.size(), 2);
         DS_ASSERT_EQ(defaultSetupCommands.at(0), "echo 1");
         DS_ASSERT_EQ(defaultSetupCommands.at(1), "echo 2");
         
         //Verify PreBuild with default platform and profile
         const std::vector<std::string>& defaultPreBuildCommands = 
-            scriptInfo.PreBuild.at("DefaultPlatform").CommandSteps.at("DefaultProfile");
+            scriptInfo.PreBuild.Data.at("DefaultPlatform").at("DefaultProfile").Steps;
         DS_ASSERT_EQ(defaultPreBuildCommands.size(), 2);
         DS_ASSERT_EQ(defaultPreBuildCommands.at(0), "echo 3");
         DS_ASSERT_EQ(defaultPreBuildCommands.at(1), "echo 4");
         
         //Verify PostBuild with default platform and profile
         const std::vector<std::string>& defaultPostBuildCommands = 
-            scriptInfo.PostBuild.at("DefaultPlatform").CommandSteps.at("DefaultProfile");
+            scriptInfo.PostBuild.Data.at("DefaultPlatform").at("DefaultProfile").Steps;
         DS_ASSERT_EQ(defaultPostBuildCommands.size(), 2);
         DS_ASSERT_EQ(defaultPostBuildCommands.at(0), "echo 5");
         DS_ASSERT_EQ(defaultPostBuildCommands.at(1), "echo 6");
         
         //Verify Cleanup with default platform and profile
         const std::vector<std::string>& defaultCleanupCommands = 
-            scriptInfo.Cleanup.at("DefaultPlatform").CommandSteps.at("DefaultProfile");
+            scriptInfo.Cleanup.Data.at("DefaultPlatform").at("DefaultProfile").Steps;
         DS_ASSERT_EQ(defaultCleanupCommands.size(), 2);
         DS_ASSERT_EQ(defaultCleanupCommands.at(0), "echo 7");
         DS_ASSERT_EQ(defaultCleanupCommands.at(1), "echo 8");
@@ -466,9 +466,9 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        scriptInfo.ParseYAML_Node(root, true, parameters).DS_TRY();
+        scriptInfo.ParseYAML_Node(root, parameters).DS_TRY();
         const std::vector<runcpp2::Data::Define>& defaultDefines = 
-            scriptInfo.Defines.at("DefaultPlatform").Defines.at("DefaultProfile");
+            scriptInfo.CurDefines.Data.at("DefaultPlatform").at("DefaultProfile").CurDefines;
         
         DS_ASSERT_EQ(defaultDefines.size(), 2);
         DS_ASSERT_EQ(defaultDefines[0].Value, std::string("\"The choice is B\""));
@@ -508,10 +508,10 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        scriptInfo.ParseYAML_Node(root, true, parameters).DS_TRY();
+        scriptInfo.ParseYAML_Node(root, parameters).DS_TRY();
         {
             const std::vector<runcpp2::Data::Define>& defaultDefines = 
-                scriptInfo.Defines.at("DefaultPlatform").Defines.at("DefaultProfile");
+                scriptInfo.CurDefines.Data.at("DefaultPlatform").at("DefaultProfile").CurDefines;
             
             DS_ASSERT_EQ(defaultDefines.size(), 1);
             DS_ASSERT_EQ(defaultDefines[0].Name, std::string("TEST_DEFINE_1"));
@@ -555,11 +555,11 @@ DS::Result<void> TestMain()
         root = roots.front();
         
         scriptInfo = {};
-        scriptInfo.ParseYAML_Node(root, true, parameters).DS_TRY();
+        scriptInfo.ParseYAML_Node(root, parameters).DS_TRY();
         
         {
             const std::vector<runcpp2::Data::Define>& defaultDefines = 
-                scriptInfo.Defines.at("DefaultPlatform").Defines.at("DefaultProfile");
+                scriptInfo.CurDefines.Data.at("DefaultPlatform").at("DefaultProfile").CurDefines;
             
             DS_ASSERT_EQ(defaultDefines.size(), 1);
             DS_ASSERT_EQ(defaultDefines[0].Name, std::string("TEST_DEFINE_1"));
@@ -603,7 +603,7 @@ DS::Result<void> TestMain()
         runcpp2::YAML::NodePtr root = roots.front();
         runcpp2::Data::ScriptInfo scriptInfo;
         
-        DS::Result<void> res = scriptInfo.ParseYAML_Node(root, true, parameters);
+        DS::Result<void> res = scriptInfo.ParseYAML_Node(root, parameters);
         DS_ASSERT_FALSE(res.HasValue());
         DS_ASSERT_EQ(   res.Error().Message, 
                         "Parameter {UnexpectedParameter} is expected but nothing is supplied");

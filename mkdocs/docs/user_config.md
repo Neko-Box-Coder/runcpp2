@@ -163,6 +163,17 @@ first before merging.
         - Description: The expected files after running this command
         ??? todo
             Actually use this...
+    - `Setup`
+        - Type: `string[]`
+        - Optional: `true`
+        - Default: None
+        - Description: The commands to run in **shell** BEFORE compiling. Compiler/Linker variables are also available here.
+    - `Cleanup`
+        - Type: `string[]`
+        - Optional: `true`
+        - Default: None
+        - Description: The commands to run in **shell** AFTER compiling. Compiler/Linker variables are also available here.
+    
 ??? example
     ```yaml
     Flags: "-FlagA -FlagB"
@@ -316,7 +327,7 @@ first before merging.
     - Description: Shell command to use for checking if the executable exists or not
     
     ##### `CompileTypes`
-    ??? info
+    ??? info "Compiler Variables"
         Here are a list of built-in variables for RunParts, Setup and Cleanup
 
         **Constants**
@@ -394,7 +405,7 @@ first before merging.
     - Description: Shell command to use for checking if the executable exists or not
 
     ##### `LinkTypes`
-    ??? info
+    ??? info "Linker Variables"
         Here are a list of built-in variables for RunParts, Setup and Cleanup
 
         **Constants**

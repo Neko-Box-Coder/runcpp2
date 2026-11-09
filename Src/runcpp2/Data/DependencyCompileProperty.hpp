@@ -2,7 +2,7 @@
 #define RUNCPP2_DATA_DEPENDENCY_COMPILE_PROPERTY_HPP
 
 #include "runcpp2/Data/ParseCommon.hpp"
-#include "runcpp2/Data/ProfilesDefines.hpp"
+#include "runcpp2/Data/Defines.hpp"
 
 #include "runcpp2/LibYAML_Wrapper.hpp"
 #include "runcpp2/ParseUtil.hpp"

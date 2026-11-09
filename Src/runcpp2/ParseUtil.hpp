@@ -540,6 +540,7 @@ namespace runcpp2
                                     const std::vector<int>& substitutionsLengths,
                                     std::string& inOutSubstitutedString,
                                     const std::vector<char>& escapeChars,
+                                    bool allowMissing,
                                     int substituteValueIndex = 0)
     {
         ssLOG_FUNC_DEBUG();
@@ -550,6 +551,9 @@ namespace runcpp2
             const std::string& substitution = foundSubstitutions[i];
             if(substitutionMap.count(substitution) == 0)
             {
+                if(allowMissing)
+                    continue;
+                
                 return DS_ERROR_MSG("Parameter " + substitution + " is expected but nothing is "
                                     "supplied");
             }
@@ -620,6 +624,7 @@ namespace runcpp2
     //      To escape a substitution character, just repeat it. (i.e. {{text}} will be escaped as {text})
     DS::Result<void> 
     GetEscapedStringAndExtractSubstitutions(const std::string& processString, 
+                                            bool translateEscape, 
                                             std::string& outEscapedString,
                                             std::vector<std::string>& outFoundSubstitutions,
                                             std::vector<int>& outFoundLocations,
@@ -644,22 +649,23 @@ namespace runcpp2
                     continue;
                 }
                 
-                //If we have opening bracket for the next character, 
-                //this is an escaping character
-                if(processString[i + 1] == '{')
-                {
-                    outEscapedString += '{';
-                    if(lastOpenBracketIndex != -1)
-                        currentSubstitution += '{';
-                    
-                    ++i;
-                    continue;
-                }
-                
                 if(lastOpenBracketIndex != -1)
                 {
                     return DS_ERROR_MSG("Unescaped { at index " + DS_STR(lastOpenBracketIndex) +
                                         ": " + processString);
+                }
+                
+                //If we have opening bracket for the next character, 
+                //this is an escaping character
+                if(processString[i + 1] == '{')
+                {
+                    if(translateEscape)
+                        outEscapedString += '{';
+                    else
+                        outEscapedString += "{{";
+                    
+                    ++i;
+                    continue;
                 }
                 
                 lastOpenBracketIndex = i;
@@ -672,9 +678,16 @@ namespace runcpp2
                 //this is an escaping character
                 if(i < processString.size() - 1 && processString[i + 1] == '}')
                 {
-                    outEscapedString += '}';
                     if(lastOpenBracketIndex != -1)
-                        currentSubstitution += '}';
+                    {
+                        return DS_ERROR_MSG("Unescaped } at index " + DS_STR(i) + ": " + 
+                                            processString);
+                    }
+                    
+                    if(translateEscape)
+                        outEscapedString += '}';
+                    else
+                        outEscapedString += "}}";
                     
                     ++i;
                     continue;
@@ -709,6 +722,7 @@ namespace runcpp2
     
     inline DS::Result<void> PerformSubstitutions(   const SubstitutionMap& substitutionMap, 
                                                     const std::vector<char>& escapeChars,
+                                                    bool allowMissing, 
                                                     std::string& inOutSubstitutedString)
     {
         std::string escapedString;
@@ -717,6 +731,7 @@ namespace runcpp2
         std::vector<int> substitutionsLengths;
         
         GetEscapedStringAndExtractSubstitutions(inOutSubstitutedString, 
+                                                !allowMissing, 
                                                 escapedString,
                                                 foundSubstitutions,
                                                 substitutionsLocations,
@@ -731,7 +746,8 @@ namespace runcpp2
                                         substitutionsLocations, 
                                         substitutionsLengths,
                                         inOutSubstitutedString,
-                                        escapeChars)
+                                        escapeChars, 
+                                        allowMissing)
             .DS_TRY();
         return {};
     }
@@ -739,6 +755,7 @@ namespace runcpp2
     inline DS::Result<void> PerformMultiSubstitutions(  const SubstitutionMap& substitutionMap, 
                                                         const std::vector<char>& escapeChars,
                                                         const std::string& inString,
+                                                        bool allowMissing, 
                                                         std::vector<std::string>& outStrings)
     {
         std::string escapedString;
@@ -747,6 +764,7 @@ namespace runcpp2
         std::vector<int> substitutionsLengths;
         
         GetEscapedStringAndExtractSubstitutions(inString, 
+                                                !allowMissing, 
                                                 escapedString,
                                                 foundSubstitutions,
                                                 substitutionsLocations,
@@ -761,6 +779,9 @@ namespace runcpp2
         {
             if(!substitutionMap.count(foundSubstitutions[i]))
             {
+                if(allowMissing)
+                    continue;
+                
                 return DS_ERROR_MSG("Parameter " + foundSubstitutions[i] + " is expected but nothing "
                                     "is supplied");
             }
@@ -802,6 +823,7 @@ namespace runcpp2
                                             substitutionsLengths,
                                             outStrings.back(),
                                             escapeChars,
+                                            allowMissing, 
                                             i)
                 .DS_TRY();
         }

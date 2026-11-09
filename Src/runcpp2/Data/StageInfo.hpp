@@ -126,7 +126,7 @@ namespace Data
                 {
                     std::string substitutedPart = currentRunParts.at(i).CommandPart;
                     
-                    PerformSubstitutions(substitutionMap, escapeChars, substitutedPart)
+                    PerformSubstitutions(substitutionMap, escapeChars, false, substitutedPart)
                         .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
                                     return false);
                     outCommand += substitutedPart;
@@ -139,6 +139,7 @@ namespace Data
                     PerformMultiSubstitutions(  substitutionMap, 
                                                 escapeChars,
                                                 currentRunParts.at(i).CommandPart,
+                                                false, 
                                                 substitutedParts)
                         .DS_TRY_ACT(ssLOG_ERROR(DS_TMP_ERROR.ToString());
                                     return false);

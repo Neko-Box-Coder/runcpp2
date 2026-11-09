@@ -494,13 +494,13 @@ namespace runcpp2
         YAML::NodePtr rootScriptNode = scriptNodes.front();
         
         std::unordered_map<std::string, std::vector<std::string>> subMap;
-        outScriptInfo = ResolveImport<Data::ScriptInfo>(rootScriptNode,
+        outScriptInfo = ResolveImport<Data::ScriptInfo>(rootScriptNode, 
                                                         yamlDir,
                                                         resourceHandle,
                                                         subMap,
                                                         inputParameters,
                                                         {}).DS_TRY();
-        outScriptInfo.ParseYAML_Node(rootScriptNode, false, inputParameters).DS_TRY();
+        outScriptInfo.ParseYAML_Node(rootScriptNode, inputParameters).DS_TRY();
         outScriptInfo.Populated = true;
         return {};
     }
