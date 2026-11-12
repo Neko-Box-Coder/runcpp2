@@ -42,10 +42,9 @@ namespace Data
         std::string Language;
         bool PassScriptPath = false;
         BuildType CurrentBuildType = BuildType::EXECUTABLE;
-        std::unordered_map<PlatformName, std::vector<ProfileName>> RequiredProfiles;
-        std::unordered_map<std::string, ParameterValue> Parameters; //TODO(NOW): Make this Platform profile map
-        std::unordered_map<std::string, std::string> Variables;     //TODO(NOW): Make this Platform profile map
-        
+        std::unordered_map<PlatformName, std::vector<ProfileName>> RequiredProfiles; //TODO: Make this platform profile map
+        std::unordered_map<std::string, ParameterValue> Parameters;
+        std::unordered_map<std::string, std::string> Variables;
         PlatformProfileContainer<FlagsOverrideInfo> OverrideCompileFlags;
         PlatformProfileContainer<FlagsOverrideInfo> OverrideLinkFlags;
         PlatformProfileContainer<ProcessPaths> OtherFilesToBeCompiled;
@@ -69,7 +68,7 @@ namespace Data
         {
             ssLOG_FUNC_DEBUG();
             
-            ParseParametersAndVariables(*this, node).DS_TRY();
+            //ParseParametersAndVariables(*this, node).DS_TRY();
             
             //Clone and modify the yaml node
             YAML::ResourceHandle resourceHandle;
