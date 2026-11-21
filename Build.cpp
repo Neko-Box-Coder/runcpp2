@@ -202,7 +202,7 @@ DS::Result<void> Main(int argc, char** argv)
     if(argc >= 2 && strcmp(argv[1], "--help") == 0)
     {
         printf( "runcpp2 run Build.cpp [--runcpp2-path <path>] [--no-werror] [--info] [--rebuild] "
-                "[--no-test] [--release] [--output-dir <path>]\n");
+                "[--no-test] [--release] [--output-dir <path>] [--watch] [--global]\n");
         return {};
     }
     
@@ -218,6 +218,8 @@ DS::Result<void> Main(int argc, char** argv)
     bool rebuild = false;
     bool buildTest = true;
     bool release = false;
+    bool watch = false;
+    bool global = false;
     ghc::filesystem::path outputDir = "Build";
     std::error_code ec;
     for(int i = 1; i < argc; ++i)
@@ -244,6 +246,10 @@ DS::Result<void> Main(int argc, char** argv)
             buildTest = false;
         else if(strcmp(argv[i], "--release") == 0)
             release = true;
+        else if(strcmp(argv[i], "--watch") == 0)
+            watch = true;
+        else if(strcmp(argv[i], "--global") == 0)
+            global = true;
         else if(strcmp(argv[i], "--output-dir") == 0)
         {
             if(i + 1 >= argc)
@@ -260,6 +266,9 @@ DS::Result<void> Main(int argc, char** argv)
             return DS_ERROR_MSG(DS_STR("Unexpected option: \"") + argv[i] + "\"");
     }
     
+    if(watch && buildTest)
+        return DS_ERROR_MSG("--no-test must be present in watch mode");
+    
     if(!ghc::filesystem::exists("./External/cfgpath/cfgpath.h"))
         return DS_ERROR_MSG("./External/cfgpath/cfgpath.h doesn't exist");
     
@@ -268,7 +277,9 @@ DS::Result<void> Main(int argc, char** argv)
                                 ghc::filesystem::copy_options::update_existing,
                                 ec);
     
-    std::string runcpp2Args = "-l -c " + EscapePath("./DefaultYAMLs/DefaultUserConfig.yaml ");
+    std::string runcpp2Args =   global ? 
+                                "" : 
+                                "-l -c " + EscapePath("./DefaultYAMLs/DefaultUserConfig.yaml ");
     GenerateDefaultYAMLs(runcpp2Path, runcpp2Args).DS_TRY();
     
     RunCommand("git tag -d nightly");
@@ -313,12 +324,17 @@ DS::Result<void> Main(int argc, char** argv)
     if(release)
         params += ";Profile.CompileMode=Release";
     
-    std::string commonBuildCommand =    runcpp2Path + 
-                                        " build -o " + EscapePath("./TempBuild ") +
+    std::string commonBuildCommand =    runcpp2Path + " build -o " + EscapePath("./TempBuild ") +
                                         (rebuild ? "--rebuild " : "") +
                                         (info ? "--log-level info " : "") +
-                                        runcpp2Args + 
-                                        "--parameters \"" + params + "\" ";
+                                        runcpp2Args + "--parameters \"" + params + "\" ";
+    
+    if(watch)
+    {
+        commonBuildCommand =    runcpp2Path + " watch " + (rebuild ? "--rebuild " : "") + 
+                                (info ? "--log-level info " : "") + runcpp2Args + 
+                                "--parameters \"" + params + "\" ";
+    }
     
     RunCommand(commonBuildCommand + EscapePath("./Src/runcpp2/runcpp2.cpp")).DS_TRY();
     
