@@ -6,9 +6,17 @@
 
 namespace runcpp2
 {
+    template<typename T>
+    struct HasParameters { RUNCPP2_TEST_HAS_MEMBER_DECL(Parameters); };
+    
+    template<typename T>
+    struct HasVariables { RUNCPP2_TEST_HAS_MEMBER_DECL(Variables); };
+    
     //Expecting `std::unordered_map<std::string, ParameterValue> Parameters;` and
     //`std::unordered_map<std::string, std::string> Variables;` from T
-    template<typename T>
+    template<   typename T,
+                typename std::enable_if<HasParameters<T>::Value, bool>::type = true, 
+                typename std::enable_if<HasVariables<T>::Value, bool>::type = true>
     inline DS::Result<void> ParseParametersAndVariables(T& data, YAML::ConstNodePtr node)
     {
         std::vector<NodeRequirement> requirements =
