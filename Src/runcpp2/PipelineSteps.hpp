@@ -399,7 +399,8 @@ namespace runcpp2
         if(lastInfo != nullptr)
         {
             //Relink if there are any changes to the link flags
-            outRelinkNeeded = lastInfo->OverrideLinkFlags.PlatformEquals(scriptInfo.OverrideLinkFlags);
+            outRelinkNeeded = !lastInfo ->OverrideLinkFlags
+                                        .PlatformEquals(scriptInfo.OverrideLinkFlags);
             outAllRecompileNeeded = scriptInfo.IsAllCompiledCacheInvalidated(*lastInfo);
 
             //Check dependencies
