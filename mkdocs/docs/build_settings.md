@@ -531,7 +531,7 @@ ExampleSettings:
             - Description: Dependency or import YAML file exists in local filesystem directory, and needs to be copied to build directory
             - Child Fields: 
                 - `Path`
-                    - Type: `string`
+                    - Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string`
                     - Optional: `false`
                     - Default: None
                     - Description: Path to the library directory

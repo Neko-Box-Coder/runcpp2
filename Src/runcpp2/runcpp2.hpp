@@ -433,14 +433,11 @@ namespace runcpp2
                                     buildsManager,
                                     buildDir,
                                     includeManager).DS_TRY();
-        ResolveDependenciesImports(scriptInfo, scriptDirectory, buildDir, parameters).DS_TRY();
+        const Data::Profile& profile = params.profiles.at(profileIndex);
+        ResolveDependenciesImports(scriptInfo, scriptDirectory, buildDir, parameters, profile).DS_TRY();
         
         //Process Dependencies
-        ResetDependencies(  scriptInfo,
-                            params.profiles.at(profileIndex), 
-                            scriptDirectory,
-                            buildDir,
-                            targetDepToReset).DS_TRY();
+        ResetDependencies(scriptInfo, profile, scriptDirectory, buildDir, targetDepToReset).DS_TRY();
         return {};
     }
 
@@ -521,7 +518,8 @@ namespace runcpp2
         if(maxThreads <= 0)
             return DS_ERROR_MSG("Invalid number of threads passed in");
         
-        ResolveDependenciesImports(scriptInfo, scriptDirectory, buildDir, parameters).DS_TRY();
+        const Data::Profile& profile = params.profiles.at(profileIndex);
+        ResolveDependenciesImports(scriptInfo, scriptDirectory, buildDir, parameters, profile).DS_TRY();
         
         //Check if script info has changed if provided and run setup if needed
         bool recompileNeeded = false;
@@ -529,7 +527,7 @@ namespace runcpp2
         std::vector<std::string> changedDependencies;
         CheckScriptInfoChanges( buildDir, 
                                 scriptInfo, 
-                                params.profiles.at(profileIndex), 
+                                profile, 
                                 scriptDirectory,
                                 lastScriptInfo, 
                                 parameters,
@@ -640,6 +638,7 @@ namespace runcpp2
                                                     scriptInfo, 
                                                     runParams.Core.profiles, 
                                                     runParams.Core.configPreferredProfile).DS_TRY();
+        const Data::Profile& profile = runParams.Core.profiles.at(profileIndex);
         
         //Parsing the script, setting up dependencies, compiling and linking
         std::vector<ghc::filesystem::path> filesToCopyPaths;
@@ -660,7 +659,11 @@ namespace runcpp2
             if(maxThreads <= 0)
                 return DS_ERROR_MSG("Invalid number of threads passed in");
             
-            ResolveDependenciesImports(scriptInfo, scriptDirectory, buildDir, parameters).DS_TRY();
+            ResolveDependenciesImports( scriptInfo, 
+                                        scriptDirectory, 
+                                        buildDir, 
+                                        parameters, 
+                                        profile).DS_TRY();
             
             //Check if script info has changed if provided and run setup if needed
             bool recompileNeeded = false;
@@ -668,7 +671,7 @@ namespace runcpp2
             std::vector<std::string> changedDependencies;
             CheckScriptInfoChanges( buildDir, 
                                     scriptInfo, 
-                                    runParams.Core.profiles.at(profileIndex), 
+                                    profile, 
                                     scriptDirectory,
                                     runParams.lastScriptInfo, 
                                     parameters,
@@ -682,7 +685,7 @@ namespace runcpp2
             //Process Dependencies
             std::vector<Data::DependencyInfo*> availableDependencies;
             ProcessDependencies(scriptInfo,
-                                runParams.Core.profiles.at(profileIndex),
+                                profile, 
                                 scriptDirectory,
                                 buildDir,
                                 changedDependencies,
@@ -693,17 +696,14 @@ namespace runcpp2
             
             //Get all the files we are trying to compile
             std::vector<ghc::filesystem::path> sourceFiles;
-            GatherSourceFiles(  absoluteScriptPath, 
-                                scriptInfo, 
-                                runParams.Core.profiles.at(profileIndex), 
-                                sourceFiles).DS_TRY();
+            GatherSourceFiles(absoluteScriptPath, scriptInfo, profile, sourceFiles).DS_TRY();
 
             //Get all include paths
             std::vector<ghc::filesystem::path> sourceIncludePaths;
             std::vector<ghc::filesystem::path> depIncludePaths;
             GatherIncludePaths( scriptDirectory,
                                 scriptInfo,
-                                runParams.Core.profiles.at(profileIndex),
+                                profile, 
                                 availableDependencies,
                                 sourceIncludePaths,
                                 depIncludePaths).DS_TRY();
@@ -719,7 +719,7 @@ namespace runcpp2
                 HasCompiledCache(   scriptDirectory,
                                     sourceFiles, 
                                     buildDir, 
-                                    runParams.Core.profiles.at(profileIndex),
+                                    profile, 
                                     includeManager,
                                     sourceHasCache,
                                     cachedObjectsFiles,
@@ -769,7 +769,7 @@ namespace runcpp2
             }
             
             std::vector<ghc::filesystem::path> depLinkFilesPaths;
-            SeparateDependencyFiles(runParams.Core.profiles.at(profileIndex).FilesTypes, 
+            SeparateDependencyFiles(profile.FilesTypes, 
                                     gatheredBinariesPaths, 
                                     depLinkFilesPaths, 
                                     filesToCopyPaths);
@@ -799,13 +799,13 @@ namespace runcpp2
             }
             
             //Run PreBuild commands before compilation
-            HandlePreBuild(scriptInfo, runParams.Core.profiles.at(profileIndex), buildDir).DS_TRY();
+            HandlePreBuild(scriptInfo, profile, buildDir).DS_TRY();
             
             //Compiling/Linking
             bool outputCache = false;
             if(!HasOutputCache( sourceHasCache, 
                                 buildDir, 
-                                runParams.Core.profiles.at(profileIndex),
+                                profile,
                                 scriptInfo,
                                 scriptName,
                                 finalBinaryWriteTime,
@@ -841,7 +841,7 @@ namespace runcpp2
                                         sourceIncludePaths, 
                                         depIncludePaths, 
                                         scriptInfo,
-                                        runParams.Core.profiles.at(profileIndex),
+                                        profile,
                                         maxThreads).DS_TRY();
                     return 0;
                 }
@@ -856,7 +856,7 @@ namespace runcpp2
                                             depIncludePaths, 
                                             scriptInfo,
                                             availableDependencies,
-                                            runParams.Core.profiles.at(profileIndex),
+                                            profile,
                                             depLinkFilesPaths,
                                             depBinaryFilesPriorities,
                                             sourceLinkFilesPaths,
@@ -876,7 +876,7 @@ namespace runcpp2
             ghc::filesystem::path runnableTarget;
             GetBuiltTargetPaths(buildDir, 
                                 scriptName, 
-                                runParams.Core.profiles.at(profileIndex), 
+                                profile, 
                                 scriptInfo,
                                 targets,
                                 &runnableTarget).DS_TRY();
@@ -911,9 +911,7 @@ namespace runcpp2
                             return DS::Error(DS_TMP_ERROR));
             
             //Run PostBuild commands after successful compilation
-            HandlePostBuild(scriptInfo, 
-                            runParams.Core.profiles.at(profileIndex), 
-                            buildDir.string()).DS_TRY();
+            HandlePostBuild(scriptInfo, profile, buildDir.string()).DS_TRY();
             
             //Don't run if we are just watching or building
             if(runParams.buildOnly)

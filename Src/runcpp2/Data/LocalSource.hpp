@@ -3,6 +3,7 @@
 
 #include "runcpp2/LibYAML_Wrapper.hpp"
 #include "runcpp2/ParseUtil.hpp"
+#include "runcpp2/Data/PlatformProfileContainer.hpp"
 
 #include "DSResult/DSResult.hpp"
 #include "ssLogger/ssLog.hpp"
@@ -36,26 +37,58 @@ namespace Data
         Copy,
         Count
     };
-
-    struct LocalSource
+    
+    struct LocalSourcePath
     {
         std::string Path;
+        
+        inline bool IsYAML_NodeParsableAsDefault(YAML::ConstNodePtr node) const
+        {
+            return node->IsScalar();
+        }
+        
+        inline bool ParseYAML_Node(YAML::ConstNodePtr node)
+        {
+            if(!node->IsScalar())
+            {
+                ssLOG_ERROR("Failed to parse LocalSourcePath, unexpected type: " << 
+                            YAML::NodeTypeToString(node->GetType()));
+                return false;
+            }
+            Path = node->GetScalar<std::string>().DS_TRY_ACT(return false);
+            return true;
+        }
+        
+        inline std::string ToString(std::string indentation) const
+        {
+            std::string out;
+            out += indentation + GetEscapedYAMLString(Path) + "\n";
+            return out;
+        }
+        
+        inline bool Equals(const LocalSourcePath& other) const
+        {
+            return Path == other.Path;
+        }
+    };
+    
+    struct LocalSource
+    {
+        PlatformProfileContainer<LocalSourcePath> Path;
         LocalCopyMode CopyMode = LocalCopyMode::Auto;
         
         inline bool ParseYAML_Node(YAML::ConstNodePtr node)
         {
-            std::vector<NodeRequirement> requirements =
+            if(!ExistAndHasChild(node, "Path"))
             {
-                NodeRequirement("Path", YAML::NodeType::Scalar, true, false)
-            };
-            
-            if(!CheckNodeRequirements(node, requirements))
-            {
-                ssLOG_ERROR("LocalSource: Failed to meet requirements");
+                ssLOG_ERROR("LocalSource must container \"Path\"");
                 return false;
             }
             
-            Path = node->GetMapValueScalar<std::string>("Path").DS_TRY_ACT(return false);
+            YAML::ConstNodePtr pathNode = node->GetMapValueNode("Path");
+            if(!Path.ParseYAML_Node(pathNode))
+                return false;
+            
             if(ExistAndHasChild(node, "CopyMode"))
             {
                 bool success = false;
@@ -73,14 +106,14 @@ namespace Data
         {
             std::string out;
             out += indentation + "Local:\n";
-            out += indentation + "    Path: " + GetEscapedYAMLString(Path) + "\n";
+            out += indentation + "    Path: \n" + Path.ToString(indentation + "        ");
             out += indentation + "    CopyMode: " + CopyModeToString(CopyMode) + "\n";
             return out;
         }
 
         inline bool Equals(const LocalSource& other) const
         {
-            return Path == other.Path && CopyMode == other.CopyMode;
+            return Path.Equals(other.Path) && CopyMode == other.CopyMode;
         }
     };
 }

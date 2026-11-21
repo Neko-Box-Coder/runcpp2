@@ -132,8 +132,9 @@ DS::Result<void> TestMain()
         
         DS_ASSERT_EQ(roots.size(), 1);
         runcpp2::YAML::NodePtr root = roots.front();
-        runcpp2::Data::ScriptInfo scriptInfo;
+        runcpp2::Data::ScriptInfo scriptInfo = {};
         
+        runcpp2::ParseParametersAndVariables(scriptInfo, root).DS_TRY();
         scriptInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
         
         //Verify basic fields
@@ -279,7 +280,8 @@ DS::Result<void> TestMain()
         roots = runcpp2::YAML::ParseYAML(yamlOutput, resource).DS_TRY();
         DS_ASSERT_EQ(roots.size(), 1);
         
-        runcpp2::Data::ScriptInfo parsedOutput;
+        runcpp2::Data::ScriptInfo parsedOutput = {};
+        runcpp2::ParseParametersAndVariables(parsedOutput, roots.front()).DS_TRY();
         parsedOutput.ParseYAML_Node(roots.front(), tempParameters).DS_TRY();
         DS_ASSERT_TRUE(scriptInfo.Equals(parsedOutput));
     }
@@ -302,8 +304,9 @@ DS::Result<void> TestMain()
         
         DS_ASSERT_EQ(roots.size(), 1);
         runcpp2::YAML::NodePtr root = roots.front();
-        runcpp2::Data::ScriptInfo scriptInfo;
+        runcpp2::Data::ScriptInfo scriptInfo = {};
         
+        runcpp2::ParseParametersAndVariables(scriptInfo, root).DS_TRY();
         scriptInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
         
         //Verify SourceFiles
@@ -355,8 +358,9 @@ DS::Result<void> TestMain()
         
         DS_ASSERT_EQ(roots.size(), 1);
         runcpp2::YAML::NodePtr root = roots.front();
-        runcpp2::Data::ScriptInfo scriptInfo;
+        runcpp2::Data::ScriptInfo scriptInfo = {};
         
+        runcpp2::ParseParametersAndVariables(scriptInfo, root).DS_TRY();
         scriptInfo.ParseYAML_Node(root, tempParameters).DS_TRY();
         
         //Verify basic fields
@@ -464,8 +468,9 @@ DS::Result<void> TestMain()
         
         DS_ASSERT_EQ(roots.size(), 1);
         runcpp2::YAML::NodePtr root = roots.front();
-        runcpp2::Data::ScriptInfo scriptInfo;
+        runcpp2::Data::ScriptInfo scriptInfo = {};
         
+        runcpp2::ParseParametersAndVariables(scriptInfo, root).DS_TRY();
         scriptInfo.ParseYAML_Node(root, parameters).DS_TRY();
         const std::vector<runcpp2::Data::Define>& defaultDefines = 
             scriptInfo.CurDefines.Data.at("DefaultPlatform").at("DefaultProfile").CurDefines;
@@ -506,8 +511,9 @@ DS::Result<void> TestMain()
         
         DS_ASSERT_EQ(roots.size(), 1);
         runcpp2::YAML::NodePtr root = roots.front();
-        runcpp2::Data::ScriptInfo scriptInfo;
+        runcpp2::Data::ScriptInfo scriptInfo = {};
         
+        runcpp2::ParseParametersAndVariables(scriptInfo, root).DS_TRY();
         scriptInfo.ParseYAML_Node(root, parameters).DS_TRY();
         {
             const std::vector<runcpp2::Data::Define>& defaultDefines = 
@@ -555,6 +561,7 @@ DS::Result<void> TestMain()
         root = roots.front();
         
         scriptInfo = {};
+        runcpp2::ParseParametersAndVariables(scriptInfo, root).DS_TRY();
         scriptInfo.ParseYAML_Node(root, parameters).DS_TRY();
         
         {
@@ -601,8 +608,9 @@ DS::Result<void> TestMain()
         
         DS_ASSERT_EQ(roots.size(), 1);
         runcpp2::YAML::NodePtr root = roots.front();
-        runcpp2::Data::ScriptInfo scriptInfo;
+        runcpp2::Data::ScriptInfo scriptInfo = {};
         
+        runcpp2::ParseParametersAndVariables(scriptInfo, root).DS_TRY();
         DS::Result<void> res = scriptInfo.ParseYAML_Node(root, parameters);
         DS_ASSERT_FALSE(res.HasValue());
         DS_ASSERT_EQ(   res.Error().Message, 

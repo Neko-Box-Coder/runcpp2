@@ -48,6 +48,7 @@ namespace
     DS::Result<void> GetDependencyPath( const runcpp2::Data::DependencyInfo& dependency,
                                         const ghc::filesystem::path& scriptDirectory,
                                         const ghc::filesystem::path& buildDir,
+                                        const runcpp2::Data::Profile& profile, 
                                         ghc::filesystem::path& outCopyPath,
                                         ghc::filesystem::path& outSourcePath);
     
@@ -87,10 +88,11 @@ namespace runcpp2
 {
     inline DS::Result<void> 
     GetDependenciesPaths(   const std::vector<Data::DependencyInfo*>& availableDependencies,
-                            std::vector<std::string>& outCopiesPaths,
-                            std::vector<std::string>& outSourcesPaths,
                             const ghc::filesystem::path& scriptDirectory,
-                            const ghc::filesystem::path& buildDir)
+                            const ghc::filesystem::path& buildDir,
+                            const Data::Profile& profile, 
+                            std::vector<std::string>& outCopiesPaths,
+                            std::vector<std::string>& outSourcesPaths)
     {
         ssLOG_FUNC_INFO();
 
@@ -101,6 +103,7 @@ namespace runcpp2
             GetDependencyPath(  *availableDependencies.at(i),
                                 scriptDirectory,
                                 buildDir,
+                                profile,
                                 currentCopyPath,
                                 currentSourcePath).DS_TRY();
             
@@ -791,7 +794,8 @@ namespace runcpp2
     ResolveDependenciesImports( Data::ScriptInfo& scriptInfo,
                                 const ghc::filesystem::path& scriptDirectory,
                                 const ghc::filesystem::path& buildDir,
-                                const std::unordered_map<std::string, std::string>& inputParameters)
+                                const std::unordered_map<std::string, std::string>& inputParameters, 
+                                const Data::Profile& profile)
     {
         ssLOG_FUNC_INFO();
         
@@ -810,8 +814,12 @@ namespace runcpp2
 
             ghc::filesystem::path copyPath;
             ghc::filesystem::path sourcePath;
-            GetDependencyPath(dependency, scriptDirectory, buildDir, copyPath, sourcePath).DS_TRY();
-
+            GetDependencyPath(  dependency, 
+                                scriptDirectory, 
+                                buildDir, 
+                                profile, 
+                                copyPath, 
+                                sourcePath).DS_TRY();
             bool prePopulated = false;
             PopulateDependency(dependency, copyPath, sourcePath, buildDir, prePopulated).DS_TRY();
             
@@ -1072,6 +1080,7 @@ namespace
     DS::Result<void> GetDependencyPath( const runcpp2::Data::DependencyInfo& dependency,
                                         const ghc::filesystem::path& scriptDirectory,
                                         const ghc::filesystem::path& buildDir,
+                                        const runcpp2::Data::Profile& profile,
                                         ghc::filesystem::path& outCopyPath,
                                         ghc::filesystem::path& outSourcePath)
     {
@@ -1115,7 +1124,16 @@ namespace
                 mpark::get_if<runcpp2::Data::LocalSource>(&currentSource.Source);
             
             std::string localDepDirectoryName;
-            std::string curPath = local->Path;
+            std::string curPath;
+            {
+                const LocalSourcePath* localPath = local->Path.GetValueFromProfile(profile);
+                if(!localPath)
+                {
+                    return DS_ERROR_MSG("Failed to get local source path for dependency " + 
+                                        dependency.Name);
+                }
+                curPath = localPath->Path;
+            }
             
             if(curPath.back() == '/')
                 curPath.pop_back();
@@ -1123,9 +1141,9 @@ namespace
             localDepDirectoryName = ghc::filesystem::path(curPath).filename().string();
             
             if(ghc::filesystem::path(curPath).is_relative())
-                outSourcePath = (scriptDirectory / local->Path);
+                outSourcePath = (scriptDirectory / curPath);
             else
-                outSourcePath = (local->Path);
+                outSourcePath = (curPath);
 
             if(!ghc::filesystem::is_directory(outSourcePath))
             {

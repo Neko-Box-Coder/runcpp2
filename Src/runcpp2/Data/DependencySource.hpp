@@ -107,8 +107,8 @@ namespace Data
             //If so, we assume it's a local source with path "./"
             else if(!ImportPath.empty())
             {
-                LocalSource localSource;
-                localSource.Path = "./";
+                LocalSource localSource = {};
+                localSource.Path.Data["DefaultPlatform"]["DefaultProfile"].Path = "./";
                 Source = localSource;
                 return true;
             }
