@@ -345,7 +345,7 @@ namespace runcpp2
                     if(parser.problem_mark.line || parser.problem_mark.column)
                     {
                         return DS_ERROR_MSG(DS_STR("Parsing failed: ") + parser.problem + " on line " +
-                                            DS_STR(parser.problem_mark.line + 1) + ", column" +
+                                            DS_STR(parser.problem_mark.line + 1) + ", column " +
                                             DS_STR(parser.problem_mark.column + 1));
                     }
                     else

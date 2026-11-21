@@ -483,9 +483,16 @@ namespace runcpp2
             if(e)
                 return DS_ERROR_MSG("Failed to get write time for script info" + e.message());
 
+            #define TO_NUM() time_since_epoch().count()
+
             //If script info file is newer than last check, we need to update
             if(currentWriteTime > scriptInfo.LastWriteTime)
+            {
+                ssLOG_INFO("Sources need update due to newer write time from ScriptInfo");
+                ssLOG_INFO("currentWriteTime: " << currentWriteTime.TO_NUM());
+                ssLOG_INFO("scriptInfo.LastWriteTime: " << scriptInfo.LastWriteTime.TO_NUM());
                 return true;
+            }
         }
         
         if(params.profiles.empty())
@@ -530,7 +537,10 @@ namespace runcpp2
                                 relinkNeeded, 
                                 changedDependencies).DS_TRY();
         if(relinkNeeded)
+        {
+            ssLOG_INFO("Sources need update due to relink required");
             return true;
+        }
         
         std::vector<std::string> gatheredBinariesPaths;
         
@@ -573,10 +583,17 @@ namespace runcpp2
         if( finalSourceWriteTime > prevFinalSourceWriteTime ||
             finalIncludeWriteTime > prevFinalIncludeWriteTime)
         {
+            ssLOG_INFO("Sources need update due newer source/include write time");
+            ssLOG_INFO("finalSourceWriteTime: " << finalSourceWriteTime.TO_NUM());
+            ssLOG_INFO("prevFinalSourceWriteTime: " << prevFinalSourceWriteTime.TO_NUM());
+            ssLOG_INFO("finalIncludeWriteTime: " << finalIncludeWriteTime.TO_NUM());
+            ssLOG_INFO("prevFinalIncludeWriteTime: " << prevFinalIncludeWriteTime.TO_NUM());
             return true;
         }
         else
             return false;
+    
+        #undef TO_NUM
     }
 
     struct RunParams
@@ -800,6 +817,12 @@ namespace runcpp2
             
             if(!outputCache || relinkNeeded)
             {
+                if(!outputCache)
+                    ssLOG_INFO("No output cache, recompiling/relinking...");
+                
+                if(relinkNeeded)
+                    ssLOG_INFO("Relink needed, relinking...");
+                
                 std::vector<ghc::filesystem::path> sourceLinkFilesPaths;
                 std::vector<int> sourceBinaryFilesPriorities;
                 for(int i = 0; i < cachedObjectsFiles.size(); ++i)

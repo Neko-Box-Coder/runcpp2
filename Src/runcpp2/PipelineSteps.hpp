@@ -365,29 +365,35 @@ namespace runcpp2
             int currentThreadTargetLevel = ssLOG_GET_CURRENT_THREAD_TARGET_LEVEL();
             ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(ssLOG_LEVEL_NONE);
             
+            DS::Result<void> parseRes = {};
             do
             {
-                if(!ParseScriptInfo(lastScriptInfoBuffer.str(), 
-                                    scriptDirectory,
-                                    parameters, 
-                                    lastScriptInfoFromDisk).HasValue())
-                {
+                parseRes = ParseScriptInfo( lastScriptInfoBuffer.str(), 
+                                            scriptDirectory,
+                                            parameters, 
+                                            lastScriptInfoFromDisk);
+                if(!parseRes.HasValue())
                     break;
-                }
                 
                 //Resolve imports for last script info
-                if(!ResolveDependenciesImports( lastScriptInfoFromDisk, 
-                                                scriptDirectory, 
-                                                buildDir, 
-                                                parameters).HasValue())
-                {
+                parseRes = ResolveDependenciesImports(  lastScriptInfoFromDisk, 
+                                                        scriptDirectory, 
+                                                        buildDir, 
+                                                        parameters, 
+                                                        profile);
+                if(!parseRes.HasValue())
                     break;
-                }
                 lastInfo = &lastScriptInfoFromDisk;
             }
             while(false);
             
             ssLOG_SET_CURRENT_THREAD_TARGET_LEVEL(currentThreadTargetLevel);
+            
+            if(!parseRes.HasValue())
+            {
+                ssLOG_WARNING(  "Failed to use cache, recompiling/relinking: " << 
+                                parseRes.Error().ToString());
+            }
             
             if(lastInfo != nullptr)
                 ssLOG_INFO("Last script info parsed");
@@ -468,10 +474,11 @@ namespace runcpp2
         std::vector<std::string> dependenciesLocalCopiesPaths;
         std::vector<std::string> dependenciesSourcePaths;
         GetDependenciesPaths(   availableDependencies,
-                                dependenciesLocalCopiesPaths,
-                                dependenciesSourcePaths,
                                 scriptDirectory,
-                                buildDir).DS_TRY();
+                                buildDir, 
+                                profile, 
+                                dependenciesLocalCopiesPaths,
+                                dependenciesSourcePaths).DS_TRY();
         
         CleanupDependencies(profile,
                             scriptInfo,
@@ -505,10 +512,11 @@ namespace runcpp2
         std::vector<std::string> dependenciesLocalCopiesPaths;
         std::vector<std::string> dependenciesSourcePaths;
         GetDependenciesPaths(   outAvailableDependencies,
-                                dependenciesLocalCopiesPaths,
-                                dependenciesSourcePaths,
                                 scriptDirectory,
-                                buildDir).DS_TRY();
+                                buildDir, 
+                                profile, 
+                                dependenciesLocalCopiesPaths,
+                                dependenciesSourcePaths).DS_TRY();
         
         if(!changedDependencies.empty())
         {
