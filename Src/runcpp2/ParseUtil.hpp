@@ -17,10 +17,19 @@
 #include <memory>
 #include <ostream>
 #include <string>
-
+#include <type_traits>
 
 namespace runcpp2
 {
+    #define RUNCPP2_TEST_HAS_MEMBER_DECL(memberName) \
+        template<typename U> \
+        static decltype(&U::memberName, std::true_type()) Test(int); \
+        \
+        template<typename U> \
+        static std::false_type Test(...); \
+        \
+        static constexpr bool Value = decltype(Test<T>(1))::value
+    
     inline bool ExistAndHasChild(   YAML::ConstNodePtr node, 
                                     const std::string& childName,
                                     bool nullable = false)

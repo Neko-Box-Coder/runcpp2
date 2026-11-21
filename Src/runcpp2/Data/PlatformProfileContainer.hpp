@@ -3,6 +3,7 @@
 
 #include "runcpp2/Data/Profile.hpp"
 #include "runcpp2/Data/ParseCommon.hpp"
+#include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/LibYAML_Wrapper.hpp"
 
 #include "ssLogger/ssLog.hpp"
@@ -17,6 +18,22 @@ namespace runcpp2
 namespace Data
 {
     template<typename T>
+    struct HasYAMLParseAsDefault { RUNCPP2_TEST_HAS_MEMBER_DECL(IsYAML_NodeParsableAsDefault); };
+    
+    template<typename T>
+    struct HasYAMLParse { RUNCPP2_TEST_HAS_MEMBER_DECL(ParseYAML_Node); };
+    
+    template<typename T>
+    struct HasToString { RUNCPP2_TEST_HAS_MEMBER_DECL(ToString); };
+    
+    template<typename T>
+    struct HasEquals { RUNCPP2_TEST_HAS_MEMBER_DECL(Equals); };
+    
+    template<   typename T, 
+                typename std::enable_if<HasYAMLParseAsDefault<T>::Value, bool>::type = true, 
+                typename std::enable_if<HasYAMLParse<T>::Value, bool>::type = true, 
+                typename std::enable_if<HasToString<T>::Value, bool>::type = true, 
+                typename std::enable_if<HasEquals<T>::Value, bool>::type = true>
     struct PlatformProfileContainer
     {
         std::unordered_map<PlatformName, std::unordered_map<ProfileName, T>> Data;
