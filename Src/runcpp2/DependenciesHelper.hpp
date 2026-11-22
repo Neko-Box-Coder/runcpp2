@@ -56,6 +56,7 @@ namespace
                                         const ghc::filesystem::path& copyPath,
                                         const ghc::filesystem::path& sourcePath,
                                         const ghc::filesystem::path& buildDir,
+                                        const runcpp2::Data::Profile& profile,
                                         bool& outPrePopulated);
     
     DS::Result<void> 
@@ -63,6 +64,7 @@ namespace
                                 const std::vector<std::string>& dependenciesCopiesPaths,
                                 const std::vector<std::string>& dependenciesSourcesPaths,
                                 const ghc::filesystem::path& buildDir,
+                                const runcpp2::Data::Profile& profile, 
                                 std::vector<bool>& outPrePopulated);
     
     DS::Result<void> 
@@ -251,6 +253,7 @@ namespace runcpp2
                                     dependenciesLocalCopiesPaths, 
                                     dependenciesSourcePaths, 
                                     buildDir,
+                                    profile, 
                                     prePolulatedDependencies).DS_TRY();
         
         PopulateAbsoluteIncludePaths(availableDependencies, dependenciesLocalCopiesPaths).DS_TRY();
@@ -821,7 +824,12 @@ namespace runcpp2
                                 copyPath, 
                                 sourcePath).DS_TRY();
             bool prePopulated = false;
-            PopulateDependency(dependency, copyPath, sourcePath, buildDir, prePopulated).DS_TRY();
+            PopulateDependency( dependency, 
+                                copyPath, 
+                                sourcePath, 
+                                buildDir, 
+                                profile, 
+                                prePopulated).DS_TRY();
             
             //Parse the import file
             HandleImport(dependency, scriptInfo.SubstitutionMap, copyPath, inputParameters).DS_TRY();
@@ -1126,7 +1134,7 @@ namespace
             std::string localDepDirectoryName;
             std::string curPath;
             {
-                const LocalSourcePath* localPath = local->Path.GetValueFromProfile(profile);
+                const SourcePath* localPath = local->Path.GetValueFromProfile(profile);
                 if(!localPath)
                 {
                     return DS_ERROR_MSG("Failed to get local source path for dependency " + 
@@ -1173,6 +1181,7 @@ namespace
                                         const ghc::filesystem::path& copyPath,
                                         const ghc::filesystem::path& sourcePath,
                                         const ghc::filesystem::path& buildDir,
+                                        const runcpp2::Data::Profile& profile,
                                         bool& outPrePopulated)
     {
         ssLOG_FUNC_INFO();
@@ -1326,10 +1335,13 @@ namespace
                         lastWriteTime = curWriteTime;
                 }
                 
+                const runcpp2::Data::SourcePath* linkSource = link->URL.GetValueFromProfile(profile);
+                if(!linkSource)
+                    return DS_ERROR_MSG("Failed to get link URL from current platform/profile");
                 {
                     std::string curlOutput;
                     int returnCode = 0;
-                    if(!runcpp2::RunCommand("curl -L -O " + link->URL, 
+                    if(!runcpp2::RunCommand("curl -L -O " + linkSource->Path, 
                                             true,
                                             copyPath.string(),
                                             curlOutput,
@@ -1361,7 +1373,7 @@ namespace
                 }
                 
                 if(!found)
-                    return DS_ERROR_MSG("Failed to download file from " + link->URL);
+                    return DS_ERROR_MSG("Failed to download file from " + linkSource->Path);
                 
                 std::string ext = filename.extension().string();
                 for(int i = 0; i < ext.size(); ++i)
@@ -1447,6 +1459,7 @@ namespace
                                 const std::vector<std::string>& dependenciesCopiesPaths,
                                 const std::vector<std::string>& dependenciesSourcesPaths,
                                 const ghc::filesystem::path& buildDir,
+                                const runcpp2::Data::Profile& profile, 
                                 std::vector<bool>& outPrePopulated)
     {
         ssLOG_FUNC_INFO();
@@ -1463,6 +1476,7 @@ namespace
                                 ghc::filesystem::path(dependenciesCopiesPaths.at(i)),
                                 ghc::filesystem::path(dependenciesSourcesPaths.at(i)),
                                 buildDir,
+                                profile, 
                                 prePopulated).DS_TRY();
             outPrePopulated.at(i) = prePopulated;
         }

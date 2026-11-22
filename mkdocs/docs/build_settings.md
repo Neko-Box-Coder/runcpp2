@@ -487,10 +487,11 @@ ExampleSettings:
             field exists. 
                 - For Git source: Path is relative to the git repository root. 
                 - For Local source: Path is relative to the path specified under `Local`. 
-                - If neither source exists, local source with main file directory is assumed.
+                - For Link source: Path is relative to the path where the extraction happens
+                - If no explicit source exists, local source with main file directory is assumed.
         - `Git`
             - Type: `map` with child fields
-            - Optional: `true` if `ImportPath` is specified or `Local` is specified
+            - Optional: `true` if `ImportPath` is specified. Cannot coexists with `Local`/`Link`.
             - Default: None
             - Description: Dependency or import YAML file exists in a git server, and needs to be cloned to build directory
             - Child Fields: 
@@ -523,10 +524,9 @@ ExampleSettings:
                     - Optional: `true`
                     - Default: `Shallow`
                     - Description: Initialization type for all the submodules recursively 
-        
         - `Local`
             - Type: `map` with child fields
-            - Optional: `true` if `ImportPath` is specified or `Git` is specified
+            - Optional: `true` if `ImportPath` is specified. Cannot coexists with `Git`/`Link`.
             - Default: None
             - Description: Dependency or import YAML file exists in local filesystem directory, and needs to be copied to build directory
             - Child Fields: 
@@ -545,6 +545,22 @@ ExampleSettings:
                     - Optional: `true`
                     - Default: `Auto`
                     - Description: How to handle copying files to build directory
+        - `Link`
+            - Type: `map` with child fields
+            - Optional: `true` if `ImportPath` is specified. Cannot coexists with `Git`/`Local`.
+            - Default: None
+            - Description: Archived dependency or import YAML file exists in http/https link, which will be downloaded via curl, and extracts with the corresponding executable.
+            - Child Fields: 
+                - `URL`
+                    - Type: [Platform Profile Map](#platform-profile-map){:target="_blank"} with `string`
+                    - Optional: `false`
+                    - Default: None
+                    - Description: URL link to download the archive
+                - `Name`
+                    - Type: `string`
+                    - Optional: `false`
+                    - Default: None
+                    - Description: **Unique** name of the directory to be perform extraction of the archive
     
     #### `Parameters`
     - Type: [ParametersInfo](#parametersinfo){:target="_blank"}

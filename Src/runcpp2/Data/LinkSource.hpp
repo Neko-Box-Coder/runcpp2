@@ -3,6 +3,8 @@
 
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/LibYAML_Wrapper.hpp"
+#include "runcpp2/Data/PlatformProfileContainer.hpp"
+#include "runcpp2/Data/SourcePath.hpp"
 
 #include "DSResult/DSResult.hpp"
 #include "ssLogger/ssLog.hpp"
@@ -16,14 +18,13 @@ namespace Data
 {
     struct LinkSource
     {
-        std::string URL;
+        PlatformProfileContainer<SourcePath> URL;
         std::string Name;
         
         inline bool ParseYAML_Node(YAML::ConstNodePtr node)
         {
             std::vector<NodeRequirement> requirements =
             {
-                NodeRequirement("URL", YAML::NodeType::Scalar, true, false),
                 NodeRequirement("Name", YAML::NodeType::Scalar, true, false),
             };
             
@@ -33,9 +34,16 @@ namespace Data
                 return false;
             }
             
-            URL = node->GetMapValueScalar<std::string>("URL").value();
-            Name = node->GetMapValueScalar<std::string>("Name").value();
+            if(!ExistAndHasChild(node, "URL"))
+            {
+                ssLOG_ERROR("LinkSource must container \"URL\"");
+                return false;
+            }
             
+            if(!URL.ParseYAML_Node(node->GetMapValueNode("URL")))
+                return false;
+            
+            Name = node->GetMapValueScalar<std::string>("Name").value();
             return true;
         }
 
@@ -43,14 +51,14 @@ namespace Data
         {
             std::string out;
             out += indentation + "Link:\n";
-            out += indentation + "    URL: " + GetEscapedYAMLString(URL) + "\n";
+            out += indentation + "    URL: \n" + URL.ToString(indentation + "        ");
             out += indentation + "    Name: " + GetEscapedYAMLString(Name) + "\n";
             return out;
         }
 
         inline bool Equals(const LinkSource& other) const
         {
-            return URL == other.URL && Name == other.Name;
+            return URL.Equals(other.URL) && Name == other.Name;
         }
     };
 }

@@ -4,11 +4,11 @@
 #include "runcpp2/LibYAML_Wrapper.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/Data/PlatformProfileContainer.hpp"
+#include "runcpp2/Data/SourcePath.hpp"
 
 #include "DSResult/DSResult.hpp"
 #include "ssLogger/ssLog.hpp"
 
-#include <string>
 #include <vector>
 
 namespace runcpp2
@@ -38,43 +38,9 @@ namespace Data
         Count
     };
     
-    struct LocalSourcePath
-    {
-        std::string Path;
-        
-        inline bool IsYAML_NodeParsableAsDefault(YAML::ConstNodePtr node) const
-        {
-            return node->IsScalar();
-        }
-        
-        inline bool ParseYAML_Node(YAML::ConstNodePtr node)
-        {
-            if(!node->IsScalar())
-            {
-                ssLOG_ERROR("Failed to parse LocalSourcePath, unexpected type: " << 
-                            YAML::NodeTypeToString(node->GetType()));
-                return false;
-            }
-            Path = node->GetScalar<std::string>().DS_TRY_ACT(return false);
-            return true;
-        }
-        
-        inline std::string ToString(std::string indentation) const
-        {
-            std::string out;
-            out += indentation + GetEscapedYAMLString(Path) + "\n";
-            return out;
-        }
-        
-        inline bool Equals(const LocalSourcePath& other) const
-        {
-            return Path == other.Path;
-        }
-    };
-    
     struct LocalSource
     {
-        PlatformProfileContainer<LocalSourcePath> Path;
+        PlatformProfileContainer<SourcePath> Path;
         LocalCopyMode CopyMode = LocalCopyMode::Auto;
         
         inline bool ParseYAML_Node(YAML::ConstNodePtr node)
