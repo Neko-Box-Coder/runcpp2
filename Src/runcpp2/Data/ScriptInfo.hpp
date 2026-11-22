@@ -70,8 +70,6 @@ namespace Data
         {
             ssLOG_FUNC_DEBUG();
             
-            ParseParametersAndVariables(*this, node).DS_TRY();
-            
             //Clone and modify the yaml node
             YAML::ResourceHandle resourceHandle;
             YAML::NodePtr clonedNode = node->Clone(false, resourceHandle).DS_TRY();
