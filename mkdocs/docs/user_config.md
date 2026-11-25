@@ -440,7 +440,6 @@ first before merging.
         
         - `{Stage.Input.Name}`: Name of the files to be linked, regardless of the build type
             - `{Stage.Input.Dep.Name}`: Name of the dependencies files to be linked, regardless of the build type, sub array
-            - `{Stage.Input.Source.Name}`: Name of the source files to be linked, regardless of the build type, sub array
             - `{Stage.Input.Object.Name}`: Name of the object files to be linked, sub array
                 - `{Stage.Input.Dep.Object.Name}`: Name of the dependencies object files to be linked, Sub array
                 - `{Stage.Input.Source.Object.Name}`: Name of the source object files to be linked, Sub array
@@ -449,7 +448,6 @@ first before merging.
         
         - `{Stage.Input.Extension}`: File Extensions of the files to be linked, regardless of the build type
             - `{Stage.Input.Dep.Extension}`: File Extensions of the dependencies files to be linked, regardless of the build type
-            - `{Stage.Input.Source.Extension}`: File Extensions of the source files to be linked, regardless of the build type
             - `{Stage.Input.Object.Extension}`: File Extensions of the object files to be linked, sub array
                 - `{Stage.Input.Dep.Object.Extension}`: File Extensions of the dependencies object files to be linked, sub array
                 - `{Stage.Input.Source.Object.Extension}`: File Extensions of the source object files to be linked, sub array
@@ -458,7 +456,6 @@ first before merging.
         
         - `{Stage.Input.Directory}`: Directories of the files to be linked, regardless of the build type
             - `{Stage.Input.Dep.Directory}`: Directories of the dependencies files to be linked, regardless of the build type
-            - `{Stage.Input.Source.Directory}`: Directories of the source files to be linked, regardless of the build type
             - `{Stage.Input.Object.Directory}`: Directories of the object files to be linked, sub array
                 - `{Stage.Input.Dep.Object.Directory}`: Directories of the dependencies object files to be linked, sub array
                 - `{Stage.Input.Source.Object.Directory}`: Directories of the source object files to be linked, sub array
@@ -467,7 +464,6 @@ first before merging.
         
         - `{Stage.Input.Path}`: Full paths to the files to be linked, regardless of the build type
             - `{Stage.Input.Dep.Path}`: Full paths to the dependencies files to be linked, regardless of the build type
-            - `{Stage.Input.Source.Path}`: Full paths to the source files to be linked, regardless of the build type
             - `{Stage.Input.Object.Path}`: Full paths to the object files to be linked, sub array
                 - `{Stage.Input.Dep.Object.Path}`: Full paths to the dependencies object files to be linked, sub array
                 - `{Stage.Input.Source.Object.Path}`: Full paths to the source object files to be linked, sub array

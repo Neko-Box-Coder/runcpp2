@@ -722,14 +722,7 @@ namespace
                     runcpp2::ProcessPath(*(currentLinkTarget.Path));
                 substitutionMap["{Stage.Input.Path}"].push_back(processedLinkFilePath);
                 
-                if(currentLinkTarget.IsSource)
-                {
-                    substitutionMap["{Stage.Input.Source.Name}"].push_back(linkName);
-                    substitutionMap["{Stage.Input.Source.Extension}"].push_back(linkExt);
-                    substitutionMap["{Stage.Input.Source.Directory}"].push_back(linkDir);
-                    substitutionMap["{Stage.Input.Source.Path}"].push_back(processedLinkFilePath);
-                }
-                else
+                if(!currentLinkTarget.IsSource)
                 {
                     substitutionMap["{Stage.Input.Dep.Name}"].push_back(linkName);
                     substitutionMap["{Stage.Input.Dep.Extension}"].push_back(linkExt);
