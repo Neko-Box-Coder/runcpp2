@@ -74,7 +74,8 @@ DS::Result<void> TestMain()
         const runcpp2::Data::LocalSource* local = 
             mpark::get_if<runcpp2::Data::LocalSource>(&dependencySource.Source);
         DS_ASSERT_TRUE(local != nullptr);
-        DS_ASSERT_EQ(local->Path, "../external/mylib");
+        DS_ASSERT_EQ(   local->Path.Data.at("DefaultPlatform").at("DefaultProfile").Path, 
+                        "../external/mylib");
         DS_ASSERT_EQ((int)local->CopyMode, (int)runcpp2::Data::LocalCopyMode::Auto);
         
         //Test ToString() and Equals()

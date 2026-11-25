@@ -42,10 +42,11 @@ namespace Data
         std::string Language;
         bool PassScriptPath = false;
         BuildType CurrentBuildType = BuildType::EXECUTABLE;
+        
+        //TODO: Add platform container similar to PlatformProfileContainer
         std::unordered_map<PlatformName, std::vector<ProfileName>> RequiredProfiles;
         std::unordered_map<std::string, ParameterValue> Parameters;
         std::unordered_map<std::string, std::string> Variables;
-        
         PlatformProfileContainer<FlagsOverrideInfo> OverrideCompileFlags;
         PlatformProfileContainer<FlagsOverrideInfo> OverrideLinkFlags;
         PlatformProfileContainer<ProcessPaths> OtherFilesToBeCompiled;
@@ -68,8 +69,6 @@ namespace Data
                         const std::unordered_map<std::string, std::string>& inputParameters)
         {
             ssLOG_FUNC_DEBUG();
-            
-            ParseParametersAndVariables(*this, node).DS_TRY();
             
             //Clone and modify the yaml node
             YAML::ResourceHandle resourceHandle;

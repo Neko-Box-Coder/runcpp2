@@ -433,14 +433,11 @@ namespace runcpp2
                                     buildsManager,
                                     buildDir,
                                     includeManager).DS_TRY();
-        ResolveDependenciesImports(scriptInfo, scriptDirectory, buildDir, parameters).DS_TRY();
+        const Data::Profile& profile = params.profiles.at(profileIndex);
+        ResolveDependenciesImports(scriptInfo, scriptDirectory, buildDir, parameters, profile).DS_TRY();
         
         //Process Dependencies
-        ResetDependencies(  scriptInfo,
-                            params.profiles.at(profileIndex), 
-                            scriptDirectory,
-                            buildDir,
-                            targetDepToReset).DS_TRY();
+        ResetDependencies(scriptInfo, profile, scriptDirectory, buildDir, targetDepToReset).DS_TRY();
         return {};
     }
 
@@ -483,9 +480,16 @@ namespace runcpp2
             if(e)
                 return DS_ERROR_MSG("Failed to get write time for script info" + e.message());
 
+            #define TO_NUM() time_since_epoch().count()
+
             //If script info file is newer than last check, we need to update
             if(currentWriteTime > scriptInfo.LastWriteTime)
+            {
+                ssLOG_INFO("Sources need update due to newer write time from ScriptInfo");
+                ssLOG_INFO("currentWriteTime: " << currentWriteTime.TO_NUM());
+                ssLOG_INFO("scriptInfo.LastWriteTime: " << scriptInfo.LastWriteTime.TO_NUM());
                 return true;
+            }
         }
         
         if(params.profiles.empty())
@@ -514,7 +518,8 @@ namespace runcpp2
         if(maxThreads <= 0)
             return DS_ERROR_MSG("Invalid number of threads passed in");
         
-        ResolveDependenciesImports(scriptInfo, scriptDirectory, buildDir, parameters).DS_TRY();
+        const Data::Profile& profile = params.profiles.at(profileIndex);
+        ResolveDependenciesImports(scriptInfo, scriptDirectory, buildDir, parameters, profile).DS_TRY();
         
         //Check if script info has changed if provided and run setup if needed
         bool recompileNeeded = false;
@@ -522,7 +527,7 @@ namespace runcpp2
         std::vector<std::string> changedDependencies;
         CheckScriptInfoChanges( buildDir, 
                                 scriptInfo, 
-                                params.profiles.at(profileIndex), 
+                                profile, 
                                 scriptDirectory,
                                 lastScriptInfo, 
                                 parameters,
@@ -530,7 +535,10 @@ namespace runcpp2
                                 relinkNeeded, 
                                 changedDependencies).DS_TRY();
         if(relinkNeeded)
+        {
+            ssLOG_INFO("Sources need update due to relink required");
             return true;
+        }
         
         std::vector<std::string> gatheredBinariesPaths;
         
@@ -573,10 +581,17 @@ namespace runcpp2
         if( finalSourceWriteTime > prevFinalSourceWriteTime ||
             finalIncludeWriteTime > prevFinalIncludeWriteTime)
         {
+            ssLOG_INFO("Sources need update due newer source/include write time");
+            ssLOG_INFO("finalSourceWriteTime: " << finalSourceWriteTime.TO_NUM());
+            ssLOG_INFO("prevFinalSourceWriteTime: " << prevFinalSourceWriteTime.TO_NUM());
+            ssLOG_INFO("finalIncludeWriteTime: " << finalIncludeWriteTime.TO_NUM());
+            ssLOG_INFO("prevFinalIncludeWriteTime: " << prevFinalIncludeWriteTime.TO_NUM());
             return true;
         }
         else
             return false;
+    
+        #undef TO_NUM
     }
 
     struct RunParams
@@ -623,6 +638,7 @@ namespace runcpp2
                                                     scriptInfo, 
                                                     runParams.Core.profiles, 
                                                     runParams.Core.configPreferredProfile).DS_TRY();
+        const Data::Profile& profile = runParams.Core.profiles.at(profileIndex);
         
         //Parsing the script, setting up dependencies, compiling and linking
         std::vector<ghc::filesystem::path> filesToCopyPaths;
@@ -643,7 +659,11 @@ namespace runcpp2
             if(maxThreads <= 0)
                 return DS_ERROR_MSG("Invalid number of threads passed in");
             
-            ResolveDependenciesImports(scriptInfo, scriptDirectory, buildDir, parameters).DS_TRY();
+            ResolveDependenciesImports( scriptInfo, 
+                                        scriptDirectory, 
+                                        buildDir, 
+                                        parameters, 
+                                        profile).DS_TRY();
             
             //Check if script info has changed if provided and run setup if needed
             bool recompileNeeded = false;
@@ -651,7 +671,7 @@ namespace runcpp2
             std::vector<std::string> changedDependencies;
             CheckScriptInfoChanges( buildDir, 
                                     scriptInfo, 
-                                    runParams.Core.profiles.at(profileIndex), 
+                                    profile, 
                                     scriptDirectory,
                                     runParams.lastScriptInfo, 
                                     parameters,
@@ -665,7 +685,7 @@ namespace runcpp2
             //Process Dependencies
             std::vector<Data::DependencyInfo*> availableDependencies;
             ProcessDependencies(scriptInfo,
-                                runParams.Core.profiles.at(profileIndex),
+                                profile, 
                                 scriptDirectory,
                                 buildDir,
                                 changedDependencies,
@@ -676,17 +696,14 @@ namespace runcpp2
             
             //Get all the files we are trying to compile
             std::vector<ghc::filesystem::path> sourceFiles;
-            GatherSourceFiles(  absoluteScriptPath, 
-                                scriptInfo, 
-                                runParams.Core.profiles.at(profileIndex), 
-                                sourceFiles).DS_TRY();
+            GatherSourceFiles(absoluteScriptPath, scriptInfo, profile, sourceFiles).DS_TRY();
 
             //Get all include paths
             std::vector<ghc::filesystem::path> sourceIncludePaths;
             std::vector<ghc::filesystem::path> depIncludePaths;
             GatherIncludePaths( scriptDirectory,
                                 scriptInfo,
-                                runParams.Core.profiles.at(profileIndex),
+                                profile, 
                                 availableDependencies,
                                 sourceIncludePaths,
                                 depIncludePaths).DS_TRY();
@@ -702,7 +719,7 @@ namespace runcpp2
                 HasCompiledCache(   scriptDirectory,
                                     sourceFiles, 
                                     buildDir, 
-                                    runParams.Core.profiles.at(profileIndex),
+                                    profile, 
                                     includeManager,
                                     sourceHasCache,
                                     cachedObjectsFiles,
@@ -752,10 +769,10 @@ namespace runcpp2
             }
             
             std::vector<ghc::filesystem::path> depLinkFilesPaths;
-            SeparateDependencyFiles(runParams.Core.profiles.at(profileIndex).FilesTypes, 
-                                    gatheredBinariesPaths, 
-                                    depLinkFilesPaths, 
-                                    filesToCopyPaths);
+            SeparateDependencyFilesToCopy(  profile.FilesTypes, 
+                                            gatheredBinariesPaths, 
+                                            depLinkFilesPaths, 
+                                            filesToCopyPaths);
             
             //TODO: Allow user to pass the priorities outside
             //Set dependencies files to be lower priority
@@ -782,13 +799,13 @@ namespace runcpp2
             }
             
             //Run PreBuild commands before compilation
-            HandlePreBuild(scriptInfo, runParams.Core.profiles.at(profileIndex), buildDir).DS_TRY();
+            HandlePreBuild(scriptInfo, profile, buildDir).DS_TRY();
             
             //Compiling/Linking
             bool outputCache = false;
             if(!HasOutputCache( sourceHasCache, 
                                 buildDir, 
-                                runParams.Core.profiles.at(profileIndex),
+                                profile,
                                 scriptInfo,
                                 scriptName,
                                 finalBinaryWriteTime,
@@ -798,8 +815,27 @@ namespace runcpp2
                                 "A cleanup is recommended");
             }
             
+            if(!outputCache)
+            {
+                ssLOG_INFO("No output cache, recompiling/relinking...");
+                CompileScriptOnly(  buildDir,
+                                    scriptDirectory,
+                                    sourceFiles,
+                                    sourceHasCache,
+                                    sourceIncludePaths, 
+                                    depIncludePaths, 
+                                    scriptInfo,
+                                    profile,
+                                    maxThreads).DS_TRY();
+            }
+            
+            //TODO: Compile and link for watch as well. Load library as well
+            if(runParams.compileOnly)
+                return 0;
+            
             if(!outputCache || relinkNeeded)
             {
+                ssLOG_INFO("Relink needed, relinking...");
                 std::vector<ghc::filesystem::path> sourceLinkFilesPaths;
                 std::vector<int> sourceBinaryFilesPriorities;
                 for(int i = 0; i < cachedObjectsFiles.size(); ++i)
@@ -808,41 +844,59 @@ namespace runcpp2
                     sourceBinaryFilesPriorities.push_back(0);
                 }
                 
-                //TODO: Compile and link for watch as well. Load library as well
-                if(runParams.compileOnly)
+                //TODO: Does the order matter?
+                //Add link flags and system flags for the dependencies
+                std::string depLinkFlags = "";
+                std::vector<std::string> systemDeps = {};
+                for(int i = 0; i < availableDependencies.size(); ++i)
                 {
-                    CompileScriptOnly(  buildDir,
+                    if(availableDependencies[i]->LibraryType == DependencyLibraryType::SYSTEM)
+                    {
+                        SystemSource* systemSource = 
+                            mpark::get_if<SystemSource>(&availableDependencies[i]->Source.Source);
+                        DS_ASSERT_TRUE(systemSource);
+                        
+                        SourcePath* systemName = systemSource->Name.GetValueFromProfile(profile);
+                        if(systemName)
+                            systemDeps.push_back(systemName->Path);
+                    }
+                    
+                    if(!runcpp2::HasValueFromPlatformMap(availableDependencies[i]->LinkProperties))
+                        continue;
+                    
+                    const runcpp2::Data::DependencyLinkProperty& linkProperty = 
+                        *runcpp2::GetValueFromPlatformMap(availableDependencies[i]->LinkProperties);
+                    
+                    const runcpp2::Data::ProfileLinkProperty* profileLinkProperty = 
+                        runcpp2::GetValueFromProfileMap(profile, linkProperty.ProfileProperties);
+                        
+                    if(!profileLinkProperty)
+                        continue;
+                    
+                    for(const std::string& option : profileLinkProperty->AdditionalLinkOptions)
+                        depLinkFlags += option + " ";
+                }
+    
+                runcpp2::TrimRight(depLinkFlags);
+                CompileAndLinkScript(   buildDir,
                                         scriptDirectory,
+                                        ghc::filesystem::path(scriptName), 
                                         sourceFiles,
                                         sourceHasCache,
                                         sourceIncludePaths, 
                                         depIncludePaths, 
                                         scriptInfo,
-                                        runParams.Core.profiles.at(profileIndex),
-                                        maxThreads).DS_TRY();
-                    return 0;
-                }
-                else
-                {
-                    CompileAndLinkScript(   buildDir,
-                                            scriptDirectory,
-                                            ghc::filesystem::path(scriptName), 
-                                            sourceFiles,
-                                            sourceHasCache,
-                                            sourceIncludePaths, 
-                                            depIncludePaths, 
-                                            scriptInfo,
-                                            availableDependencies,
-                                            runParams.Core.profiles.at(profileIndex),
-                                            depLinkFilesPaths,
-                                            depBinaryFilesPriorities,
-                                            sourceLinkFilesPaths,
-                                            sourceBinaryFilesPriorities,
-                                            maxThreads)
-                        .DS_TRY_ACT(DS_TMP_ERROR.Message += "\nFailed to compile or link script.";
-                                    DS_APPEND_TRACE(DS_TMP_ERROR);
-                                    return DS::Error(DS_TMP_ERROR));
-                }
+                                        profile,
+                                        depLinkFlags, 
+                                        systemDeps, 
+                                        depLinkFilesPaths,
+                                        depBinaryFilesPriorities,
+                                        sourceLinkFilesPaths,
+                                        sourceBinaryFilesPriorities,
+                                        maxThreads)
+                    .DS_TRY_ACT(DS_TMP_ERROR.Message += "\nFailed to compile or link script.";
+                                DS_APPEND_TRACE(DS_TMP_ERROR);
+                                return DS::Error(DS_TMP_ERROR));
             }
         }
         
@@ -853,7 +907,7 @@ namespace runcpp2
             ghc::filesystem::path runnableTarget;
             GetBuiltTargetPaths(buildDir, 
                                 scriptName, 
-                                runParams.Core.profiles.at(profileIndex), 
+                                profile, 
                                 scriptInfo,
                                 targets,
                                 &runnableTarget).DS_TRY();
@@ -888,9 +942,7 @@ namespace runcpp2
                             return DS::Error(DS_TMP_ERROR));
             
             //Run PostBuild commands after successful compilation
-            HandlePostBuild(scriptInfo, 
-                            runParams.Core.profiles.at(profileIndex), 
-                            buildDir.string()).DS_TRY();
+            HandlePostBuild(scriptInfo, profile, buildDir.string()).DS_TRY();
             
             //Don't run if we are just watching or building
             if(runParams.buildOnly)

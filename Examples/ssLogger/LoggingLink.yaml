@@ -1,0 +1,25 @@
+SourceFiles: ["./Logging.cpp"]
+
+Parameters:
+    LogText:
+        Optional: false
+
+Variables:
+    LogSentence: "LogText is {LogText}"
+
+Defines:
+-   "_CRT_SECURE_NO_WARNINGS=1"
+-   "LOG_SEN=\\\"{LogSentence}\\\""
+# Uncomment this to log things below warning
+# -   "ssLOG_LEVEL=5"
+
+Dependencies:
+-   Name: ssLogger
+    Platforms: [DefaultPlatform]
+    Source:
+        Link:
+            URL: "https://github.com/Neko-Box-Coder/ssLogger/archive/refs/heads/main.zip"
+            Name: "ssLogger"
+    LibraryType: Header
+    IncludePaths: ["ssLogger-main/Include"]
+    

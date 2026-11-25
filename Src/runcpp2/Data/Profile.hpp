@@ -91,7 +91,6 @@ namespace Data
             INTERN_ADD_MAP("{Stage.Output.Directory}");
             INTERN_ADD_MAP("{Stage.Input.Name}");
             INTERN_ADD_MAP("{Stage.Input.Dep.Name}");
-            INTERN_ADD_MAP("{Stage.Input.Source.Name}");
             INTERN_ADD_MAP("{Stage.Input.Object.Name}");
             INTERN_ADD_MAP("{Stage.Input.Dep.Object.Name}");
             INTERN_ADD_MAP("{Stage.Input.Source.Object.Name}");
@@ -99,7 +98,6 @@ namespace Data
             INTERN_ADD_MAP("{Stage.Input.Static.Name}");
             INTERN_ADD_MAP("{Stage.Input.Extension}");
             INTERN_ADD_MAP("{Stage.Input.Dep.Extension}");
-            INTERN_ADD_MAP("{Stage.Input.Source.Extension}");
             INTERN_ADD_MAP("{Stage.Input.Object.Extension}");
             INTERN_ADD_MAP("{Stage.Input.Dep.Object.Extension}");
             INTERN_ADD_MAP("{Stage.Input.Source.Object.Extension}");
@@ -107,7 +105,6 @@ namespace Data
             INTERN_ADD_MAP("{Stage.Input.Static.Extension}");
             INTERN_ADD_MAP("{Stage.Input.Directory}");
             INTERN_ADD_MAP("{Stage.Input.Dep.Directory}");
-            INTERN_ADD_MAP("{Stage.Input.Source.Directory}");
             INTERN_ADD_MAP("{Stage.Input.Object.Directory}");
             INTERN_ADD_MAP("{Stage.Input.Dep.Object.Directory}");
             INTERN_ADD_MAP("{Stage.Input.Source.Object.Directory}");
@@ -115,7 +112,6 @@ namespace Data
             INTERN_ADD_MAP("{Stage.Input.Static.Directory}");
             INTERN_ADD_MAP("{Stage.Input.Path}");
             INTERN_ADD_MAP("{Stage.Input.Dep.Path}");
-            INTERN_ADD_MAP("{Stage.Input.Source.Path}");
             INTERN_ADD_MAP("{Stage.Input.Object.Path}");
             INTERN_ADD_MAP("{Stage.Input.Dep.Object.Path}");
             INTERN_ADD_MAP("{Stage.Input.Source.Object.Path}");

@@ -1,16 +1,3 @@
-/* runcpp2
-
-Dependencies:
--   Name: cpp-httplib
-    Platforms: [DefaultPlatform]
-    Source:
-        Git:
-            URL: "https://github.com/yhirose/cpp-httplib.git"
-            Branch: "v0.20.0"
-    LibraryType: Header
-    IncludePaths: ["./"]
-*/
-
 #include "httplib.h"
 #include <iostream>
 

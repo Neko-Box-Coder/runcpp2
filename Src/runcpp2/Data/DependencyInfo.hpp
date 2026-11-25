@@ -36,6 +36,8 @@ namespace Data
         DependencyLibraryType LibraryType;
         std::vector<std::string> IncludePaths;
         std::vector<std::string> AbsoluteIncludePaths;
+        
+        //TODO: Move these to PlatformProfileContainer
         std::unordered_map<PlatformName, DependencyLinkProperty> LinkProperties;
         std::unordered_map<PlatformName, DependencyCompileProperty> CompileProperties;
         std::unordered_map<PlatformName, ProfilesCommands> Setup;
@@ -119,7 +121,7 @@ namespace Data
             if(!Source.ParseYAML_Node(sourceNode))
                 return DS_ERROR_MSG("DependencyInfo: Failed to parse Source");
             
-            static_assert((int)DependencyLibraryType::COUNT == 4, "");
+            static_assert((int)DependencyLibraryType::COUNT == 5, "");
             std::string libType = clonedNode->GetMapValueScalar<std::string>("LibraryType").DS_TRY();
             if(libType == "Static")
                 LibraryType = DependencyLibraryType::STATIC;
@@ -129,6 +131,8 @@ namespace Data
                 LibraryType = DependencyLibraryType::OBJECT;
             else if(libType == "Header")
                 LibraryType = DependencyLibraryType::HEADER;
+            else if(libType == "System")
+                LibraryType = DependencyLibraryType::SYSTEM;
             else
                 return DS_ERROR_MSG("DependencyInfo: LibraryType is invalid");
             
@@ -150,7 +154,8 @@ namespace Data
                                                                                 LinkProperties, 
                                                                                 "LinkProperties"));
             }
-            else if(LibraryType != DependencyLibraryType::HEADER)
+            else if(LibraryType != DependencyLibraryType::HEADER && 
+                    LibraryType != DependencyLibraryType::SYSTEM)
             {
                 return DS_ERROR_MSG("DependencyInfo: Missing LinkProperties with library type " + 
                                     Data::DependencyLibraryTypeToString(LibraryType));
@@ -198,7 +203,7 @@ namespace Data
             out += indentation + "Source:\n";
             out += Source.ToString(indentation + "    ");
             
-            static_assert((int)DependencyLibraryType::COUNT == 4, "");
+            static_assert((int)DependencyLibraryType::COUNT == 5, "");
             
             if(LibraryType == DependencyLibraryType::STATIC)
                 out += indentation + "LibraryType: Static\n";
@@ -208,6 +213,8 @@ namespace Data
                 out += indentation + "LibraryType: Object\n";
             else if(LibraryType == DependencyLibraryType::HEADER)
                 out += indentation + "LibraryType: Header\n";
+            else if(LibraryType == DependencyLibraryType::SYSTEM)
+                out += indentation + "LibraryType: System\n";
             
             if(!IncludePaths.empty())
             {

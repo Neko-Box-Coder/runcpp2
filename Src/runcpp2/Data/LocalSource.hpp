@@ -3,11 +3,12 @@
 
 #include "runcpp2/LibYAML_Wrapper.hpp"
 #include "runcpp2/ParseUtil.hpp"
+#include "runcpp2/Data/PlatformProfileContainer.hpp"
+#include "runcpp2/Data/SourcePath.hpp"
 
 #include "DSResult/DSResult.hpp"
 #include "ssLogger/ssLog.hpp"
 
-#include <string>
 #include <vector>
 
 namespace runcpp2
@@ -36,26 +37,24 @@ namespace Data
         Copy,
         Count
     };
-
+    
     struct LocalSource
     {
-        std::string Path;
+        PlatformProfileContainer<SourcePath> Path;
         LocalCopyMode CopyMode = LocalCopyMode::Auto;
         
         inline bool ParseYAML_Node(YAML::ConstNodePtr node)
         {
-            std::vector<NodeRequirement> requirements =
+            if(!ExistAndHasChild(node, "Path"))
             {
-                NodeRequirement("Path", YAML::NodeType::Scalar, true, false)
-            };
-            
-            if(!CheckNodeRequirements(node, requirements))
-            {
-                ssLOG_ERROR("LocalSource: Failed to meet requirements");
+                ssLOG_ERROR("LocalSource must container \"Path\"");
                 return false;
             }
             
-            Path = node->GetMapValueScalar<std::string>("Path").DS_TRY_ACT(return false);
+            YAML::ConstNodePtr pathNode = node->GetMapValueNode("Path");
+            if(!Path.ParseYAML_Node(pathNode))
+                return false;
+            
             if(ExistAndHasChild(node, "CopyMode"))
             {
                 bool success = false;
@@ -73,14 +72,14 @@ namespace Data
         {
             std::string out;
             out += indentation + "Local:\n";
-            out += indentation + "    Path: " + GetEscapedYAMLString(Path) + "\n";
+            out += indentation + "    Path: \n" + Path.ToString(indentation + "        ");
             out += indentation + "    CopyMode: " + CopyModeToString(CopyMode) + "\n";
             return out;
         }
 
         inline bool Equals(const LocalSource& other) const
         {
-            return Path == other.Path && CopyMode == other.CopyMode;
+            return Path.Equals(other.Path) && CopyMode == other.CopyMode;
         }
     };
 }

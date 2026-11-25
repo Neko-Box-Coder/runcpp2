@@ -424,9 +424,12 @@ DS::Result<void> HandleWatch(int argc, char* argv[])
                                                     params,
                                                     jobs,
                                                     configPath).DS_TRY();
-        parsed = ProcessGeneralOptions(argc, argv, argIndex).DS_TRY();
         if(!parsed)
-            break;
+        {
+            parsed = ProcessGeneralOptions(argc, argv, argIndex).DS_TRY();
+            if(!parsed)
+                break;
+        }
     }
     
     if(argIndex >= argc)
@@ -512,7 +515,7 @@ DS::Result<void> HandleWatch(int argc, char* argv[])
             
             lastParsedScriptInfo = &parsedScriptInfo;
             needsRunning = false;
-            ssLOG_BASE("Watching...");
+            ssLOG_BASE("Compiled successful. Watching...");
         } //if(needsRunning)
         
         std::this_thread::sleep_for(std::chrono::seconds(5));

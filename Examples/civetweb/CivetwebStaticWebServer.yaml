@@ -1,0 +1,24 @@
+SourceFiles: ["./CivetwebStaticWebServer.cpp"]
+
+Dependencies:
+-   Name: civetweb
+    Platforms: [DefaultPlatform]
+    Source:
+        Git:
+            URL: "https://github.com/civetweb/civetweb.git"
+            Branch: v1.16
+    LibraryType: Static
+    IncludePaths: ["include"]
+    LinkProperties:
+        Windows:
+            DefaultProfile:
+                SearchLibraryNames: ["civetweb"]
+                SearchDirectories: ["./output/src/debug"]
+        Unix:
+            DefaultProfile:
+                SearchLibraryNames: ["civetweb"]
+                SearchDirectories: ["./output/src"]
+    Setup:
+    -   "mkdir output"
+    -   "cd output && cmake .. -DCIVETWEB_BUILD_TESTING=OFF -DCIVETWEB_ENABLE_ASAN=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+    -   "cd output && cmake --build . -j 16"

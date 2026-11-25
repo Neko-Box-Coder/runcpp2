@@ -4,6 +4,7 @@
 ## Done
 
 ### Nightly
+- Add more default profiles
 - Add version for default user config and prompt for update
 - Rename "OtherFilesToBeCompiled" to "SourceFiles"
 - Migrate to libyaml
@@ -17,6 +18,7 @@
 - Parameters for profiles
 - CompileProperties for dependencies
 - Ditch cmake
+- External Source (curl download) for dependency
 
 ### v0.3.1
 - Check last run is shared lib or executable. Reset cache when necessary if different type
@@ -41,14 +43,13 @@
 
 ### v0.4.0
 - Add support to object output type
-- Allow runcpp2 to be library for scriptable pipeline
-- Add more default profiles (gcc, clang, emscripten?)
 - Move to variant-lite instead of mpark-variant
+- Add the ability to patch external dependency files
+- Parsing ExpectedOutputFiles (`HasOutputCache()`)
 
 ## High Priority
 - Use execv* directly when doing `runcpp2 run` to allow debugging instead of forking, not sure about windows
 - Allow running multiple instances of runcpp2
-- External Source (curl download) for dependency
 - Expose/rename "InternalExecutableShared" and change BuildType to be platform map
     - This ties to the warning in `CompilingLinking.cpp:619`
 - Update `FileProperties.hpp` to use list of string for prefix and extension

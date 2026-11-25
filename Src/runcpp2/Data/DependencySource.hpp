@@ -3,6 +3,8 @@
 
 #include "runcpp2/Data/GitSource.hpp"
 #include "runcpp2/Data/LocalSource.hpp"
+#include "runcpp2/Data/LinkSource.hpp"
+#include "runcpp2/Data/SystemSource.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/LibYAML_Wrapper.hpp"
 
@@ -21,7 +23,7 @@ namespace Data
 {
     struct DependencySource
     {
-        mpark::variant<GitSource, LocalSource> Source;
+        mpark::variant<GitSource, LocalSource, LinkSource, SystemSource> Source;
         ghc::filesystem::path ImportPath;
         std::vector<std::shared_ptr<DependencySource>> ImportedSources;
         
@@ -29,10 +31,11 @@ namespace Data
         {
             if(ExistAndHasChild(node, "ImportPath"))
             {
-                DS_UNWRAP_ASSIGN_ACT(   ImportPath, 
-                                        node->GetMapValueScalar<std::string>("ImportPath"), 
-                                        ssLOG_ERROR(DS_TMP_ERROR.ToString()); return false);
-                
+                ImportPath =    node->GetMapValueScalar<std::string>("ImportPath").DS_TRY_ACT
+                                (
+                                    ssLOG_ERROR(DS_TMP_ERROR.ToString()); 
+                                    return false;
+                                );
                 if(ImportPath.is_absolute())
                 {
                     ssLOG_ERROR("DependencySource: ImportPath must be relative: " << 
@@ -41,11 +44,16 @@ namespace Data
                 }
             }
 
-            if(ExistAndHasChild(node, "Git"))
+            bool hasGitSource = ExistAndHasChild(node, "Git");
+            bool hasLocalSource = ExistAndHasChild(node, "Local");
+            bool hasLinkSource = ExistAndHasChild(node, "Link");
+            bool hasSystemSource = ExistAndHasChild(node, "System");
+            
+            if(hasGitSource)
             {
-                if(ExistAndHasChild(node, "Local"))
+                if(hasLocalSource || hasLinkSource || hasSystemSource)
                 {
-                    ssLOG_ERROR("DependencySource: Both Git and Local sources found");
+                    ssLOG_ERROR("Multiple type of sources cannot exist at the same time");
                     return false;
                 }
                 
@@ -56,11 +64,11 @@ namespace Data
                 Source = gitSource;
                 return true;
             }
-            else if(ExistAndHasChild(node, "Local"))
+            else if(hasLocalSource)
             {
-                if(ExistAndHasChild(node, "Git"))
+                if(hasGitSource || hasLinkSource || hasSystemSource)
                 {
-                    ssLOG_ERROR("DependencySource: Both Git and Local sources found");
+                    ssLOG_ERROR("Multiple type of sources cannot exist at the same time");
                     return false;
                 }
                 
@@ -71,12 +79,48 @@ namespace Data
                 Source = localSource;
                 return true;
             }
+            else if(hasLinkSource)
+            {
+                if(hasGitSource || hasLocalSource || hasSystemSource)
+                {
+                    ssLOG_ERROR("Multiple type of sources cannot exist at the same time");
+                    return false;
+                }
+                
+                LinkSource linkSource;
+                YAML::ConstNodePtr linkNode = node->GetMapValueNode("Link");
+                if(!linkSource.ParseYAML_Node(linkNode))
+                    return false;
+                Source = linkSource;
+                return true;
+            }
+            else if(hasSystemSource)
+            {
+                if(hasGitSource || hasLocalSource || hasLinkSource)
+                {
+                    ssLOG_ERROR("Multiple type of sources cannot exist at the same time");
+                    return false;
+                }
+                
+                if(!ImportPath.empty())
+                {
+                    ssLOG_ERROR("There's nothing to import for system source.");
+                    return false;
+                }
+                
+                SystemSource systemSource;
+                YAML::ConstNodePtr systemNode = node->GetMapValueNode("System");
+                if(!systemSource.ParseYAML_Node(systemNode))
+                    return false;
+                Source = systemSource;
+                return true;
+            }
             //If no source is found, we need to check if it's an imported source. 
             //If so, we assume it's a local source with path "./"
             else if(!ImportPath.empty())
             {
-                LocalSource localSource;
-                localSource.Path = "./";
+                LocalSource localSource = {};
+                localSource.Path.Data["DefaultPlatform"]["DefaultProfile"].Path = "./";
                 Source = localSource;
                 return true;
             }
@@ -100,6 +144,16 @@ namespace Data
             {
                 const LocalSource* local = mpark::get_if<LocalSource>(&Source);
                 out += local->ToString(indentation);
+            }
+            else if(mpark::get_if<LinkSource>(&Source))
+            {
+                const LinkSource* link = mpark::get_if<LinkSource>(&Source);
+                out += link->ToString(indentation);
+            }
+            else if(mpark::get_if<SystemSource>(&Source))
+            {
+                const SystemSource* system = mpark::get_if<SystemSource>(&Source);
+                out += system->ToString(indentation);
             }
             else
             {
@@ -135,6 +189,29 @@ namespace Data
                 }
                 else
                     return false;
+            }
+            else if(mpark::get_if<LinkSource>(&Source))
+            {
+                if(mpark::get_if<LinkSource>(&other.Source))
+                {
+                    const LinkSource* link = mpark::get_if<LinkSource>(&Source);
+                    const LinkSource* otherLink = mpark::get_if<LinkSource>(&other.Source);
+                    return link->Equals(*otherLink);
+                }
+                else
+                    return false;
+            }
+            else if(mpark::get_if<SystemSource>(&Source))
+            {
+                if(mpark::get_if<SystemSource>(&other.Source))
+                {
+                    const SystemSource* system = mpark::get_if<SystemSource>(&Source);
+                    const SystemSource* otherSystem = mpark::get_if<SystemSource>(&other.Source);
+                    return system->Equals(*otherSystem);
+                }
+                else
+                    return false;
+            
             }
             
             ssLOG_ERROR("Invalid DependencySource type");

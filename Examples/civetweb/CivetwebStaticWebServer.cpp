@@ -1,31 +1,3 @@
-/* runcpp2
-
-BuildType: InternalExecutable
-
-Dependencies:
--   Name: civetweb
-    Platforms: [DefaultPlatform]
-    Source:
-        Git:
-            URL: "https://github.com/civetweb/civetweb.git"
-    LibraryType: Static
-    IncludePaths:
-    -   "./include"
-    LinkProperties:
-        Windows:
-            DefaultProfile:
-                SearchLibraryNames: ["civetweb"]
-                SearchDirectories: ["./output/src/debug"]
-        Unix:
-            DefaultProfile:
-                SearchLibraryNames: ["civetweb"]
-                SearchDirectories: ["./output/src"]
-    Setup:
-    -   "mkdir output"
-    -   "cd output && cmake .. -DCIVETWEB_BUILD_TESTING=OFF -DCIVETWEB_ENABLE_ASAN=OFF"
-    -   "cd output && cmake --build . -j 16"
-*/
-
 extern "C" {
     #include "civetweb.h"
 }
