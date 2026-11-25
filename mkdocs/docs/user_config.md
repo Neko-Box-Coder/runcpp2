@@ -438,32 +438,34 @@ first before merging.
         
         **Iterable variables, must be inside "Repeats" run type**
         
-        - `{Stage.Input.Name}`: Name of the files to be linked, regardless of the build type
-            - `{Stage.Input.Dep.Name}`: Name of the dependencies files to be linked, regardless of the build type, sub array
+        - `{Stage.Input.Name}`: Name of the files to be linked, regardless of the input type, _except for system libraries_
+            - `{Stage.Input.Dep.Name}`: Name of the dependencies files to be linked, regardless of the input type, sub array
             - `{Stage.Input.Object.Name}`: Name of the object files to be linked, sub array
                 - `{Stage.Input.Dep.Object.Name}`: Name of the dependencies object files to be linked, Sub array
                 - `{Stage.Input.Source.Object.Name}`: Name of the source object files to be linked, Sub array
             - `{Stage.Input.Shared.Name}`: Name of the shared dependencies files to be linked, sub array
             - `{Stage.Input.Static.Name}`: Name of the static dependencies files to be linked, sub array
         
-        - `{Stage.Input.Extension}`: File Extensions of the files to be linked, regardless of the build type
-            - `{Stage.Input.Dep.Extension}`: File Extensions of the dependencies files to be linked, regardless of the build type
+        - `{Stage.Input.Dep.System.Name}`: Name of the system libraries to be linked
+        
+        - `{Stage.Input.Extension}`: File Extensions of the files to be linked, regardless of the input type
+            - `{Stage.Input.Dep.Extension}`: File Extensions of the dependencies files to be linked, regardless of the input type
             - `{Stage.Input.Object.Extension}`: File Extensions of the object files to be linked, sub array
                 - `{Stage.Input.Dep.Object.Extension}`: File Extensions of the dependencies object files to be linked, sub array
                 - `{Stage.Input.Source.Object.Extension}`: File Extensions of the source object files to be linked, sub array
             - `{Stage.Input.Shared.Extension}`: File Extensions of the shared dependencies files to be linked, sub array
             - `{Stage.Input.Static.Extension}`: File Extensions of the static dependencies files to be linked, sub array
         
-        - `{Stage.Input.Directory}`: Directories of the files to be linked, regardless of the build type
-            - `{Stage.Input.Dep.Directory}`: Directories of the dependencies files to be linked, regardless of the build type
+        - `{Stage.Input.Directory}`: Directories of the files to be linked, regardless of the input type
+            - `{Stage.Input.Dep.Directory}`: Directories of the dependencies files to be linked, regardless of the input type
             - `{Stage.Input.Object.Directory}`: Directories of the object files to be linked, sub array
                 - `{Stage.Input.Dep.Object.Directory}`: Directories of the dependencies object files to be linked, sub array
                 - `{Stage.Input.Source.Object.Directory}`: Directories of the source object files to be linked, sub array
             - `{Stage.Input.Shared.Directory}`: Directories of the shared dependencies files to be linked, sub array
             - `{Stage.Input.Static.Directory}`: Directories of the static dependencies files to be linked, sub array
         
-        - `{Stage.Input.Path}`: Full paths to the files to be linked, regardless of the build type
-            - `{Stage.Input.Dep.Path}`: Full paths to the dependencies files to be linked, regardless of the build type
+        - `{Stage.Input.Path}`: Full paths to the files to be linked, regardless of the input type
+            - `{Stage.Input.Dep.Path}`: Full paths to the dependencies files to be linked, regardless of the input type
             - `{Stage.Input.Object.Path}`: Full paths to the object files to be linked, sub array
                 - `{Stage.Input.Dep.Object.Path}`: Full paths to the dependencies object files to be linked, sub array
                 - `{Stage.Input.Source.Object.Path}`: Full paths to the source object files to be linked, sub array

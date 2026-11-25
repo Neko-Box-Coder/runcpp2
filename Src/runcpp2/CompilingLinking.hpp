@@ -560,6 +560,7 @@ namespace
     struct LinkPriorities
     {
         ghc::filesystem::path* Path;
+        std::string* SystemLib;
         int Priority;
         bool IsSource;
     };
@@ -646,13 +647,33 @@ namespace
             {
                 const LinkPriorities& currentLinkTarget = priorities.at(i);
                 
-                ssLOG_INFO("Trying to link " << *(currentLinkTarget.Path));
+                bool hasSystemLib = currentLinkTarget.SystemLib != NULL;
+                if(!hasSystemLib)
+                {
+                    if(!currentLinkTarget.Path)
+                    {
+                        ssLOG_ERROR("Invalid LinkPriorities struct");
+                        return false;
+                    }
+                    ssLOG_INFO("Trying to link " << *(currentLinkTarget.Path));
+                }
+                else
+                    ssLOG_INFO("Trying to link " << *(currentLinkTarget.SystemLib));
+                
                 using namespace runcpp2;
                 
                 //Check if this is a file we can link
-                std::string extension = GetFileExtensionWithoutVersion(*(currentLinkTarget.Path));
+                static_assert((int)Data::DependencyLibraryType::COUNT == 5, "");
                 Data::DependencyLibraryType currentLinkType = Data::DependencyLibraryType::COUNT;
                 
+                std::string extension = "";
+                if(hasSystemLib)
+                {
+                    currentLinkType = Data::DependencyLibraryType::SYSTEM;
+                    goto processLinkFile;
+                }
+                
+                extension = GetFileExtensionWithoutVersion(*(currentLinkTarget.Path));
                 if(!HasValueFromPlatformMap(profile.FilesTypes.ObjectLinkFile.Extension))
                 {
                     ssLOG_WARNING(  "profile " << profile.Name << " missing extension for " <<
@@ -710,6 +731,13 @@ namespace
                     continue;
                 }
                 
+                if(hasSystemLib) //Special case if it is system library
+                {
+                    substitutionMap["{Stage.Input.Dep.System.Name}"]
+                        .push_back(*currentLinkTarget.SystemLib);
+                    continue;
+                }
+                
                 ghc::filesystem::path linkParsedPath = *(currentLinkTarget.Path);
                 std::string linkDir = linkParsedPath.parent_path().string();
                 std::string linkName = linkParsedPath.stem().string();
@@ -730,7 +758,7 @@ namespace
                     substitutionMap["{Stage.Input.Dep.Path}"].push_back(processedLinkFilePath);
                 }
                 
-                static_assert(  static_cast<int>(Data::DependencyLibraryType::COUNT) == 4, 
+                static_assert(  static_cast<int>(Data::DependencyLibraryType::COUNT) == 5, 
                                 "Add new type to be processed");
                 switch(currentLinkType)
                 {
@@ -789,6 +817,11 @@ namespace
                         }
                         break;
                     }
+                    case Data::DependencyLibraryType::SYSTEM:
+                    {
+                        ssLOG_ERROR("This shouldn't be reached");
+                        return false;
+                    }
                     case Data::DependencyLibraryType::HEADER:
                     case Data::DependencyLibraryType::COUNT:
                     {
@@ -797,7 +830,7 @@ namespace
                                     " for " << *(currentLinkTarget.Path));
                         return false;
                     }
-                }
+                } //switch(currentLinkType)
             } //for(int i = 0; i < objectsFilesPaths.size(); ++i)
         }
         
@@ -1024,12 +1057,13 @@ namespace runcpp2
                             const std::vector<ghc::filesystem::path>& sourceIncludePaths,
                             const std::vector<ghc::filesystem::path>& depIncludePaths,
                             const Data::ScriptInfo& scriptInfo,
-                            const std::vector<Data::DependencyInfo*>& availableDependencies,
                             const Data::Profile& profile,
-                            const std::vector<ghc::filesystem::path>& sourceBinaryFilesPaths,
-                            const std::vector<int>& sourceBinaryFilesPriorities,
+                            const std::string& additionalLinkFlags, 
+                            const std::vector<std::string>& systemDeps, 
                             const std::vector<ghc::filesystem::path>& depBinaryFilesPaths,
                             const std::vector<int>& depBinaryFilesPriorities,
+                            const std::vector<ghc::filesystem::path>& sourceBinaryFilesPaths,
+                            const std::vector<int>& sourceBinaryFilesPriorities,
                             const int maxThreads)
     {
         DS_ASSERT_EQ(sourceBinaryFilesPaths.size(), sourceBinaryFilesPriorities.size());
@@ -1067,13 +1101,14 @@ namespace runcpp2
         //Priorities for source files
         std::vector<LinkPriorities> priorities;
         for(int i = 0; i < compiledObjectsFilesPaths.size(); ++i)
-            priorities.push_back({&compiledObjectsFilesPaths[i], 0, true});
+            priorities.push_back({&compiledObjectsFilesPaths[i], NULL, 0, true});
         
         //Add compiled object files
         for(int i = 0; i < sourceBinaryFilesPaths.size(); ++i)
         {
             priorities.push_back(   { 
                                         (ghc::filesystem::path*)&sourceBinaryFilesPaths.at(i), 
+                                        NULL, 
                                         sourceBinaryFilesPriorities.at(i),
                                         true
                                     });
@@ -1084,11 +1119,24 @@ namespace runcpp2
         {
             priorities.push_back(   {
                                         (ghc::filesystem::path*)&depBinaryFilesPaths.at(i),
+                                        NULL, 
                                         depBinaryFilesPriorities.at(i),
                                         false
                                     });
         }
         
+        //Add system dependencies, should be lowest priority.
+        for(int i = 0; i < systemDeps.size(); ++i)
+        {
+            priorities.push_back(   {
+                                        NULL, 
+                                        &systemDeps.at(i), 
+                                        -200, 
+                                        false
+                                    });
+        }
+        
+        //TODO: This is not stable. Use a stable alternative instead
         qsort(  priorities.data(), 
                 priorities.size(), 
                 sizeof(LinkPriorities), 
@@ -1114,33 +1162,10 @@ namespace runcpp2
             return {};
         }
         
-        std::string dependenciesLinkFlags; //TODO: Does the order matter?
-        
-        //Add link flags for the dependencies
-        for(int i = 0; i < availableDependencies.size(); ++i)
-        {
-            if(!runcpp2::HasValueFromPlatformMap(availableDependencies.at(i)->LinkProperties))
-                continue;
-            
-            const runcpp2::Data::DependencyLinkProperty& linkProperty = 
-                *runcpp2::GetValueFromPlatformMap(availableDependencies.at(i)->LinkProperties);
-            
-            const runcpp2::Data::ProfileLinkProperty* profileLinkProperty = 
-                runcpp2::GetValueFromProfileMap(profile, linkProperty.ProfileProperties);
-                
-            if(!profileLinkProperty)
-                continue;
-            
-            for(const std::string& option : profileLinkProperty->AdditionalLinkOptions)
-                dependenciesLinkFlags += option + " ";
-        }
-        
-        runcpp2::TrimRight(dependenciesLinkFlags);
-        
         if(!LinkScript( buildDir, 
                         outputName, 
                         scriptInfo, 
-                        dependenciesLinkFlags, 
+                        additionalLinkFlags, 
                         profile, 
                         priorities))
         {

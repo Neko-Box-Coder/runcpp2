@@ -38,13 +38,13 @@ namespace Data
         {
             std::string out;
             out += indentation + "System:\n";
-            out += indentation + "    Name: \n" + Path.ToString(indentation + "        ");
+            out += indentation + "    Name: \n" + Name.ToString(indentation + "        ");
             return out;
         }
 
         inline bool Equals(const SystemSource& other) const
         {
-            return Name.Equals(other.Path);
+            return Name.Equals(other.Name);
         }
     };
 }

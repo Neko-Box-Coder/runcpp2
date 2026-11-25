@@ -769,10 +769,10 @@ namespace runcpp2
             }
             
             std::vector<ghc::filesystem::path> depLinkFilesPaths;
-            SeparateDependencyFiles(profile.FilesTypes, 
-                                    gatheredBinariesPaths, 
-                                    depLinkFilesPaths, 
-                                    filesToCopyPaths);
+            SeparateDependencyFilesToCopy(  profile.FilesTypes, 
+                                            gatheredBinariesPaths, 
+                                            depLinkFilesPaths, 
+                                            filesToCopyPaths);
             
             //TODO: Allow user to pass the priorities outside
             //Set dependencies files to be lower priority
@@ -815,14 +815,27 @@ namespace runcpp2
                                 "A cleanup is recommended");
             }
             
+            if(!outputCache)
+            {
+                ssLOG_INFO("No output cache, recompiling/relinking...");
+                CompileScriptOnly(  buildDir,
+                                    scriptDirectory,
+                                    sourceFiles,
+                                    sourceHasCache,
+                                    sourceIncludePaths, 
+                                    depIncludePaths, 
+                                    scriptInfo,
+                                    profile,
+                                    maxThreads).DS_TRY();
+            }
+            
+            //TODO: Compile and link for watch as well. Load library as well
+            if(runParams.compileOnly)
+                return 0;
+            
             if(!outputCache || relinkNeeded)
             {
-                if(!outputCache)
-                    ssLOG_INFO("No output cache, recompiling/relinking...");
-                
-                if(relinkNeeded)
-                    ssLOG_INFO("Relink needed, relinking...");
-                
+                ssLOG_INFO("Relink needed, relinking...");
                 std::vector<ghc::filesystem::path> sourceLinkFilesPaths;
                 std::vector<int> sourceBinaryFilesPriorities;
                 for(int i = 0; i < cachedObjectsFiles.size(); ++i)
@@ -831,41 +844,59 @@ namespace runcpp2
                     sourceBinaryFilesPriorities.push_back(0);
                 }
                 
-                //TODO: Compile and link for watch as well. Load library as well
-                if(runParams.compileOnly)
+                //TODO: Does the order matter?
+                //Add link flags and system flags for the dependencies
+                std::string depLinkFlags = "";
+                std::vector<std::string> systemDeps = {};
+                for(int i = 0; i < availableDependencies.size(); ++i)
                 {
-                    CompileScriptOnly(  buildDir,
+                    if(availableDependencies[i]->LibraryType == DependencyLibraryType::SYSTEM)
+                    {
+                        SystemSource* systemSource = 
+                            mpark::get_if<SystemSource>(&availableDependencies[i]->Source.Source);
+                        DS_ASSERT_TRUE(systemSource);
+                        
+                        SourcePath* systemName = systemSource->Name.GetValueFromProfile(profile);
+                        if(systemName)
+                            systemDeps.push_back(systemName->Path);
+                    }
+                    
+                    if(!runcpp2::HasValueFromPlatformMap(availableDependencies[i]->LinkProperties))
+                        continue;
+                    
+                    const runcpp2::Data::DependencyLinkProperty& linkProperty = 
+                        *runcpp2::GetValueFromPlatformMap(availableDependencies[i]->LinkProperties);
+                    
+                    const runcpp2::Data::ProfileLinkProperty* profileLinkProperty = 
+                        runcpp2::GetValueFromProfileMap(profile, linkProperty.ProfileProperties);
+                        
+                    if(!profileLinkProperty)
+                        continue;
+                    
+                    for(const std::string& option : profileLinkProperty->AdditionalLinkOptions)
+                        depLinkFlags += option + " ";
+                }
+    
+                runcpp2::TrimRight(depLinkFlags);
+                CompileAndLinkScript(   buildDir,
                                         scriptDirectory,
+                                        ghc::filesystem::path(scriptName), 
                                         sourceFiles,
                                         sourceHasCache,
                                         sourceIncludePaths, 
                                         depIncludePaths, 
                                         scriptInfo,
                                         profile,
-                                        maxThreads).DS_TRY();
-                    return 0;
-                }
-                else
-                {
-                    CompileAndLinkScript(   buildDir,
-                                            scriptDirectory,
-                                            ghc::filesystem::path(scriptName), 
-                                            sourceFiles,
-                                            sourceHasCache,
-                                            sourceIncludePaths, 
-                                            depIncludePaths, 
-                                            scriptInfo,
-                                            availableDependencies,
-                                            profile,
-                                            depLinkFilesPaths,
-                                            depBinaryFilesPriorities,
-                                            sourceLinkFilesPaths,
-                                            sourceBinaryFilesPriorities,
-                                            maxThreads)
-                        .DS_TRY_ACT(DS_TMP_ERROR.Message += "\nFailed to compile or link script.";
-                                    DS_APPEND_TRACE(DS_TMP_ERROR);
-                                    return DS::Error(DS_TMP_ERROR));
-                }
+                                        depLinkFlags, 
+                                        systemDeps, 
+                                        depLinkFilesPaths,
+                                        depBinaryFilesPriorities,
+                                        sourceLinkFilesPaths,
+                                        sourceBinaryFilesPriorities,
+                                        maxThreads)
+                    .DS_TRY_ACT(DS_TMP_ERROR.Message += "\nFailed to compile or link script.";
+                                DS_APPEND_TRACE(DS_TMP_ERROR);
+                                return DS::Error(DS_TMP_ERROR));
             }
         }
         

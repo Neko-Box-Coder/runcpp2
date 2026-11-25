@@ -576,10 +576,11 @@ namespace runcpp2
         return {};
     }
 
-    inline void SeparateDependencyFiles(const Data::FilesTypesInfo& filesTypes,
-                                        const std::vector<std::string>& gatheredBinariesPaths,
-                                        std::vector<ghc::filesystem::path>& outLinkFilesPaths,
-                                        std::vector<ghc::filesystem::path>& outFilesToCopyPaths)
+    inline void 
+    SeparateDependencyFilesToCopy(  const Data::FilesTypesInfo& filesTypes,
+                                    const std::vector<std::string>& gatheredBinariesPaths,
+                                    std::vector<ghc::filesystem::path>& outLinkFilesPaths,
+                                    std::vector<ghc::filesystem::path>& outFilesToCopyPaths)
     {
         ssLOG_FUNC_INFO();
         INTERNAL_RUNCPP2_SAFE_START();

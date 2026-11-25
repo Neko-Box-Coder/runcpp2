@@ -551,8 +551,12 @@ namespace runcpp2
                     extensionsToLink.push_back(*debugSymbolExt);
             }
             
-            if(availableDependencies.at(i)->LibraryType == Data::DependencyLibraryType::HEADER)
+            static_assert((int)DependencyLibraryType::COUNT == 5, "");
+            if( availableDependencies.at(i)->LibraryType == Data::DependencyLibraryType::HEADER ||
+                availableDependencies.at(i)->LibraryType == Data::DependencyLibraryType::SYSTEM)
+            {
                 continue;
+            }
             
             //Get the Search path and search library name
             using PropertyMap = std::unordered_map<ProfileName, Data::DependencyLinkProperty>;
@@ -1171,6 +1175,16 @@ namespace
             outCopyPath = buildDir / link->Name;
             outSourcePath.clear();
         }
+        else if(mpark::get_if<runcpp2::Data::SystemSource>(&currentSource.Source))
+        {
+            //NOTE: There's nothing to do for system source, but we still need to give a path for 
+            //      commands to run in
+            const runcpp2::Data::SystemSource* system = 
+                mpark::get_if<runcpp2::Data::SystemSource>(&currentSource.Source);
+            const SourcePath* systemName = system->Name.GetValueFromProfile(profile);
+            outCopyPath = buildDir / systemName->Path;
+            outSourcePath.clear();
+        }
         else
             return DS_ERROR_MSG("Unrecognized source type: " + DS_STR(currentSource.Source.index()));
         
@@ -1443,6 +1457,12 @@ namespace
                 else
                     return DS_ERROR_MSG("Unrecognized file extension " + DS_STR(ext) + " from url");
             } //else if(mpark::get_if<runcpp2::Data::LinkSource>(&(dependency.Source.Source)))
+            else if(mpark::get_if<runcpp2::Data::SystemSource>(&(dependency.Source.Source)))
+            {
+                //There's nothing to do for system source. We just need to add link flags
+                outPrePopulated = true;
+                return {};
+            }
             else
             {
                 return DS_ERROR_MSG("Unrecognized source type: " + 
@@ -1591,7 +1611,7 @@ namespace
                                                 const runcpp2::Data::Profile& profile,
                                                 std::vector<std::string>& outExtensionsToLink)
     {
-        static_assert((int)runcpp2::Data::DependencyLibraryType::COUNT == 4, "");
+        static_assert((int)runcpp2::Data::DependencyLibraryType::COUNT == 5, "");
         switch(dependencyInfo.LibraryType)
         {
             case runcpp2::Data::DependencyLibraryType::STATIC:
@@ -1652,6 +1672,8 @@ namespace
                 break;
             }
             case runcpp2::Data::DependencyLibraryType::HEADER:
+                break;
+            case runcpp2::Data::DependencyLibraryType::SYSTEM:
                 break;
             default:
                 ssLOG_ERROR("Invalid library type: " << (int)dependencyInfo.LibraryType);

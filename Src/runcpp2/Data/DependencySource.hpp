@@ -49,18 +49,11 @@ namespace Data
             bool hasLinkSource = ExistAndHasChild(node, "Link");
             bool hasSystemSource = ExistAndHasChild(node, "System");
             
-            //TODO(NOW)
-
-            if(ExistAndHasChild(node, "Git"))
+            if(hasGitSource)
             {
-                if(ExistAndHasChild(node, "Local"))
+                if(hasLocalSource || hasLinkSource || hasSystemSource)
                 {
-                    ssLOG_ERROR("DependencySource: Both Git and Local sources found");
-                    return false;
-                }
-                else if(ExistAndHasChild(node, "Link"))
-                {
-                    ssLOG_ERROR("DependencySource: Both Git and Link sources found");
+                    ssLOG_ERROR("Multiple type of sources cannot exist at the same time");
                     return false;
                 }
                 
@@ -71,16 +64,11 @@ namespace Data
                 Source = gitSource;
                 return true;
             }
-            else if(ExistAndHasChild(node, "Local"))
+            else if(hasLocalSource)
             {
-                if(ExistAndHasChild(node, "Git"))
+                if(hasGitSource || hasLinkSource || hasSystemSource)
                 {
-                    ssLOG_ERROR("DependencySource: Both Local and Git sources found");
-                    return false;
-                }
-                else if(ExistAndHasChild(node, "Link"))
-                {
-                    ssLOG_ERROR("DependencySource: Both Local and Link sources found");
+                    ssLOG_ERROR("Multiple type of sources cannot exist at the same time");
                     return false;
                 }
                 
@@ -91,24 +79,40 @@ namespace Data
                 Source = localSource;
                 return true;
             }
-            else if(ExistAndHasChild(node, "Link"))
+            else if(hasLinkSource)
             {
-                if(ExistAndHasChild(node, "Git"))
+                if(hasGitSource || hasLocalSource || hasSystemSource)
                 {
-                    ssLOG_ERROR("DependencySource: Both Link and Git sources found");
-                    return false;
-                }
-                else if(ExistAndHasChild(node, "Local"))
-                {
-                    ssLOG_ERROR("DependencySource: Both Link and Local sources found");
+                    ssLOG_ERROR("Multiple type of sources cannot exist at the same time");
                     return false;
                 }
                 
                 LinkSource linkSource;
-                YAML::ConstNodePtr localNode = node->GetMapValueNode("Link");
-                if(!linkSource.ParseYAML_Node(localNode))
+                YAML::ConstNodePtr linkNode = node->GetMapValueNode("Link");
+                if(!linkSource.ParseYAML_Node(linkNode))
                     return false;
                 Source = linkSource;
+                return true;
+            }
+            else if(hasSystemSource)
+            {
+                if(hasGitSource || hasLocalSource || hasLinkSource)
+                {
+                    ssLOG_ERROR("Multiple type of sources cannot exist at the same time");
+                    return false;
+                }
+                
+                if(!ImportPath.empty())
+                {
+                    ssLOG_ERROR("There's nothing to import for system source.");
+                    return false;
+                }
+                
+                SystemSource systemSource;
+                YAML::ConstNodePtr systemNode = node->GetMapValueNode("System");
+                if(!systemSource.ParseYAML_Node(systemNode))
+                    return false;
+                Source = systemSource;
                 return true;
             }
             //If no source is found, we need to check if it's an imported source. 
@@ -145,6 +149,11 @@ namespace Data
             {
                 const LinkSource* link = mpark::get_if<LinkSource>(&Source);
                 out += link->ToString(indentation);
+            }
+            else if(mpark::get_if<SystemSource>(&Source))
+            {
+                const SystemSource* system = mpark::get_if<SystemSource>(&Source);
+                out += system->ToString(indentation);
             }
             else
             {
@@ -191,6 +200,18 @@ namespace Data
                 }
                 else
                     return false;
+            }
+            else if(mpark::get_if<SystemSource>(&Source))
+            {
+                if(mpark::get_if<SystemSource>(&other.Source))
+                {
+                    const SystemSource* system = mpark::get_if<SystemSource>(&Source);
+                    const SystemSource* otherSystem = mpark::get_if<SystemSource>(&other.Source);
+                    return system->Equals(*otherSystem);
+                }
+                else
+                    return false;
+            
             }
             
             ssLOG_ERROR("Invalid DependencySource type");

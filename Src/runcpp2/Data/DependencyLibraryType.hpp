@@ -14,12 +14,13 @@ namespace runcpp2
             SHARED,
             OBJECT,
             HEADER,
+            SYSTEM,
             COUNT
         };
         
         inline std::string DependencyLibraryTypeToString(DependencyLibraryType type)
         {
-            static_assert(static_cast<int>(DependencyLibraryType::COUNT) == 4, "Update below");
+            static_assert(static_cast<int>(DependencyLibraryType::COUNT) == 5, "Update below");
             switch(type)
             {
                 case DependencyLibraryType::STATIC:
@@ -30,6 +31,8 @@ namespace runcpp2
                     return "DependencyLibraryType::OBJECT";
                 case DependencyLibraryType::HEADER:
                     return "DependencyLibraryType::HEADER";
+                case DependencyLibraryType::SYSTEM:
+                    return "DependencyLibraryType::SYSTEM";
                 default:
                     assert(false);
                     return "Unknown";
