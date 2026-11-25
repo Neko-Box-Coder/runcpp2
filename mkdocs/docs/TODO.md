@@ -18,6 +18,7 @@
 - Parameters for profiles
 - CompileProperties for dependencies
 - Ditch cmake
+- External Source (curl download) for dependency
 
 ### v0.3.1
 - Check last run is shared lib or executable. Reset cache when necessary if different type
@@ -43,7 +44,6 @@
 ### v0.4.0
 - Add support to object output type
 - Move to variant-lite instead of mpark-variant
-- External Source (curl download) for dependency
 - Add the ability to patch external dependency files
 - Parsing ExpectedOutputFiles (`HasOutputCache()`)
 
