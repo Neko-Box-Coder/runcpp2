@@ -56,9 +56,9 @@ bool ListDir(const std::string& dirLoc = ".")
     #endif
 }
 
-#define CH(x) do { if(!(x)) { printf("Line %d failed.\n", __LINE__); exit(1); } } while(0)
+#define CHK(x) do { if(!(x)) { printf("Line %d failed.\n", __LINE__); exit(1); } } while(0)
 
-#define SH(x) CH( RunCommand(x) )
+#define SH(x) CHK( RunCommand(x) )
 
 
 #if defined(_WIN32)
@@ -71,15 +71,15 @@ bool ListDir(const std::string& dirLoc = ".")
 
 #define RUN_TEST(testName) SH( "cd ./Build && ./" RUNCPP2_EXE " run " COMMON_RUNCPP2_ARGS " " testName);
 #define BUILD_TEST(testName, outputLoc) \
-    SH( "cd ./Build && ./" RUNCPP2_EXE " build -o " outputLoc " " COMMON_RUNCPP2_ARGS " " testName);
+    SH("cd ./Build && ./" RUNCPP2_EXE " build -o " outputLoc " " COMMON_RUNCPP2_ARGS " " testName);
 
 int main(int, char**)
 {
-    CH(ListDir());
+    CHK(ListDir());
     RUN_TEST("../Tests/MultiSourcesAndStatic/Test.cpp");
     
     BUILD_TEST("../Tests/MultiSourcesAndStatic/TestStatic.cpp", "TestStaticOutput");
-    CH(ListDir("./Build/TestStaticOutput"));
+    CHK(ListDir("./Build/TestStaticOutput"));
     
     RUN_TEST("../Tests/LocalDependency/TestLocalDependency.cpp");
     RUN_TEST("../Tests/SeparateYaml/TestSeparateYaml.cpp");
@@ -91,9 +91,20 @@ int main(int, char**)
     }
     RUN_TEST("../Tests/YamlOnly/YamlOnlyTest.yaml");
     RUN_TEST("../Tests/C_ProfileTest/System2Test.c");
+    
+    BUILD_TEST("../Examples/CLI11/config_app.yaml", "./Examples");
+    BUILD_TEST("../Examples/FXTUI/textarea.yaml", "./Examples");
+    BUILD_TEST("../Examples/SDL/SDLWindow.yaml", "./Examples");
+    BUILD_TEST("../Examples/civetweb/CivetwebStaticWebServer.yaml", "./Examples");
+    BUILD_TEST("../Examples/civetweb/embedded_c.yaml", "./Examples");
+    BUILD_TEST("../Examples/cpp-httplib/CppStaticWebServer.yaml", "./Examples");
+    BUILD_TEST("../Examples/freetype/example1.yaml", "./Examples");
+    BUILD_TEST("../Examples/matplot++/MatplotExample.yaml", "./Examples");
+    BUILD_TEST("../Examples/ssLogger/LoggingGit.yaml", "./Examples");
+    BUILD_TEST("../Examples/ssLogger/LoggingLink.yaml", "./Examples");
+    
     RUN_TEST(   "../Examples/InteractiveTutorial.cpp --test ./" RUNCPP2_EXE 
                 " ../DefaultYAMLs/DefaultUserConfig.yaml");
-    
     
     printf("Done\n");
     return 0;
