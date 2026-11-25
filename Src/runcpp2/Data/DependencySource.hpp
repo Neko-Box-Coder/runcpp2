@@ -4,6 +4,7 @@
 #include "runcpp2/Data/GitSource.hpp"
 #include "runcpp2/Data/LocalSource.hpp"
 #include "runcpp2/Data/LinkSource.hpp"
+#include "runcpp2/Data/SystemSource.hpp"
 #include "runcpp2/ParseUtil.hpp"
 #include "runcpp2/LibYAML_Wrapper.hpp"
 
@@ -22,7 +23,7 @@ namespace Data
 {
     struct DependencySource
     {
-        mpark::variant<GitSource, LocalSource, LinkSource> Source;
+        mpark::variant<GitSource, LocalSource, LinkSource, SystemSource> Source;
         ghc::filesystem::path ImportPath;
         std::vector<std::shared_ptr<DependencySource>> ImportedSources;
         
@@ -42,6 +43,13 @@ namespace Data
                     return false;
                 }
             }
+
+            bool hasGitSource = ExistAndHasChild(node, "Git");
+            bool hasLocalSource = ExistAndHasChild(node, "Local");
+            bool hasLinkSource = ExistAndHasChild(node, "Link");
+            bool hasSystemSource = ExistAndHasChild(node, "System");
+            
+            //TODO(NOW)
 
             if(ExistAndHasChild(node, "Git"))
             {
