@@ -1,0 +1,24 @@
+SourceFiles: ["./SDLWindow.cpp"]
+
+Dependencies:
+-   Name: SDL2
+    Platforms: [DefaultPlatform]
+    Source:
+        Git:
+            URL: "https://github.com/libsdl-org/SDL.git"
+            Branch: "release-2.32.6"
+    LibraryType: Shared
+    IncludePaths:
+    -   "./include"
+    LinkProperties:
+        SearchLibraryNames: ["SDL2"]
+        ExcludeLibraryNames: ["SDL2-static", "SDL2_test"] # On Windows
+        SearchDirectories: ["./build", "./build/debug"]
+    Setup: ["mkdir build", "cd build && cmake .. && cmake --build . -j 16"]
+
+# Or use system installed SDL on Unix...
+# OverrideLinkFlags:
+#     Unix:
+#         "g++":
+#             Remove: ""
+#             Append: "-lSDL2"

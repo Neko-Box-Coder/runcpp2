@@ -1,0 +1,24 @@
+SourceFiles: ["./MatplotExample.cpp"]
+
+OverrideCompileFlags:
+    Windows:
+        msvc:
+            Append: "/wd4251"
+Defines: ["MATPLOT_BUILD_HIGH_RESOLUTION_WORLD_MAP"]
+Dependencies:
+-   Name: matplotplusplus
+    Platforms: [DefaultPlatform]
+    Source:
+        Git:
+            URL: "https://github.com/alandefreitas/matplotplusplus.git"
+            Branch: "v1.2.2"
+    LibraryType: Shared
+    IncludePaths: ["./source", "./build/source/matplot"]
+    LinkProperties:
+        SearchLibraryNames: ["matplot"]
+        ExcludeLibraryNames: ["libmatplot.so.1.2.0"]
+        SearchDirectories: ["./build/source/matplot", "./build/source/matplot/debug"]
+    Setup:
+    -   "mkdir build"
+    -   "cd build && cmake .. -DMATPLOTPP_BUILD_WITH_PEDANTIC_WARNINGS=OFF -DMATPLOTPP_BUILD_WITH_SANITIZERS=OFF -DMATPLOTPP_BUILD_EXAMPLES=OFF -DMATPLOTPP_BUILD_INSTALLER=OFF -DMATPLOTPP_BUILD_PACKAGE=OFF -DBUILD_SHARED_LIBS=ON"
+    -   "cd build && cmake --build . -j 16"

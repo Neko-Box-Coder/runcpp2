@@ -1,4 +1,5 @@
-/* runcpp2
+SourceFiles: ["./Logging.cpp"]
+
 Parameters:
     LogText:
         Optional: false
@@ -21,24 +22,4 @@ Dependencies:
             Name: "ssLogger"
     LibraryType: Header
     IncludePaths: ["ssLogger-main/Include"]
-*/
-
-
-#include "ssLogger/ssLogInit.hpp"
-#include "ssLogger/ssLog.hpp"
-
-int main(int, char**)
-{
-    ssLOG_LINE("Let's log something with different log levels!");
-    ssLOG_FATAL("Hello World");
-    ssLOG_ERROR("Hello World");
-    ssLOG_WARNING("Hello World");
     
-    ssLOG_LINE(LOG_SEN);
-    
-    //You won't see the following logs since anything below warnings are evaluated to nothing
-    ssLOG_INFO("Hello World");
-    ssLOG_DEBUG("Hello World");
-    
-    return 0;
-}

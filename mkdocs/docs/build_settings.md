@@ -459,7 +459,6 @@ ExampleSettings:
 
 ### `Dependency`
 - Type: `map`
-
     #### `Name`
     - Type: `string`
     - Optional: `false`, `true` only if `Source.ImportPath` is specified
